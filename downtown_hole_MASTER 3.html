@@ -1616,6 +1616,55 @@ document.body.appendChild(musicToggleBtn);
 // branch never executed and music started+stopped in the same frame.
 // Now the button owns the whole gesture flow.
 let musicStarted = false;
+let lastPlayBtnActivationAt = -Infinity;
+
+function revealModePicker() {
+  playBtn.textContent = 'Begin';
+  modePickerWrap.classList.remove('hidden');
+}
+
+function primeTitleMusicFromGesture() {
+  try {
+    initMusicContext();
+    if (music.ctx && music.ctx.state === 'suspended') {
+      const resumeResult = music.ctx.resume();
+      if (resumeResult && typeof resumeResult.catch === 'function') {
+        resumeResult.catch(err => console.warn('resume failed:', err));
+      }
+    }
+    startMusic();
+  } catch (err) {
+    console.warn('Title music init failed:', err);
+  }
+}
+
+function handlePlayButtonActivation(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  const now = performance.now();
+  if (now - lastPlayBtnActivationAt < 400) return;
+  lastPlayBtnActivationAt = now;
+
+  // If this is a restart (not the first time), reload to get a fresh city
+  if (playBtn.textContent === 'Play Again') {
+    window.location.reload();
+    return;
+  }
+
+  // On first interaction, browsers block audio until a gesture occurs on
+  // the iframe/page. First tap primes music and reveals mode choice.
+  if (!musicStarted) {
+    musicStarted = true;
+    revealModePicker();
+    primeTitleMusicFromGesture();
+    return;
+  }
+
+  startGame();
+}
 
 // Safety net: if audio context ever ends up suspended (e.g. browser autoplay
 // policy in sandboxed iframes), resume it on any subsequent user gesture.
@@ -2264,32 +2313,8 @@ function updateHUD() {
   miniLbEl.innerHTML = mini;
 }
 
-playBtn.addEventListener('click', (e) => {
-  // If this is a restart (not the first time), reload to get a fresh city
-  if (playBtn.textContent === 'Play Again') {
-    window.location.reload();
-    return;
-  }
-  // On first interaction, browsers block audio until a gesture occurs on
-  // the iframe/page. First tap primes music; second tap starts game.
-  if (!musicStarted) {
-    musicStarted = true;
-    // Ensure audio context is created + resumed SYNCHRONOUSLY inside the
-    // click handler (some browsers require this to satisfy gesture policy)
-    initMusicContext();
-    if (music.ctx && music.ctx.state === 'suspended') {
-      music.ctx.resume().catch(err => console.warn('resume failed:', err));
-    }
-    startMusic();
-    playBtn.textContent = 'Begin';
-    // Reveal the mode picker now that music is primed
-    modePickerWrap.classList.remove('hidden');
-    e.preventDefault();
-    e.stopPropagation();
-    return;
-  }
-  startGame();
-});
+playBtn.addEventListener('click', handlePlayButtonActivation);
+playBtn.addEventListener('touchend', handlePlayButtonActivation, { passive: false });
 
 // Last Man Standing modal — wire both buttons
 lmsEnterBtn.addEventListener('click', () => enterLms());
