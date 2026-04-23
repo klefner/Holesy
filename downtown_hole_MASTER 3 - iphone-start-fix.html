@@ -1617,18 +1617,8 @@ document.body.appendChild(musicToggleBtn);
 // Now the button owns the whole gesture flow.
 let musicStarted = false;
 let lastPlayBtnActivationAt = -Infinity;
-let modePickerRevealedAt = -Infinity;
-
-function setSelectedMode(mode) {
-  selectedMode = mode;
-  modePicker.querySelectorAll('.mode-option').forEach((opt) => {
-    opt.classList.toggle('selected', opt.dataset.mode === mode);
-  });
-}
 
 function revealModePicker() {
-  modePickerRevealedAt = performance.now();
-  setSelectedMode('timed');
   playBtn.textContent = 'Begin';
   modePickerWrap.classList.remove('hidden');
 }
@@ -2005,38 +1995,6 @@ function flashConsumed(value, worldPos) {
   setTimeout(() => el.remove(), 750);
 }
 
-function resetHolesForFreshRound() {
-  const freshCorners = [
-    { x: 0, z: 0 },
-    { x: -HALF + 18, z: -HALF + 18 },
-    { x:  HALF - 18, z: -HALF + 18 },
-    { x: -HALF + 18, z:  HALF - 18 },
-  ];
-
-  holes.forEach((h, index) => {
-    const spawn = freshCorners[index] || freshCorners[0];
-    h.alive = true;
-    h.score = 0;
-    h.bonusRadius = 0;
-    h.radius = MIN_RADIUS;
-    h.targetRadius = MIN_RADIUS;
-    h.x = spawn.x;
-    h.z = spawn.z;
-    h.targetX = spawn.x;
-    h.targetZ = spawn.z;
-    h.aiState = 'wander';
-    h.aiTargetObj = null;
-    h.aiTimer = 0;
-    h.wanderX = spawn.x;
-    h.wanderZ = spawn.z;
-    h.threatAwareSince = 0;
-    h.lastSeenThreat = null;
-    if (h.group && !h.group.parent) scene.add(h.group);
-    h.group.visible = true;
-    updateHoleVisual(h);
-  });
-}
-
 function startGame() {
   // Player reset is handled via holes array (holes already created at page load).
   // Just flip running + UI.
@@ -2053,13 +2011,14 @@ function startGame() {
   leaderboardEl.innerHTML = '';
   stopTitleMusic(800);
 
-  tearDownWorld();
-  resetHolesForFreshRound();
-  populateCity();
-
   if (wavesMode) {
     // Start with Wave 1. startWave handles running=true, timer, HUD, banner.
     currentWave = 1;
+    // Clear any soldier/plane state from a prior round
+    tearDownWorld();
+    // Ensure holes are at fresh spawn corners
+    repositionHolesForNewWave();
+    populateCity();
     startWave(1);
     return;
   }
@@ -2067,7 +2026,7 @@ function startGame() {
   // Timed / LMS (non-waves)
   gameTime = 120;
   running = true;
-  soldiersEnabledThisWave = false;
+  soldiersEnabledThisWave = true;
   currentSoldierSpeedMult = 1.0;
   currentSoldierDamageMult = 1.0;
   if (lmsMode) {
@@ -2363,10 +2322,6 @@ lmsCashoutBtn.addEventListener('click', () => cashoutFromLmsChoice());
 
 // Mode picker — click a mode to select it (Waves is disabled for now)
 modePicker.addEventListener('click', (e) => {
-  // Touch browsers can synthesize a follow-up click right after the first tap
-  // reveals the picker. Ignore that short window so mode doesn't silently
-  // change to LMS and freeze scoring before the player chooses.
-  if (performance.now() - modePickerRevealedAt < 500) return;
   const option = e.target.closest('.mode-option');
   if (!option) return;
   const mode = option.dataset.mode;
@@ -2384,7 +2339,10 @@ modePicker.addEventListener('click', (e) => {
     );
     return;
   }
-  setSelectedMode(mode);
+  // Update selected styling
+  modePicker.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('selected'));
+  option.classList.add('selected');
+  selectedMode = mode;
 });
 
 // =========================================================================
