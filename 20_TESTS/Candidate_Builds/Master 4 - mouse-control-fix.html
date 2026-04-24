@@ -5,13 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 <title>Downtown Devour</title>
 <style>
+  :root {
+    --safe-top: calc(env(safe-area-inset-top, 0px) + 12px);
+    --safe-left: calc(env(safe-area-inset-left, 0px) + 12px);
+    --safe-right: calc(env(safe-area-inset-right, 0px) + 12px);
+    --hud-right-reserve: 96px;
+    --bottom-controls-offset: 84px;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; -webkit-user-select: none; overscroll-behavior: none; }
   #game { width: 100vw; height: 100vh; display: block; cursor: crosshair; touch-action: none; -webkit-touch-callout: none; }
 
 
   #hud {
-    position: fixed; top: 0; left: 0; right: 0; padding: 12px 16px;
+    position: fixed; top: 0; left: 0; right: 0;
+    padding: var(--safe-top) calc(var(--safe-right) + var(--hud-right-reserve)) 12px var(--safe-left);
     display: flex; justify-content: space-between; align-items: flex-start;
     pointer-events: none; z-index: 10; color: #fff;
     text-shadow: 0 2px 8px rgba(0,0,0,0.8);
@@ -22,8 +30,24 @@
     border-radius: 14px; padding: 10px 14px;
     border: 1px solid rgba(255,255,255,0.08);
   }
+  .panel-status { min-width: 172px; max-width: 220px; }
+  .panel-timer { min-width: 92px; }
   .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.65; font-weight: 600; }
   .value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mode-badge {
+    display: inline-block;
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(77, 158, 255, 0.2);
+    border: 1px solid rgba(77, 158, 255, 0.35);
+    color: #9fd0ff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+  }
+  .score-stack { display: flex; flex-direction: column; gap: 2px; }
   #stage-bar { width: 180px; height: 6px; background: rgba(255,255,255,0.12); border-radius: 3px; margin-top: 6px; overflow: hidden; }
   #stage-fill { height: 100%; background: linear-gradient(90deg, #ff5e7e, #ff9f43); border-radius: 3px; transition: width 0.3s ease; }
   #timer.warn { color: #ff6b6b; }
@@ -61,7 +85,7 @@
 
   /* Mini leaderboard on right during game */
   #mini-lb {
-    position: fixed; right: 12px; top: 110px; z-index: 10;
+    position: fixed; right: calc(var(--safe-right) + var(--hud-right-reserve)); top: calc(var(--safe-top) + 98px); z-index: 10;
     background: rgba(20, 22, 36, 0.72); backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
     padding: 8px 10px; min-width: 130px; color: #fff;
@@ -70,9 +94,9 @@
   .mini-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-variant-numeric: tabular-nums; }
   .mini-row.mini-you { font-weight: 700; }
   .mini-row.mini-dead { opacity: 0.4; text-decoration: line-through; }
+  .mini-rank { width: 16px; font-size: 10px; font-weight: 800; opacity: 0.6; flex-shrink: 0; }
   .mini-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
   .mini-name { flex: 1; }
-  .mini-score { font-weight: 600; color: #ffdd59; }
 
   /* Final leaderboard */
   #leaderboard { margin: 12px 0 20px 0; width: 100%; max-width: 360px; }
@@ -183,19 +207,119 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.55; }
   }
+
+  #game-controls {
+    position: fixed;
+    left: var(--safe-left);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + var(--bottom-controls-offset));
+    display: flex;
+    gap: 10px;
+    z-index: 26;
+    pointer-events: auto;
+  }
+  #game-controls button {
+    background: rgba(20, 22, 36, 0.8);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.28);
+    cursor: pointer;
+  }
+  #game-controls button:hover { transform: translateY(-1px); }
+
+  #pause-overlay {
+    position: fixed; inset: 0; background: rgba(10, 12, 24, 0.88);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 32; color: #fff; text-align: center; padding: 20px;
+    backdrop-filter: blur(14px);
+  }
+  #pause-overlay h2 {
+    font-size: 36px; font-weight: 900; margin: 0 0 8px 0; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #4d9eff, #8ad1ff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  #pause-overlay .pause-sub {
+    font-size: 14px; opacity: 0.78; margin-bottom: 22px; max-width: 360px; line-height: 1.5;
+  }
+  #pause-overlay .pause-btns {
+    display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px;
+  }
+  #pause-overlay button {
+    padding: 15px 22px; font-size: 15px; font-weight: 800; border-radius: 14px;
+    border: none; color: #fff; cursor: pointer;
+  }
+  #pause-overlay .pause-resume {
+    background: linear-gradient(135deg, #4d9eff, #67b3ff);
+    box-shadow: 0 8px 20px rgba(77,158,255,0.35);
+  }
+  #pause-overlay .pause-menu {
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,255,255,0.16);
+  }
+
+  @media (max-width: 768px) {
+    :root {
+      --hud-right-reserve: 124px;
+      --bottom-controls-offset: 94px;
+    }
+    #hud {
+      padding-left: calc(env(safe-area-inset-left, 0px) + 10px);
+      padding-right: calc(env(safe-area-inset-right, 0px) + var(--hud-right-reserve));
+      gap: 10px;
+    }
+    .panel {
+      padding: 9px 12px;
+      border-radius: 12px;
+    }
+    .panel-status { min-width: 136px; max-width: 168px; }
+    .panel-timer { min-width: 78px; }
+    .value { font-size: 19px; }
+    #stage-bar { width: 112px; }
+    #mini-lb {
+      left: calc(env(safe-area-inset-left, 0px) + 10px);
+      right: calc(env(safe-area-inset-right, 0px) + var(--hud-right-reserve));
+      top: calc(env(safe-area-inset-top, 0px) + 96px);
+      min-width: 0;
+      font-size: 11px;
+      padding: 7px 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+    }
+    .mini-row { width: calc(50% - 4px); padding: 1px 0; }
+    .mini-rank { width: 14px; }
+    #game-controls {
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+    }
+    #game-controls button {
+      padding: 11px 17px;
+      font-size: 14px;
+    }
+  }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 
 <div id="hud" class="hidden">
-  <div class="panel">
-    <div class="label">Score</div>
-    <div class="value" id="score">0</div>
+  <div class="panel panel-status">
+    <div class="mode-badge" id="mode-name">Timed Mode</div>
+    <div class="score-stack">
+      <div class="label">Score</div>
+      <div class="value" id="score">0</div>
+    </div>
     <div class="label" style="margin-top:8px;">Tier: <span id="stage-num">Pothole</span></div>
     <div id="stage-bar"><div id="stage-fill" style="width:0%"></div></div>
   </div>
-  <div class="panel" style="text-align:right;">
+  <div class="panel panel-timer" style="text-align:right;">
     <div class="label"><span id="wave-label" class="hidden">Wave <span id="wave-num">1</span>/4 · </span>Time</div>
     <div class="value" id="timer">2:00</div>
   </div>
@@ -250,12 +374,25 @@
   <div class="lms-btns">
     <button class="lms-accept" id="lms-enter-btn">
       <span class="lms-btn-label">⚔️ Last Man Standing</span>
-      <span class="lms-btn-desc">Keep playing until one hole is left. No more scoring — only survival. Win by outlasting everyone.</span>
+      <span class="lms-btn-desc">Keep playing until one hole is left. Scoring stays active, but survival still decides the winner.</span>
     </button>
     <button class="lms-decline" id="lms-cashout-btn">
       <span class="lms-btn-label">🏁 End Now</span>
       <span class="lms-btn-desc">Lock in your score and see the final leaderboard.</span>
     </button>
+  </div>
+</div>
+
+<div id="game-controls" class="hidden">
+  <button id="pause-btn" type="button">Pause</button>
+</div>
+
+<div id="pause-overlay" class="hidden">
+  <h2>Paused</h2>
+  <div class="pause-sub">Take a breather, then jump back in or return to the game mode selector.</div>
+  <div class="pause-btns">
+    <button class="pause-resume" id="pause-resume-btn" type="button">Resume</button>
+    <button class="pause-menu" id="pause-exit-btn" type="button">Game Modes</button>
   </div>
 </div>
 
@@ -970,6 +1107,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
     name,
     rimColor,
     alive: true,
+    spawnX: startPos.x, spawnZ: startPos.z,
     x: startPos.x, z: startPos.z,
     targetX: startPos.x, targetZ: startPos.z,
     stage: 0, // vestigial, unused
@@ -1200,6 +1338,7 @@ const WAVE_CONFIGS = [
 ];
 
 const hud = document.getElementById('hud');
+const modeNameEl = document.getElementById('mode-name');
 const scoreEl = document.getElementById('score');
 const timerEl = document.getElementById('timer');
 const stageNumEl = document.getElementById('stage-num');
@@ -1213,6 +1352,11 @@ const miniLbEl = document.getElementById('mini-lb');
 const playBtn = document.getElementById('play-btn');
 const stagePop = document.getElementById('stage-pop');
 const flashEl = document.getElementById('consumed-flash');
+const pauseBtn = document.getElementById('pause-btn');
+const gameControls = document.getElementById('game-controls');
+const pauseOverlay = document.getElementById('pause-overlay');
+const pauseResumeBtn = document.getElementById('pause-resume-btn');
+const pauseExitBtn = document.getElementById('pause-exit-btn');
 
 // LMS choice modal — shown when timer hits zero if player is still alive
 const lmsChoice = document.getElementById('lms-choice');
@@ -1227,6 +1371,12 @@ const modePicker = document.getElementById('mode-picker');
 // Waves HUD elements
 const waveLabel = document.getElementById('wave-label');
 const waveNumEl = document.getElementById('wave-num');
+
+function selectedModeLabel() {
+  if (wavesMode || selectedMode === 'waves') return 'Waves';
+  if (lmsMode || selectedMode === 'lms') return 'Last Man Standing';
+  return 'Timed';
+}
 
 // =========================================================================
 // MUSIC — procedurally-generated orchestral title theme
@@ -1616,65 +1766,6 @@ document.body.appendChild(musicToggleBtn);
 // branch never executed and music started+stopped in the same frame.
 // Now the button owns the whole gesture flow.
 let musicStarted = false;
-let lastPlayBtnActivationAt = -Infinity;
-let modePickerRevealedAt = -Infinity;
-
-function setSelectedMode(mode) {
-  selectedMode = mode;
-  modePicker.querySelectorAll('.mode-option').forEach((opt) => {
-    opt.classList.toggle('selected', opt.dataset.mode === mode);
-  });
-}
-
-function revealModePicker() {
-  modePickerRevealedAt = performance.now();
-  setSelectedMode('timed');
-  playBtn.textContent = 'Begin';
-  modePickerWrap.classList.remove('hidden');
-}
-
-function primeTitleMusicFromGesture() {
-  try {
-    initMusicContext();
-    if (music.ctx && music.ctx.state === 'suspended') {
-      const resumeResult = music.ctx.resume();
-      if (resumeResult && typeof resumeResult.catch === 'function') {
-        resumeResult.catch(err => console.warn('resume failed:', err));
-      }
-    }
-    startMusic();
-  } catch (err) {
-    console.warn('Title music init failed:', err);
-  }
-}
-
-function handlePlayButtonActivation(e) {
-  if (e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  const now = performance.now();
-  if (now - lastPlayBtnActivationAt < 400) return;
-  lastPlayBtnActivationAt = now;
-
-  // If this is a restart (not the first time), reload to get a fresh city
-  if (playBtn.textContent === 'Play Again') {
-    window.location.reload();
-    return;
-  }
-
-  // On first interaction, browsers block audio until a gesture occurs on
-  // the iframe/page. First tap primes music and reveals mode choice.
-  if (!musicStarted) {
-    musicStarted = true;
-    revealModePicker();
-    primeTitleMusicFromGesture();
-    return;
-  }
-
-  startGame();
-}
 
 // Safety net: if audio context ever ends up suspended (e.g. browser autoplay
 // policy in sandboxed iframes), resume it on any subsequent user gesture.
@@ -2005,38 +2096,6 @@ function flashConsumed(value, worldPos) {
   setTimeout(() => el.remove(), 750);
 }
 
-function resetHolesForFreshRound() {
-  const freshCorners = [
-    { x: 0, z: 0 },
-    { x: -HALF + 18, z: -HALF + 18 },
-    { x:  HALF - 18, z: -HALF + 18 },
-    { x: -HALF + 18, z:  HALF - 18 },
-  ];
-
-  holes.forEach((h, index) => {
-    const spawn = freshCorners[index] || freshCorners[0];
-    h.alive = true;
-    h.score = 0;
-    h.bonusRadius = 0;
-    h.radius = MIN_RADIUS;
-    h.targetRadius = MIN_RADIUS;
-    h.x = spawn.x;
-    h.z = spawn.z;
-    h.targetX = spawn.x;
-    h.targetZ = spawn.z;
-    h.aiState = 'wander';
-    h.aiTargetObj = null;
-    h.aiTimer = 0;
-    h.wanderX = spawn.x;
-    h.wanderZ = spawn.z;
-    h.threatAwareSince = 0;
-    h.lastSeenThreat = null;
-    if (h.group && !h.group.parent) scene.add(h.group);
-    h.group.visible = true;
-    updateHoleVisual(h);
-  });
-}
-
 function startGame() {
   // Player reset is handled via holes array (holes already created at page load).
   // Just flip running + UI.
@@ -2047,19 +2106,22 @@ function startGame() {
   timerEl.classList.remove('lms-active');
   overlay.classList.add('hidden');
   lmsChoice.classList.add('hidden');
+  pauseOverlay.classList.add('hidden');
   hud.classList.remove('hidden');
   miniLbEl.classList.remove('hidden');
+  gameControls.classList.remove('hidden');
   finalWrap.classList.add('hidden');
   leaderboardEl.innerHTML = '';
   stopTitleMusic(800);
 
-  tearDownWorld();
-  resetHolesForFreshRound();
-  populateCity();
-
   if (wavesMode) {
     // Start with Wave 1. startWave handles running=true, timer, HUD, banner.
     currentWave = 1;
+    // Clear any soldier/plane state from a prior round
+    tearDownWorld();
+    // Ensure holes are at fresh spawn corners
+    repositionHolesForNewWave();
+    populateCity();
     startWave(1);
     return;
   }
@@ -2067,7 +2129,7 @@ function startGame() {
   // Timed / LMS (non-waves)
   gameTime = 120;
   running = true;
-  soldiersEnabledThisWave = false;
+  soldiersEnabledThisWave = true;
   currentSoldierSpeedMult = 1.0;
   currentSoldierDamageMult = 1.0;
   if (lmsMode) {
@@ -2076,6 +2138,107 @@ function startGame() {
   }
   updateHUD();
   lastT = performance.now();
+  updatePauseButtonLabel();
+}
+
+function updatePauseButtonLabel() {
+  pauseBtn.textContent = running ? 'Pause' : 'Resume';
+}
+
+function canUsePauseMenu() {
+  return overlay.classList.contains('hidden') &&
+    lmsChoice.classList.contains('hidden') &&
+    !wavesTransitioning;
+}
+
+function pauseGame() {
+  if (!canUsePauseMenu() || !running) return;
+  running = false;
+  pauseOverlay.classList.remove('hidden');
+  updatePauseButtonLabel();
+  updateWaveHudBanner();
+}
+
+function resumeGame() {
+  if (!canUsePauseMenu() || pauseOverlay.classList.contains('hidden')) return;
+  pauseOverlay.classList.add('hidden');
+  running = true;
+  lastT = performance.now();
+  updatePauseButtonLabel();
+}
+
+function resetHoleState() {
+  holes.forEach((h, i) => {
+    h.alive = true;
+    if (!h.group.parent) scene.add(h.group);
+    h.group.visible = true;
+    h.x = h.spawnX;
+    h.z = h.spawnZ;
+    h.targetX = h.spawnX;
+    h.targetZ = h.spawnZ;
+    h.radius = MIN_RADIUS;
+    h.targetRadius = MIN_RADIUS;
+    h.score = 0;
+    h.bonusRadius = 0;
+    h.aiTargetObj = null;
+    h.aiState = 'wander';
+    h.aiTimer = i === 0 ? 0 : Math.random() * 1.2;
+    h.wanderX = h.spawnX;
+    h.wanderZ = h.spawnZ;
+    h.threatAwareSince = 0;
+    h.lastSeenThreat = null;
+    h.hitFlashUntil = 0;
+    updateHoleVisual(h);
+  });
+}
+
+function resetInputState() {
+  input.hasMouse = false;
+  input.dragActive = false;
+  input.dragDx = 0;
+  input.dragDy = 0;
+  player._lastInputWasKeys = false;
+  keys.w = false; keys.a = false; keys.s = false; keys.d = false;
+}
+
+function resetRoundState() {
+  running = false;
+  lmsMode = false;
+  wavesMode = false;
+  wavesTransitioning = false;
+  currentWave = 1;
+  gameTime = 120;
+  waveTimer = 8 + Math.random() * 2;
+  soldiersEnabledThisWave = true;
+  currentSoldierSpeedMult = 1.0;
+  currentSoldierDamageMult = 1.0;
+  timerEl.classList.remove('warn', 'lms-active');
+  timerEl.textContent = '2:00';
+  waveLabel.classList.add('hidden');
+  tearDownWorld();
+  resetHoleState();
+  populateCity();
+  resetInputState();
+  updatePauseButtonLabel();
+  updateWaveHudBanner();
+  updateHUD();
+}
+
+function returnToModeSelect() {
+  pauseOverlay.classList.add('hidden');
+  lmsChoice.classList.add('hidden');
+  resetRoundState();
+  titleEl.textContent = 'Downtown Devour';
+  subtitleEl.textContent = "You're a hungry hole competing against 3 rival holes. Eat everything. Grow bigger. Devour your rivals. Last hole standing wins.";
+  finalWrap.classList.add('hidden');
+  leaderboardEl.innerHTML = '';
+  playBtn.textContent = musicStarted ? 'Begin' : 'Tap to Load Music';
+  modePickerWrap.classList.toggle('hidden', !musicStarted);
+  hud.classList.add('hidden');
+  miniLbEl.classList.add('hidden');
+  gameControls.classList.add('hidden');
+  overlay.classList.remove('hidden');
+  if (musicStarted) playTitleMusic();
 }
 
 // Shown when the timer hits zero and the player is still alive. Pauses gameplay
@@ -2083,6 +2246,7 @@ function startGame() {
 function showLmsChoice() {
   if (!running) return;
   running = false; // pause world simulation during the decision
+  updatePauseButtonLabel();
   lmsCurrentScore.textContent = player.score.toLocaleString();
   lmsChoice.classList.remove('hidden');
 }
@@ -2097,6 +2261,7 @@ function enterLms() {
   // Update timer HUD to reflect the new mode
   timerEl.classList.add('lms-active');
   timerEl.textContent = 'LAST MAN STANDING';
+  updatePauseButtonLabel();
 }
 
 // Player chose to cash out: proceed with standard end-of-round flow.
@@ -2253,6 +2418,8 @@ function endGame() {
   running = false;
   hud.classList.add('hidden');
   miniLbEl.classList.add('hidden');
+  gameControls.classList.add('hidden');
+  pauseOverlay.classList.add('hidden');
 
   // Reason for end
   const aliveHoles = holes.filter(h => h.alive);
@@ -2307,7 +2474,7 @@ function endGame() {
   leaderboardEl.innerHTML = html;
 
   finalWrap.classList.remove('hidden');
-  playBtn.textContent = 'Play Again';
+  playBtn.textContent = 'Game Modes';
   overlay.classList.remove('hidden');
   // Restart title music as background for the leaderboard screen
   if (musicStarted) playTitleMusic();
@@ -2315,6 +2482,7 @@ function endGame() {
 
 function updateHUD() {
   if (!player) return;
+  modeNameEl.textContent = selectedModeLabel() + ' Mode';
   scoreEl.textContent = player.score.toLocaleString();
   stageNumEl.textContent = tierLabel(player.radius);
   // Progress bar: relative to reference size, caps at 100% visually but hole keeps growing
@@ -2346,27 +2514,62 @@ function updateHUD() {
   ranked.forEach((h, i) => {
     const colorHex = '#' + h.rimColor.toString(16).padStart(6, '0');
     mini += `<div class="mini-row${h.isPlayer ? ' mini-you' : ''}${!h.alive ? ' mini-dead' : ''}">
+      <span class="mini-rank">#${i + 1}</span>
       <span class="mini-dot" style="background:${colorHex}"></span>
       <span class="mini-name">${h.name}</span>
-      <span class="mini-score">${h.score.toLocaleString()}</span>
     </div>`;
   });
   miniLbEl.innerHTML = mini;
 }
 
-playBtn.addEventListener('click', handlePlayButtonActivation);
-playBtn.addEventListener('touchend', handlePlayButtonActivation, { passive: false });
+playBtn.addEventListener('click', (e) => {
+  // If this is a restart (not the first time), reload to get a fresh city
+  if (playBtn.textContent === 'Game Modes') {
+    returnToModeSelect();
+    return;
+  }
+  // On first interaction, browsers block audio until a gesture occurs on
+  // the iframe/page. First tap primes music; second tap starts game.
+  if (!musicStarted) {
+    musicStarted = true;
+    // Ensure audio context is created + resumed SYNCHRONOUSLY inside the
+    // click handler (some browsers require this to satisfy gesture policy)
+    initMusicContext();
+    if (music.ctx && music.ctx.state === 'suspended') {
+      music.ctx.resume().catch(err => console.warn('resume failed:', err));
+    }
+    startMusic();
+    playBtn.textContent = 'Begin';
+    // Reveal the mode picker now that music is primed
+    modePickerWrap.classList.remove('hidden');
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+  startGame();
+});
 
 // Last Man Standing modal — wire both buttons
 lmsEnterBtn.addEventListener('click', () => enterLms());
 lmsCashoutBtn.addEventListener('click', () => cashoutFromLmsChoice());
+pauseBtn.addEventListener('click', () => {
+  if (pauseOverlay.classList.contains('hidden')) pauseGame();
+  else resumeGame();
+});
+pauseResumeBtn.addEventListener('click', () => resumeGame());
+pauseExitBtn.addEventListener('click', () => returnToModeSelect());
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (!canUsePauseMenu()) return;
+    e.preventDefault();
+    if (pauseOverlay.classList.contains('hidden')) pauseGame();
+    else resumeGame();
+  }
+});
 
 // Mode picker — click a mode to select it (Waves is disabled for now)
 modePicker.addEventListener('click', (e) => {
-  // Touch browsers can synthesize a follow-up click right after the first tap
-  // reveals the picker. Ignore that short window so mode doesn't silently
-  // change to LMS and freeze scoring before the player chooses.
-  if (performance.now() - modePickerRevealedAt < 500) return;
   const option = e.target.closest('.mode-option');
   if (!option) return;
   const mode = option.dataset.mode;
@@ -2384,7 +2587,10 @@ modePicker.addEventListener('click', (e) => {
     );
     return;
   }
-  setSelectedMode(mode);
+  // Update selected styling
+  modePicker.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('selected'));
+  option.classList.add('selected');
+  selectedMode = mode;
 });
 
 // =========================================================================
@@ -2398,8 +2604,8 @@ function beginConsume(h, obj) {
   obj.spin = (Math.random() - 0.5) * 4;
   obj.fallTargetHole = h;
   // Award score and recompute radius via log formula (no ceiling, diminishing returns).
-  // In Last Man Standing mode, scoring is suppressed — radius still comes from bonusRadius.
-  if (!lmsMode) h.score += obj.value;
+  // LMS now keeps normal scoring/growth so devouring objects remains meaningful.
+  h.score += obj.value;
   h.targetRadius = radiusFromScore(h);
   // Category-based sound effect — distance-attenuated relative to player camera
   if (!music.muted) {
@@ -2433,9 +2639,8 @@ function holeEatsHole(eater, eaten) {
   // Big score reward — scales with victim's score and size
   // Reduced 50% from previous (was 500 + 60%score + 200×radius)
   const reward = 250 + Math.floor(eaten.score * 0.3) + Math.floor(eaten.radius * 100);
-  // In LMS, no score is awarded, but radius gain via bonusRadius still applies —
-  // hunting smaller holes is still the core mechanic; only the scoreboard freezes.
-  if (!lmsMode) eater.score += reward;
+  // LMS keeps the same score reward pipeline as the other modes.
+  eater.score += reward;
   // Direct bonus radius on top of score-driven growth (so predation stays
   // dramatic even in late game when log formula gives tiny per-point growth)
   eater.bonusRadius = (eater.bonusRadius || 0) + eaten.radius * HOLE_EAT_RADIUS_BONUS;
@@ -3532,7 +3737,7 @@ function consumeSoldiersByHoles() {
           }
         }
         // Score reward for eating a soldier — 3x the value of eating a civilian human (which is worth 10)
-        if (!lmsMode) h.score += 30;
+        h.score += 30;
         h.targetRadius = radiusFromScore(h);
         if (h.isPlayer) {
           flashConsumed(30, new THREE.Vector3(s.x, 0, s.z));
@@ -3556,8 +3761,7 @@ function consumeSoldiersByHoles() {
               if (count > topCount) { topCount = count; topEater = eater; }
             }
             // Award bonus to that hole (must still be alive).
-            // In LMS mode the bonus isn't awarded (no scoring) — the message is skipped too.
-            if (topEater && topEater.alive && !lmsMode) {
+            if (topEater && topEater.alive) {
               const bonus = 1800 + Math.floor(Math.random() * 1200); // 1800-3000 (3-5x skyscraper)
               topEater.score += bonus;
               topEater.targetRadius = radiusFromScore(topEater);
@@ -3662,25 +3866,17 @@ function animate() {
         player.targetZ = player.z;
         player._lastInputWasKeys = false;
       } else if (!input.isTouch && input.hasMouse) {
-        // Mouse only counts as "active input" if it moved in the last 300ms.
-        // Otherwise the hole would keep chasing the last cursor position
-        // indefinitely, producing runaway motion after keyboard-then-mouse-idle.
-        const mouseIsActive = (performance.now() - input.mouseLastMove) < 300;
-        if (mouseIsActive) {
-          // Target is the ground point under cursor, with a small deadzone
-          const target = getMouseGround();
-          const dxm = target.x - player.x;
-          const dzm = target.z - player.z;
-          const distm = Math.hypot(dxm, dzm);
-          if (distm > 1.5) {
-            player.targetX = THREE.MathUtils.clamp(target.x, -HALF + 2, HALF - 2);
-            player.targetZ = THREE.MathUtils.clamp(target.z, -HALF + 2, HALF - 2);
-          } else {
-            player.targetX = player.x;
-            player.targetZ = player.z;
-          }
+        // Desktop mouse steering should persist toward the last cursor-directed
+        // target until the player actively changes direction or leaves the
+        // canvas. That keeps mouse control continuous instead of timing out.
+        const target = getMouseGround();
+        const dxm = target.x - player.x;
+        const dzm = target.z - player.z;
+        const distm = Math.hypot(dxm, dzm);
+        if (distm > 1.5) {
+          player.targetX = THREE.MathUtils.clamp(target.x, -HALF + 2, HALF - 2);
+          player.targetZ = THREE.MathUtils.clamp(target.z, -HALF + 2, HALF - 2);
         } else {
-          // Mouse idle — snap target to current position so hole doesn't drift
           player.targetX = player.x;
           player.targetZ = player.z;
         }

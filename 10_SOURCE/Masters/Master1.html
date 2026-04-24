@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>Downtown Devour</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a1a2e; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; user-select: none; -webkit-user-select: none; overscroll-behavior: none; }
+  #game { width: 100vw; height: 100vh; display: block; cursor: crosshair; touch-action: none; -webkit-touch-callout: none; }
+
+  #sound-toggle {
+    position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
+    z-index: 11; pointer-events: auto;
+    background: rgba(20, 22, 36, 0.72); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 20px;
+    padding: 8px 14px; color: #fff; font-size: 12px; font-weight: 600;
+    cursor: pointer; user-select: none;
+  }
+  #sound-toggle.off { opacity: 0.5; }
+
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0; padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none; z-index: 10; color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  }
+  .panel {
+    background: rgba(20, 22, 36, 0.72);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    border-radius: 14px; padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.65; font-weight: 600; }
+  .value { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  #stage-bar { width: 180px; height: 6px; background: rgba(255,255,255,0.12); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+  #stage-fill { height: 100%; background: linear-gradient(90deg, #ff5e7e, #ff9f43); border-radius: 3px; transition: width 0.3s ease; }
+  #timer.warn { color: #ff6b6b; }
+
+  #stage-pop {
+    position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0.6);
+    color: #fff; font-size: 54px; font-weight: 900; letter-spacing: 2px;
+    text-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 0 40px #ff5e7e;
+    opacity: 0; pointer-events: none; z-index: 15;
+    transition: all 0.4s cubic-bezier(.2,1.4,.4,1);
+  }
+  #stage-pop.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+  #overlay {
+    position: fixed; inset: 0; background: rgba(10, 12, 24, 0.92);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 20; color: #fff; text-align: center; padding: 20px;
+    backdrop-filter: blur(12px);
+  }
+  #overlay h1 { font-size: 44px; font-weight: 900; margin-bottom: 8px; letter-spacing: -1px;
+    background: linear-gradient(135deg, #ff5e7e, #ff9f43); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  #overlay .sub { font-size: 15px; opacity: 0.75; margin-bottom: 24px; max-width: 380px; line-height: 1.5; }
+  #overlay .score-final { font-size: 18px; margin-bottom: 20px; }
+  #overlay .score-final span { font-weight: 800; color: #ff9f43; }
+  button.play {
+    padding: 14px 36px; font-size: 16px; font-weight: 700; letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #ff5e7e, #ff9f43); color: #fff; border: none;
+    border-radius: 40px; cursor: pointer; box-shadow: 0 6px 20px rgba(255,94,126,0.4);
+    transition: transform 0.15s ease;
+  }
+  button.play:hover { transform: translateY(-2px); }
+  button.play:active { transform: translateY(0); }
+  .tips { margin-top: 28px; font-size: 12px; opacity: 0.55; max-width: 320px; line-height: 1.7; }
+  .hidden { display: none !important; }
+
+  /* Mini leaderboard on right during game */
+  #mini-lb {
+    position: fixed; right: 12px; top: 110px; z-index: 10;
+    background: rgba(20, 22, 36, 0.72); backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 12px;
+    padding: 8px 10px; min-width: 130px; color: #fff;
+    font-size: 12px; pointer-events: none;
+  }
+  .mini-row { display: flex; align-items: center; gap: 6px; padding: 2px 0; font-variant-numeric: tabular-nums; }
+  .mini-row.mini-you { font-weight: 700; }
+  .mini-row.mini-dead { opacity: 0.4; text-decoration: line-through; }
+  .mini-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .mini-name { flex: 1; }
+  .mini-score { font-weight: 600; color: #ffdd59; }
+
+  /* Final leaderboard */
+  #leaderboard { margin: 12px 0 20px 0; width: 100%; max-width: 360px; }
+  .lb-title { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.7; margin-bottom: 10px; }
+  .lb-row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+  .lb-row.lb-you { background: rgba(77, 158, 255, 0.18); border: 1px solid rgba(77, 158, 255, 0.4); }
+  .lb-rank { width: 20px; font-weight: 800; opacity: 0.6; }
+  .lb-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .lb-name { flex: 1; text-align: left; font-weight: 600; }
+  .lb-dead { opacity: 0.5; font-size: 11px; font-weight: 400; }
+  .lb-score { font-weight: 800; color: #ff9f43; font-size: 16px; }
+
+  #consumed-flash {
+    position: fixed; pointer-events: none; z-index: 12;
+    font-size: 13px; font-weight: 700; color: #ffdd59;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+    opacity: 0; transition: all 0.6s ease;
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden">
+  <div class="panel">
+    <div class="label">Score</div>
+    <div class="value" id="score">0</div>
+    <div class="label" style="margin-top:8px;">Stage <span id="stage-num">1</span></div>
+    <div id="stage-bar"><div id="stage-fill" style="width:0%"></div></div>
+  </div>
+  <div class="panel" style="text-align:right;">
+    <div class="label">Time</div>
+    <div class="value" id="timer">2:00</div>
+  </div>
+</div>
+<div id="sound-toggle" class="hidden">🔊 Sound</div>
+<div id="mini-lb" class="hidden"></div>
+
+<div id="stage-pop"></div>
+<div id="consumed-flash"></div>
+
+<div id="overlay">
+  <h1 id="title">Downtown Devour</h1>
+  <div class="sub" id="subtitle">You're a hungry hole competing against 3 rival holes. Eat everything. Grow bigger. Devour your rivals. Last hole standing wins.</div>
+  <div id="final-wrap" class="hidden">
+    <div id="leaderboard"></div>
+  </div>
+  <button class="play" id="play-btn">Start Devouring</button>
+  <div class="tips">
+    Desktop: move your mouse to steer the hole.<br>
+    Mobile: drag in the direction you want to go (joystick-style).<br>
+    Avoid bigger holes — they'll eat you. Hunt smaller ones.
+  </div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// =========================================================================
+// SETUP
+// =========================================================================
+const canvas = document.getElementById('game');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x87ceeb);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x9ec7e8, 80, 260);
+
+// Top-down-ish angled camera (follows hole)
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 500);
+camera.position.set(0, 40, 30);
+camera.lookAt(0, 0, 0);
+
+// Lights
+const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xfff1d0, 1.1);
+sun.position.set(50, 80, 30);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -120;
+sun.shadow.camera.right = 120;
+sun.shadow.camera.top = 120;
+sun.shadow.camera.bottom = -120;
+sun.shadow.camera.near = 10;
+sun.shadow.camera.far = 250;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+// =========================================================================
+// WORLD / CITY
+// =========================================================================
+const WORLD_SIZE = 220;      // full square size
+const HALF = WORLD_SIZE / 2;
+const BLOCK = 32;            // city block size
+const ROAD_W = 8;
+
+// Ground
+const groundGeom = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE);
+const groundMat = new THREE.MeshLambertMaterial({ color: 0x4a7c3a });
+const ground = new THREE.Mesh(groundGeom, groundMat);
+ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+// Roads (grid)
+const roadMat = new THREE.MeshLambertMaterial({ color: 0x2d2d35 });
+const lineMat = new THREE.MeshBasicMaterial({ color: 0xf5d547 });
+
+function addRoad(x, z, w, h) {
+  const r = new THREE.Mesh(new THREE.PlaneGeometry(w, h), roadMat);
+  r.rotation.x = -Math.PI / 2;
+  r.position.set(x, 0.01, z);
+  r.receiveShadow = true;
+  scene.add(r);
+  // Dashed center lines
+  const isHoriz = w > h;
+  const dashCount = Math.floor((isHoriz ? w : h) / 4);
+  for (let i = 0; i < dashCount; i++) {
+    if (i % 2 === 0) continue;
+    const dash = new THREE.Mesh(
+      new THREE.PlaneGeometry(isHoriz ? 2 : 0.3, isHoriz ? 0.3 : 2),
+      lineMat
+    );
+    dash.rotation.x = -Math.PI / 2;
+    const t = (i / dashCount - 0.5) * (isHoriz ? w : h);
+    dash.position.set(isHoriz ? x + t : x, 0.02, isHoriz ? z : z + t);
+    scene.add(dash);
+  }
+}
+
+// Build grid of roads
+const blockPositions = [];
+for (let i = -3; i <= 3; i++) {
+  const p = i * BLOCK;
+  addRoad(p, 0, ROAD_W, WORLD_SIZE);  // vertical roads
+  addRoad(0, p, WORLD_SIZE, ROAD_W);  // horizontal roads
+}
+
+// Collect block centers (between roads)
+for (let ix = -3; ix < 3; ix++) {
+  for (let iz = -3; iz < 3; iz++) {
+    const cx = ix * BLOCK + BLOCK / 2;
+    const cz = iz * BLOCK + BLOCK / 2;
+    blockPositions.push({ x: cx, z: cz });
+  }
+}
+
+// Sidewalks around each block
+const sidewalkMat = new THREE.MeshLambertMaterial({ color: 0xb8b8b8 });
+for (const bp of blockPositions) {
+  const sw = new THREE.Mesh(
+    new THREE.PlaneGeometry(BLOCK - ROAD_W + 0.5, BLOCK - ROAD_W + 0.5),
+    sidewalkMat
+  );
+  sw.rotation.x = -Math.PI / 2;
+  sw.position.set(bp.x, 0.015, bp.z);
+  sw.receiveShadow = true;
+  scene.add(sw);
+}
+
+// =========================================================================
+// OBJECT SYSTEM
+// =========================================================================
+// Each consumable object has: mesh, size (radius roughly), tier (stage required), value, falling state
+const objects = [];
+
+function makeObject(mesh, size, tier, value, pos, soundCat = 'plastic', soundIntensity = 0.5) {
+  mesh.position.set(pos.x, pos.y || 0, pos.z);
+  mesh.castShadow = true;
+  scene.add(mesh);
+  const obj = {
+    mesh, size, tier, value,
+    falling: false, fallVel: 0, spin: 0,
+    consumed: false,
+    x: pos.x, z: pos.z,
+    soundCat, soundIntensity
+  };
+  objects.push(obj);
+  return obj;
+}
+
+// Simple primitive builders
+function sharedBoxMat(color) { return new THREE.MeshLambertMaterial({ color }); }
+
+// --- People ---
+function makePerson(pos) {
+  const g = new THREE.Group();
+  const shirtColors = [0xff6b6b, 0x4ecdc4, 0xffe66d, 0x6c5ce7, 0xfd79a8, 0x00b894];
+  const pantsColor = [0x2d3436, 0x34495e, 0x5d4037, 0x1e3a5f];
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.4),
+    sharedBoxMat(shirtColors[Math.floor(Math.random()*shirtColors.length)]));
+  body.position.y = 0.8;
+  g.add(body);
+  const legs = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.7, 0.38),
+    sharedBoxMat(pantsColor[Math.floor(Math.random()*pantsColor.length)]));
+  legs.position.y = 0.3;
+  g.add(legs);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.45),
+    sharedBoxMat(0xf4c2a1));
+  head.position.y = 1.45;
+  g.add(head);
+  g.rotation.y = Math.random() * Math.PI * 2;
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 0.5, 1, 10, pos, 'organic', 0.4);
+}
+
+// --- Fire hydrant ---
+function makeHydrant(pos) {
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 0.9, 8),
+    sharedBoxMat(0xd63031));
+  base.position.y = 0.45;
+  g.add(base);
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 0.2, 8),
+    sharedBoxMat(0xc0392b));
+  cap.position.y = 1.0;
+  g.add(cap);
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.35, 6),
+    sharedBoxMat(0xc0392b));
+  nozzle.rotation.z = Math.PI / 2;
+  nozzle.position.set(0.35, 0.6, 0);
+  g.add(nozzle);
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 0.5, 1, 15, pos, 'metal', 0.7);
+}
+
+// --- Traffic cone ---
+function makeCone(pos) {
+  const g = new THREE.Group();
+  const cone = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 12),
+    sharedBoxMat(0xff7f00));
+  cone.position.y = 0.45;
+  g.add(cone);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.04, 6, 16),
+    sharedBoxMat(0xffffff));
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.55;
+  g.add(ring);
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 0.4, 1, 8, pos, 'plastic', 0.3);
+}
+
+// --- Trash can ---
+function makeTrash(pos) {
+  const g = new THREE.Group();
+  const can = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.4, 1.0, 10),
+    sharedBoxMat(0x2d3436));
+  can.position.y = 0.5;
+  g.add(can);
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.1, 10),
+    sharedBoxMat(0x555a5f));
+  lid.position.y = 1.05;
+  g.add(lid);
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 0.55, 1, 12, pos, 'metal', 0.4);
+}
+
+// --- Fire extinguisher (outside a building) ---
+function makeExtinguisher(pos) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.7, 10),
+    sharedBoxMat(0xc0392b));
+  body.position.y = 0.35;
+  g.add(body);
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.22, 0.15, 10),
+    sharedBoxMat(0x222222));
+  top.position.y = 0.78;
+  g.add(top);
+  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.3),
+    sharedBoxMat(0x111111));
+  handle.position.set(0, 0.88, 0.1);
+  g.add(handle);
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 0.35, 1, 10, pos, 'metal', 0.6);
+}
+
+// --- Mailbox ---
+function makeMailbox(pos) {
+  const g = new THREE.Group();
+  const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, 0.12),
+    sharedBoxMat(0x2d3436));
+  post.position.y = 0.45;
+  g.add(post);
+  const box = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.4),
+    sharedBoxMat(0x1565c0));
+  box.position.y = 1.05;
+  g.add(box);
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 0.45, 1, 10, pos, 'metal', 0.5);
+}
+
+// --- Bench ---
+function makeBench(pos) {
+  const g = new THREE.Group();
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 0.6),
+    sharedBoxMat(0x6d4c41));
+  seat.position.y = 0.45;
+  g.add(seat);
+  const back = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.5, 0.12),
+    sharedBoxMat(0x6d4c41));
+  back.position.set(0, 0.75, -0.24);
+  g.add(back);
+  for (const dx of [-0.9, 0.9]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.55),
+      sharedBoxMat(0x3e2723));
+    leg.position.set(dx, 0.22, 0);
+    g.add(leg);
+  }
+  g.rotation.y = Math.random() * Math.PI * 2;
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 1.0, 2, 20, pos, 'wood', 0.4);
+}
+
+// --- Tree ---
+function makeTree(pos) {
+  const g = new THREE.Group();
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.6, 8),
+    sharedBoxMat(0x6d4c41));
+  trunk.position.y = 0.8;
+  g.add(trunk);
+  const leaves = new THREE.Mesh(new THREE.SphereGeometry(1.1, 10, 8),
+    sharedBoxMat(0x2e7d32));
+  leaves.position.y = 2.2;
+  g.add(leaves);
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 1.1, 2, 25, pos, 'wood', 0.7);
+}
+
+// --- Street lamp ---
+function makeLamp(pos) {
+  const g = new THREE.Group();
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 3.0, 8),
+    sharedBoxMat(0x1a1a1a));
+  post.position.y = 1.5;
+  g.add(post);
+  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.1),
+    sharedBoxMat(0x1a1a1a));
+  arm.position.set(0.4, 2.95, 0);
+  g.add(arm);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.4),
+    sharedBoxMat(0xfff176));
+  head.position.set(0.7, 2.85, 0);
+  g.add(head);
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 0.9, 2, 22, pos, 'metal', 0.8);
+}
+
+// --- Car ---
+function makeCar(pos) {
+  const g = new THREE.Group();
+  const colors = [0xe74c3c, 0x3498db, 0xf39c12, 0x2ecc71, 0x9b59b6, 0xecf0f1, 0x34495e, 0x1abc9c];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.55, 3.2),
+    sharedBoxMat(color));
+  body.position.y = 0.55;
+  g.add(body);
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 1.8),
+    sharedBoxMat(0x222831));
+  cabin.position.set(0, 1.05, -0.2);
+  g.add(cabin);
+  // wheels
+  for (const [wx, wz] of [[-0.8, 1.0], [0.8, 1.0], [-0.8, -1.0], [0.8, -1.0]]) {
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 10),
+      sharedBoxMat(0x111111));
+    wheel.rotation.z = Math.PI / 2;
+    wheel.position.set(wx, 0.3, wz);
+    g.add(wheel);
+  }
+  g.rotation.y = Math.random() < 0.5 ? 0 : Math.PI / 2;
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, 1.8, 3, 50, pos, 'vehicle', 0.6);
+}
+
+// --- Small building (shop) ---
+function makeSmallBuilding(pos) {
+  const g = new THREE.Group();
+  const w = 4 + Math.random() * 2;
+  const d = 4 + Math.random() * 2;
+  const h = 3 + Math.random() * 2;
+  const colors = [0xd1a77a, 0xc9b59d, 0xb89968, 0xa57d52, 0xe6cfa7];
+  const base = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+    sharedBoxMat(colors[Math.floor(Math.random()*colors.length)]));
+  base.position.y = h / 2;
+  g.add(base);
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, 0.3, d + 0.3),
+    sharedBoxMat(0x6d4c41));
+  roof.position.y = h + 0.15;
+  g.add(roof);
+  // windows
+  const winMat = sharedBoxMat(0x74b9ff);
+  for (let fy = 1; fy < h - 0.5; fy += 1.3) {
+    for (let fx = -w/2 + 0.7; fx < w/2 - 0.5; fx += 1.3) {
+      const win = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.05), winMat);
+      win.position.set(fx, fy, d/2 + 0.01);
+      g.add(win);
+    }
+  }
+  // door
+  const door = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.6, 0.05),
+    sharedBoxMat(0x5d4037));
+  door.position.set(0, 0.8, d/2 + 0.01);
+  g.add(door);
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, Math.max(w, d) / 2, 4, 120, pos, 'building', 0.3);
+}
+
+// --- Mid building (office) ---
+function makeMidBuilding(pos) {
+  const g = new THREE.Group();
+  const w = 6 + Math.random() * 2;
+  const d = 6 + Math.random() * 2;
+  const h = 7 + Math.random() * 3;
+  const colors = [0x95a5a6, 0xbdc3c7, 0x7f8c8d, 0xc8b99c];
+  const base = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+    sharedBoxMat(colors[Math.floor(Math.random()*colors.length)]));
+  base.position.y = h / 2;
+  g.add(base);
+  // window grid (subtle, painted strips)
+  const stripMat = sharedBoxMat(0x2c3e50);
+  const rows = Math.floor(h / 1.2);
+  for (let r = 0; r < rows; r++) {
+    const strip = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.4, 0.02), stripMat);
+    strip.position.set(0, 1 + r * 1.2, d/2 + 0.01);
+    g.add(strip);
+    const strip2 = strip.clone();
+    strip2.position.z = -d/2 - 0.01;
+    g.add(strip2);
+  }
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, Math.max(w, d) / 2, 5, 300, pos, 'building', 0.6);
+}
+
+// --- Skyscraper ---
+function makeSkyscraper(pos) {
+  const g = new THREE.Group();
+  const w = 7 + Math.random() * 2;
+  const d = 7 + Math.random() * 2;
+  const h = 14 + Math.random() * 6;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
+    sharedBoxMat(0x3d5a80));
+  base.position.y = h / 2;
+  g.add(base);
+  // glass bands
+  const glassMat = sharedBoxMat(0x98c1d9);
+  const rows = Math.floor(h / 1.5);
+  for (let r = 0; r < rows; r++) {
+    const band = new THREE.Mesh(new THREE.BoxGeometry(w - 0.2, 0.9, 0.04), glassMat);
+    band.position.set(0, 1.2 + r * 1.5, d/2 + 0.02);
+    g.add(band);
+    const b2 = band.clone(); b2.position.z = -d/2 - 0.02; g.add(b2);
+    const b3 = band.clone(); b3.rotation.y = Math.PI/2; b3.position.set(w/2 + 0.02, 1.2 + r*1.5, 0);
+    b3.geometry = new THREE.BoxGeometry(d - 0.2, 0.9, 0.04); g.add(b3);
+    const b4 = b3.clone(); b4.position.x = -w/2 - 0.02; g.add(b4);
+  }
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(w * 0.6, 0.8, d * 0.6),
+    sharedBoxMat(0x293548));
+  cap.position.y = h + 0.4;
+  g.add(cap);
+  g.children.forEach(c => c.castShadow = true);
+  return makeObject(g, Math.max(w, d) / 2, 5, 600, pos, 'building', 1.0);
+}
+
+// =========================================================================
+// POPULATE CITY
+// =========================================================================
+function randInBlock(bp, margin = 2) {
+  const inset = (BLOCK - ROAD_W) / 2 - margin;
+  return {
+    x: bp.x + (Math.random() * 2 - 1) * inset,
+    z: bp.z + (Math.random() * 2 - 1) * inset
+  };
+}
+
+// Place buildings on block corners/edges, small stuff around perimeter
+for (const bp of blockPositions) {
+  // Decide block type
+  const t = Math.random();
+  if (t < 0.35) {
+    // Skyscraper block
+    makeSkyscraper({ x: bp.x, z: bp.z });
+  } else if (t < 0.65) {
+    // Mid building
+    makeMidBuilding({ x: bp.x, z: bp.z });
+  } else {
+    // Cluster of small buildings
+    const positions = [
+      { x: bp.x - 5, z: bp.z - 5 },
+      { x: bp.x + 5, z: bp.z - 5 },
+      { x: bp.x - 5, z: bp.z + 5 },
+      { x: bp.x + 5, z: bp.z + 5 },
+    ];
+    for (const p of positions) {
+      if (Math.random() < 0.85) makeSmallBuilding(p);
+    }
+  }
+
+  // Sidewalk props along block perimeter
+  const edge = (BLOCK - ROAD_W) / 2 - 0.6;
+  // Street lamps at corners
+  for (const [dx, dz] of [[-edge, -edge], [edge, -edge], [-edge, edge], [edge, edge]]) {
+    if (Math.random() < 0.7) makeLamp({ x: bp.x + dx, z: bp.z + dz });
+  }
+  // Objects along each side of the block
+  const sides = [
+    { axis: 'x', sign: -1 }, { axis: 'x', sign: 1 },
+    { axis: 'z', sign: -1 }, { axis: 'z', sign: 1 }
+  ];
+  for (const s of sides) {
+    const count = 3 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < count; i++) {
+      const along = (Math.random() * 2 - 1) * (edge - 1);
+      const pos = s.axis === 'x'
+        ? { x: bp.x + s.sign * edge, z: bp.z + along }
+        : { x: bp.x + along, z: bp.z + s.sign * edge };
+      const r = Math.random();
+      if (r < 0.25) makePerson(pos);
+      else if (r < 0.4) makeCone(pos);
+      else if (r < 0.55) makeHydrant(pos);
+      else if (r < 0.68) makeTrash(pos);
+      else if (r < 0.78) makeMailbox(pos);
+      else if (r < 0.86) makeExtinguisher(pos);
+      else if (r < 0.93) makeTree(pos);
+      else makeBench(pos);
+    }
+  }
+}
+
+// Cars on the roads
+for (let i = 0; i < 35; i++) {
+  // Pick a road
+  const onVert = Math.random() < 0.5;
+  const roadIdx = Math.floor(Math.random() * 7) - 3;
+  const along = (Math.random() - 0.5) * WORLD_SIZE * 0.9;
+  const lane = (Math.random() < 0.5 ? -1 : 1) * 1.8;
+  const pos = onVert
+    ? { x: roadIdx * BLOCK + lane, z: along }
+    : { x: along, z: roadIdx * BLOCK + lane };
+  const car = makeCar(pos);
+  car.mesh.rotation.y = onVert ? 0 : Math.PI / 2;
+}
+
+// Extra people & trees on the grass edges of blocks (parks feel)
+for (let i = 0; i < 40; i++) {
+  const bp = blockPositions[Math.floor(Math.random() * blockPositions.length)];
+  const p = randInBlock(bp, 3);
+  if (Math.random() < 0.5) makePerson(p);
+  else makeTree(p);
+}
+
+// =========================================================================
+// HOLES — player + AI opponents
+// =========================================================================
+const HOLE_STAGES = [
+  { radius: 0.9,  scoreToNext: 60,   label: 'STAGE 1 — Pothole' },
+  { radius: 1.6,  scoreToNext: 180,  label: 'STAGE 2 — Manhole' },
+  { radius: 2.6,  scoreToNext: 450,  label: 'STAGE 3 — Crater' },
+  { radius: 4.0,  scoreToNext: 1100, label: 'STAGE 4 — Sinkhole' },
+  { radius: 6.0,  scoreToNext: Infinity, label: 'STAGE 5 — Abyss' }
+];
+
+const holes = []; // all holes (player at index 0)
+
+function createHole(isPlayer, name, rimColor, startPos) {
+  const group = new THREE.Group();
+  scene.add(group);
+
+  const disc = new THREE.Mesh(
+    new THREE.CircleGeometry(1, 48),
+    new THREE.MeshBasicMaterial({ color: 0x000000 })
+  );
+  disc.rotation.x = -Math.PI / 2;
+  disc.position.y = 0.04;
+  group.add(disc);
+
+  // Colored rim so player can distinguish holes from above
+  const rim = new THREE.Mesh(
+    new THREE.RingGeometry(1, 1.18, 48),
+    new THREE.MeshBasicMaterial({ color: rimColor, transparent: true, opacity: 0.85 })
+  );
+  rim.rotation.x = -Math.PI / 2;
+  rim.position.y = 0.06;
+  group.add(rim);
+
+  const well = new THREE.Mesh(
+    new THREE.CylinderGeometry(1, 1, 6, 32, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })
+  );
+  well.position.y = -3;
+  group.add(well);
+
+  // Name label (sprite so it always faces camera)
+  const labelCanvas = document.createElement('canvas');
+  labelCanvas.width = 256; labelCanvas.height = 64;
+  const lctx = labelCanvas.getContext('2d');
+  lctx.font = 'bold 36px -apple-system, Segoe UI, sans-serif';
+  lctx.textAlign = 'center';
+  lctx.textBaseline = 'middle';
+  lctx.strokeStyle = 'rgba(0,0,0,0.85)';
+  lctx.lineWidth = 5;
+  lctx.strokeText(name, 128, 32);
+  lctx.fillStyle = '#' + rimColor.toString(16).padStart(6, '0');
+  lctx.fillText(name, 128, 32);
+  const labelTex = new THREE.CanvasTexture(labelCanvas);
+  const labelMat = new THREE.SpriteMaterial({ map: labelTex, transparent: true, depthTest: false });
+  const labelSprite = new THREE.Sprite(labelMat);
+  labelSprite.scale.set(4, 1, 1);
+  labelSprite.position.y = 2.5;
+  group.add(labelSprite);
+
+  const hole = {
+    isPlayer,
+    name,
+    rimColor,
+    alive: true,
+    x: startPos.x, z: startPos.z,
+    targetX: startPos.x, targetZ: startPos.z,
+    stage: 0,
+    radius: HOLE_STAGES[0].radius,
+    targetRadius: HOLE_STAGES[0].radius,
+    score: 0,
+    group, disc, rim, well, labelSprite,
+    // AI state
+    aiState: 'wander', aiTargetObj: null, aiTimer: 0,
+    wanderX: startPos.x, wanderZ: startPos.z
+  };
+  holes.push(hole);
+  return hole;
+}
+
+function updateHoleVisual(h) {
+  if (!h.alive) return;
+  h.disc.scale.set(h.radius, h.radius, 1);
+  h.rim.scale.set(h.radius, h.radius, 1);
+  h.well.scale.set(h.radius, 1, h.radius);
+  h.group.position.set(h.x, 0, h.z);
+  // Label size and height scale with hole
+  const s = Math.max(3, h.radius * 2.2);
+  h.labelSprite.scale.set(s, s / 4, 1);
+  h.labelSprite.position.y = Math.max(2.5, h.radius * 1.5 + 1);
+}
+
+// Player + 3 AI opponents, spread across corners
+const AI_NAMES = ['Void', 'Maw', 'Gulp'];
+const AI_COLORS = [0xff6b6b, 0xffd93d, 0x6bcb77]; // red, yellow, green
+// Personalities: each AI weights (value, distance, risk) differently so they diverge
+const AI_PERSONALITIES = [
+  { name: 'Void', greed: 1.4, laziness: 0.6, aggression: 0.9, wanderBias: 0.2, decisionInterval: [0.5, 1.0] },  // value-chaser
+  { name: 'Maw',  greed: 0.7, laziness: 1.3, aggression: 0.5, wanderBias: 0.5, decisionInterval: [0.8, 1.5] },  // lazy, prefers close stuff
+  { name: 'Gulp', greed: 1.0, laziness: 0.9, aggression: 1.4, wanderBias: 0.1, decisionInterval: [0.4, 0.9] },  // hunter, chases holes
+];
+const PLAYER_COLOR = 0x4d9eff; // blue
+
+createHole(true, 'You', PLAYER_COLOR, { x: 0, z: 0 });
+const spawnCorners = [
+  { x: -HALF * 0.7, z: -HALF * 0.7 },
+  { x:  HALF * 0.7, z: -HALF * 0.7 },
+  { x:  HALF * 0.7, z:  HALF * 0.7 }
+];
+for (let i = 0; i < 3; i++) {
+  const h = createHole(false, AI_NAMES[i], AI_COLORS[i], spawnCorners[i]);
+  h.personality = AI_PERSONALITIES[i];
+  // Stagger initial AI timers so they don't all re-decide on the same frame
+  h.aiTimer = Math.random() * 1.2;
+}
+
+const player = holes[0];
+
+// Global reservation: maps object → hole that claimed it this round
+const objectReservations = new WeakMap();
+
+holes.forEach(updateHoleVisual);
+
+// =========================================================================
+// INPUT — hybrid: desktop uses mouse, mobile uses virtual joystick drag
+// =========================================================================
+const input = {
+  // Desktop: mouse position in NDC
+  mouseNormX: 0, mouseNormY: 0, hasMouse: false,
+  // Mobile: relative drag direction
+  dragActive: false, dragDx: 0, dragDy: 0,
+  isTouch: false
+};
+
+// Detect touch device
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+input.isTouch = isTouchDevice;
+
+// Desktop mouse
+if (!isTouchDevice) {
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    input.mouseNormX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    input.mouseNormY = ((e.clientY - rect.top) / rect.height) * 2 - 1;
+    input.hasMouse = true;
+  });
+  // When mouse leaves canvas, stop the hole
+  canvas.addEventListener('mouseleave', () => {
+    input.hasMouse = false;
+    if (player) { player.targetX = player.x; player.targetZ = player.z; }
+  });
+}
+
+// Mobile touch: drag anywhere, move in the direction of the drag relative to touch start
+let touchStartX = 0, touchStartY = 0;
+canvas.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 0) return;
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+  input.dragActive = true;
+  input.dragDx = 0;
+  input.dragDy = 0;
+  resumeAudio();
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 0) return;
+  const t = e.touches[0];
+  input.dragDx = t.clientX - touchStartX;
+  input.dragDy = t.clientY - touchStartY;
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  input.dragActive = false;
+  input.dragDx = 0;
+  input.dragDy = 0;
+  // Immediately stop the hole at its current position
+  if (player) { player.targetX = player.x; player.targetZ = player.z; }
+}, { passive: false });
+
+canvas.addEventListener('touchcancel', () => {
+  input.dragActive = false;
+  input.dragDx = 0;
+  input.dragDy = 0;
+  if (player) { player.targetX = player.x; player.targetZ = player.z; }
+});
+
+// Desktop click to resume audio
+canvas.addEventListener('mousedown', resumeAudio);
+
+// Raycaster for desktop mouse → ground
+const raycaster = new THREE.Raycaster();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+const ndcVec = new THREE.Vector2();
+const hitPt = new THREE.Vector3();
+function getMouseGround() {
+  ndcVec.set(input.mouseNormX, -input.mouseNormY);
+  raycaster.setFromCamera(ndcVec, camera);
+  raycaster.ray.intersectPlane(groundPlane, hitPt);
+  return hitPt;
+}
+
+// =========================================================================
+// AUDIO — layered synth design with variation and punch (no external libs)
+// =========================================================================
+let audioCtx = null;
+let audioEnabled = true;
+let masterGain = null;
+let reverbNode = null;
+let compressor = null;
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AC();
+
+    // Compressor for punchy impacts
+    compressor = audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -18;
+    compressor.knee.value = 10;
+    compressor.ratio.value = 6;
+    compressor.attack.value = 0.003;
+    compressor.release.value = 0.15;
+
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.55;
+
+    // Reverb via generated IR
+    reverbNode = audioCtx.createConvolver();
+    const length = audioCtx.sampleRate * 1.2;
+    const ir = audioCtx.createBuffer(2, length, audioCtx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const data = ir.getChannelData(c);
+      for (let i = 0; i < length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.2);
+      }
+    }
+    reverbNode.buffer = ir;
+    const revGain = audioCtx.createGain();
+    revGain.gain.value = 0.22;
+    reverbNode.connect(revGain);
+    revGain.connect(compressor);
+
+    compressor.connect(masterGain);
+    masterGain.connect(audioCtx.destination);
+  } catch (e) { audioEnabled = false; }
+}
+
+function resumeAudio() {
+  initAudio();
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// Output bus helper
+function outBus() { return compressor; }
+
+// Noise buffer (cached pink-ish)
+let noiseBuf = null;
+function getNoise(duration) {
+  const buf = audioCtx.createBuffer(1, Math.floor(audioCtx.sampleRate * duration), audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  // Pink-ish noise (low-passed white) for more natural sound
+  let b0 = 0, b1 = 0, b2 = 0;
+  for (let i = 0; i < data.length; i++) {
+    const white = Math.random() * 2 - 1;
+    b0 = 0.99765 * b0 + white * 0.099046;
+    b1 = 0.96300 * b1 + white * 0.2965164;
+    b2 = 0.57000 * b2 + white * 1.0526913;
+    data[i] = (b0 + b1 + b2 + white * 0.1848) * 0.15;
+  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  return src;
+}
+
+function envelope(attack, decay, sustain, release, peak = 1) {
+  const g = audioCtx.createGain();
+  const t = audioCtx.currentTime;
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(peak, t + attack);
+  g.gain.linearRampToValueAtTime(peak * sustain, t + attack + decay);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay + release);
+  return g;
+}
+
+// Waveshaper for subtle saturation
+let saturator = null;
+function getSaturator(amount = 20) {
+  if (saturator) return saturator;
+  saturator = audioCtx.createWaveShaper();
+  const k = amount, n = 256;
+  const curve = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const x = (i * 2) / n - 1;
+    curve[i] = (3 + k) * x * 20 * (Math.PI / 180) / (Math.PI + k * Math.abs(x));
+  }
+  saturator.curve = curve;
+  saturator.oversample = '2x';
+  return saturator;
+}
+
+// Whoosh suction — plays when anything starts falling
+function sndWhoosh() {
+  if (!audioEnabled || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const n = getNoise(0.22);
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = 'bandpass';
+  filt.frequency.setValueAtTime(1800, t);
+  filt.frequency.exponentialRampToValueAtTime(300, t + 0.2);
+  filt.Q.value = 3;
+  const env = envelope(0.005, 0.04, 0.3, 0.15, 0.18);
+  n.connect(filt); filt.connect(env); env.connect(outBus());
+  n.start(t); n.stop(t + 0.22);
+}
+
+// Small pitch variation per instance
+function vary(v, amt = 0.08) { return v * (1 + (Math.random() - 0.5) * 2 * amt); }
+
+// ORGANIC (people) — cartoonish "yoink"
+function sndOrganic(intensity = 0.5) {
+  if (!audioEnabled || !audioCtx) return;
+  sndWhoosh();
+  const t = audioCtx.currentTime;
+  // Yoink slide up
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sawtooth';
+  const f0 = vary(280, 0.15);
+  osc.frequency.setValueAtTime(f0, t);
+  osc.frequency.exponentialRampToValueAtTime(f0 * 1.8, t + 0.14);
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = 'lowpass'; filt.frequency.value = 1600;
+  const env = envelope(0.005, 0.03, 0.3, 0.18, 0.3);
+  osc.connect(filt); filt.connect(env); env.connect(outBus());
+  env.connect(reverbNode);
+  osc.start(t); osc.stop(t + 0.24);
+  // Body thud
+  const thud = audioCtx.createOscillator();
+  thud.type = 'sine';
+  thud.frequency.setValueAtTime(120, t);
+  thud.frequency.exponentialRampToValueAtTime(55, t + 0.12);
+  const tenv = envelope(0.002, 0.03, 0.2, 0.12, 0.5);
+  thud.connect(tenv); tenv.connect(outBus());
+  thud.start(t); thud.stop(t + 0.18);
+}
+
+// PLASTIC — hollow "bonk"
+function sndPlastic(intensity = 0.5) {
+  if (!audioEnabled || !audioCtx) return;
+  sndWhoosh();
+  const t = audioCtx.currentTime;
+  // Multiple plastic partials
+  [1.0, 1.59, 2.14].forEach((mult, i) => {
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle';
+    const f = vary(340 * mult, 0.06);
+    osc.frequency.setValueAtTime(f, t);
+    osc.frequency.exponentialRampToValueAtTime(f * 0.85, t + 0.2);
+    const env = envelope(0.001, 0.015, 0.15, 0.2, 0.25 / (i + 1));
+    osc.connect(env); env.connect(outBus());
+    if (i === 0) env.connect(reverbNode);
+    osc.start(t); osc.stop(t + 0.3);
+  });
+  // High click
+  const n = getNoise(0.04);
+  const nf = audioCtx.createBiquadFilter();
+  nf.type = 'highpass'; nf.frequency.value = 3500;
+  const nenv = envelope(0.001, 0.01, 0.05, 0.03, 0.22);
+  n.connect(nf); nf.connect(nenv); nenv.connect(outBus());
+  n.start(t); n.stop(t + 0.04);
+}
+
+// METAL — rich clang with harmonics
+function sndMetal(intensity = 0.5) {
+  if (!audioEnabled || !audioCtx) return;
+  sndWhoosh();
+  const t = audioCtx.currentTime;
+  // Metallic bell: inharmonic partials
+  const baseF = vary(380 + intensity * 160, 0.1);
+  [1.0, 1.76, 2.61, 3.73, 4.92].forEach((mult, i) => {
+    const osc = audioCtx.createOscillator();
+    osc.type = i === 0 ? 'sine' : 'sine';
+    osc.frequency.setValueAtTime(baseF * mult, t);
+    osc.frequency.exponentialRampToValueAtTime(baseF * mult * 0.97, t + 0.5);
+    const env = envelope(0.001, 0.05 + i * 0.02, 0.25, 0.4 + i * 0.1, 0.22 / (i + 1));
+    osc.connect(env); env.connect(outBus());
+    env.connect(reverbNode);
+    osc.start(t); osc.stop(t + 0.8);
+  });
+  // Metal strike transient with saturation
+  const n = getNoise(0.06);
+  const nf = audioCtx.createBiquadFilter();
+  nf.type = 'bandpass'; nf.frequency.value = 4000; nf.Q.value = 3;
+  const sat = getSaturator(15);
+  const nenv = envelope(0.0005, 0.01, 0.05, 0.04, 0.35);
+  n.connect(nf); nf.connect(sat); sat.connect(nenv); nenv.connect(outBus());
+  n.start(t); n.stop(t + 0.06);
+}
+
+// WOOD — warm thunk with crack
+function sndWood(intensity = 0.5) {
+  if (!audioEnabled || !audioCtx) return;
+  sndWhoosh();
+  const t = audioCtx.currentTime;
+  // Low woody body
+  const osc = audioCtx.createOscillator();
+  osc.type = 'triangle';
+  const f = vary(170, 0.1);
+  osc.frequency.setValueAtTime(f, t);
+  osc.frequency.exponentialRampToValueAtTime(f * 0.55, t + 0.2);
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = 'lowpass'; filt.frequency.value = 800;
+  const env = envelope(0.002, 0.04, 0.2, 0.25, 0.55);
+  osc.connect(filt); filt.connect(env); env.connect(outBus());
+  env.connect(reverbNode);
+  osc.start(t); osc.stop(t + 0.35);
+  // Wood crack (high transient)
+  const n = getNoise(0.08);
+  const nf = audioCtx.createBiquadFilter();
+  nf.type = 'bandpass';
+  nf.frequency.value = 1800 + intensity * 800;
+  nf.Q.value = 2;
+  const sat = getSaturator(10);
+  const nenv = envelope(0.002, 0.02, 0.1, 0.06, 0.28);
+  n.connect(nf); nf.connect(sat); sat.connect(nenv); nenv.connect(outBus());
+  n.start(t); n.stop(t + 0.08);
+  // Leaf rustle for trees
+  if (intensity > 0.5) {
+    const n2 = getNoise(0.25);
+    const n2f = audioCtx.createBiquadFilter();
+    n2f.type = 'highpass'; n2f.frequency.value = 2500;
+    const n2env = envelope(0.01, 0.05, 0.3, 0.2, 0.15);
+    n2.connect(n2f); n2f.connect(n2env); n2env.connect(outBus());
+    n2.start(t); n2.stop(t + 0.25);
+  }
+}
+
+// VEHICLE — car crunch
+function sndVehicle(intensity = 0.5) {
+  if (!audioEnabled || !audioCtx) return;
+  sndWhoosh();
+  const t = audioCtx.currentTime;
+  // Crunchy sawtooth body
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sawtooth';
+  const f = vary(85, 0.1);
+  osc.frequency.setValueAtTime(f, t);
+  osc.frequency.exponentialRampToValueAtTime(45, t + 0.35);
+  const filt = audioCtx.createBiquadFilter();
+  filt.type = 'lowpass'; filt.frequency.value = 700;
+  const sat = getSaturator(25);
+  const env = envelope(0.01, 0.08, 0.35, 0.35, 0.55);
+  osc.connect(filt); filt.connect(sat); sat.connect(env); env.connect(outBus());
+  env.connect(reverbNode);
+  osc.start(t); osc.stop(t + 0.55);
+  // Glass shatter
+  const n = getNoise(0.28);
+  const nf = audioCtx.createBiquadFilter();
+  nf.type = 'highpass'; nf.frequency.value = 2800;
+  const nenv = envelope(0.003, 0.04, 0.35, 0.22, 0.4);
+  n.connect(nf); nf.connect(nenv); nenv.connect(outBus());
+  nenv.connect(reverbNode);
+  n.start(t); n.stop(t + 0.28);
+  // Panicked honk
+  setTimeout(() => {
+    if (!audioCtx) return;
+    const t2 = audioCtx.currentTime;
+    const h = audioCtx.createOscillator();
+    h.type = 'square'; h.frequency.value = vary(420, 0.05);
+    const hf = audioCtx.createBiquadFilter();
+    hf.type = 'bandpass'; hf.frequency.value = 800; hf.Q.value = 2;
+    const henv = envelope(0.005, 0.02, 0.3, 0.1, 0.22);
+    h.connect(hf); hf.connect(henv); henv.connect(outBus());
+    h.start(t2); h.stop(t2 + 0.15);
+  }, 15);
+}
+
+// BUILDING — deep rumble + debris + glass
+function sndBuilding(intensity = 0.5) {
+  if (!audioEnabled || !audioCtx) return;
+  sndWhoosh();
+  const t = audioCtx.currentTime;
+  // Sub rumble
+  const osc = audioCtx.createOscillator();
+  osc.type = 'sine';
+  const baseF = vary(55 - intensity * 20, 0.08);
+  osc.frequency.setValueAtTime(baseF, t);
+  osc.frequency.exponentialRampToValueAtTime(baseF * 0.4, t + 0.8 + intensity * 0.5);
+  const env = envelope(0.015, 0.15, 0.55, 0.7 + intensity * 0.5, 0.85);
+  osc.connect(env); env.connect(outBus());
+  env.connect(reverbNode);
+  osc.start(t); osc.stop(t + 1.5);
+  // Mid debris crunch
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = 'sawtooth';
+  osc2.frequency.setValueAtTime(140, t);
+  osc2.frequency.exponentialRampToValueAtTime(70, t + 0.5);
+  const f2 = audioCtx.createBiquadFilter();
+  f2.type = 'lowpass'; f2.frequency.value = 500;
+  const sat = getSaturator(30);
+  const env2 = envelope(0.01, 0.1, 0.4, 0.5, 0.35);
+  osc2.connect(f2); f2.connect(sat); sat.connect(env2); env2.connect(outBus());
+  osc2.start(t); osc2.stop(t + 0.8);
+  // Debris noise
+  const n = getNoise(0.9);
+  const nf = audioCtx.createBiquadFilter();
+  nf.type = 'lowpass';
+  nf.frequency.setValueAtTime(2500, t);
+  nf.frequency.exponentialRampToValueAtTime(350, t + 0.6);
+  const nenv = envelope(0.005, 0.1, 0.45, 0.6, 0.5);
+  n.connect(nf); nf.connect(nenv); nenv.connect(outBus());
+  nenv.connect(reverbNode);
+  n.start(t); n.stop(t + 0.9);
+  // Glass shatter for bigger
+  if (intensity > 0.3) {
+    const n2 = getNoise(0.4);
+    const n2f = audioCtx.createBiquadFilter();
+    n2f.type = 'highpass'; n2f.frequency.value = 4800;
+    const n2env = envelope(0.005, 0.04, 0.4, 0.25, 0.35 * intensity);
+    n2.connect(n2f); n2f.connect(n2env); n2env.connect(outBus());
+    n2.start(t + 0.05); n2.stop(t + 0.45);
+  }
+}
+
+// Dispatcher
+function playConsumeForObject(obj) {
+  if (!audioEnabled || !audioCtx) return;
+  const cat = obj.soundCat || 'plastic';
+  const i = obj.soundIntensity || 0.5;
+  switch (cat) {
+    case 'organic': sndOrganic(i); break;
+    case 'plastic': sndPlastic(i); break;
+    case 'metal':   sndMetal(i); break;
+    case 'wood':    sndWood(i); break;
+    case 'vehicle': sndVehicle(i); break;
+    case 'building': sndBuilding(i); break;
+    default: sndPlastic(i);
+  }
+}
+
+// Stage up — richer arpeggio
+function playStageUp() {
+  if (!audioEnabled || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const freqs = [392, 494, 587, 784, 988];
+  freqs.forEach((f, i) => {
+    const osc = audioCtx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.value = f;
+    const env = envelope(0.04, 0.1, 0.4, 0.7, 0.22);
+    osc.connect(env); env.connect(outBus());
+    env.connect(reverbNode);
+    osc.start(t + i * 0.06); osc.stop(t + 1.1);
+  });
+  // Shimmer layer
+  setTimeout(() => {
+    if (!audioCtx) return;
+    const t2 = audioCtx.currentTime;
+    [1568, 1976, 2349, 3136].forEach((f, i) => {
+      const o = audioCtx.createOscillator();
+      o.type = 'sine'; o.frequency.value = f;
+      const env = envelope(0.01, 0.04, 0.25, 0.2, 0.15);
+      o.connect(env); env.connect(outBus());
+      env.connect(reverbNode);
+      o.start(t2 + i * 0.05); o.stop(t2 + 0.4);
+    });
+  }, 220);
+}
+
+function playGameOver() {
+  if (!audioEnabled || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const notes = [440, 370, 311, 262];
+  notes.forEach((f, i) => {
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.value = f;
+    const filt = audioCtx.createBiquadFilter();
+    filt.type = 'lowpass'; filt.frequency.value = 1000;
+    const env = envelope(0.02, 0.08, 0.35, 0.4, 0.22);
+    osc.connect(filt); filt.connect(env); env.connect(outBus());
+    env.connect(reverbNode);
+    osc.start(t + i * 0.2); osc.stop(t + i * 0.2 + 0.55);
+  });
+}
+
+// Sound toggle button
+const soundToggle = document.getElementById('sound-toggle');
+soundToggle.addEventListener('click', () => {
+  audioEnabled = !audioEnabled;
+  soundToggle.textContent = audioEnabled ? '🔊 Sound' : '🔇 Muted';
+  soundToggle.classList.toggle('off', !audioEnabled);
+  if (audioEnabled) resumeAudio();
+});
+
+// =========================================================================
+// GAME STATE
+// =========================================================================
+let running = false;
+let gameTime = 120; // 2 minutes
+let lastT = performance.now();
+
+const hud = document.getElementById('hud');
+const scoreEl = document.getElementById('score');
+const timerEl = document.getElementById('timer');
+const stageNumEl = document.getElementById('stage-num');
+const stageFillEl = document.getElementById('stage-fill');
+const overlay = document.getElementById('overlay');
+const titleEl = document.getElementById('title');
+const subtitleEl = document.getElementById('subtitle');
+const finalWrap = document.getElementById('final-wrap');
+const leaderboardEl = document.getElementById('leaderboard');
+const miniLbEl = document.getElementById('mini-lb');
+const playBtn = document.getElementById('play-btn');
+const stagePop = document.getElementById('stage-pop');
+const flashEl = document.getElementById('consumed-flash');
+
+function showStagePop(text) {
+  stagePop.textContent = text;
+  stagePop.classList.add('show');
+  setTimeout(() => stagePop.classList.remove('show'), 1400);
+}
+
+function flashConsumed(value, worldPos) {
+  // Project world pos to screen
+  const v = worldPos.clone().project(camera);
+  const x = (v.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (-v.y * 0.5 + 0.5) * window.innerHeight;
+  // Create ephemeral element for each flash so they can stack
+  const el = document.createElement('div');
+  el.textContent = '+' + value;
+  el.style.cssText = `position:fixed;left:${x}px;top:${y}px;pointer-events:none;z-index:12;
+    font-size:${Math.min(22, 11 + value/15)}px;font-weight:800;color:#ffdd59;
+    text-shadow:0 2px 6px rgba(0,0,0,0.9);transform:translate(-50%,0);
+    transition:transform 0.7s ease-out, opacity 0.7s ease-out;opacity:1;`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => {
+    el.style.transform = 'translate(-50%, -40px)';
+    el.style.opacity = '0';
+  });
+  setTimeout(() => el.remove(), 750);
+}
+
+function startGame() {
+  // Player reset is handled via holes array (holes already created at page load).
+  // Just flip running + UI.
+  gameTime = 120;
+  running = true;
+  overlay.classList.add('hidden');
+  hud.classList.remove('hidden');
+  soundToggle.classList.remove('hidden');
+  miniLbEl.classList.remove('hidden');
+  finalWrap.classList.add('hidden');
+  leaderboardEl.innerHTML = '';
+  updateHUD();
+  showStagePop(HOLE_STAGES[0].label);
+  resumeAudio();
+  lastT = performance.now();
+}
+
+function endGame() {
+  if (!running) return;
+  running = false;
+  hud.classList.add('hidden');
+  soundToggle.classList.add('hidden');
+  miniLbEl.classList.add('hidden');
+  playGameOver();
+
+  // Reason for end
+  const aliveHoles = holes.filter(h => h.alive);
+  let reason;
+  if (!player.alive) {
+    reason = "You got devoured.";
+  } else if (aliveHoles.length === 1 && aliveHoles[0].isPlayer) {
+    reason = "Last hole standing. Devour complete.";
+  } else if (gameTime <= 0) {
+    reason = "Time's up!";
+  } else {
+    reason = "Round over.";
+  }
+
+  titleEl.textContent = reason;
+  subtitleEl.textContent = player.stage >= 4
+    ? "You reached The Abyss. Absolute menace."
+    : "Final leaderboard below.";
+
+  // Build leaderboard — sort ALL holes by score
+  const ranked = [...holes].sort((a, b) => b.score - a.score);
+  let html = '<div class="lb-title">Final Scores</div>';
+  ranked.forEach((h, i) => {
+    const colorHex = '#' + h.rimColor.toString(16).padStart(6, '0');
+    const medal = i === 0 ? '🏆 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
+    const status = h.alive ? '' : ' <span class="lb-dead">(eaten)</span>';
+    html += `<div class="lb-row${h.isPlayer ? ' lb-you' : ''}">
+      <span class="lb-rank">${i + 1}</span>
+      <span class="lb-dot" style="background:${colorHex}"></span>
+      <span class="lb-name">${medal}${h.name}${h.isPlayer ? ' (You)' : ''}${status}</span>
+      <span class="lb-score">${h.score.toLocaleString()}</span>
+    </div>`;
+  });
+  leaderboardEl.innerHTML = html;
+
+  finalWrap.classList.remove('hidden');
+  playBtn.textContent = 'Play Again';
+  overlay.classList.remove('hidden');
+}
+
+function updateHUD() {
+  if (!player) return;
+  scoreEl.textContent = player.score.toLocaleString();
+  stageNumEl.textContent = player.stage + 1;
+  const need = HOLE_STAGES[player.stage].scoreToNext;
+  const prev = player.stage === 0 ? 0 : HOLE_STAGES[player.stage - 1].scoreToNext;
+  if (need === Infinity) {
+    stageFillEl.style.width = '100%';
+  } else {
+    const pct = Math.min(100, ((player.score - prev) / (need - prev)) * 100);
+    stageFillEl.style.width = pct + '%';
+  }
+  const mm = Math.floor(gameTime / 60);
+  const ss = Math.floor(gameTime % 60).toString().padStart(2, '0');
+  timerEl.textContent = mm + ':' + ss;
+  if (gameTime < 15) timerEl.classList.add('warn'); else timerEl.classList.remove('warn');
+
+  // Live mini-leaderboard on right side
+  const ranked = [...holes].sort((a, b) => b.score - a.score);
+  let mini = '';
+  ranked.forEach((h, i) => {
+    const colorHex = '#' + h.rimColor.toString(16).padStart(6, '0');
+    mini += `<div class="mini-row${h.isPlayer ? ' mini-you' : ''}${!h.alive ? ' mini-dead' : ''}">
+      <span class="mini-dot" style="background:${colorHex}"></span>
+      <span class="mini-name">${h.name}</span>
+      <span class="mini-score">${h.score.toLocaleString()}</span>
+    </div>`;
+  });
+  miniLbEl.innerHTML = mini;
+}
+
+playBtn.addEventListener('click', () => {
+  // If this is a restart (not the first time), reload to get a fresh city
+  if (playBtn.textContent === 'Play Again') {
+    window.location.reload();
+    return;
+  }
+  startGame();
+});
+
+// =========================================================================
+// MAIN LOOP
+// =========================================================================
+
+// Helper: apply stage progression to a hole based on its score
+function checkStageUp(h) {
+  let leveled = false;
+  while (h.stage < HOLE_STAGES.length - 1 &&
+         h.score >= HOLE_STAGES[h.stage].scoreToNext) {
+    h.stage++;
+    h.targetRadius = Math.max(h.targetRadius, HOLE_STAGES[h.stage].radius);
+    leveled = true;
+  }
+  return leveled;
+}
+
+// Helper: a hole consumes an object (triggered when it starts falling)
+function beginConsume(h, obj) {
+  obj.falling = true;
+  obj.fallVel = 0;
+  obj.spin = (Math.random() - 0.5) * 4;
+  obj.fallTargetHole = h;
+  // Award score immediately so UI reflects consumption in progress
+  h.score += obj.value;
+  const growth = obj.value * 0.0018;
+  h.targetRadius = Math.min(HOLE_STAGES[4].radius * 1.15, h.targetRadius + growth);
+  if (checkStageUp(h)) {
+    if (h.isPlayer) {
+      showStagePop(HOLE_STAGES[h.stage].label);
+      playStageUp();
+    }
+  }
+  // Play consume SFX + visual only for player (and player-near AI gets soft cues, skipped for perf)
+  if (h.isPlayer) {
+    playConsumeForObject(obj);
+    flashConsumed(obj.value, new THREE.Vector3(h.x, 0, h.z));
+  } else {
+    // Quieter distant AI consume — only play if camera is near
+    const camDist = Math.hypot(h.x - player.x, h.z - player.z);
+    if (camDist < 40) playConsumeForObject(obj);
+  }
+}
+
+// Helper: absorb one hole into another
+function holeEatsHole(eater, eaten) {
+  if (!eaten.alive) return;
+  eaten.alive = false;
+  // Big score reward for eating a hole
+  const reward = 200 + Math.floor(eaten.score * 0.4);
+  eater.score += reward;
+  // Significant growth
+  eater.targetRadius = Math.min(HOLE_STAGES[4].radius * 1.2, eater.targetRadius + eaten.radius * 0.35);
+  checkStageUp(eater);
+  // Remove eaten from scene
+  scene.remove(eaten.group);
+  // Audio + visual
+  if (eater.isPlayer) {
+    playStageUp(); // triumphant
+    showStagePop('DEVOURED ' + eaten.name.toUpperCase() + '!');
+    flashConsumed('+' + reward + ' (ate ' + eaten.name + ')', new THREE.Vector3(eater.x, 0, eater.z));
+  } else if (eaten.isPlayer) {
+    playGameOver();
+    showStagePop('EATEN BY ' + eater.name.toUpperCase());
+  }
+}
+
+// AI: update a single AI hole
+function updateAI(h, dt) {
+  if (!h.alive) return;
+  h.aiTimer -= dt;
+
+  // Re-evaluate strategy periodically
+  const targetInvalid = !h.aiTargetObj ||
+    (h.aiTargetObj.consumed !== undefined && (h.aiTargetObj.consumed || h.aiTargetObj.falling)) ||
+    (h.aiTargetObj.alive === false); // hole target that died
+
+  if (h.aiTimer <= 0 || targetInvalid) {
+    // Release any reservation we held on our old target
+    if (h.aiTargetObj && objectReservations.get(h.aiTargetObj) === h) {
+      objectReservations.delete(h.aiTargetObj);
+    }
+
+    const p = h.personality || { greed: 1, laziness: 1, aggression: 1, wanderBias: 0.2, decisionInterval: [0.6, 1.2] };
+    // Stagger next decision per personality
+    const [minT, maxT] = p.decisionInterval;
+    h.aiTimer = minT + Math.random() * (maxT - minT);
+
+    // Check for flee-threat: any bigger hole within danger range
+    let threat = null;
+    let minThreatDist = Infinity;
+    for (const other of holes) {
+      if (other === h || !other.alive) continue;
+      if (other.radius > h.radius * 1.05) {
+        const d = Math.hypot(other.x - h.x, other.z - h.z);
+        if (d < 18 + other.radius * 3 && d < minThreatDist) {
+          threat = other;
+          minThreatDist = d;
+        }
+      }
+    }
+
+    // Check for hunt-target: smaller hole within reach (aggression-weighted)
+    let prey = null;
+    let minPreyDist = Infinity;
+    for (const other of holes) {
+      if (other === h || !other.alive) continue;
+      if (other.radius < h.radius * 0.9) {
+        const d = Math.hypot(other.x - h.x, other.z - h.z);
+        const effectiveRange = 30 * p.aggression;
+        if (d < effectiveRange && d < minPreyDist) {
+          prey = other;
+          minPreyDist = d;
+        }
+      }
+    }
+
+    if (threat) {
+      h.aiState = 'flee';
+      h.aiTargetObj = threat;
+    } else if (prey && Math.random() < 0.4 + p.aggression * 0.3) {
+      h.aiState = 'hunt_hole';
+      h.aiTargetObj = prey;
+    } else if (Math.random() < p.wanderBias) {
+      // Personality-driven random wander (prevents conga-line convergence)
+      h.aiState = 'wander';
+      h.wanderX = THREE.MathUtils.clamp(h.x + (Math.random() - 0.5) * 60, -HALF + 3, HALF - 3);
+      h.wanderZ = THREE.MathUtils.clamp(h.z + (Math.random() - 0.5) * 60, -HALF + 3, HALF - 3);
+      h.aiTargetObj = null;
+    } else {
+      // Find best consumable object using PERSONALITY-WEIGHTED scoring,
+      // respecting reservations held by other holes.
+      const maxSize = h.radius * 0.95;
+      let best = null;
+      let bestScore = -Infinity;
+      // Randomized sampling offset so different holes see different subsets
+      const sampleStride = Math.max(1, Math.floor(objects.length / 80));
+      const offset = Math.floor(Math.random() * sampleStride);
+      for (let i = offset; i < objects.length; i += sampleStride) {
+        const o = objects[i];
+        if (o.consumed || o.falling) continue;
+        if (o.size > maxSize) continue;
+        // Skip if another hole already claimed this object (and is closer or similar)
+        const claimedBy = objectReservations.get(o);
+        if (claimedBy && claimedBy !== h && claimedBy.alive) {
+          const claimDist = Math.hypot(o.x - claimedBy.x, o.z - claimedBy.z);
+          const ourDist = Math.hypot(o.x - h.x, o.z - h.z);
+          // Let them have it unless we're meaningfully closer
+          if (claimDist < ourDist * 1.3) continue;
+        }
+        const d = Math.hypot(o.x - h.x, o.z - h.z);
+        // Personality-weighted scoring: greed emphasizes value, laziness emphasizes proximity
+        // Add a small random term (personality-seeded) so ties break differently per hole
+        const jitter = 1 + (Math.random() - 0.5) * 0.3;
+        const sc = (Math.pow(o.value, p.greed) / Math.pow(d + 3, p.laziness)) * jitter;
+        if (sc > bestScore) { bestScore = sc; best = o; }
+      }
+      if (best) {
+        h.aiState = 'hunt_object';
+        h.aiTargetObj = best;
+        objectReservations.set(best, h);
+      } else {
+        // Fall back to wander
+        h.aiState = 'wander';
+        h.wanderX = THREE.MathUtils.clamp(h.x + (Math.random() - 0.5) * 60, -HALF + 3, HALF - 3);
+        h.wanderZ = THREE.MathUtils.clamp(h.z + (Math.random() - 0.5) * 60, -HALF + 3, HALF - 3);
+        h.aiTargetObj = null;
+      }
+    }
+  }
+
+  // Set movement target based on state
+  let tx, tz;
+  if (h.aiState === 'flee' && h.aiTargetObj) {
+    const t = h.aiTargetObj;
+    const dx = h.x - t.x, dz = h.z - t.z;
+    const d = Math.hypot(dx, dz) + 0.001;
+    tx = h.x + (dx / d) * 40;
+    tz = h.z + (dz / d) * 40;
+  } else if ((h.aiState === 'hunt_hole' || h.aiState === 'hunt_object') && h.aiTargetObj) {
+    tx = h.aiTargetObj.x;
+    tz = h.aiTargetObj.z;
+  } else {
+    tx = h.wanderX;
+    tz = h.wanderZ;
+    if (Math.hypot(h.x - tx, h.z - tz) < 2) {
+      h.wanderX = THREE.MathUtils.clamp(h.x + (Math.random() - 0.5) * 60, -HALF + 3, HALF - 3);
+      h.wanderZ = THREE.MathUtils.clamp(h.z + (Math.random() - 0.5) * 60, -HALF + 3, HALF - 3);
+    }
+  }
+
+  h.targetX = THREE.MathUtils.clamp(tx, -HALF + 2, HALF - 2);
+  h.targetZ = THREE.MathUtils.clamp(tz, -HALF + 2, HALF - 2);
+}
+
+// Move a hole toward its target (shared for player & AI)
+function moveHole(h, dt) {
+  if (!h.alive) return;
+  // Slightly slower for AI so player has an edge
+  const baseSpeed = h.isPlayer ? 18 : 15;
+  const speed = baseSpeed / (0.7 + h.radius * 0.12);
+  const dx = h.targetX - h.x;
+  const dz = h.targetZ - h.z;
+  const dist = Math.hypot(dx, dz);
+  if (dist > 0.15) {
+    const step = Math.min(dist, speed * dt);
+    h.x += (dx / dist) * step;
+    h.z += (dz / dist) * step;
+  } else {
+    h.x = h.targetX;
+    h.z = h.targetZ;
+  }
+  h.radius += (h.targetRadius - h.radius) * Math.min(1, dt * 6);
+}
+
+// Hole-vs-hole collision check
+function resolveHoleCollisions() {
+  for (let i = 0; i < holes.length; i++) {
+    if (!holes[i].alive) continue;
+    for (let j = i + 1; j < holes.length; j++) {
+      if (!holes[j].alive) continue;
+      const a = holes[i], b = holes[j];
+      const d = Math.hypot(a.x - b.x, a.z - b.z);
+      // Overlap threshold: center of smaller hole crosses edge of larger
+      const bigger = a.radius >= b.radius ? a : b;
+      const smaller = bigger === a ? b : a;
+      // If smaller hole's center is inside bigger hole, AND bigger is at least slightly larger
+      if (d < bigger.radius - 0.2 && bigger.radius > smaller.radius * 1.02) {
+        holeEatsHole(bigger, smaller);
+      }
+    }
+  }
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  const now = performance.now();
+  const dt = Math.min(0.05, (now - lastT) / 1000);
+  lastT = now;
+
+  if (running) {
+    gameTime -= dt;
+    if (gameTime <= 0) { gameTime = 0; endGame(); }
+
+    // --- Player input ---
+    if (player.alive) {
+      if (!input.isTouch && input.hasMouse) {
+        const target = getMouseGround();
+        player.targetX = THREE.MathUtils.clamp(target.x, -HALF + 2, HALF - 2);
+        player.targetZ = THREE.MathUtils.clamp(target.z, -HALF + 2, HALF - 2);
+      } else if (input.isTouch && input.dragActive) {
+        const mag = Math.hypot(input.dragDx, input.dragDy);
+        if (mag > 8) {
+          const maxMag = 120;
+          const scale = Math.min(1, mag / maxMag);
+          const nx = (input.dragDx / mag) * scale;
+          const ny = (input.dragDy / mag) * scale;
+          const reach = 40;
+          player.targetX = THREE.MathUtils.clamp(player.x + nx * reach, -HALF + 2, HALF - 2);
+          player.targetZ = THREE.MathUtils.clamp(player.z + ny * reach, -HALF + 2, HALF - 2);
+        }
+      }
+    }
+
+    // --- Update AIs ---
+    for (const h of holes) {
+      if (!h.isPlayer) updateAI(h, dt);
+    }
+
+    // --- Move all holes ---
+    for (const h of holes) moveHole(h, dt);
+
+    // --- Hole vs hole collisions ---
+    resolveHoleCollisions();
+
+    // --- Object consumption (all holes compete for objects) ---
+    for (const obj of objects) {
+      if (obj.consumed || obj.falling) continue;
+
+      // Find the FIRST hole that can eat this object (closest + big enough)
+      let eater = null;
+      let bestD = Infinity;
+      for (const h of holes) {
+        if (!h.alive) continue;
+        const maxConsumeSize = h.radius * 0.95;
+        if (obj.size > maxConsumeSize) continue;
+        const dxo = obj.x - h.x;
+        const dzo = obj.z - h.z;
+        const d = Math.hypot(dxo, dzo);
+        // Within falling range
+        if (d < h.radius - 0.1 && d < bestD) {
+          eater = h; bestD = d;
+        }
+      }
+
+      if (eater) {
+        beginConsume(eater, obj);
+        continue;
+      }
+
+      // Otherwise apply pull from closest hole that could eat it
+      let puller = null;
+      let pullD = Infinity;
+      for (const h of holes) {
+        if (!h.alive) continue;
+        const maxConsumeSize = h.radius * 0.95;
+        if (obj.size > maxConsumeSize) continue;
+        const d = Math.hypot(obj.x - h.x, obj.z - h.z);
+        if (d < h.radius + obj.size && d < pullD) {
+          puller = h; pullD = d;
+        }
+      }
+      if (puller) {
+        const dxo = obj.x - puller.x;
+        const dzo = obj.z - puller.z;
+        const d = pullD;
+        const pull = Math.max(0, (puller.radius + obj.size - d)) * 8 * dt;
+        const nx = dxo / (d + 0.001);
+        const nz = dzo / (d + 0.001);
+        obj.x -= nx * pull;
+        obj.z -= nz * pull;
+        obj.mesh.position.x = obj.x;
+        obj.mesh.position.z = obj.z;
+      }
+
+      // Red tint for player-blocked too-big objects
+      const playerMax = player.alive ? player.radius * 0.95 : 0;
+      if (player.alive && obj.size > playerMax) {
+        const pd = Math.hypot(obj.x - player.x, obj.z - player.z);
+        if (pd < player.radius + obj.size + 1 && !obj._blockedTint) {
+          obj._blockedTint = true;
+          obj.mesh.traverse(c => {
+            if (c.material && c.material.color && !c._origColor) {
+              c._origColor = c.material.color.getHex();
+              c.material = c.material.clone();
+              c.material.color.setHex(0xff6666);
+            }
+          });
+          setTimeout(() => {
+            obj.mesh.traverse(c => {
+              if (c.material && c._origColor !== undefined) {
+                c.material.color.setHex(c._origColor);
+              }
+            });
+            obj._blockedTint = false;
+          }, 400);
+        }
+      }
+    }
+
+    // --- Update falling objects ---
+    for (const obj of objects) {
+      if (obj.consumed) continue;
+      if (!obj.falling) continue;
+      const h = obj.fallTargetHole || player;
+      obj.fallVel += 25 * dt;
+      obj.mesh.position.y -= obj.fallVel * dt;
+      const dxo = h.x - obj.mesh.position.x;
+      const dzo = h.z - obj.mesh.position.z;
+      obj.mesh.position.x += dxo * Math.min(1, dt * 8);
+      obj.mesh.position.z += dzo * Math.min(1, dt * 8);
+      obj.mesh.rotation.x += obj.spin * dt;
+      obj.mesh.rotation.z += obj.spin * dt * 0.7;
+      const s = Math.max(0.1, 1 - (Math.abs(obj.mesh.position.y) / 6));
+      obj.mesh.scale.set(s, s, s);
+      if (obj.mesh.position.y < -5) {
+        obj.consumed = true;
+        scene.remove(obj.mesh);
+      }
+    }
+
+    // --- Update visuals ---
+    for (const h of holes) updateHoleVisual(h);
+
+    // --- End game if only one hole remains ---
+    const aliveCount = holes.filter(h => h.alive).length;
+    if (aliveCount <= 1 && running) {
+      endGame();
+    }
+
+    // --- Camera follows player (or follows last hole alive) ---
+    const focus = player.alive ? player : (holes.find(h => h.alive) || player);
+    const camHeight = 32 + focus.radius * 5;
+    const camBack = 22 + focus.radius * 4;
+    camera.position.x += (focus.x - camera.position.x) * Math.min(1, dt * 4);
+    camera.position.z += (focus.z + camBack - camera.position.z) * Math.min(1, dt * 4);
+    camera.position.y += (camHeight - camera.position.y) * Math.min(1, dt * 4);
+    camera.lookAt(focus.x, 0, focus.z);
+
+    updateHUD();
+  }
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// =========================================================================
+// RESIZE
+// =========================================================================
+window.addEventListener('resize', () => {
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+</script>
+</body>
+</html>
