@@ -46,7 +46,11 @@ Status:
 
 Status:
 
-- pending
+- completed
+
+Outcome:
+
+- consolidated world, growth, traffic, input, HUD, audio, wave, and military tuning values into a single top-level config object so future balancing changes are no longer scattered across the file
 
 ### P1.6 Refactor reset / restart / wave rebuild behavior
 
@@ -125,6 +129,6 @@ Backlog items:
 
 Work Priority 1 to completion before serious Endless Mode investment.
 
-The next active task after the current input patch should be:
+The next active task is:
 
-- audio/startup separation
+- P1.6 Refactor reset / restart / wave rebuild behavior
