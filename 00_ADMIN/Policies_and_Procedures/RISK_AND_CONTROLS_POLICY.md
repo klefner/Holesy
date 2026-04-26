@@ -111,6 +111,18 @@ In every completion, Codex should review work against this policy and confirm:
 
 This review can be concise, but it must be present in substance even when not labeled formally.
 
+### 11A. Separate QA Pass Requirement
+
+- Before acting on a material recommendation, implementation, or process conclusion, perform a separate QA-minded review.
+- The QA pass should specifically challenge:
+  - unsupported claims
+  - misleading wording
+  - gaps in rollback or backup thinking
+  - confusion between local files, Git state, GitHub state, and released state
+  - missing user-impact considerations
+- If the QA pass finds a material issue, revise the work before presenting it as ready.
+- Work should not be treated as complete until the QA pass has no open material findings.
+
 ### 12. Cross-Agent Coordination
 
 - This document is the shared policy for Codex and Claude.

@@ -1,0 +1,54 @@
+name: Bug report
+description: Record a defect in gameplay, UI, controls, setup, or release behavior.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the problem in plain language.
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: File or build tested
+      description: Example: Master 4.html or Master 4 - master1-mouse-reuse.html
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Chrome desktop
+        - Chrome mobile emulation
+        - iPhone Safari
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: risk
+    attributes:
+      label: Risk / impact
+      description: Explain why the defect matters to the player or release.

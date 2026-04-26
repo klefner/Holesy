@@ -1,0 +1,29 @@
+name: Feature request
+description: Track a desired gameplay, UX, UI, process, or release improvement.
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: request
+    attributes:
+      label: Requested outcome
+      description: Describe the desired result in plain language.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem being solved
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints or design considerations
+      description: Include mobile/desktop, player usability, speed, or style concerns.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance signals
+      description: How will we know this is done well?
