@@ -40,7 +40,7 @@ Outcome target:
 
 Status:
 
-- pending
+- completed
 
 ### P1.5 Centralize config and balancing values
 
