@@ -1,6 +1,30 @@
 ## Holesy Product Backlog
 
-This backlog reflects the current project direction, recent gameplay work, and the decision to treat codebase stabilization as Priority 1.
+This backlog reflects the current project direction, approved gameplay work, the new standalone website deployment workflow, and the decision to treat codebase stabilization as Priority 1.
+
+## Priority 0 — Operational Readiness
+
+Goal: make the approved game easy to publish, recover, and operate outside the WordPress snippet path.
+
+### P0.1 Deploy standalone `index.html` workflow
+
+Status:
+
+- completed
+
+Outcome:
+
+- documented the production workflow for publishing Holesy as a standalone `index.html` in `/holesy/`
+
+### P0.2 Promote approved master to website publish package
+
+Status:
+
+- completed
+
+Outcome:
+
+- created a website-ready `index.html` package sourced from the approved master
 
 ## Priority 1 — Codebase Stabilization
 
@@ -72,30 +96,81 @@ Status:
 
 ## Priority 2 — Waves Mode Completion and Tuning
 
-Goal: finish the mode we already started and make it feel deliberately paced.
+Goal: finish the mode already in flight and make it feel deliberately paced.
 
 Backlog items:
 
 - continue fine-tuning wave duration, cadence, and roster pressure
-- decide whether true board-size reduction should be implemented or replaced with other pressure systems
-- improve wave readability and progression signaling
 - confirm the final difficulty curve feels fair on desktop and mobile
+- improve progression readability and signaling where still needed
+- validate the final-wave active-arena pressure model against repeat play
 
-## Priority 3 — Endless Mode
+## Priority 3 — Physics Stack And Collapse System
 
-Goal: unlock long-session replayability once the foundation is stable.
+Goal: introduce `hole.io`-style stacked-object variety with convincing gravity-driven collapse while preserving the current battlefield systems.
 
 Backlog items:
 
-- endless escalation rules
-- scaling object density
-- scaling AI pressure
-- scaling hazard intensity
-- endless end-condition / scoring framing
+- add a hybrid physics subsystem for stackable objects only
+- create stack object registry / factory layer
+- implement gravity-driven stacked object collapse and landing
+- support hole consumption against physics-backed stack pieces
+- build first stack families:
+  - crate column
+  - log jenga
+  - melon pyramid
+  - barrel arch
+- add clean reset / teardown behavior for physics-backed stacks
+- expand stackable object variety after prototype validation
+- add break-apart structures that convert larger world objects into smaller collectible debris
 
-## Priority 4 — Rewards and Progression
+## Priority 4 — Powerup Expansion And Strategic Depth
 
-Goal: make sessions more satisfying beyond raw score.
+Goal: deepen moment-to-moment decision-making and add more shareable “wow” moments.
+
+Backlog items:
+
+- Magnet Surge powerup
+  - temporarily doubles pull radius
+  - strong visual suction moment
+- Enemy Freeze powerup
+  - freezes rival holes briefly
+  - creates tactical gather window
+- Gravity Vortex powerup
+  - wide spiral pull / orbiting debris
+  - standout signature power
+- Time Dilation powerup
+  - world slows while player remains full speed
+  - includes music pitch-shift treatment
+- Soldier Hijack powerup
+  - soldiers target rivals instead of the player
+  - leverages the unique military simulation
+
+## Priority 5 — New Modes And Replayability
+
+Goal: add modes and session structures that materially extend repeat play.
+
+Backlog items:
+
+- Solo 100% Clear mode
+  - no rivals
+  - timer pressure plus passive size decay
+  - final score is percentage of total city mass consumed
+  - aid ships drop enhancements more frequently than the standard cadence
+- Endless Mode
+  - endless escalation rules
+  - scaling object density
+  - scaling AI pressure
+  - scaling hazard intensity
+  - endless scoring framing
+- procedural layout variation
+- challenge variants
+- alternative mode rules
+- session goals
+
+## Priority 6 — Rewards, Progression, And Cross-Platform UX
+
+Goal: make sessions more satisfying and the control model more deliberate across PC and mobile.
 
 Backlog items:
 
@@ -103,32 +178,27 @@ Backlog items:
 - streaks / combos
 - between-wave bonuses or upgrade choices
 - cosmetic unlockables
+- unified control feel / powerup queue bar
+  - same visual location across desktop and mobile
+  - keyboard shortcuts on PC
+  - intentional activation instead of forced immediate consumption
 
-## Priority 5 — Replayability Expansion
+## Priority 7 — Monetization-Ready Layer
 
-Goal: increase variety across sessions.
-
-Backlog items:
-
-- procedural layout variation
-- challenge variants
-- alternative mode rules
-- session goals
-
-## Priority 6 — Monetization-Ready Layer
-
-Goal: only after the core game is stable and replayable.
+Goal: only after the core game is stable, replayable, and strategically differentiated.
 
 Backlog items:
 
 - cosmetic progression readiness
-- account/progression considerations
+- account / progression considerations
 - store-ready non-intrusive reward structures
 
 ## Current Recommendation
 
-Work Priority 1 to completion before serious Endless Mode investment.
+1. Finish Priority 1 stabilization
+2. Then tackle the hardest content-system investment: the hybrid physics stack and collapse layer
+3. Then deepen powerups and mode variety on top of that stronger foundation
 
-The next active task is:
+The next active engineering task remains:
 
 - P1.6 Refactor reset / restart / wave rebuild behavior
