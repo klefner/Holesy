@@ -130,6 +130,20 @@ Goal: deepen moment-to-moment decision-making and add more shareable “wow” m
 
 Backlog items:
 
+- difficulty toggle
+  - `Off` = current baseline values
+  - `On` = Nightmare
+  - applies to whichever game mode the player starts
+  - selection persists until the player changes it or reloads the web app
+  - appears above the game-mode choices on the first screen
+  - centralize all difficulty-linked values for one-stop balancing
+  - difficulty-linked values include:
+    - soldier damage
+    - soldiers per unit drop
+    - aid-drop frequency
+    - skyscraper / high-value object density
+    - rival AI quality and target selection heuristics
+  - Nightmare AI should prioritize the best reachable point stream over time rather than simplistic nearest-object chasing
 - Magnet Surge powerup
   - temporarily doubles pull radius
   - strong visual suction moment
@@ -163,17 +177,30 @@ Backlog items:
   - scaling AI pressure
   - scaling hazard intensity
   - endless scoring framing
+- camera / POV switch
+  - gameplay UI toggle
+  - `Off` = current slanted tactical “Diablo” perspective
+  - `On` = first-person hover perspective
+  - first-person keeps the forward-facing half of the hole visible while the world fills the rest of the frame
+  - buildings should feel taller than the player at close range, with roofs and upper floors mostly hidden except at distance
+  - object approach should read as natural relative-size growth as the hole moves closer
 - procedural layout variation
 - challenge variants
 - alternative mode rules
 - session goals
 
-## Priority 6 — Rewards, Progression, And Cross-Platform UX
+## Priority 6 — Traversal, Verticality, And Cross-Platform UX
 
-Goal: make sessions more satisfying and the control model more deliberate across PC and mobile.
+Goal: add richer movement choices, support vertical object placement, and preserve intentional controls across PC and mobile.
 
 Backlog items:
 
+- jump / elevated collection system
+  - hole can jump to consume planes and other sensible aerial targets
+  - hole can jump to the top of buildings to reach rooftop-only objects
+  - jump height should depend on the building being targeted
+  - jump may also become an evasion tool against rival holes
+  - supports future rooftop content such as people, radio towers, antennas, and similar high-value placements
 - score grades
 - streaks / combos
 - between-wave bonuses or upgrade choices
