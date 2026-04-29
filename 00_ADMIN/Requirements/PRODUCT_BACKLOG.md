@@ -80,19 +80,40 @@ Outcome:
 
 Status:
 
-- pending
+- completed
+
+Outcome:
+
+- guarded delayed wave-start handoff so exiting, restarting, or reaching game over cannot accidentally resume a pending next wave
+- promoted the validated fix into `Master 8`
 
 ### P1.7 Strengthen section boundaries / module-like organization
 
 Status:
 
-- pending
+- in progress
+
+Progress:
+
+- promoted transition-pause support into `Master 9`
+- extracted round-lifecycle UI show / hide behavior into explicit helpers as the first section-boundary cleanup pass
+- promoted `Master 10` with validated Waves payoff / wind / timing polish while keeping rollback-safe candidate iteration
+- stabilized the soldier-unit-clear feedback loop around explicit helper paths instead of one-off inline reactions
 
 ### P1.8 Add lightweight debug tools
 
 Status:
 
-- pending
+- in progress
+
+Initial target:
+
+- add a low-overhead debug overlay and toggle so balancing passes can inspect live wave, player, and reward state without guessing from feel alone
+- validated and promoted the first overlay slice into `Master 11`, including proper cleanup when leaving a run
+- validated and promoted `Master 12` with mobile audio startup behavior and shorter unit-clear speed boost tuning
+- validated and promoted `Master 13` with player-facing effect timers, player-anchored wave-end warning, bullet-resistance rim thickening, and hole wind-pull ring visualization
+- validated and promoted `Master 14` with unit-clear growth retuning so successful clears more reliably refund recent soldier damage and come out net-positive
+- build lineage for candidate testing is now expected to use explicit sub-build numbering beneath the current master (`Master 12.3`, `Master 12.4`, `Master 12.5`, etc.) so defect reports map to one exact candidate
 
 ## Priority 2 — Waves Mode Completion and Tuning
 
@@ -104,6 +125,21 @@ Backlog items:
 - confirm the final difficulty curve feels fair on desktop and mobile
 - improve progression readability and signaling where still needed
 - validate the final-wave active-arena pressure model against repeat play
+- use the shared narrative reference before changing wave lore or pacing:
+  - [Waves Narrative And Text Pack](WAVES_NARRATIVE_AND_TEXT_PACK.md)
+- define the canonical Waves story concept so escalation feels intentional rather than decorative
+  - recommended framing: the holes are part of a spreading extradimensional feeding event rather than ordinary sinkholes
+  - recommended battlefield logic: the district keeps rebuilding or repopulating between waves because the `Parallax` is reconstituting matter inside the active breach zone
+  - recommended escalation ladder:
+    - Wave 1 = normal city life caught off guard
+    - Wave 2 = first organized containment and troop deployment
+    - Wave 3 = evacuation, hard containment, and more lethal resistance
+    - Wave 4 = terminal district collapse and full crackdown
+  - recommended tone target: sci-fi disaster with ominous military escalation
+- replace current wave intro / transition copy with sharper lore-consistent messaging
+  - avoid vague terms that do not clearly map to the fiction or gameplay stakes
+  - each wave message should explain what changed in the city response, not just add flavor text
+  - each between-wave message should reinforce why the battlefield is repopulated and why the response is escalating
 
 ## Priority 3 — Physics Stack And Collapse System
 
@@ -111,6 +147,8 @@ Goal: introduce `hole.io`-style stacked-object variety with convincing gravity-d
 
 Backlog items:
 
+- use the shared tank/destructible-building concept before scoping military heavy-unit or building-damage work:
+  - [Tanks And Destructible Buildings Concept](TANKS_AND_DESTRUCTIBLE_BUILDINGS_CONCEPT.md)
 - add a hybrid physics subsystem for stackable objects only
 - create stack object registry / factory layer
 - implement gravity-driven stacked object collapse and landing
@@ -123,6 +161,18 @@ Backlog items:
 - add clean reset / teardown behavior for physics-backed stacks
 - expand stackable object variety after prototype validation
 - add break-apart structures that convert larger world objects into smaller collectible debris
+- explore tank units as a future military escalation layer
+  - longer range than soldiers
+  - dramatically higher radial damage than soldiers
+  - slower reload than soldiers, with much larger per-shot damage and a distinct DPS profile
+  - establish reload speed as an explicit variable for every offensive combat unit type
+  - able to fire through buildings
+  - road-limited navigation
+  - movement speed slightly faster than soldiers
+  - destroys cars on contact
+  - able to reduce building score value by damaging structures before the player consumes them
+  - fifth qualifying building hit destroys the structure
+  - future stretch goal: shell impacts can blow visible building chunks outward, leave temporary zero-value debris on the ground, then flash and disappear
 
 ## Priority 4 — Powerup Expansion And Strategic Depth
 
@@ -149,6 +199,8 @@ Backlog items:
   - every game should include at least one meaningfully smarter rival hole than the other two
   - smarter rivals should evaluate reachable object value over time, growth-gating constraints, and route efficiency rather than just local nearest-value opportunities
   - long-term balance target: it must be genuinely possible for the player to lose on points, not just on survival
+  - leaderboard compression needs dedicated tuning; current playtests show the player can finish several multiples above second place even in runs where the player deliberately sacrifices scoring time to test military interactions
+  - investigate stronger rival early/mid-game intake, denser high-value routing, and possible trailing-AI catch-up pressure so Waves can feel like a real score race as well as a survival mode
 - Magnet Surge powerup
   - temporarily doubles pull radius
   - strong visual suction moment
@@ -177,7 +229,10 @@ Backlog items:
   - final score is percentage of total city mass consumed
   - aid ships drop enhancements more frequently than the standard cadence
 - Endless Mode
-  - endless escalation rules
+  - use the same core wave system as `Waves`
+  - remove the automatic stop at the end of `4/4`
+  - difficulty should continue scaling upward wave after wave with config-driven tuning
+  - treat the mode as conceptually unbounded `N` waves, not a fixed cap, even if early versions only tune the first several dozen well
   - scaling object density
   - scaling AI pressure
   - scaling hazard intensity
