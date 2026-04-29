@@ -143,7 +143,12 @@ Backlog items:
     - aid-drop frequency
     - skyscraper / high-value object density
     - rival AI quality and target selection heuristics
+    - rival intelligence / efficiency profiles
   - Nightmare AI should prioritize the best reachable point stream over time rather than simplistic nearest-object chasing
+  - rival intelligence / efficiency must be variablized independently from other difficulty knobs so different game setups can field stronger or weaker enemies
+  - every game should include at least one meaningfully smarter rival hole than the other two
+  - smarter rivals should evaluate reachable object value over time, growth-gating constraints, and route efficiency rather than just local nearest-value opportunities
+  - long-term balance target: it must be genuinely possible for the player to lose on points, not just on survival
 - Magnet Surge powerup
   - temporarily doubles pull radius
   - strong visual suction moment
