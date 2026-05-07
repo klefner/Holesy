@@ -216,6 +216,50 @@ Backlog items:
 - Soldier Hijack powerup
   - soldiers target rivals instead of the player
   - leverages the unique military simulation
+- geographic combo and chain system
+  - eating multiple objects in continuous succession along a city path awards escalating score multipliers
+  - chain counter visible in HUD during an active chain
+  - multiplier scales with chain length: 1.2x at 5, 1.5x at 10, 2x at 20
+  - chain breaks on backtracking, idle timeout (>2s between eats), or soldier damage
+  - cross-category chain (person → prop → car → building within 5s) awards a rare bonus or temporary ability
+  - cross-category combo triggers distinct visual and audio feedback
+  - works in all game modes
+- contextual eat mechanics
+  - eat outcomes vary based on the state of the target at the moment of consumption
+  - moving cars transfer momentum (speed boost); parked cars give bonus score; crashing cars trigger collapse chains
+  - people who have spotted the player and are fleeing are worth more than people caught off-guard
+  - buildings collapsing near other buildings can chain-collapse
+  - each contextual state has distinct visual or audio feedback so the player learns the system
+  - reuse existing audio bank where possible
+- active abilities / size-spending system
+  - player can trigger 2-3 active abilities during play, each costing a tunable percentage of current hole size
+  - proposed initial abilities: short dash (positional), panic pulse (scares targets in radius), target mark (doubles next eat value within 5s)
+  - cooldowns prevent spam
+  - mobile and desktop input both supported: tap zones on mobile, keyboard shortcuts on desktop
+  - HUD shows current ability availability and size cost
+  - each ability has distinct visual and audio feedback
+- soldier behavior depth
+  - soldiers in formation are more dangerous than isolated soldiers (group buff or visual indicator)
+  - reload state is visually distinguishable and exploitable: eating mid-reload grants score or ability bonus
+  - soldiers actively targeting AI rivals temporarily do not retarget the player
+  - a soldier who witnesses a squadmate being eaten panics and drops their weapon, which becomes an environmental hazard or score pickup
+  - all behaviors layer cleanly on top of the existing wave system
+- rival hole asymmetric mechanics
+  - each rival has one mechanically distinct trait beyond movement personality
+  - proposed traits:
+    - Void: leaves a small-hole trail that briefly traps the player
+    - Maw: emits a shockwave when eating large objects, knocking rivals back
+    - Gulp: detects the player during active chains and hunts them specifically
+  - traits visibly change how the player approaches each rival
+  - traits scale appropriately by wave and difficulty
+  - player can recognize each rival's trait within 1-2 encounters
+  - traits respect the existing personality framework: Void = predictable, Maw = circles, Gulp = feints
+- mid-run risk/reward beacons
+  - occasional beacon events appear on the map during waves, offering high-risk high-reward detours
+  - examples: dense soldier squad guarding a large bonus, a giant target that fights back, a timed challenge rewarding a score multiplier
+  - at least 3 beacon event types implemented
+  - beacons appear at semi-predictable intervals with clear visual indicators and risk/reward telegraphing
+  - engaging is always optional and never forced; rewards are meaningful but not mandatory for progression
 
 ## Priority 5 — New Modes And Replayability
 
@@ -229,14 +273,29 @@ Backlog items:
   - final score is percentage of total city mass consumed
   - aid ships drop enhancements more frequently than the standard cadence
 - Endless Mode
-  - use the same core wave system as `Waves`
-  - remove the automatic stop at the end of `4/4`
-  - difficulty should continue scaling upward wave after wave with config-driven tuning
+  - new mode option in the mode picker
+  - uses the same core wave system as `Waves`; removes the automatic stop at the end of `4/4`
+  - difficulty ramps on a fixed timer (every 60-90 seconds) with a visible warning before each ramp
+  - at least 5 distinct escalation tiers: more soldiers, faster rivals, smaller board, weather or visibility effects
   - treat the mode as conceptually unbounded `N` waves, not a fixed cap, even if early versions only tune the first several dozen well
-  - scaling object density
-  - scaling AI pressure
-  - scaling hazard intensity
-  - endless scoring framing
+  - scaling object density, AI pressure, and hazard intensity
+  - score and survival time persisted to localStorage
+  - run ends only on player death
+  - achievements and milestones tied to specific endless thresholds
+- Endless Mode unlocks and milestones
+  - 10+ milestone achievements defined (examples: survive 10 minutes, reach the 3rd ramp, eliminate 200 soldiers in a run)
+  - each milestone unlocks something tangible: starting modifier, ability slot, or cosmetic
+  - unlocks persist via localStorage
+  - unlock progress is visible to the player
+  - at least half of unlocks are gameplay-affecting, not purely cosmetic
+  - depends on Endless Mode being live
+- lore drip system
+  - lore fragments unlock through gameplay milestones: run count, achievements, rare in-run events
+  - 15-20 initial fragments written and documented before implementation begins
+  - narrative direction: holes are transporting things to an unknown destination, or are something ancient reclaiming what was theirs; avoid political framings and generic alien invasion
+  - fragments are short, environmental, and avoid exposition dumps
+  - fragments viewable from the main menu
+  - fragment storage and display system implemented in-game
 - camera / POV switch
   - gameplay UI toggle
   - `Off` = current slanted tactical “Diablo” perspective
@@ -262,7 +321,6 @@ Backlog items:
   - jump may also become an evasion tool against rival holes
   - supports future rooftop content such as people, radio towers, antennas, and similar high-value placements
 - score grades
-- streaks / combos
 - between-wave bonuses or upgrade choices
 - cosmetic unlockables
 - unified control feel / powerup queue bar
@@ -279,6 +337,28 @@ Backlog items:
 - cosmetic progression readiness
 - account / progression considerations
 - store-ready non-intrusive reward structures
+- daily seed leaderboard
+  - all players receive the same procedurally generated city, rivals, and wave config for a 24-hour period
+  - seed rotates at a fixed UTC time
+  - score submission to a hosted leaderboard backend (Dreamlo or Cloudflare Workers + KV, target $0/month at expected volumes)
+  - leaderboard viewable in-game with personal best for the current seed displayed
+  - anti-tamper consideration acceptable to defer for v1
+  - depends on geographic combo, contextual eat, and active abilities being live
+- meta-progression currency and unlock tree
+  - persistent currency earned from runs based on score, combos, and milestones
+  - persisted to localStorage
+  - unlock tree with at least 20 nodes
+  - first unlock reachable within 2-3 runs; late unlocks require 50+ runs
+  - spent currency is not refundable
+  - all unlocks affect gameplay or visibly change the experience
+  - depends on Endless Mode being live
+- playable rival holes
+  - player can select Void, Maw, or Gulp as their playable hole instead of the default
+  - each playable rival uses its asymmetric trait as a passive ability
+  - selection UI integrated into the mode picker
+  - unlocked through meta-progression or specific achievements
+  - per-rival mastery tracking: runs played, best scores
+  - depends on rival hole asymmetric mechanics and meta-progression being live
 
 ## Current Recommendation
 
