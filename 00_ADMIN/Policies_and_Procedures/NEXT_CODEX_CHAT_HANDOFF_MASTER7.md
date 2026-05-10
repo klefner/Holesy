@@ -83,23 +83,28 @@ Most important project folders:
 
 Current promoted master:
 
-- `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 7.html`
+- `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 12.html`
 
 Current basis note:
 
 - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Current\CURRENT_BASIS.md`
 
-What `Master 7` specifically represents:
+What `Master 12` specifically represents:
 
-- it includes the full approved `Master 6` gameplay baseline
-- it shows the visible master version on the title screen
-- it restores the correct universal startup flow:
+- it includes the full approved `Master 11` gameplay baseline
+- it preserves the visible master version on the title screen
+- it preserves the corrected universal startup flow:
   - first screen is the mode-select screen on all platforms
   - `Begin` primes audio and starts the game in the same gesture
+- it includes:
+  - background / app-switch title-music muting behavior
+  - mobile title-music startup from the first mode-selection tap on the game selector screen
+  - a 25% shorter full-unit-clear speed boost window
+  - a mobile-specific hole-wind audibility lift
 
-Last approved candidate promoted into `Master 7`:
+Last approved candidate promoted into `Master 12`:
 
-- `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Candidate_Builds\Master 6 - universal-mode-select-startup-fix.html`
+- `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Candidate_Builds\Master 11 - mobile-wind-and-shorter-unit-boost.html`
 
 ## 6. Technical Stack
 
@@ -138,8 +143,9 @@ Major architecture improvements already completed:
 Important architecture status:
 
 - Priority 1 stabilization is **not fully finished**
-- the next active stabilization task is still:
-  - `P1.6 Refactor reset / restart / wave rebuild behavior`
+- `P1.6` is completed
+- `P1.7` section-boundary cleanup is in progress
+- `P1.8` lightweight debug tooling is in progress
 
 Important active architectural seam:
 
@@ -173,8 +179,14 @@ Important specific docs:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\00_ADMIN\Policies_and_Procedures\GITHUB_OPERATING_MODEL.md`
 - standalone website workflow:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\00_ADMIN\Policies_and_Procedures\STANDALONE_WEBSITE_PUBLISH_WORKFLOW.md`
+- next-chat handoff:
+  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\00_ADMIN\Policies_and_Procedures\NEXT_CODEX_CHAT_HANDOFF_MASTER7.md`
 - product backlog:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\00_ADMIN\Requirements\PRODUCT_BACKLOG.md`
+- waves narrative pack:
+  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\00_ADMIN\Requirements\WAVES_NARRATIVE_AND_TEXT_PACK.md`
+- tanks / destructible buildings concept:
+  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\00_ADMIN\Requirements\TANKS_AND_DESTRUCTIBLE_BUILDINGS_CONCEPT.md`
 
 ## 9. GitHub / Git Configuration And Governance
 
@@ -212,6 +224,7 @@ Known untracked files that have repeatedly existed and should be treated careful
 
 - `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Exploratory_Builds\Stack-collapse exploration - cannon-es prototype.html`
 - `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Candidate_Builds\index.html`
+- various newer candidate/master files may also be present untracked during active experimentation; always inspect `git status` before staging
 
 The next chat should inspect `git status` before every commit and avoid staging those unless the user explicitly wants them included.
 
@@ -266,6 +279,11 @@ Website publish package:
 - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
 
 This package is meant to be uploaded into the hosting directory `/holesy/`.
+
+Important deployment note:
+
+- the standalone website package does not automatically update when a new master is promoted
+- the next chat should confirm whether the publish package still matches the current approved master before telling the user to upload it
 
 GoDaddy navigation that worked:
 
@@ -323,6 +341,8 @@ Some major completed content/status highlights:
 - wave transition readability improvements
 - alien aid-drop system
 - Wave 4 battlefield pressure concept
+- debug overlay foundation
+- background-title-music muting when the app/browser loses active focus
 
 ## 14. Current Product Backlog
 
@@ -346,6 +366,8 @@ Important backlog additions already captured:
 - jump / elevated collection system
 - Solo 100% Clear mode
 - strategic powerup expansion
+- tank / destructible-building concept
+- waves narrative pack as a governing story reference
 
 ## 15. Hardest Remaining Item
 
@@ -371,9 +393,8 @@ This is harder than:
 
 ## 16. Important Recent Decisions
 
-- the user explicitly confirmed the latest tested universal startup fix had no defects
-- that build was promoted to `Master 7`
-- current canonical baseline is therefore `Master 7`
+- the user explicitly confirmed the later debug/audio/tuning chain through `Master 12`
+- the current canonical baseline is therefore `Master 12`
 
 Important corrected product behavior:
 
@@ -389,6 +410,7 @@ Important corrected product behavior:
 - accidentally staging exploratory physics files
 - wave / reset state corruption if `P1.6` is touched
 - AI balance currently still too easy for the player on points
+- repo state may contain newer untracked masters/candidates beyond the current promoted baseline; never infer promotion from filename existence alone
 
 ## 18. Recommended Next Moves For The Replacement Chat
 
@@ -397,12 +419,14 @@ Important corrected product behavior:
    - `PRODUCT_BACKLOG.md`
    - `RISK_AND_CONTROLS_POLICY.md`
    - `GITHUB_OPERATING_MODEL.md`
-2. Treat `Master 7` as the baseline
+   - `WAVES_NARRATIVE_AND_TEXT_PACK.md`
+   - `TANKS_AND_DESTRUCTIBLE_BUILDINGS_CONCEPT.md`
+2. Treat `Master 12` as the baseline unless a newer master is explicitly promoted in repo docs
 3. Confirm `git status` before any new work
 4. Keep the known exploratory files out of commits unless explicitly asked
 5. Continue either:
    - the user’s next gameplay request, or
-   - `P1.6` if the user wants backlog-driven stabilization next
+   - `P1.7` / `P1.8` if the user wants backlog-driven stabilization next
 
 ## 19. If The New Chat Needs A Fast Mental Model
 
@@ -412,12 +436,25 @@ Use this summary:
 - repo is organized and governed now
 - GitHub push works
 - `main` is protected
-- `Master 7` is current baseline
+- `Master 12` is current baseline
 - user tests frequently and expects careful regression control
 - hardest future system is physics-based stacked-object collapse
 - current backlog already includes difficulty scaling, stronger AI, first-person POV, jump/verticality, new modes, and strategic powerups
 
-## 20. Final Handoff Status
+## 20. Handoff Automation
+
+An automatic heartbeat now exists to keep this handoff package current:
+
+- automation name: `Refresh Holesy handoff`
+- behavior:
+  - review current thread plus shared repo files
+  - update this handoff if stale
+  - run a separate QA-style review of the handoff
+  - commit/push documentation updates when needed
+
+The next chat should preserve this automation unless it is intentionally replaced with a newer one.
+
+## 21. Final Handoff Status
 
 This document is intended to let a new Codex chat take over without needing the full prior thread.
 

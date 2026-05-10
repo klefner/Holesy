@@ -91,7 +91,7 @@ Outcome:
 
 Status:
 
-- in progress
+- completed
 
 Progress:
 
@@ -99,12 +99,19 @@ Progress:
 - extracted round-lifecycle UI show / hide behavior into explicit helpers as the first section-boundary cleanup pass
 - promoted `Master 10` with validated Waves payoff / wind / timing polish while keeping rollback-safe candidate iteration
 - stabilized the soldier-unit-clear feedback loop around explicit helper paths instead of one-off inline reactions
+- recent candidate work extracted unit-clear reward math and debug bookkeeping into explicit helper functions instead of leaving the whole path bundled inside one reward routine
+- recent candidate work also extracts soldier-consumption audio, score mutation, and wave-roster award bookkeeping into explicit helper functions so the reward path is less entangled with the main consume loop
+
+Outcome:
+
+- the remaining high-friction reward, roster, and local UI/control seams were pulled behind explicit helpers well enough that Priority 1 no longer needs to track section-boundary cleanup as an open backlog item
+- further structure work can continue later as normal maintenance or as support work for larger future systems
 
 ### P1.8 Add lightweight debug tools
 
 Status:
 
-- in progress
+- completed
 
 Initial target:
 
@@ -113,11 +120,44 @@ Initial target:
 - validated and promoted `Master 12` with mobile audio startup behavior and shorter unit-clear speed boost tuning
 - validated and promoted `Master 13` with player-facing effect timers, player-anchored wave-end warning, bullet-resistance rim thickening, and hole wind-pull ring visualization
 - validated and promoted `Master 14` with unit-clear growth retuning so successful clears more reliably refund recent soldier damage and come out net-positive
+- validated and promoted `Master 15` with the stable narrow-slice Waves rebuild: transition clarity, transition-safe buff timing, non-music menu audio cleanup, bonus-mass text clarity, and stronger rival aid contesting / score pressure
+- recent candidate work extends the debug overlay so unit-clear tuning can show refund-cap, tracked-damage, refund-mass, and post-clear damage-bank details directly during play
+- recent candidate work also adds active-input, aid-drop countdown, and live wave-roster summary visibility to the debug overlay so balancing passes can see control ownership and roster state without reading code
 - build lineage for candidate testing is now expected to use explicit sub-build numbering beneath the current master (`Master 12.3`, `Master 12.4`, `Master 12.5`, etc.) so defect reports map to one exact candidate
+
+Outcome:
+
+- the project now has a lightweight live-debug surface for reward tuning, input ownership, aid-drop timing, and wave-roster inspection, which satisfies the original low-overhead instrumentation goal for Priority 1
+- future debug additions can continue opportunistically without keeping this backlog epic open
 
 ## Priority 2 — Waves Mode Completion and Tuning
 
 Goal: finish the mode already in flight and make it feel deliberately paced.
+
+Status:
+
+- in progress
+
+Progress:
+
+- `Master 14.4 - waves-narrative-and-pacing-pass.html` starts the Priority 2 pass from the approved narrative pack rather than ad hoc flavor text
+- that candidate replaces wave intro banners, threat briefings, transition copy, and Waves-specific end-state messaging with the agreed containment / Parallax framing
+- the same candidate lengthens briefing and transition dwell times and retunes per-wave durations / roster cadence toward a more deliberate escalation curve
+- `Master 14.5 - ai-rivals-aid-search-and-score-pressure.html` explored the right design targets, but the line failed validation due to a blocker startup regression and is not the active base
+- `Master 14.6 - rollback-to-14.4-stable-baseline.html` restores the last known working Waves candidate so testing and incremental rebuild can continue safely
+- `Master 14.7 - transition-freeze-and-outcome-clarity.html` is the first narrow rebuild slice from the stable base and targets transition readability, transition-safe buff timing, and clearer Waves loss messaging
+- `Master 14.8 - non-music-menu-audio-cleanup.html` is the next narrow rebuild slice and targets post-round / menu audio shutdown without reopening startup-path risk
+- `Master 14.9 - powerup-text-clarity.html` is the next narrow rebuild slice and targets player-readable alien-drop text for the non-temporary mass pickup
+- `Master 14.10 - rival-aid-and-score-pressure.html` is the next narrow rebuild slice and targets stronger rival aid contesting plus better score pressure without reintroducing the failed `14.5` startup-path risk
+- `Master 14.10` has now been validated and promoted into `Master 15`
+- `Master 15.1 - wave1-speed-burst-tuning.html` is the next candidate slice from the approved `Master 15` baseline and targets the remaining concern that one Speed Burst aid in Wave 1 may still be too decisive
+- `Master 15.2 - aid-intel-and-rival-pressure.html` is the next candidate slice and targets the remaining observation that grounded paralax aid can still go uncontested and that rival scores still trail too far behind the player
+- `Master 15.3 - score-compression-pass.html` is the next candidate slice and targets the remaining leaderboard-gap problem after `15.2` improved rival aid contesting
+- `Master 15.4 - aid-cooldown-and-ai-smoothing.html` is the next candidate slice and targets the `15.3` follow-up issues: aid monopolization by one rival, post-aid AI stutter, and an initially too-robotic feel
+- `Master 15.5 - transition-countdown-and-proof-of-life.html` is the next candidate slice and targets the remaining issue that intentional Waves transition delay still feels like a lockup
+- `Master 15.6 - transition-camera-and-soldier-escape.html` is the next candidate slice and targets restoration of the liked transition wide-camera feel plus a defect where rivals can linger under concentrated soldier fire
+- `Master 15.7 - predrop-aid-intel-fix.html` is the next candidate slice and targets a confirmed unfair defect where AI can wait on the exact future aid landing spot before the drop happens
+- `Master 15.8 - aid-stutter-camera-and-mid-ai-buff.html` is the next candidate slice and targets post-aid loser stutter, a transition camera that rose too high, and slightly underpowered non-Gulp rivals
 
 Backlog items:
 
@@ -125,6 +165,21 @@ Backlog items:
 - confirm the final difficulty curve feels fair on desktop and mobile
 - improve progression readability and signaling where still needed
 - validate the final-wave active-arena pressure model against repeat play
+- validate whether one-aid-drop speed access is still too strong in Wave 1 even after rival contest pressure improves
+- validate whether the `15.1` Waves-specific Speed Burst tuning is enough, or whether Wave 1 aid needs further softening
+- validate whether `15.2` shared-but-imperfect aid intel plus stronger rival pressure produces more believable aid contests and tighter leaderboards
+- validate whether `15.3` materially compresses leaderboard gaps without making rivals feel unfair
+- validate whether `15.4` keeps the tighter leaderboard while reducing robotic behavior and repeated aid monopolies
+- validate whether `15.5` makes the Waves transition feel intentionally staged instead of frozen
+- validate whether `15.6` restores the transition camera feel and improves soldier-pressure escape behavior
+- validate whether `15.7` removes exact pre-drop aid prediction while preserving post-landing aid contesting
+- validate whether `15.8` removes stale-aid stutter, restores the lower transition camera feel, and lifts Void/Maw competitiveness
+- future design note: randomize wave-start hole spawn positions while preventing holes from spawning too close to each other
+- validate whether the stronger rival routing meaningfully compresses the end-of-run leaderboard without making survival feel cheap
+- validate that all non-music sounds are silent on scoreboard and mode-select screens while music continues normally
+- validate that rivals search for alien aid with intent but without feeling omniscient
+- continue tuning the Waves difficulty curve from the now-approved `Master 15` baseline
+- validate the `14.8` audio slice before reintroducing AI competition changes
 - use the shared narrative reference before changing wave lore or pacing:
   - [Waves Narrative And Text Pack](WAVES_NARRATIVE_AND_TEXT_PACK.md)
 - define the canonical Waves story concept so escalation feels intentional rather than decorative
@@ -233,6 +288,28 @@ Backlog items:
   - remove the automatic stop at the end of `4/4`
   - difficulty should continue scaling upward wave after wave with config-driven tuning
   - treat the mode as conceptually unbounded `N` waves, not a fixed cap, even if early versions only tune the first several dozen well
+  - the same AI pressure knobs used in current Waves tuning should remain variablized so Endless can progressively tighten:
+    - rival aid-drop interest / search behavior
+    - rival object-routing quality / scoring efficiency
+    - rival flee intelligence / survivability
+  - long-term target: players are chasing their own best wave reached and best score, not merely seeing a finite ending
+- Persistent records and run-history surface
+  - retain and recall best score, best Waves round reached, and future Endless round milestones
+  - celebrate new personal bests with explicit UI feedback such as `You broke a record`
+  - expose remembered targets on the front-end so replay goals stay visible between sessions
+- Achievements / milestone tracking
+  - retain accomplishment state and show what has been completed versus what remains
+  - candidate examples:
+    - reach Wave 10 / 20 / 30
+    - consume large cumulative totals such as `100000 humans eaten`
+  - celebration and recall are both required; achievements should improve replayability, not just trigger one-time popups
+- Menu and UI audio feedback
+  - add lightweight sonic feedback for menu and control interactions
+  - candidate examples from live direction:
+    - short alien chirp when a game mode is selected
+    - coin-drop sound when `Begin` is clicked
+    - sharp braking sound when pause is triggered
+  - keep these sounds distinct from gameplay-only SFX and make sure they obey title / menu audio-state rules cleanly
   - scaling object density
   - scaling AI pressure
   - scaling hazard intensity
@@ -288,4 +365,4 @@ Backlog items:
 
 The next active engineering task remains:
 
-- P1.6 Refactor reset / restart / wave rebuild behavior
+- Priority 2 Waves mode tuning and readability validation on the latest candidate

@@ -60,6 +60,7 @@ Important working expectations:
 - preserve rollback and avoid unsafe edits
 - use a separate QA-minded pass before declaring material work ready
 - the user does a lot of browser-based human testing and reports defects iteratively
+- other developer chats inside the same project are primary-source background and decision history for takeover work; review them when available instead of relying only on the current thread summary
 
 ## 4. Canonical Local Paths
 
@@ -132,7 +133,7 @@ Important note:
 
 ## 7. Code Architecture Summary
 
-The codebase is still a large single-file game with stabilization work partially completed.
+The codebase is still a large single-file game, but the tracked Priority 1 stabilization items are now closed and the next active work is Waves tuning.
 
 Major architecture improvements already completed:
 
@@ -143,9 +144,9 @@ Major architecture improvements already completed:
 
 Important architecture status:
 
-- Priority 1 stabilization is **not fully finished**
-- the next active stabilization task is still:
-  - `P1.8 Add lightweight debug tools`
+- Priority 1 stabilization is now treated as closed at the backlog level
+- `P1.7` and `P1.8` have been closed based on the current repo-state helper extraction and debug-overlay coverage
+- Priority 2 Waves tuning has now started in candidate form but is not validated or promoted
 
 Important active architectural seam:
 
@@ -216,12 +217,12 @@ Do not:
 - casually stage unrelated files
 - sweep exploratory files into commits
 
-Known untracked files that have repeatedly existed and should be treated carefully:
+Known local-status hygiene notes:
 
-- `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Exploratory_Builds\Stack-collapse exploration - cannon-es prototype.html`
-- `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Candidate_Builds\index.html`
+- `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Exploratory_Builds\Stack-collapse exploration - cannon-es prototype.html` is a governed exploratory artifact and is currently tracked on branch `codex/publish-master4-structure`; do not mix further edits to it into unrelated commits.
+- `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Candidate_Builds\index.html` is currently absent locally and should remain absent unless the user explicitly wants a governed replacement.
 
-The next chat should inspect `git status` before every commit and avoid staging those unless the user explicitly wants them included.
+The next chat should inspect `git status` before every commit and keep unrelated local modifications out of the staged set.
 
 ## 10. Risk / QA / Control Requirements
 
@@ -340,12 +341,12 @@ Primary backlog document:
 
 Key backlog truths right now:
 
-- Priority 1 stabilization is still active
+- Priority 1 stabilization is now considered backlog-complete
 - `P1.6` is complete and promoted into `Master 8`
-- `P1.7` remains in progress and `Master 10` includes additional validated cleanup-adjacent payoff/timing polish
-- `P1.8` is now in progress and `Master 14` carries the next validated instrumentation/audio-tuning-adjacent slice plus the accepted unit-clear growth retune
-- the next active engineering task is:
-  - `P1.8 Add lightweight debug tools`
+- `P1.7` is now closed after the helper-extraction passes in the `14.x` candidate line reduced the remaining mixed reward / roster / local UI seams enough to stop tracking it as an open backlog epic
+- `P1.8` is now closed because the debug overlay covers the original low-overhead inspection goals for reward tuning, input ownership, aid-drop timing, and wave-roster state
+- the active engineering tasks are:
+  - `Priority 2 Waves mode completion and tuning`
 - hardest remaining major system is still:
   - `Priority 3 — Physics Stack And Collapse System`
 
@@ -387,8 +388,15 @@ This is harder than:
 - the user explicitly confirmed the `Master 12.5` active-effect / pull-ring candidate had no defects
 - that build was promoted to `Master 14`
 - current canonical baseline is therefore `Master 14`
-- the Waves narrative direction and replacement text pack were captured for future Priority 2 work in:
+- the Waves narrative direction and replacement text pack were captured for Priority 2 work in:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\00_ADMIN\Requirements\WAVES_NARRATIVE_AND_TEXT_PACK.md`
+- `Master 14.4 - waves-narrative-and-pacing-pass.html` is the first candidate to apply that pack plus a new pacing pass
+- `Master 14.5 - ai-rivals-aid-search-and-score-pressure.html` is the follow-on Waves candidate built directly from user playtest findings on `14.4`, but it later failed validation due to a blocker startup regression
+- `Master 14.6 - rollback-to-14.4-stable-baseline.html` is the governed rollback candidate that restores the last known working Waves build for continued testing
+- `Master 14.7 - transition-freeze-and-outcome-clarity.html` is the next narrow rebuild slice from the stable base and targets transition messaging, transition-safe buff timers, and clearer Waves defeat copy
+- `Master 14.8 - non-music-menu-audio-cleanup.html` is the next narrow rebuild slice from the stable base and targets scoreboard / mode-select non-music audio shutdown while preserving music
+- `Master 14.9 - powerup-text-clarity.html` is the next narrow rebuild slice from the stable base and targets clearer player-facing text for the non-temporary mass pickup
+- `Master 14.10 - rival-aid-and-score-pressure.html` is the next narrow rebuild slice from the stable base and targets stronger rival aid contesting plus tighter score pressure while explicitly avoiding the failed `14.5` startup-path risk
 
 Important corrected product behavior:
 
@@ -402,7 +410,7 @@ Important corrected product behavior:
 - mobile / touch event handling around the `Begin` button
 - confusing local-versus-live website state
 - accidentally staging exploratory physics files
-- wave / reset state integrity should still be watched as `P1.7` and later structure work continue
+- wave / reset state integrity should still be watched during future work even though `P1.7` is closed at the backlog level
 - AI balance currently still too easy for the player on points
 
 ## 18. Recommended Next Moves For The Replacement Chat
@@ -414,10 +422,30 @@ Important corrected product behavior:
    - `GITHUB_OPERATING_MODEL.md`
 2. Treat `Master 14` as the baseline
 3. Confirm `git status` before any new work
-4. Keep the known exploratory files out of commits unless explicitly asked
+4. Keep unrelated local modifications and exploratory-file edits out of commits unless explicitly asked
 5. Continue either:
    - the user’s next gameplay request, or
-  - `P1.8` if the user wants backlog-driven stabilization next
+  - the latest backlog item already in motion:
+  - `Priority 2 Waves mode testing and validation on Master 14.10`
+
+## 18A. Verified State Snapshot As Of 2026-04-29
+
+- `CURRENT_BASIS.md` and the local masters folder both show `Master 14` as the approved local basis.
+- `NEXT_CODEX_CHAT_HANDOFF_MASTER13.md` is now a historical handoff and no longer reflects the approved basis.
+- local branch `codex/publish-master4-structure` and `origin/codex/publish-master4-structure` both point to commit `39bbd94`.
+- local `main` and `origin/main` both point to commit `9c3eba1` and do not contain the later `Master 7` through `Master 14` lineage.
+- `20_TESTS/Candidate_Builds/Master 14.10 - rival-aid-and-score-pressure.html` is the latest in-flight candidate build.
+- `Master 14.10` keeps the stable startup path and validated `14.7` through `14.9` rebuild slices, then adds only a narrow AI competition slice:
+  - rivals get per-personality object-scan budgets instead of the older coarse shared sampling pattern
+  - rivals weight powerups more heavily for score pressure
+  - rivals can investigate alien aid intentionally via noisy ship-path search rather than perfect drop omniscience
+- the `14.5` line should now be treated as design-intent reference only, not as a technical base:
+  - preserve its intended improvement themes
+  - rebuild them from `14.6` one slice at a time
+- reapply reference:
+  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\00_ADMIN\Reviews_and_Reports\MASTER14_5_REAPPLY_PLAN_FROM_STABLE_BASELINE.md`
+- `40_RELEASE\Website_Publish_Package\holesy\index.html` still hashes to `Master 6`, not `Master 14`, so local approved-master state and local publish-package state must be treated separately.
+- direct shell fetch of `https://ptbooksinc.com/holesy/` was blocked by environment socket restrictions during this verification pass, so live website conclusions must either use the allowed web-inspection path or explicit publish evidence.
 
 ## 19. If The New Chat Needs A Fast Mental Model
 
