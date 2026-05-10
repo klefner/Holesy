@@ -1,6 +1,6 @@
 ## Holesy Product Backlog
 
-This backlog reflects the current project direction, approved gameplay work, the new standalone website deployment workflow, and the decision to treat codebase stabilization as Priority 1.
+This backlog reflects the current project direction, approved gameplay work, the standalone website deployment workflow, and the decision to work on wave-system performance before returning to new gameplay elements.
 
 ## Priority 0 — Operational Readiness
 
@@ -26,7 +26,7 @@ Outcome:
 
 - created a website-ready `index.html` package sourced from the approved master
 
-## Priority 1 — Codebase Stabilization
+## Completed Foundation — Codebase Stabilization
 
 Goal: make the code safer to change, easier to reason about, and less likely to regress.
 
@@ -130,13 +130,330 @@ Outcome:
 - the project now has a lightweight live-debug surface for reward tuning, input ownership, aid-drop timing, and wave-roster inspection, which satisfies the original low-overhead instrumentation goal for Priority 1
 - future debug additions can continue opportunistically without keeping this backlog epic open
 
+## Priority 1 — Wave System Performance
+
+Goal: bound wave-system load, reduce memory churn, and create a durable performance-profile foundation before resuming gameplay expansion.
+
+Status:
+
+- in progress
+
+Working decision:
+
+- performance work temporarily takes priority over new gameplay elements
+- once this priority is complete, return to Waves tuning and gameplay-element work
+- performance profile and difficulty setting are separate axes:
+  - performance profile = what the machine can handle
+  - difficulty = how hard the game should push within those caps
+
+Suggested implementation order:
+
+1. `PERF-001`
+2. `PERF-003`
+3. `PERF-004`
+4. `PERF-002`
+5. `PERF-005`
+6. `PERF-006`
+7. `PERF-007`
+
+`PERF-008` remains deferred until heavier unit types are ready. `PERF-009` is an ongoing standing review rule.
+
+### PERF-001 Establish Performance Profile System
+
+Type:
+
+- Foundation / Infrastructure
+
+Priority:
+
+- highest; blocks several other performance tasks
+
+Status:
+
+- planned
+
+Description:
+
+- create a centralized performance profile system with named tiers such as `low`, `medium`, `high`, and `ultra`
+- each tier defines values for every performance-sensitive variable in the game
+- the active profile is detected or selected at launch
+- every subsystem reads performance-sensitive values from the active profile instead of hardcoded constants
+
+Acceptance criteria:
+
+- a profile object exists with at least `low`, `medium`, `high`, and `ultra` tiers
+- every performance-sensitive value is sourced from the active profile, not a hardcoded number
+- profile is selected at launch by auto-detection, manual choice, or both
+- new performance-sensitive values added in future code default to being profile-controlled
+
+Notes:
+
+- future code reviews will flag hardcoded performance-sensitive constants for promotion into this profile
+
+### PERF-002 Concurrent Wave Cap With Soft Pressure Valve
+
+Type:
+
+- Performance / Gameplay system
+
+Priority:
+
+- high
+
+Depends on:
+
+- `PERF-001`
+
+Status:
+
+- planned
+
+Description:
+
+- implement a profile-controlled ceiling for concurrent planes and wave pressure
+- when the ceiling is reached, the wave timer pauses rather than firing, resetting, or decrementing
+- the timer resumes when active count drops below the ceiling
+
+Acceptance criteria:
+
+- a profile-controlled `MAX_CONCURRENT_PLANES` value gates new wave spawns
+- when the cap is reached, the wave timer pauses rather than firing or resetting
+- timer resumes when a plane exits the playfield or a wave is fully eaten
+- player experience: surviving longer feels like waves arrive faster, but the engine never exceeds its budget
+
+Notes:
+
+- this is a soft pressure valve, not a hard wall; design intent is preserved while engine load is bounded
+- the cap is a performance ceiling, not a difficulty cap
+- difficulty tuning still controls wave intervals, soldier counts, and accuracy beneath this ceiling
+
+### PERF-003 Geometry Pooling For Wave Units
+
+Type:
+
+- Performance / Memory
+
+Priority:
+
+- high
+
+Status:
+
+- planned
+
+Description:
+
+- `makePlaneMesh()`, `makeSoldierMesh()`, and `makeParachuteMesh()` currently allocate fresh geometry on every spawn
+- this creates GPU upload churn and garbage-collection spikes, and is the likely cause of observed wave-loading hitches
+- create wave-unit geometries once at startup and reuse them across all instances
+
+Acceptance criteria:
+
+- geometries for plane parts, soldier parts, parachute canopy, and parachute cords are created once at startup and reused across all instances
+- new spawns use shared geometry references; only mesh wrappers and transforms are per-instance
+- visual output is unchanged
+
+Notes:
+
+- this is a pure performance win with no intended gameplay change
+- pooling now also makes future heavier unit types, such as tanks and jets, cheaper to introduce
+
+### PERF-004 Proper Disposal On Unit Cleanup
+
+Type:
+
+- Performance / Memory leak
+
+Priority:
+
+- high
+
+Depends on:
+
+- `PERF-003`
+
+Status:
+
+- planned
+
+Description:
+
+- planes, soldiers, and paratroopers are removed from the scene without consistently disposing GPU resources
+- tracers already follow the intended disposal pattern
+- cleanup must explicitly dispose short-lived per-instance resources when units leave the playfield, are eaten, or convert state
+
+Acceptance criteria:
+
+- all needed geometry and material disposals happen on plane exit, soldier consumption, and paratrooper-to-soldier conversion
+- after `PERF-003`, only per-instance resources are disposed; pooled shared geometries are not disposed during normal unit cleanup
+- memory profiling over a 5+ minute session shows no unbounded geometry growth
+
+Notes:
+
+- short-lived units should clean up aggressively the moment they leave the playfield
+- order matters: pooling lands first so disposal logic correctly distinguishes shared from per-instance resources
+
+### PERF-005 Reuse Paratrooper Soldier Mesh On Landing
+
+Type:
+
+- Performance / Allocation
+
+Priority:
+
+- medium
+
+Depends on:
+
+- `PERF-003`
+
+Status:
+
+- planned
+
+Description:
+
+- when a paratrooper lands, the code removes the full paratrooper mesh and creates a new soldier mesh
+- instead, reparent the existing soldier mesh from the paratrooper group to the scene root
+
+Acceptance criteria:
+
+- paratrooper-to-soldier transition reparents the existing mesh
+- no new soldier mesh allocation occurs at landing
+- parachute mesh is the only thing disposed at landing
+
+Notes:
+
+- this becomes simpler after `PERF-003` because soldier mesh structure is already pooled
+
+### PERF-006 Throttle Per-Plane Engine Audio Updates
+
+Type:
+
+- Performance / Audio
+
+Priority:
+
+- medium
+
+Depends on:
+
+- `PERF-001`
+
+Status:
+
+- planned
+
+Description:
+
+- `updatePlaneEngineAudio` currently runs at 60Hz per plane and makes multiple audio API calls per plane per frame
+- throttle updates to a profile-controlled rate, defaulting around 10Hz, with no audible behavior change
+
+Acceptance criteria:
+
+- engine audio updates execute at a profile-controlled rate, default around 10Hz
+- no audible change in engine drone behavior at any plane count
+- per-frame audio API call count is reduced, especially with multiple planes active
+
+Notes:
+
+- update frequency should be profile-controlled so low-end hardware can reduce it further
+
+### PERF-007 Clear waveRosters On Game End
+
+Type:
+
+- Cleanup / Minor leak
+
+Priority:
+
+- low
+
+Status:
+
+- planned
+
+Description:
+
+- `waveRosters` entries are only deleted when a wave is fully eaten
+- partially eaten waves at game end can leave orphaned entries that persist across runs
+
+Acceptance criteria:
+
+- `waveRosters` is cleared when the game ends
+- verified that no roster entries persist between runs
+
+Notes:
+
+- this is a small leak but cheap to address alongside the broader cleanup pass
+
+### PERF-008 Future Review: Weighted Pressure Budget For Mixed Unit Types
+
+Type:
+
+- Deferred / Design hook
+
+Priority:
+
+- deferred; revisit when heavier units are introduced
+
+Status:
+
+- deferred
+
+Description:
+
+- when heavier unit types such as tanks or missile-firing jets are added, evaluate whether the concurrent cap should become a weighted budget
+- under a weighted budget, each unit type costs a different amount against one profile-controlled ceiling
+
+Acceptance criteria when revisited:
+
+- decision documented: weighted budget, per-type caps, or hybrid
+- if weighted, each unit type has a defined cost and the cap is profile-controlled
+- profiling data informs the decision
+
+Notes:
+
+- per-frame active behavior is the right unit of weight: AI ticks, collision checks, projectile spawning, and similar active costs
+- disposal-on-exit handles duration; the budget handles peak load
+- do not implement a weighted system speculatively
+
+### PERF-009 Standing Practice: Flag Hardcoded Performance Constants
+
+Type:
+
+- Process / Standing review rule
+
+Priority:
+
+- ongoing
+
+Status:
+
+- ongoing
+
+Description:
+
+- every future code review must flag hardcoded values that affect performance for promotion into the performance profile system
+- examples include counts, ranges, intervals, distances, quality settings, audio voice limits, particle counts, and draw distance
+
+Acceptance criteria:
+
+- each performance review includes a `hardcoded constants flagged` section
+- flagged constants are tracked as backlog items for promotion
+- new code submitted after `PERF-001` lands defaults to profile-controlled values
+
+Notes:
+
+- this is a standing instruction for the performance-review role, not a one-time task
+
 ## Priority 2 — Waves Mode Completion and Tuning
 
 Goal: finish the mode already in flight and make it feel deliberately paced.
 
 Status:
 
-- in progress
+- paused behind active Priority 1 performance work
 
 Progress:
 
@@ -359,10 +676,11 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Finish Priority 1 stabilization
-2. Then tackle the hardest content-system investment: the hybrid physics stack and collapse layer
-3. Then deepen powerups and mode variety on top of that stronger foundation
+1. Finish the new Priority 1 wave-system performance backlog.
+2. Return to Priority 2 Waves tuning and readability validation on the latest candidate.
+3. Then tackle the hardest content-system investment: the hybrid physics stack and collapse layer.
+4. Then deepen powerups and mode variety on top of that stronger foundation.
 
 The next active engineering task remains:
 
-- Priority 2 Waves mode tuning and readability validation on the latest candidate
+- Priority 1 performance profile and wave-system performance foundation, starting with `PERF-001`
