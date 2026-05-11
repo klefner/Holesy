@@ -44,7 +44,22 @@ Open validation required:
 4. Play into Waves mode and confirm soldier waves still deploy, fight, and clear normally under the default profile.
 5. Check low-profile Waves behavior specifically for smoother load and no broken transition, aid-drop, or soldier lifecycle behavior.
 
+Validation performed on 2026-05-11:
+
+- Extracted module script syntax check with `node --check`; result passed.
+- Confirmed the candidate contains `low`, `medium`, `high`, and `ultra` profile tiers.
+- Confirmed launch selection reads saved `localStorage.holesyPerformanceProfile` before fallback detection.
+- Confirmed the candidate launches locally in browser at build marker `Master 15.9`.
+- Started Waves mode and confirmed the HUD enters `Wave 1/4` without console errors.
+- Opened the debug overlay and confirmed it reports `build: Master 15.9` and the active performance profile.
+- Let the run advance into `Wave 2/4` under the active `low` profile; the debug overlay reported active soldiers, wave roster state, aid-drop state, and no browser console errors.
+
+Validation still open:
+
+- Forced browser verification for saved `medium`, `high`, and `ultra` profile values remains open because the browser automation security policy blocked programmatic `localStorage` injection. Manual console entry or another approved browser path is needed to complete that evidence.
+- Capture before/after frame-time evidence before promotion.
+
 Status:
 
-- candidate ready for browser validation
+- candidate partially browser-validated
 - not approved for promotion
