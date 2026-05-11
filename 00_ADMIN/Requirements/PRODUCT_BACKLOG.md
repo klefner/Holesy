@@ -170,7 +170,7 @@ Priority:
 
 Status:
 
-- planned
+- in progress; `Master 15.9 - performance-profile-system.html` candidate ready for browser validation
 
 Description:
 
@@ -189,6 +189,11 @@ Acceptance criteria:
 Notes:
 
 - future code reviews will flag hardcoded performance-sensitive constants for promotion into this profile
+- first candidate evidence:
+  - `20_TESTS/Candidate_Builds/Master 15.9 - performance-profile-system.html`
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_9_PERFORMANCE_PROFILE_SYSTEM.md`
+  - foundation now covers named launch-selected profiles and routes the first renderer, wave, traffic, people, music, and military knobs through the active tier
+  - remaining acceptance work is browser validation plus continued promotion of newly flagged performance-sensitive constants into the profile during later performance slices
 
 ### PERF-002 Concurrent Wave Cap With Soft Pressure Valve
 
@@ -475,6 +480,7 @@ Progress:
 - `Master 15.6 - transition-camera-and-soldier-escape.html` is the next candidate slice and targets restoration of the liked transition wide-camera feel plus a defect where rivals can linger under concentrated soldier fire
 - `Master 15.7 - predrop-aid-intel-fix.html` is the next candidate slice and targets a confirmed unfair defect where AI can wait on the exact future aid landing spot before the drop happens
 - `Master 15.8 - aid-stutter-camera-and-mid-ai-buff.html` is the next candidate slice and targets post-aid loser stutter, a transition camera that rose too high, and slightly underpowered non-Gulp rivals
+- `Master 15.9 - performance-profile-system.html` starts `PERF-001` from the approved `Master 15` baseline and adds launch-selected performance tiers before the remaining wave-system performance work
 
 Backlog items:
 
@@ -548,7 +554,7 @@ Backlog items:
 
 ## Priority 4 — Powerup Expansion And Strategic Depth
 
-Goal: deepen moment-to-moment decision-making and add more shareable “wow” moments.
+Goal: deepen moment-to-moment decision-making and add more shareable "wow" moments.
 
 Backlog items:
 
@@ -633,7 +639,7 @@ Backlog items:
   - endless scoring framing
 - camera / POV switch
   - gameplay UI toggle
-  - `Off` = current slanted tactical “Diablo” perspective
+  - `Off` = current slanted tactical "Diablo" perspective
   - `On` = first-person hover perspective
   - first-person keeps the forward-facing half of the hole visible while the world fills the rest of the frame
   - buildings should feel taller than the player at close range, with roofs and upper floors mostly hidden except at distance
@@ -683,4 +689,4 @@ Backlog items:
 
 The next active engineering task remains:
 
-- Priority 1 performance profile and wave-system performance foundation, starting with `PERF-001`
+- validate the `PERF-001` candidate (`Master 15.9 - performance-profile-system.html`), then continue the remaining Priority 1 wave-system performance backlog
