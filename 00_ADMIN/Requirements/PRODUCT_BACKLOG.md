@@ -481,9 +481,11 @@ Progress:
 - `Master 15.7 - predrop-aid-intel-fix.html` is the next candidate slice and targets a confirmed unfair defect where AI can wait on the exact future aid landing spot before the drop happens
 - `Master 15.8 - aid-stutter-camera-and-mid-ai-buff.html` is the next candidate slice and targets post-aid loser stutter, a transition camera that rose too high, and slightly underpowered non-Gulp rivals
 - `Master 15.9 - performance-profile-system.html` starts `PERF-001` from the approved `Master 15` baseline and adds launch-selected performance tiers before the remaining wave-system performance work
+- `Master 15.10 - wave-end-countdown-audio.html` adds a 3-second audible countdown before each active Waves round timer reaches zero
 
 Backlog items:
 
+- validate that the `15.10` wave-end countdown sound plays once at 3, 2, and 1 seconds before each Waves timer expires
 - continue fine-tuning wave duration, cadence, and roster pressure
 - confirm the final difficulty curve feels fair on desktop and mobile
 - improve progression readability and signaling where still needed
