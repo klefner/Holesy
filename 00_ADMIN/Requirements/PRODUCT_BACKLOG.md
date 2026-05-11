@@ -482,10 +482,13 @@ Progress:
 - `Master 15.8 - aid-stutter-camera-and-mid-ai-buff.html` is the next candidate slice and targets post-aid loser stutter, a transition camera that rose too high, and slightly underpowered non-Gulp rivals
 - `Master 15.9 - performance-profile-system.html` starts `PERF-001` from the approved `Master 15` baseline and adds launch-selected performance tiers before the remaining wave-system performance work
 - `Master 15.10 - wave-end-countdown-audio.html` adds a 3-second audible countdown before each active Waves round timer reaches zero
+- `Master 15.11 - audio-state-cleanup.html` responds to failed `15.10` audible validation by strengthening the countdown cue and gating aid, soldier, and plane sounds to active gameplay only
 
 Backlog items:
 
-- validate that the `15.10` wave-end countdown sound plays once at 3, 2, and 1 seconds before each Waves timer expires
+- validate that the `15.11` wave-end countdown sound plays once at 3, 2, and 1 seconds before each Waves timer expires
+- validate that aid radar, soldier callouts, gunshots, and plane engine sounds stop on game-over and mode-select screens
+- later difficulty work: player-selectable difficulty must make the hardest setting materially harder to survive while still beatable
 - continue fine-tuning wave duration, cadence, and roster pressure
 - confirm the final difficulty curve feels fair on desktop and mobile
 - improve progression readability and signaling where still needed
