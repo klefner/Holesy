@@ -605,6 +605,18 @@ Progress:
 
 Backlog items:
 
+- add temporary game stats tracker on the game-select screen for performance and tuning comparisons:
+  - persist historical run data locally
+  - track total games played
+  - track win/loss/abandon rate by game mode
+  - track win/loss rate by difficulty
+  - track game duration and average duration
+  - track ending-reason histogram, including score win/loss, eaten by rival, shot by soldiers, survival win/loss, waves survived, and abandoned runs
+  - expose the data temporarily on the mode-select screen as a test harness, not as permanent player-facing UI
+  - first candidate evidence:
+    - `20_TESTS/Candidate_Builds/Master 15.30 - game-stats-tracker.html`
+    - `20_TESTS/Candidate_Builds/Master 15.30 - game-stats-tracker.css`
+    - `20_TESTS/Candidate_Builds/Master 15.30 - game-stats.js`
 - redesign the hole swirling wind audio so it sounds more natural, less anxious, and less obtrusive before re-enabling it
 - validate that `15.25` passes the remaining performance test set: plane cap pause/resume, paratrooper mesh reparent, engine-audio throttle, game-end roster cleanup, and no console errors
 - validate that `Normal` preserves the current baseline feel
@@ -810,12 +822,13 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Validate `PERF-010` modular client architecture JS/data proof candidate.
-2. Resume the remaining Priority 1 wave-system performance backlog after the architecture gate is clear.
-3. Return to Priority 2 Waves tuning and readability validation on the latest candidate.
-4. Then tackle the hardest content-system investment: the hybrid physics stack and collapse layer.
-5. Then deepen powerups and mode variety on top of that stronger foundation.
+1. Validate `Master 15.30 - game-stats-tracker.html` as the temporary stats-tracking harness.
+2. Validate `PERF-010` modular client architecture JS/data proof candidate.
+3. Resume the remaining Priority 1 wave-system performance backlog after the architecture gate is clear.
+4. Return to Priority 2 Waves tuning and readability validation on the latest candidate.
+5. Then tackle the hardest content-system investment: the hybrid physics stack and collapse layer.
+6. Then deepen powerups and mode variety on top of that stronger foundation.
 
 The next active engineering task remains:
 
-- validate `Master 15.29 - modular-js-data-proof.html`, then resume the paused Priority 1 performance backlog
+- validate `Master 15.30 - game-stats-tracker.html`, then resume the paused Priority 1 performance backlog
