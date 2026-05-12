@@ -211,7 +211,7 @@ Depends on:
 
 Status:
 
-- in progress; `Master 15.24 - wave-unit-cleanup-disposal.html` candidate ready for validation
+- in progress; `Master 15.25 - remaining-performance-pass.html` candidate ready for validation
 
 Description:
 
@@ -231,6 +231,10 @@ Notes:
 - this is a soft pressure valve, not a hard wall; design intent is preserved while engine load is bounded
 - the cap is a performance ceiling, not a difficulty cap
 - difficulty tuning still controls wave intervals, soldier counts, and accuracy beneath this ceiling
+- first candidate evidence:
+  - `20_TESTS/Candidate_Builds/Master 15.25 - remaining-performance-pass.html`
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_25_REMAINING_PERFORMANCE_PASS.md`
+  - performance profiles now define max concurrent planes; wave deployment timer pauses while at the active profile cap
 
 ### PERF-003 Geometry Pooling For Wave Units
 
@@ -324,7 +328,7 @@ Depends on:
 
 Status:
 
-- planned
+- in progress; `Master 15.25 - remaining-performance-pass.html` candidate ready for validation
 
 Description:
 
@@ -340,6 +344,10 @@ Acceptance criteria:
 Notes:
 
 - this becomes simpler after `PERF-003` because soldier mesh structure is already pooled
+- first candidate evidence:
+  - `20_TESTS/Candidate_Builds/Master 15.25 - remaining-performance-pass.html`
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_25_REMAINING_PERFORMANCE_PASS.md`
+  - paratrooper landing now reparents the existing descending soldier mesh instead of allocating a new soldier mesh
 
 ### PERF-006 Throttle Per-Plane Engine Audio Updates
 
@@ -357,7 +365,7 @@ Depends on:
 
 Status:
 
-- planned
+- in progress; `Master 15.25 - remaining-performance-pass.html` candidate ready for validation
 
 Description:
 
@@ -373,6 +381,10 @@ Acceptance criteria:
 Notes:
 
 - update frequency should be profile-controlled so low-end hardware can reduce it further
+- first candidate evidence:
+  - `20_TESTS/Candidate_Builds/Master 15.25 - remaining-performance-pass.html`
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_25_REMAINING_PERFORMANCE_PASS.md`
+  - performance profiles now define the plane-engine audio update rate; movement remains per-frame while audio API updates are throttled
 
 ### PERF-007 Clear waveRosters On Game End
 
@@ -386,7 +398,7 @@ Priority:
 
 Status:
 
-- planned
+- in progress; `Master 15.25 - remaining-performance-pass.html` candidate ready for validation
 
 Description:
 
@@ -399,6 +411,11 @@ Acceptance criteria:
 - verified that no roster entries persist between runs
 
 Notes:
+
+- first candidate evidence:
+  - `20_TESTS/Candidate_Builds/Master 15.25 - remaining-performance-pass.html`
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_25_REMAINING_PERFORMANCE_PASS.md`
+  - `waveRosters` now clears through a shared helper on reset, wave teardown, and game end
 
 - this is a small leak but cheap to address alongside the broader cleanup pass
 
@@ -512,9 +529,11 @@ Progress:
 - User validation passed for `Master 15.23`: wave-unit geometry pooling preserved visuals and behavior
 - `Master 15.24 - wave-unit-cleanup-disposal.html` starts `PERF-004` by disposing per-instance wave-unit resources while protecting pooled geometries
 - User validation passed for `Master 15.24`: wave-unit cleanup/disposal looked good
+- `Master 15.25 - remaining-performance-pass.html` addresses the remaining active performance backlog by adding the profile plane cap, paratrooper soldier-mesh reparenting, plane-engine audio throttling, and game-end roster clearing
 
 Backlog items:
 
+- validate that `15.25` passes the remaining performance test set: plane cap pause/resume, paratrooper mesh reparent, engine-audio throttle, game-end roster cleanup, and no console errors
 - validate that `Normal` preserves the current baseline feel
 - validate that `15.21` keeps `Ultra` materially harder to survive than `Normal` while still beatable
 - validate that higher difficulty makes targets harder to find and high-value towers rarer
