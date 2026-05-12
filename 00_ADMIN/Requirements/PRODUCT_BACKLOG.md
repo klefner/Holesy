@@ -496,11 +496,13 @@ Progress:
 - `Master 15.20 - rival-ai-difficulty-scaling.html` responds to playtest feedback that rivals still score too poorly and visibly dither by making higher-difficulty rivals faster, less random, more committed, better at value-stream routing, more willing to contest objects, and more decisive when chasing
 - User validation passed for `Master 15.20` with continuing observation: `Ultra` is obviously harder, and rival AI improvements are accepted for continued tuning
 - `Master 15.21 - difficulty-hole-eat-growth.html` adds difficulty-scaled rival-consumption rewards so easier modes grow more from eating another hole while harder modes grow less
+- `Master 15.22 - player-eaten-return.html` adds a five-second post-consumption spectator window, fades to black, and returns to game-mode selection after the player is eaten
 
 Backlog items:
 
 - validate that `Normal` preserves the current baseline feel
 - validate that `15.21` keeps `Ultra` materially harder to survive than `Normal` while still beatable
+- validate that `15.22` lets the player watch for five seconds after being eaten, then fades to black and returns to game-mode selection
 - validate that higher difficulty makes targets harder to find and high-value towers rarer
 - validate that higher difficulty makes rival holes score and route meaningfully better
 - validate that hole-eat score/radius rewards scale down on harder difficulties
