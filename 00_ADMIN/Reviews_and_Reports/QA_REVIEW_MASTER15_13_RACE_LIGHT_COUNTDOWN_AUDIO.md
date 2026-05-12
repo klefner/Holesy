@@ -59,10 +59,15 @@ Validation performed on 2026-05-11:
 
 Validation still open:
 
-- Audible style confirmation by the user.
 - Visible/debug cue proof confirmation by the user.
+
+Validation finding:
+
+- User confirmed the beep sound style was right.
+- User requested about 30% more volume.
+- User reported the beep did not fire at the same time the visible timer counted down.
 
 Status:
 
-- candidate prepared for validation
+- candidate superseded by `Master 15.14 - synced-race-light-countdown.html`
 - not approved for promotion
