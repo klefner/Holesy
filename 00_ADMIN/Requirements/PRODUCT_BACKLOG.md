@@ -483,10 +483,14 @@ Progress:
 - `Master 15.9 - performance-profile-system.html` starts `PERF-001` from the approved `Master 15` baseline and adds launch-selected performance tiers before the remaining wave-system performance work
 - `Master 15.10 - wave-end-countdown-audio.html` adds a 3-second audible countdown before each active Waves round timer reaches zero
 - `Master 15.11 - audio-state-cleanup.html` responds to failed `15.10` audible validation by strengthening the countdown cue and gating aid, soldier, and plane sounds to active gameplay only
+- `Master 15.12 - countdown-audio-proof.html` responds to failed `15.11` validation by routing the countdown cue directly to the audio destination and adding visible/debug proof whenever 3, 2, or 1 fires
+- `Master 15.13 - race-light-countdown-audio.html` responds to `15.12` sound-design feedback by keeping the proven cue trigger/proof path but changing the audio to three identical race-start-light style beeps
 
 Backlog items:
 
-- validate that the `15.11` wave-end countdown sound plays once at 3, 2, and 1 seconds before each Waves timer expires
+- validate that the `15.13` wave-end countdown sound plays once at 3, 2, and 1 seconds before each Waves timer expires
+- validate that the three `15.13` countdown beeps use the same tone instead of rising pitch
+- validate that `15.13` shows visible `BEEP 3/2/1` proof and debug-overlay cue proof during the final 3 seconds of each wave
 - validate that aid radar, soldier callouts, gunshots, and plane engine sounds stop on game-over and mode-select screens
 - later difficulty work: player-selectable difficulty must make the hardest setting materially harder to survive while still beatable
 - continue fine-tuning wave duration, cadence, and roster pressure
