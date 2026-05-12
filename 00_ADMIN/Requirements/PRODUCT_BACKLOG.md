@@ -136,11 +136,12 @@ Goal: bound wave-system load, reduce memory churn, and create a durable performa
 
 Status:
 
-- in progress
+- paused pending architecture decision
 
 Working decision:
 
 - performance work temporarily takes priority over new gameplay elements
+- active performance implementation is paused until the large-file architecture direction below is captured well enough to avoid optimizing into a dead-end structure
 - once this priority is complete, return to Waves tuning and gameplay-element work
 - performance profile and difficulty setting are separate axes:
   - performance profile = what the machine can handle
@@ -479,6 +480,67 @@ Notes:
 
 - this is a standing instruction for the performance-review role, not a one-time task
 
+### PERF-010 Architecture Decision: Modular Client Split
+
+Type:
+
+- Architecture / Maintainability / Long-term performance support
+
+Priority:
+
+- highest while Priority 1 is paused; decision gate before more broad performance work
+
+Status:
+
+- in progress; architecture decision recorded and first CSS extraction proof candidate created
+
+Decision summary:
+
+- yes, split the giant single-file HTML game over time
+- no, a Python/server rewrite will not directly fix browser runtime performance
+- keep moment-to-moment gameplay client-side: game loop, rendering, input, animation, collision, audio, and AI remain in browser JavaScript
+- use a backend only for server-type needs such as accounts, cloud saves, leaderboards, analytics, downloadable content, multiplayer coordination, or anti-cheat
+
+Target direction:
+
+- move toward modular browser assets:
+  - `index.html`
+  - `css/styles.css`
+  - `js/main.js`
+  - `js/gameLoop.js`
+  - `js/player.js`
+  - `js/enemies.js`
+  - `js/levels.js`
+  - `js/ui.js`
+  - `js/saveSystem.js`
+  - `assets/images/`
+  - `assets/audio/`
+  - `data/levels.json`
+- use modern JavaScript modules for clean organization
+- consider code splitting / lazy loading later for levels, art, music, enemy types, and cutscenes
+- consider Web Workers only for heavy background work such as pathfinding, procedural generation, AI calculations, map generation, or large save/load compression
+- consider OffscreenCanvas only if rendering itself becomes the measured bottleneck
+
+Acceptance criteria:
+
+- create a short architecture decision record documenting client-side modularization as the approved direction
+- define the first safe migration slice that does not change gameplay behavior
+- preserve the existing candidate-build workflow during the transition
+- identify which code should stay in the main thread and which future work might move to workers
+- identify backend/server use cases separately from runtime FPS concerns
+- prove one low-risk extraction slice can load through the browser without changing gameplay behavior
+- update the current recommendation after the decision is documented
+
+Notes:
+
+- modularization improves maintainability and load control; it does not automatically improve runtime FPS
+- profile first before adding workers, OffscreenCanvas, or backend complexity
+- this item exists to prevent the project from treating Python/server work as a solution to browser-frame performance
+- first proof candidate:
+  - `20_TESTS/Candidate_Builds/Master 15.28 - modular-css-proof.html`
+  - `20_TESTS/Candidate_Builds/Master 15.28 - modular-css-proof.css`
+  - no gameplay logic changed; the former inline stylesheet was moved to an adjacent CSS file
+
 ## Priority 2 — Waves Mode Completion and Tuning
 
 Goal: finish the mode already in flight and make it feel deliberately paced.
@@ -741,11 +803,12 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Finish the new Priority 1 wave-system performance backlog.
-2. Return to Priority 2 Waves tuning and readability validation on the latest candidate.
-3. Then tackle the hardest content-system investment: the hybrid physics stack and collapse layer.
-4. Then deepen powerups and mode variety on top of that stronger foundation.
+1. Validate `PERF-010` modular client architecture proof candidate.
+2. Resume the remaining Priority 1 wave-system performance backlog after the architecture gate is clear.
+3. Return to Priority 2 Waves tuning and readability validation on the latest candidate.
+4. Then tackle the hardest content-system investment: the hybrid physics stack and collapse layer.
+5. Then deepen powerups and mode variety on top of that stronger foundation.
 
 The next active engineering task remains:
 
-- validate the `PERF-001` candidate (`Master 15.9 - performance-profile-system.html`), then continue the remaining Priority 1 wave-system performance backlog
+- validate `Master 15.28 - modular-css-proof.html`, then resume the paused Priority 1 performance backlog
