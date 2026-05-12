@@ -59,9 +59,18 @@ Validation performed on 2026-05-12:
 
 Validation still open:
 
-- User gameplay validation of difficulty-scaled paratrooper drop timing.
+- None.
+
+User validation on 2026-05-12:
+
+- Everything seemed good.
+- User ran 15 games, five per game mode / difficulty layer:
+  - Normal: 5 wins, 0 losses, 100% win rate
+  - Hard: 3 wins, 2 losses, 60% win rate
+  - Ultra: 1 win, 4 losses, 20% win rate
+- User assessed the win-rate pattern as reasonable for a three-layer difficulty model.
 
 Status:
 
-- candidate prepared for validation
-- not approved for promotion
+- user validation passed
+- accepted as the active basis for the next candidate slice
