@@ -60,9 +60,13 @@ Validation performed on 2026-05-11:
 
 Validation still open:
 
-- User gameplay validation of the full PERF-004 test set.
+- None.
+
+User validation on 2026-05-12:
+
+- All looked good.
 
 Status:
 
-- candidate prepared for validation
-- not approved for promotion
+- user validation passed
+- accepted as the active basis for the next candidate slice
