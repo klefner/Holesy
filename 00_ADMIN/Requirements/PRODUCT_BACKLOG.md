@@ -488,10 +488,13 @@ Progress:
 - `Master 15.14 - synced-race-light-countdown.html` responds to `15.13` timing feedback by increasing beep volume and triggering the cue from the same HUD update that displays `0:03`, `0:02`, and `0:01`
 - `Master 15.15 - new-wave-text-and-audio-stop.html` changes countdown proof text to `NEW WAVE IN X` and hardens menu/game-over cleanup so active non-music samples stop immediately
 - User validation passed for `Master 15.15`: countdown timing, race-light audio, `NEW WAVE IN X` text, and non-music audio cleanup all passed
+- `Master 15.16 - selectable-difficulty.html` adds a gameplay difficulty dropdown above game-mode selection with `Normal`, `Hard`, and `Ultra`; the setting persists and tunes soldier pressure, aid timing, and rival AI efficiency separately from the performance profile
 
 Backlog items:
 
-- add player-selectable difficulty; hardest setting must be materially harder to survive while still beatable
+- validate that `15.16` shows the difficulty dropdown above the game modes and persists the selected value
+- validate that `Normal` preserves the current baseline feel
+- validate that `Ultra` is materially harder to survive than `Normal` while still beatable
 - continue fine-tuning wave duration, cadence, and roster pressure
 - confirm the final difficulty curve feels fair on desktop and mobile
 - improve progression readability and signaling where still needed
