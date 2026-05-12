@@ -63,7 +63,11 @@ Validation still open:
 - User confirmation of timer synchronization.
 - User confirmation of louder race-light beep volume.
 
+Follow-up:
+
+- User requested the visible countdown proof change from `BEEP X` to `NEW WAVE IN X`.
+
 Status:
 
-- candidate prepared for validation
+- candidate superseded by `Master 15.15 - new-wave-text-and-audio-stop.html`
 - not approved for promotion
