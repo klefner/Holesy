@@ -663,6 +663,10 @@ Backlog items:
 
 Goal: introduce `hole.io`-style stacked-object variety with convincing gravity-driven collapse while preserving the current battlefield systems.
 
+Status:
+
+- in progress; first skyscraper-only collapse prototype created for validation
+
 Backlog items:
 
 - use the shared tank/destructible-building concept before scoping military heavy-unit or building-damage work:
@@ -671,6 +675,12 @@ Backlog items:
 - create stack object registry / factory layer
 - implement gravity-driven stacked object collapse and landing
 - support hole consumption against physics-backed stack pieces
+- first in-game prototype:
+  - `20_TESTS/Candidate_Builds/Master 15.31 - skyscraper-collapse-prototype.html`
+  - skyscrapers are segmented into stacked edible chunks instead of one large block
+  - nearby holes destabilize the stack
+  - chunks fall, tumble, bounce, settle, and remain consumable while falling
+  - current implementation is a lightweight in-game prototype; full physics-library integration remains a future decision if the feel validates
 - build first stack families:
   - crate column
   - log jenga
