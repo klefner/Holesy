@@ -211,7 +211,7 @@ Depends on:
 
 Status:
 
-- in progress; `Master 15.23 - wave-unit-geometry-pooling.html` candidate ready for browser validation
+- planned
 
 Description:
 
@@ -244,7 +244,7 @@ Priority:
 
 Status:
 
-- planned
+- complete for current candidate; user validation passed for `Master 15.23 - wave-unit-geometry-pooling.html`
 
 Description:
 
@@ -266,6 +266,7 @@ Notes:
   - `20_TESTS/Candidate_Builds/Master 15.23 - wave-unit-geometry-pooling.html`
   - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_23_WAVE_UNIT_GEOMETRY_POOLING.md`
   - plane, soldier, parachute canopy, and parachute cord geometries now reuse shared geometry references while mesh wrappers remain per spawn
+  - user validation passed on 2026-05-11
 
 ### PERF-004 Proper Disposal On Unit Cleanup
 
@@ -503,12 +504,12 @@ Progress:
 - `Master 15.22 - player-eaten-return.html` adds a five-second post-consumption spectator window, fades to black, and returns to game-mode selection after the player is eaten
 - User validation passed for `Master 15.22`: player-eaten fade-to-black return flow works perfectly
 - `Master 15.23 - wave-unit-geometry-pooling.html` starts `PERF-003` by pooling plane, soldier, parachute canopy, and parachute cord geometries for wave units
+- User validation passed for `Master 15.23`: wave-unit geometry pooling preserved visuals and behavior
 
 Backlog items:
 
 - validate that `Normal` preserves the current baseline feel
 - validate that `15.21` keeps `Ultra` materially harder to survive than `Normal` while still beatable
-- validate that `15.23` preserves plane, paratrooper, and soldier visuals while reusing wave-unit geometries
 - validate that higher difficulty makes targets harder to find and high-value towers rarer
 - validate that higher difficulty makes rival holes score and route meaningfully better
 - validate that hole-eat score/radius rewards scale down on harder difficulties

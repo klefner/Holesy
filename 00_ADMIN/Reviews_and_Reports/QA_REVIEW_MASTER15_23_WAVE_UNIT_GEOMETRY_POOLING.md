@@ -59,9 +59,13 @@ Validation performed on 2026-05-11:
 
 Validation still open:
 
-- User visual confirmation that plane, paratrooper, and soldier visuals remain unchanged during Waves mode.
+- None.
+
+User validation on 2026-05-11:
+
+- All tests passed.
 
 Status:
 
-- candidate prepared for validation
-- not approved for promotion
+- user validation passed
+- accepted as the active basis for the next candidate slice
