@@ -74,9 +74,8 @@ Validation performed on 2026-05-12:
 
 Validation still open:
 
-- Player-facing collapse feel validation.
-- User validation.
+- continue observation during future feature validation
 
 Status:
 
-- ready for browser smoke check and gameplay validation
+- passed user validation; accepted for continued observation

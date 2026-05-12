@@ -602,6 +602,7 @@ Progress:
 - `Master 15.26 - hole-wind-audio-disabled.html` disables the hole swirling wind audio by configuration while preserving the code for later redesign
 - `Master 15.27 - difficulty-parachute-drop-time.html` makes paratrooper fall time difficulty-scaled: Normal baseline, Hard faster, Ultra fastest
 - User validation passed for `Master 15.27`: 15-game run produced a reasonable three-layer difficulty pattern, with Normal 100%, Hard 60%, and Ultra 20% win rates
+- `Master 15.33 - car-panic-escape.html` adds car panic escape behavior: some moving cars accelerate away from nearby holes, may lose control, leave the road, crash into world objects, stop as smoking/flaming wrecks, and are worth more while still driving than after crashing
 
 Backlog items:
 
