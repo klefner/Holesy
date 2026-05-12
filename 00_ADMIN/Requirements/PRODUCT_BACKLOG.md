@@ -604,6 +604,7 @@ Progress:
 - User validation passed for `Master 15.27`: 15-game run produced a reasonable three-layer difficulty pattern, with Normal 100%, Hard 60%, and Ultra 20% win rates
 - `Master 15.33 - car-panic-escape.html` adds car panic escape behavior: some moving cars accelerate away from nearby holes, may lose control, leave the road, crash into world objects, stop as smoking/flaming wrecks, and are worth more while still driving than after crashing
 - `Master 15.34 - skyscraper-collapse-size-gate.html` restores the old skyscraper size gate before collapse, makes rivals value fresh collapse spills more often, and gives individual chunk consumption a smaller building-break sound than the full collapse
+- `Master 15.35 - car-crash-visibility-tuning.html` responds to playtest feedback that car escape was visible but crashes were not; increases panic crash visibility while keeping normal traffic behavior unchanged
 
 Backlog items:
 
