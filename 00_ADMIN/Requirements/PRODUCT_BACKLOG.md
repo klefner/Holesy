@@ -491,11 +491,12 @@ Progress:
 - `Master 15.16 - selectable-difficulty.html` adds a gameplay difficulty dropdown above game-mode selection with `Normal`, `Hard`, and `Ultra`; the setting persists and tunes soldier pressure, aid timing, and rival AI efficiency separately from the performance profile
 - `Master 15.17 - difficulty-descriptions.html` adds explanatory text below the difficulty selector and updates it when the user changes difficulty
 - User validation passed for `Master 15.17`: difficulty description placement/copy passed
+- `Master 15.18 - ultra-difficulty-tuning.html` responds to playtest feedback that the three difficulty levels were not discernible by making `Hard` and especially `Ultra` materially stronger; `Ultra` now starts troop pressure in Wave 1 and scales soldier count, cadence, damage, hit chance, aid scarcity, and rival AI
 
 Backlog items:
 
 - validate that `Normal` preserves the current baseline feel
-- validate that `Ultra` is materially harder to survive than `Normal` while still beatable
+- validate that `15.18` makes `Ultra` materially harder to survive than `Normal` while still beatable
 - continue fine-tuning wave duration, cadence, and roster pressure
 - confirm the final difficulty curve feels fair on desktop and mobile
 - improve progression readability and signaling where still needed
