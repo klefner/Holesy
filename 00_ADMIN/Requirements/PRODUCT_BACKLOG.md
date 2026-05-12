@@ -531,9 +531,11 @@ Progress:
 - User validation passed for `Master 15.24`: wave-unit cleanup/disposal looked good
 - `Master 15.25 - remaining-performance-pass.html` addresses the remaining active performance backlog by adding the profile plane cap, paratrooper soldier-mesh reparenting, plane-engine audio throttling, and game-end roster clearing
 - `Master 15.26 - hole-wind-audio-disabled.html` disables the hole swirling wind audio by configuration while preserving the code for later redesign
+- `Master 15.27 - difficulty-parachute-drop-time.html` makes paratrooper fall time difficulty-scaled: Normal baseline, Hard faster, Ultra fastest
 
 Backlog items:
 
+- validate that `15.27` makes soldier drop time scale inversely as difficulty increases
 - redesign the hole swirling wind audio so it sounds more natural, less anxious, and less obtrusive before re-enabling it
 - validate that `15.25` passes the remaining performance test set: plane cap pause/resume, paratrooper mesh reparent, engine-audio throttle, game-end roster cleanup, and no console errors
 - validate that `Normal` preserves the current baseline feel
