@@ -603,6 +603,7 @@ Progress:
 - `Master 15.27 - difficulty-parachute-drop-time.html` makes paratrooper fall time difficulty-scaled: Normal baseline, Hard faster, Ultra fastest
 - User validation passed for `Master 15.27`: 15-game run produced a reasonable three-layer difficulty pattern, with Normal 100%, Hard 60%, and Ultra 20% win rates
 - `Master 15.33 - car-panic-escape.html` adds car panic escape behavior: some moving cars accelerate away from nearby holes, may lose control, leave the road, crash into world objects, stop as smoking/flaming wrecks, and are worth more while still driving than after crashing
+- `Master 15.34 - skyscraper-collapse-size-gate.html` restores the old skyscraper size gate before collapse, makes rivals value fresh collapse spills more often, and gives individual chunk consumption a smaller building-break sound than the full collapse
 
 Backlog items:
 
@@ -689,6 +690,12 @@ Backlog items:
   - use one consistent gravity rule while varying collapse paths through outward fracture force, nearby-object influence, and block-to-block contact
   - keep blocks heavy: short bounces, limited travel, and visible settling
   - vary collapse sound by situation while staying in the building-breaking-apart sound family
+- collapse rules correction:
+  - `20_TESTS/Candidate_Builds/Master 15.34 - skyscraper-collapse-size-gate.html`
+  - restore the original whole-skyscraper size requirement before any hole can destabilize the tower
+  - keep collapsed chunks individually edible only after a valid collapse
+  - bias rival AI toward nearby fresh collapse debris so rivals sometimes stay to gather the spill
+  - make chunk-eating sounds smaller than the full-building collapse sound
 - build first stack families:
   - crate column
   - log jenga
