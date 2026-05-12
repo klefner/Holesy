@@ -57,9 +57,13 @@ Validation performed on 2026-05-11:
 
 Validation still open:
 
-- User confirmation of the player-eaten five-second return flow.
+- None.
+
+User validation on 2026-05-11:
+
+- Fade to black works perfectly.
 
 Status:
 
-- candidate prepared for validation
-- not approved for promotion
+- user validation passed
+- accepted as the active basis for the next candidate slice

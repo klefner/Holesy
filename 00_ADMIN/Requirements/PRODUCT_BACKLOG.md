@@ -211,7 +211,7 @@ Depends on:
 
 Status:
 
-- planned
+- in progress; `Master 15.23 - wave-unit-geometry-pooling.html` candidate ready for browser validation
 
 Description:
 
@@ -262,6 +262,10 @@ Notes:
 
 - this is a pure performance win with no intended gameplay change
 - pooling now also makes future heavier unit types, such as tanks and jets, cheaper to introduce
+- first candidate evidence:
+  - `20_TESTS/Candidate_Builds/Master 15.23 - wave-unit-geometry-pooling.html`
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_23_WAVE_UNIT_GEOMETRY_POOLING.md`
+  - plane, soldier, parachute canopy, and parachute cord geometries now reuse shared geometry references while mesh wrappers remain per spawn
 
 ### PERF-004 Proper Disposal On Unit Cleanup
 
@@ -497,12 +501,14 @@ Progress:
 - User validation passed for `Master 15.20` with continuing observation: `Ultra` is obviously harder, and rival AI improvements are accepted for continued tuning
 - `Master 15.21 - difficulty-hole-eat-growth.html` adds difficulty-scaled rival-consumption rewards so easier modes grow more from eating another hole while harder modes grow less
 - `Master 15.22 - player-eaten-return.html` adds a five-second post-consumption spectator window, fades to black, and returns to game-mode selection after the player is eaten
+- User validation passed for `Master 15.22`: player-eaten fade-to-black return flow works perfectly
+- `Master 15.23 - wave-unit-geometry-pooling.html` starts `PERF-003` by pooling plane, soldier, parachute canopy, and parachute cord geometries for wave units
 
 Backlog items:
 
 - validate that `Normal` preserves the current baseline feel
 - validate that `15.21` keeps `Ultra` materially harder to survive than `Normal` while still beatable
-- validate that `15.22` lets the player watch for five seconds after being eaten, then fades to black and returns to game-mode selection
+- validate that `15.23` preserves plane, paratrooper, and soldier visuals while reusing wave-unit geometries
 - validate that higher difficulty makes targets harder to find and high-value towers rarer
 - validate that higher difficulty makes rival holes score and route meaningfully better
 - validate that hole-eat score/radius rewards scale down on harder difficulties
