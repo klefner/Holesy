@@ -681,6 +681,13 @@ Backlog items:
   - nearby holes destabilize the stack
   - chunks fall, tumble, bounce, settle, and remain consumable while falling
   - current implementation is a lightweight in-game prototype; full physics-library integration remains a future decision if the feel validates
+- collapse variation follow-up:
+  - `20_TESTS/Candidate_Builds/Master 15.32 - collapse-variation-and-audio.html`
+  - preserve skyscraper integrity while standing with aligned floors and a clean tower footprint
+  - fracture each floor into 4-8 smaller square-ish edible blocks instead of one oversized slab
+  - use one consistent gravity rule while varying collapse paths through outward fracture force, nearby-object influence, and block-to-block contact
+  - keep blocks heavy: short bounces, limited travel, and visible settling
+  - vary collapse sound by situation while staying in the building-breaking-apart sound family
 - build first stack families:
   - crate column
   - log jenga
