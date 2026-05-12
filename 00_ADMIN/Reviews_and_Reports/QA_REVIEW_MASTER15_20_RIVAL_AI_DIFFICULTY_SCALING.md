@@ -58,12 +58,13 @@ Validation performed on 2026-05-11:
 - Candidate content confirms the `Master 15.20` build marker.
 - Candidate content confirms route-lookahead and wander-bias difficulty controls are present.
 - Diff hygiene check passed with line-ending warnings only.
+- User accepted the tests as passed with continued observation for difficulty scaling.
 
 Validation still open:
 
-- User confirmation of rival scoring and routing behavior.
+- Continued observation of rival scoring and routing behavior in later builds.
 
 Status:
 
-- candidate prepared for validation
-- not approved for promotion
+- user-validated for continuation
+- approved as the current basis for the next difficulty-scaling slice

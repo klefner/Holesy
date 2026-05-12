@@ -494,13 +494,16 @@ Progress:
 - `Master 15.18 - ultra-difficulty-tuning.html` responds to playtest feedback that the three difficulty levels were not discernible by making `Hard` and especially `Ultra` materially stronger; `Ultra` now starts troop pressure in Wave 1 and scales soldier count, cadence, damage, hit chance, aid scarcity, and rival AI
 - `Master 15.19 - difficulty-asset-scarcity.html` adds difficulty-scaled food scarcity: harder settings have fewer buildings, people, cars, props, park assets, and fewer skyscrapers relative to other buildings
 - `Master 15.20 - rival-ai-difficulty-scaling.html` responds to playtest feedback that rivals still score too poorly and visibly dither by making higher-difficulty rivals faster, less random, more committed, better at value-stream routing, more willing to contest objects, and more decisive when chasing
+- User validation passed for `Master 15.20` with continuing observation: `Ultra` is obviously harder, and rival AI improvements are accepted for continued tuning
+- `Master 15.21 - difficulty-hole-eat-growth.html` adds difficulty-scaled rival-consumption rewards so easier modes grow more from eating another hole while harder modes grow less
 
 Backlog items:
 
 - validate that `Normal` preserves the current baseline feel
-- validate that `15.20` makes `Ultra` materially harder to survive than `Normal` while still beatable
+- validate that `15.21` keeps `Ultra` materially harder to survive than `Normal` while still beatable
 - validate that higher difficulty makes targets harder to find and high-value towers rarer
 - validate that higher difficulty makes rival holes score and route meaningfully better
+- validate that hole-eat score/radius rewards scale down on harder difficulties
 - continue fine-tuning wave duration, cadence, and roster pressure
 - confirm the final difficulty curve feels fair on desktop and mobile
 - improve progression readability and signaling where still needed
