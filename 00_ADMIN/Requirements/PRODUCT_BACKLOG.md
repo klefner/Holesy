@@ -492,7 +492,7 @@ Priority:
 
 Status:
 
-- in progress; architecture decision recorded and first CSS extraction proof candidate created
+- in progress; architecture decision recorded, CSS extraction proof passed user validation, and next JS/data extraction proof candidate created
 
 Decision summary:
 
@@ -540,6 +540,13 @@ Notes:
   - `20_TESTS/Candidate_Builds/Master 15.28 - modular-css-proof.html`
   - `20_TESTS/Candidate_Builds/Master 15.28 - modular-css-proof.css`
   - no gameplay logic changed; the former inline stylesheet was moved to an adjacent CSS file
+  - user validation passed on 2026-05-12
+- second proof candidate:
+  - `20_TESTS/Candidate_Builds/Master 15.29 - modular-js-data-proof.html`
+  - `20_TESTS/Candidate_Builds/Master 15.29 - modular-js-data-proof.css`
+  - `20_TESTS/Candidate_Builds/Master 15.29 - build-info.js`
+  - `20_TESTS/Candidate_Builds/Master 15.29 - difficulty-profiles.js`
+  - no gameplay loop changed; build metadata and difficulty-profile data were moved into JS modules
 
 ## Priority 2 — Waves Mode Completion and Tuning
 
@@ -803,7 +810,7 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Validate `PERF-010` modular client architecture proof candidate.
+1. Validate `PERF-010` modular client architecture JS/data proof candidate.
 2. Resume the remaining Priority 1 wave-system performance backlog after the architecture gate is clear.
 3. Return to Priority 2 Waves tuning and readability validation on the latest candidate.
 4. Then tackle the hardest content-system investment: the hybrid physics stack and collapse layer.
@@ -811,4 +818,4 @@ Backlog items:
 
 The next active engineering task remains:
 
-- validate `Master 15.28 - modular-css-proof.html`, then resume the paused Priority 1 performance backlog
+- validate `Master 15.29 - modular-js-data-proof.html`, then resume the paused Priority 1 performance backlog

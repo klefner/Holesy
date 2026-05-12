@@ -60,11 +60,13 @@ Validation performed on 2026-05-12:
 - Local preview browser smoke check confirmed the styled mode selector and `Master 15.28` marker were visible.
 - Local preview browser smoke check started gameplay and confirmed HUD / pause controls appeared.
 - Browser console error check returned no errors during load and startup smoke testing.
+- User validation passed: game ran normally after the CSS split.
 
 Validation still open:
 
-- User validation.
+- None.
 
 Status:
 
-- ready for browser validation
+- user validation passed
+- accepted as the first modular split proof

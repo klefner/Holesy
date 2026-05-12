@@ -70,15 +70,25 @@ First Safe Migration Slice:
 - Create `Master 15.28 - modular-css-proof.html` from `Master 15.27 - difficulty-parachute-drop-time.html`.
 - Move the inline stylesheet into `Master 15.28 - modular-css-proof.css`.
 - Leave gameplay JavaScript unchanged except the build marker.
+- User validation passed on 2026-05-12.
+
+Second Safe Migration Slice:
+
+- Create `Master 15.29 - modular-js-data-proof.html` from the validated `Master 15.28` proof.
+- Keep the extracted stylesheet external.
+- Move build/version metadata into `Master 15.29 - build-info.js`.
+- Move difficulty-profile data into `Master 15.29 - difficulty-profiles.js`.
+- Leave the game loop, rendering, input, collision, scoring, audio, and AI behavior unchanged.
 
 Acceptance:
 
 - candidate loads in the browser through the existing local preview workflow
 - CSS loads from the adjacent file
-- build marker shows `Master 15.28`
+- build marker shows the current proof candidate version
 - game mode selector remains styled
 - gameplay starts normally
 - no console errors caused by the CSS extraction
+- no console errors caused by the JS module extraction
 
 Architectural Rationale:
 
