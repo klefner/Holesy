@@ -50,12 +50,13 @@ Validation performed on 2026-05-11:
 - Candidate content confirms the `Master 15.17` build marker.
 - Candidate content confirms the difficulty description element and Ultra description text are present.
 - Diff hygiene check passed with line-ending warnings only.
+- User reported test passed.
 
 Validation still open:
 
-- User confirmation of description placement and copy.
+- None.
 
 Status:
 
-- candidate prepared for validation
-- not approved for promotion
+- user-validated
+- approved as the current candidate basis for difficulty feel validation
