@@ -211,7 +211,7 @@ Depends on:
 
 Status:
 
-- planned
+- in progress; `Master 15.24 - wave-unit-cleanup-disposal.html` candidate ready for validation
 
 Description:
 
@@ -302,6 +302,10 @@ Notes:
 
 - short-lived units should clean up aggressively the moment they leave the playfield
 - order matters: pooling lands first so disposal logic correctly distinguishes shared from per-instance resources
+- first candidate evidence:
+  - `20_TESTS/Candidate_Builds/Master 15.24 - wave-unit-cleanup-disposal.html`
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_24_WAVE_UNIT_CLEANUP_DISPOSAL.md`
+  - plane exit, soldier consumption, paratrooper landing conversion, wave teardown, and menu cleanup now use one shared wave-unit cleanup helper that protects pooled geometries
 
 ### PERF-005 Reuse Paratrooper Soldier Mesh On Landing
 
@@ -505,9 +509,11 @@ Progress:
 - User validation passed for `Master 15.22`: player-eaten fade-to-black return flow works perfectly
 - `Master 15.23 - wave-unit-geometry-pooling.html` starts `PERF-003` by pooling plane, soldier, parachute canopy, and parachute cord geometries for wave units
 - User validation passed for `Master 15.23`: wave-unit geometry pooling preserved visuals and behavior
+- `Master 15.24 - wave-unit-cleanup-disposal.html` starts `PERF-004` by disposing per-instance wave-unit resources while protecting pooled geometries
 
 Backlog items:
 
+- validate that `15.24` passes plane exit, soldier consumption, paratrooper conversion, repeated deployment, round reset, and console-cleanup tests
 - validate that `Normal` preserves the current baseline feel
 - validate that `15.21` keeps `Ultra` materially harder to survive than `Normal` while still beatable
 - validate that higher difficulty makes targets harder to find and high-value towers rarer
