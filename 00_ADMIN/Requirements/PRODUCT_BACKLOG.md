@@ -606,6 +606,7 @@ Progress:
 - `Master 15.34 - skyscraper-collapse-size-gate.html` restores the old skyscraper size gate before collapse, makes rivals value fresh collapse spills more often, and gives individual chunk consumption a smaller building-break sound than the full collapse
 - `Master 15.35 - car-crash-visibility-tuning.html` responds to playtest feedback that car escape was visible but crashes were not; increases panic crash visibility while keeping normal traffic behavior unchanged
 - `Master 15.36 - car-crash-trigger-fix.html` adds panic-duration crash buildup so sustained chases reliably produce observable car crashes after speed-up/wobble validation still showed no crashes
+- `Master 15.37 - panic-crash-ramp.html` changes car panic design so nearby holes cause panic, crash risk ramps sharply as cars approach top speed, and cars not cleanly escaping are more likely to lose control
 
 Backlog items:
 
