@@ -56,13 +56,13 @@ Validation performed on 2026-05-11:
 - Candidate content confirms the `Master 15.15` build marker.
 - Candidate content confirms `NEW WAVE IN` countdown wording is present.
 - Diff hygiene check passed with line-ending warnings only.
+- User reported all tests passed.
 
 Validation still open:
 
-- User confirmation of countdown wording.
-- User confirmation of non-music audio cleanup on mode-select and game-over.
+- None.
 
 Status:
 
-- candidate prepared for validation
-- not approved for promotion
+- user-validated
+- approved as the current candidate basis for the next backlog slice
