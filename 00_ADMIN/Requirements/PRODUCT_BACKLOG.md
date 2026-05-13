@@ -779,6 +779,17 @@ Third follow-up candidate evidence:
 - adds always-visible Archive field-pattern cards for the three starter buff patterns players should know immediately: short speed boost, instant mass increase, and the pedestrian-chain pull effect
 - uses lore-aligned language while preserving clear trigger/effect text
 
+Fourth follow-up candidate evidence:
+
+- `20_TESTS/Candidate_Builds/Master 15.44 - end-screen-and-feedback-cleanup.html`
+- `20_TESTS/Candidate_Builds/Master 15.44 - end-screen-and-feedback-cleanup.css`
+- `20_TESTS/Candidate_Builds/Master 15.44 - build-info.js`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_44_END_SCREEN_AND_FEEDBACK_CLEANUP.md`
+- fixes end-of-round flow so the existing game-mode picker remains the only mode-select surface and the primary button says `Begin`
+- suppresses the brief traffic-crash text while preserving car crashes, smoke, fire, and crash audio
+- gates the too-small skyscraper warning to actual hole overlap instead of proximity
+- confirms the gold Parallax mass drop exists and simplifies aid-drop colors toward blue, green, and yellow
+
 Notes:
 
 - the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it
@@ -975,7 +986,7 @@ Backlog items:
 ## Current Recommendation
 
 1. Validate `Master 15.39 - idle-lifecycle-cleanup.html` against the original long-idle Chrome close-stall observation.
-2. Validate `Master 15.43 - starter-buff-patterns.html` as the current lore / archive / achievement-buff candidate.
+2. Validate `Master 15.44 - end-screen-and-feedback-cleanup.html` as the current lore / archive / achievement-buff candidate.
 3. Confirm the Archive music still fits the funny, whimsical, conspiracy-undertone direction while remaining readable.
 4. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
 5. Tune the new lore buffs through playtest, especially impossible-tier triggers.
@@ -984,4 +995,4 @@ Backlog items:
 
 The next active engineering task remains:
 
-- validate `Master 15.39` and `Master 15.43`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, rare document drops, starter buff-pattern clarity, buff-effect clarity, and lore-buff combo feel
+- validate `Master 15.39` and `Master 15.44`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, rare document drops, starter buff-pattern clarity, end-screen flow, feedback noise, skyscraper warning timing, and lore-buff combo feel
