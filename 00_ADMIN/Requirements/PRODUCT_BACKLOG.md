@@ -769,10 +769,21 @@ Second follow-up candidate evidence:
 - makes buff and achievement feedback player-readable with clear effect text, longer notifications, active-effect tray descriptions, and beneficial / risky combo labels
 - changes document drops from frequent achievement-linked unlocks to rare end-of-round discoveries, with a maximum of one document per round and most rounds awarding none
 
+Third follow-up candidate evidence:
+
+- `20_TESTS/Candidate_Builds/Master 15.43 - starter-buff-patterns.html`
+- `20_TESTS/Candidate_Builds/Master 15.43 - starter-buff-patterns.css`
+- `20_TESTS/Candidate_Builds/Master 15.43 - build-info.js`
+- `20_TESTS/Candidate_Builds/Master 15.43 - lore-documents.js`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_43_STARTER_BUFF_PATTERNS.md`
+- adds always-visible Archive field-pattern cards for the three starter buff patterns players should know immediately: short speed boost, instant mass increase, and the pedestrian-chain pull effect
+- uses lore-aligned language while preserving clear trigger/effect text
+
 Notes:
 
 - the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it
 - the current buffs are gameplay-useful approximations of the lore clues and should be tuned through playtest; `Master 15.42` makes the current effect surface legible enough to support that tuning
+- `Master 15.43` keeps the new player guidance inside the Archive so lore reading and buff discovery share the same scrapbook context
 - impossible-tier achievements are implemented as persistent unlocks first; exact long-tail balance can be tightened after the UX validates
 - Archive music should feel funny, whimsical, and conspiracy-adjacent without becoming horror ambience or drowning out reading
 - document pacing target is rarity, not completion speed: one document maximum per round, with none in most rounds
@@ -964,7 +975,7 @@ Backlog items:
 ## Current Recommendation
 
 1. Validate `Master 15.39 - idle-lifecycle-cleanup.html` against the original long-idle Chrome close-stall observation.
-2. Validate `Master 15.42 - buff-clarity-and-rare-docs.html` as the current lore / archive / achievement-buff candidate.
+2. Validate `Master 15.43 - starter-buff-patterns.html` as the current lore / archive / achievement-buff candidate.
 3. Confirm the Archive music still fits the funny, whimsical, conspiracy-undertone direction while remaining readable.
 4. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
 5. Tune the new lore buffs through playtest, especially impossible-tier triggers.
@@ -973,4 +984,4 @@ Backlog items:
 
 The next active engineering task remains:
 
-- validate `Master 15.39` and `Master 15.42`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, rare document drops, buff-effect clarity, and lore-buff combo feel
+- validate `Master 15.39` and `Master 15.43`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, rare document drops, starter buff-pattern clarity, buff-effect clarity, and lore-buff combo feel
