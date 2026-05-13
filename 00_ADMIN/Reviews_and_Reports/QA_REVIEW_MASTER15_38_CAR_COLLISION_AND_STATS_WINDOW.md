@@ -68,6 +68,8 @@ Validation performed on 2026-05-12:
 - Candidate content confirms optional stats popup open/refresh/reset logic exists.
 - Local preview returned HTTP 200 for candidate HTML, CSS, build-info, difficulty-profiles, and game-stats files.
 - Extracted module script passed JavaScript syntax check.
+- Browser smoke check loaded the candidate and updated the visible build marker to `Master 15.38`.
+- Stats popup script close tag was escaped inside the main module template so the browser does not truncate the game script.
 
 Validation still open:
 
