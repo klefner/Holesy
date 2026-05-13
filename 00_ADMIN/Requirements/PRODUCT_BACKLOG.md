@@ -706,6 +706,57 @@ Backlog items:
   - each wave message should explain what changed in the city response, not just add flavor text
   - each between-wave message should reinforce why the battlefield is repopulated and why the response is escalating
 
+## Priority 2A — Lore, Found Documents, And Achievement Buffs
+
+Goal: make the lore corpus playable by giving players a way to recover documents, read them in-game, and discover lore-based buffs through intentional play.
+
+Status:
+
+- in progress; `Master 15.40 - lore-achievement-system.html` candidate ready for browser and gameplay validation
+
+Implementation order:
+
+1. Add durable lore infrastructure:
+   - document data module
+   - local unlock persistence
+   - archive reader UI on the mode screen
+   - end-of-round recovered-document drops
+2. Add achievement buff architecture:
+   - trigger tracking during runs
+   - persistent achievement unlocks
+   - active buff feedback in the HUD
+   - score / pull / bonus effects that are legible without reading code
+3. Add the first lore corpus slice:
+   - Witnesses, Pattern, and Origins documents from the approved baseline
+   - buff-hint documents for First Bite, Pedestrian Pull, Tree Hugger, The Forum User, The Quiet Block, Linden Street, Bellmar, and The Quiet
+4. Continue expanding the corpus until all approved lore threads are represented in data, including earlier Rival / Response documents not yet present in the first playable slice.
+
+Acceptance criteria:
+
+- player can open the Archive from the mode screen
+- archive shows recovered versus locked document state
+- recovered documents persist in localStorage
+- a run can award a new document at the final leaderboard
+- the player can open the recovered document from the final leaderboard
+- achievement buffs can be unlocked from gameplay behavior hinted by lore
+- active timed buffs appear in the same effect UI used by existing powerups
+- lore system does not require network or backend services
+- no source master or website publish package changes until candidate validation passes
+
+First candidate evidence:
+
+- `20_TESTS/Candidate_Builds/Master 15.40 - lore-achievement-system.html`
+- `20_TESTS/Candidate_Builds/Master 15.40 - lore-achievement-system.css`
+- `20_TESTS/Candidate_Builds/Master 15.40 - lore-documents.js`
+- `20_TESTS/Candidate_Builds/Master 15.40 - build-info.js`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_40_LORE_AND_ACHIEVEMENT_SYSTEM.md`
+
+Notes:
+
+- the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it
+- the current buffs are gameplay-useful approximations of the lore clues and should be tuned through playtest
+- impossible-tier achievements are implemented as persistent unlocks first; exact long-tail balance can be tightened after the UX validates
+
 ## Priority 3 — Physics Stack And Collapse System
 
 Goal: introduce `hole.io`-style stacked-object variety with convincing gravity-driven collapse while preserving the current battlefield systems.
@@ -892,13 +943,13 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Validate `Master 15.30 - game-stats-tracker.html` as the temporary stats-tracking harness.
-2. Validate `PERF-010` modular client architecture JS/data proof candidate.
-3. Resume the remaining Priority 1 wave-system performance backlog after the architecture gate is clear.
-4. Return to Priority 2 Waves tuning and readability validation on the latest candidate.
-5. Then tackle the hardest content-system investment: the hybrid physics stack and collapse layer.
-6. Then deepen powerups and mode variety on top of that stronger foundation.
+1. Validate `Master 15.39 - idle-lifecycle-cleanup.html` against the original long-idle Chrome close-stall observation.
+2. Validate `Master 15.40 - lore-achievement-system.html` as the first playable lore / archive / achievement-buff candidate.
+3. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
+4. Tune the new lore buffs through playtest, especially impossible-tier triggers.
+5. Resume the remaining Priority 1 wave-system performance backlog after the lore candidate is proven stable.
+6. Then return to Waves tuning, physics stack, and broader powerup/mode expansion.
 
 The next active engineering task remains:
 
-- validate `Master 15.30 - game-stats-tracker.html`, then resume the paused Priority 1 performance backlog
+- validate `Master 15.39` and `Master 15.40`, with special attention to long-idle tab cleanup, archive readability, document drops, and lore-buff trigger feel
