@@ -751,11 +751,20 @@ First candidate evidence:
 - `20_TESTS/Candidate_Builds/Master 15.40 - build-info.js`
 - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_40_LORE_AND_ACHIEVEMENT_SYSTEM.md`
 
+Follow-up candidate evidence:
+
+- `20_TESTS/Candidate_Builds/Master 15.41 - archive-music.html`
+- `20_TESTS/Candidate_Builds/Master 15.41 - archive-music.css`
+- `20_TESTS/Candidate_Builds/Master 15.41 - build-info.js`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_41_ARCHIVE_MUSIC.md`
+- adds separate Archive music so found-document reading has a whimsical investigative cue instead of the title theme
+
 Notes:
 
 - the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it
 - the current buffs are gameplay-useful approximations of the lore clues and should be tuned through playtest
 - impossible-tier achievements are implemented as persistent unlocks first; exact long-tail balance can be tightened after the UX validates
+- Archive music should feel funny, whimsical, and conspiracy-adjacent without becoming horror ambience or drowning out reading
 
 ## Priority 3 — Physics Stack And Collapse System
 
@@ -944,12 +953,13 @@ Backlog items:
 ## Current Recommendation
 
 1. Validate `Master 15.39 - idle-lifecycle-cleanup.html` against the original long-idle Chrome close-stall observation.
-2. Validate `Master 15.40 - lore-achievement-system.html` as the first playable lore / archive / achievement-buff candidate.
-3. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
-4. Tune the new lore buffs through playtest, especially impossible-tier triggers.
-5. Resume the remaining Priority 1 wave-system performance backlog after the lore candidate is proven stable.
-6. Then return to Waves tuning, physics stack, and broader powerup/mode expansion.
+2. Validate `Master 15.41 - archive-music.html` as the current lore / archive / achievement-buff candidate.
+3. Confirm the Archive music fits the funny, whimsical, conspiracy-undertone direction while remaining readable.
+4. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
+5. Tune the new lore buffs through playtest, especially impossible-tier triggers.
+6. Resume the remaining Priority 1 wave-system performance backlog after the lore candidate is proven stable.
+7. Then return to Waves tuning, physics stack, and broader powerup/mode expansion.
 
 The next active engineering task remains:
 
-- validate `Master 15.39` and `Master 15.40`, with special attention to long-idle tab cleanup, archive readability, document drops, and lore-buff trigger feel
+- validate `Master 15.39` and `Master 15.41`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, document drops, and lore-buff trigger feel
