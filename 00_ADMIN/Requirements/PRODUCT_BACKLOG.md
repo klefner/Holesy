@@ -548,6 +548,46 @@ Notes:
   - `20_TESTS/Candidate_Builds/Master 15.29 - difficulty-profiles.js`
   - no gameplay loop changed; build metadata and difficulty-profile data were moved into JS modules
 
+### PERF-011 Idle Menu Lifecycle And Page-Exit Cleanup
+
+Type:
+
+- Defect remediation / Performance stability
+
+Priority:
+
+- blocker before the lore feature build
+
+Status:
+
+- in progress; `Master 15.39 - idle-lifecycle-cleanup.html` candidate ready for gameplay and long-idle validation
+
+Description:
+
+- remediate the observed long-idle menu memory/resource leak where a Chrome tab left on the game menu for hours took roughly 20 seconds to close and blocked other browser UI
+- reduce static menu/game-over render work while preserving immediate gameplay responsiveness
+- add explicit cleanup for browser page exit so animation, audio, popup-window, timer, and WebGL resources do not linger until Chrome forces cleanup
+
+Acceptance criteria:
+
+- title, mode-select, and game-over screens do not render continuously at active gameplay frame rate when nothing is changing
+- starting a run from an idle menu state wakes the normal animation loop immediately
+- page exit cancels scheduled animation frames and idle timers
+- page exit stops music scheduler intervals, delayed music-stop timers, persistent wind audio, active non-music samples, alien aid loops, and plane engine drones
+- page exit releases stats-window opener references
+- page exit disposes renderer resources where safe
+- quick close smoke test is materially faster than the observed 20-second tab-close stall
+- issue remains in `monitor` until a real long-idle Chrome validation is completed
+
+Notes:
+
+- issue tracked as `QA-006`
+- first candidate evidence:
+  - `20_TESTS/Candidate_Builds/Master 15.39 - idle-lifecycle-cleanup.html`
+  - `20_TESTS/Candidate_Builds/Master 15.39 - idle-lifecycle-cleanup.css`
+  - `20_TESTS/Candidate_Builds/Master 15.39 - build-info.js`
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_39_IDLE_LIFECYCLE_CLEANUP.md`
+
 ## Priority 2 — Waves Mode Completion and Tuning
 
 Goal: finish the mode already in flight and make it feel deliberately paced.
@@ -608,6 +648,7 @@ Progress:
 - `Master 15.36 - car-crash-trigger-fix.html` adds panic-duration crash buildup so sustained chases reliably produce observable car crashes after speed-up/wobble validation still showed no crashes
 - `Master 15.37 - panic-crash-ramp.html` changes car panic design so nearby holes cause panic, crash risk ramps sharply as cars approach top speed, and cars not cleanly escaping are more likely to lose control
 - `Master 15.38 - car-collision-system.html` prevents cars from passing through each other by adding car-to-car separation, avoidance nudging, and high-speed/panic contact crashes; it also removes the startup stats panel and replaces it with an optional stats popup window that refreshes after game-end writes
+- `Master 15.39 - idle-lifecycle-cleanup.html` responds to the long-idle menu tab-close stall by throttling static menu rendering and adding explicit page-exit cleanup for animation, audio, popup-window, timer, and WebGL resources
 
 Backlog items:
 
