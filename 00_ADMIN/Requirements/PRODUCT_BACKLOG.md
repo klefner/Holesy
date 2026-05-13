@@ -607,6 +607,7 @@ Progress:
 - `Master 15.35 - car-crash-visibility-tuning.html` responds to playtest feedback that car escape was visible but crashes were not; increases panic crash visibility while keeping normal traffic behavior unchanged
 - `Master 15.36 - car-crash-trigger-fix.html` adds panic-duration crash buildup so sustained chases reliably produce observable car crashes after speed-up/wobble validation still showed no crashes
 - `Master 15.37 - panic-crash-ramp.html` changes car panic design so nearby holes cause panic, crash risk ramps sharply as cars approach top speed, and cars not cleanly escaping are more likely to lose control
+- `Master 15.38 - car-collision-system.html` prevents cars from passing through each other by adding car-to-car separation, avoidance nudging, and high-speed/panic contact crashes; it also removes the startup stats panel and replaces it with an optional stats popup window that refreshes after game-end writes
 
 Backlog items:
 
