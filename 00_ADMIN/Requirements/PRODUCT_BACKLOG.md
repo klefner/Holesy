@@ -759,12 +759,23 @@ Follow-up candidate evidence:
 - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_41_ARCHIVE_MUSIC.md`
 - adds separate Archive music so found-document reading has a whimsical investigative cue instead of the title theme
 
+Second follow-up candidate evidence:
+
+- `20_TESTS/Candidate_Builds/Master 15.42 - buff-clarity-and-rare-docs.html`
+- `20_TESTS/Candidate_Builds/Master 15.42 - buff-clarity-and-rare-docs.css`
+- `20_TESTS/Candidate_Builds/Master 15.42 - build-info.js`
+- `20_TESTS/Candidate_Builds/Master 15.42 - lore-documents.js`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_42_BUFF_CLARITY_AND_RARE_DOCS.md`
+- makes buff and achievement feedback player-readable with clear effect text, longer notifications, active-effect tray descriptions, and beneficial / risky combo labels
+- changes document drops from frequent achievement-linked unlocks to rare end-of-round discoveries, with a maximum of one document per round and most rounds awarding none
+
 Notes:
 
 - the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it
-- the current buffs are gameplay-useful approximations of the lore clues and should be tuned through playtest
+- the current buffs are gameplay-useful approximations of the lore clues and should be tuned through playtest; `Master 15.42` makes the current effect surface legible enough to support that tuning
 - impossible-tier achievements are implemented as persistent unlocks first; exact long-tail balance can be tightened after the UX validates
 - Archive music should feel funny, whimsical, and conspiracy-adjacent without becoming horror ambience or drowning out reading
+- document pacing target is rarity, not completion speed: one document maximum per round, with none in most rounds
 
 ## Priority 3 — Physics Stack And Collapse System
 
@@ -953,8 +964,8 @@ Backlog items:
 ## Current Recommendation
 
 1. Validate `Master 15.39 - idle-lifecycle-cleanup.html` against the original long-idle Chrome close-stall observation.
-2. Validate `Master 15.41 - archive-music.html` as the current lore / archive / achievement-buff candidate.
-3. Confirm the Archive music fits the funny, whimsical, conspiracy-undertone direction while remaining readable.
+2. Validate `Master 15.42 - buff-clarity-and-rare-docs.html` as the current lore / archive / achievement-buff candidate.
+3. Confirm the Archive music still fits the funny, whimsical, conspiracy-undertone direction while remaining readable.
 4. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
 5. Tune the new lore buffs through playtest, especially impossible-tier triggers.
 6. Resume the remaining Priority 1 wave-system performance backlog after the lore candidate is proven stable.
@@ -962,4 +973,4 @@ Backlog items:
 
 The next active engineering task remains:
 
-- validate `Master 15.39` and `Master 15.41`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, document drops, and lore-buff trigger feel
+- validate `Master 15.39` and `Master 15.42`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, rare document drops, buff-effect clarity, and lore-buff combo feel
