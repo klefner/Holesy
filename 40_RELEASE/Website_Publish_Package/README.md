@@ -12,7 +12,13 @@ This package is the website-ready build for the live `/holesy/` directory.
 
 This package was generated from:
 
-- `10_SOURCE/Masters/Master 6.html`
+- `10_SOURCE/Masters/Master 16.html`
+
+## Current Package Notes
+
+- `index.html` is a bundled production/mobile-test build.
+- The bottom-left build badge opens in-game build notes for future patch-note publication.
+- This package includes the promoted lore Archive, found-document drops, achievement buffs, Archive music, starter Field Patterns, and the end-screen/feedback cleanup from the `Master 15.39` through `Master 15.45` candidate lineage.
 
 ## Publish Rule
 

@@ -4,17 +4,18 @@ This folder is reserved for the active working source basis.
 
 Current status:
 
-- The promoted stable master is `10_SOURCE/Masters/Master 15.html`
-- `Master 15` is the approved build that includes:
-  - the full approved `Master 14` gameplay baseline
-  - transition-safe buff timing during Waves interstitials
-  - clearer Waves transition and defeat messaging
-  - non-music audio cleanup on scoreboard and mode-select screens while music continues
-  - clearer player-facing text for the non-temporary bonus-mass alien drop
-  - stronger rival aid contesting and better score pressure without reopening the failed `14.5` startup-path regression
-  - explicit cleanup of transition overlays when exiting from paused Waves transitions back to the menu flow
-- New candidate work should branch from `Master 15` unless a newer file is explicitly promoted
-- The last approved candidate that became this master was `20_TESTS/Candidate_Builds/Master 14.10 - rival-aid-and-score-pressure.html`
+- The promoted stable master is `10_SOURCE/Masters/Master 16.html`
+- `Master 16` is the approved build that includes:
+  - the full approved `Master 15` gameplay baseline
+  - the idle lifecycle cleanup candidate lineage from `Master 15.39`
+  - the playable Archive / found-document / lore-achievement-buff system from `Master 15.40`
+  - Archive-specific music from `Master 15.41`
+  - clearer buff messaging and rare, capped document drops from `Master 15.42`
+  - always-visible starter Field Pattern guidance from `Master 15.43`
+  - end-screen, feedback-noise, skyscraper warning, and aid-drop color cleanup from `Master 15.44`
+  - clickable in-game build notes from `Master 15.45`
+- New candidate work should branch from `Master 16` unless a newer file is explicitly promoted
+- The last approved candidate lineage that became this master was `20_TESTS/Candidate_Builds/Master 15.45 - in-game-build-notes.html`
 
 When a future candidate is approved as the active working basis, either:
 

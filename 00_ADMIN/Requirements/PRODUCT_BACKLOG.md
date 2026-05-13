@@ -712,7 +712,7 @@ Goal: make the lore corpus playable by giving players a way to recover documents
 
 Status:
 
-- in progress; `Master 15.40 - lore-achievement-system.html` candidate ready for browser and gameplay validation
+- promoted; `Master 16.html` packages the approved lore / archive / achievement-buff slice for production mobile testing
 
 Implementation order:
 
@@ -790,6 +790,19 @@ Fourth follow-up candidate evidence:
 - gates the too-small skyscraper warning to actual hole overlap instead of proximity
 - confirms the gold Parallax mass drop exists and simplifies aid-drop colors toward blue, green, and yellow
 
+Fifth follow-up candidate and promotion evidence:
+
+- `20_TESTS/Candidate_Builds/Master 15.45 - in-game-build-notes.html`
+- `20_TESTS/Candidate_Builds/Master 15.45 - in-game-build-notes.css`
+- `20_TESTS/Candidate_Builds/Master 15.45 - build-info.js`
+- `10_SOURCE/Masters/Master 16.html`
+- `40_RELEASE/Website_Publish_Package/holesy/index.html`
+- `00_ADMIN/Requirements/BUILD_CHANGELOG.md`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_PROMOTION_AND_BUILD_NOTES.md`
+- adds an in-game `Recovered Build Notes` patch-note surface by making the bottom-left build badge clickable
+- promotes the validated `Master 15.44` lore / archive / achievement-buff lineage plus build notes into `Master 16`
+- regenerates the website publish package from `Master 16` for production/mobile testing
+
 Notes:
 
 - the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it
@@ -798,6 +811,7 @@ Notes:
 - impossible-tier achievements are implemented as persistent unlocks first; exact long-tail balance can be tightened after the UX validates
 - Archive music should feel funny, whimsical, and conspiracy-adjacent without becoming horror ambience or drowning out reading
 - document pacing target is rarity, not completion speed: one document maximum per round, with none in most rounds
+- build-change notes now have an in-game surface and should be updated with each promoted candidate so they can become player-facing patch notes later
 
 ## Priority 3 — Physics Stack And Collapse System
 
@@ -985,14 +999,13 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Validate `Master 15.39 - idle-lifecycle-cleanup.html` against the original long-idle Chrome close-stall observation.
-2. Validate `Master 15.44 - end-screen-and-feedback-cleanup.html` as the current lore / archive / achievement-buff candidate.
-3. Confirm the Archive music still fits the funny, whimsical, conspiracy-undertone direction while remaining readable.
-4. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
-5. Tune the new lore buffs through playtest, especially impossible-tier triggers.
-6. Resume the remaining Priority 1 wave-system performance backlog after the lore candidate is proven stable.
-7. Then return to Waves tuning, physics stack, and broader powerup/mode expansion.
+1. Mobile-test the promoted `Master 16` website package.
+2. Confirm the Archive music still fits the funny, whimsical, conspiracy-undertone direction while remaining readable.
+3. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
+4. Tune the new lore buffs through playtest, especially impossible-tier triggers and combo clarity.
+5. Resume the remaining Priority 1 wave-system performance backlog after the promoted lore build is proven stable.
+6. Then return to Waves tuning, physics stack, and broader powerup/mode expansion.
 
 The next active engineering task remains:
 
-- validate `Master 15.39` and `Master 15.44`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, rare document drops, starter buff-pattern clarity, end-screen flow, feedback noise, skyscraper warning timing, and lore-buff combo feel
+- mobile-test `Master 16`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, rare document drops, starter buff-pattern clarity, end-screen flow, feedback noise, skyscraper warning timing, lore-buff combo feel, and the new build-notes modal
