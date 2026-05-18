@@ -741,15 +741,159 @@
       --hud-right-reserve: 124px;
       --bottom-controls-offset: 94px;
     }
+    #overlay {
+      justify-content: flex-start;
+      overflow-y: auto;
+      padding: max(12px, env(safe-area-inset-top, 0px) + 8px) 12px max(78px, env(safe-area-inset-bottom, 0px) + 54px);
+    }
+    #overlay h1 {
+      font-size: 32px;
+      margin: 6px 0 4px;
+      letter-spacing: 0;
+    }
+    #overlay .sub {
+      font-size: 12px;
+      line-height: 1.35;
+      margin-bottom: 10px;
+      max-width: min(360px, 100%);
+    }
+    #final-wrap {
+      width: min(340px, 100%);
+    }
+    #leaderboard {
+      margin: 6px 0 10px;
+      max-width: 100%;
+    }
+    .lb-title {
+      margin-bottom: 6px;
+      font-size: 10px;
+    }
+    .lb-row {
+      padding: 7px 10px;
+      margin-bottom: 4px;
+      gap: 7px;
+    }
+    .lb-score {
+      font-size: 13px;
+    }
+    #mode-picker-wrap,
+    #difficulty-wrap,
+    #mode-picker {
+      width: min(340px, 100%);
+      max-width: 100%;
+    }
+    #mode-picker-title {
+      margin-top: 2px;
+      font-size: 9px;
+    }
+    #difficulty-wrap {
+      margin: 5px 0;
+      padding: 7px 9px;
+      gap: 5px 8px;
+    }
+    #difficulty-select {
+      min-width: 108px;
+      padding: 7px 26px 7px 9px;
+      font-size: 12px;
+    }
+    #difficulty-desc {
+      font-size: 10px;
+      line-height: 1.25;
+    }
+    #mode-picker {
+      gap: 7px;
+      margin: 7px 0 8px;
+    }
+    #mode-picker .mode-option {
+      padding: 9px 12px;
+      border-radius: 8px;
+    }
+    #mode-picker .mode-label {
+      font-size: 14px;
+      margin-bottom: 1px;
+    }
+    #mode-picker .mode-desc {
+      font-size: 10px;
+      line-height: 1.3;
+    }
+    #menu-action-row {
+      margin: 2px 0;
+    }
+    #stats-window-btn,
+    #lore-archive-btn {
+      margin: 2px 0;
+      padding: 7px 11px;
+      font-size: 10px;
+    }
+    button.play {
+      padding: 11px 28px;
+      font-size: 14px;
+    }
+    .tips {
+      margin-top: 10px;
+      max-width: min(330px, 100%);
+      font-size: 10px;
+      line-height: 1.45;
+    }
+    #music-credit {
+      margin-top: 7px !important;
+      font-size: 9px !important;
+      max-width: min(330px, 100%) !important;
+    }
+    #build-version {
+      position: fixed;
+      padding: 6px 9px;
+      font-size: 9px;
+    }
     #lore-modal {
       padding: 10px;
+      align-items: flex-start;
+      overflow-y: auto;
     }
     #lore-shell {
-      grid-template-columns: 1fr;
-      grid-template-rows: minmax(160px, 34vh) minmax(0, 1fr);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: auto;
+    }
+    #lore-list-panel,
+    #lore-reader-panel {
+      max-height: none;
+      overflow: visible;
+    }
+    #lore-doc-list {
+      max-height: 34vh;
+      overflow-y: auto;
+    }
+    .lore-panel-head {
+      padding: 12px;
+    }
+    #lore-progress {
+      padding: 8px 12px;
+    }
+    #lore-starter-patterns {
+      padding: 9px;
+    }
+    .lore-pattern-card {
+      grid-template-columns: 34px minmax(0, 1fr);
+      gap: 7px;
+      padding: 7px;
+    }
+    .lore-pattern-icon {
+      min-height: 30px;
+      font-size: 9px;
     }
     #lore-reader-panel {
-      padding: 18px;
+      padding: 14px;
+      flex: 0 0 auto;
+    }
+    #lore-doc-title {
+      font-size: 22px;
+      line-height: 1.1;
+    }
+    #lore-doc-body {
+      font-size: 14px;
+      line-height: 1.48;
     }
     #hud {
       padding-left: calc(env(safe-area-inset-left, 0px) + 10px);
@@ -823,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.1</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -946,7 +1090,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 0;
+const BUILD_SUB = 1;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1674,6 +1818,9 @@ const HOLESY_CONFIG = Object.freeze({
     panicWrongWayCrashMultiplier: 2.4,
     panicWobble: 1.75,
     crashDurationSeconds: 1.05,
+    crashMaxSlideDistance: 10,
+    crashFrictionPerSecond: 0.16,
+    crashStopSpeed: 0.65,
     carCollisionRadius: 2.25,
     carAvoidanceRadius: 5.0,
     carCrashImpactSpeed: 10.0,
@@ -1823,6 +1970,17 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.1',
+    date: '2026-05-18',
+    summary: 'Mobile readability and end-of-round reward patch.',
+    changes: [
+      'Compressed and scroll-enabled the mobile mode-selection screen.',
+      'Made the Found Documents archive scroll as one mobile page instead of letting the reader block most of the screen.',
+      'Restricted found-document drops to live player wins only, with at most one document roll per completed run.',
+      'Capped runaway car skids with distance, speed, and friction limits.',
+    ],
+  },
   {
     label: 'Master 16',
     date: '2026-05-13',
@@ -4861,13 +5019,18 @@ function pickNextLoreDrop() {
   return locked[0].id;
 }
 
-function awardEndOfRoundLoreDrop(winner) {
-  if (roundLoreState && roundLoreState.documentDropAwarded) return;
-  const playerWon = !!(winner && winner.isPlayer);
+function awardEndOfRoundLoreDrop(playerWon) {
+  if (!roundLoreState) return;
+  if (roundLoreState.documentDropAwarded) return;
+  roundLoreState.documentDropAwarded = true;
+  if (!playerWon) {
+    pendingLoreDropId = '';
+    return;
+  }
   const achievementBonus = roundLoreState && roundLoreState.newAchievements > 0 ? LORE_DROP_ACHIEVEMENT_BONUS : 0;
   const dropChance = Math.min(
     LORE_DROP_MAX_CHANCE,
-    LORE_DROP_BASE_CHANCE + (playerWon ? LORE_DROP_WIN_BONUS : 0) + achievementBonus
+    LORE_DROP_BASE_CHANCE + LORE_DROP_WIN_BONUS + achievementBonus
   );
   if (Math.random() > dropChance) {
     pendingLoreDropId = '';
@@ -5112,11 +5275,11 @@ function updateLoreRunTracking() {
   }
 }
 
-function finalizeLoreRunTracking(winner, playerRank) {
+function finalizeLoreRunTracking(winner, playerRank, playerWon) {
   if (!roundLoreState || !player) return;
   if (roundLoreState.bestPlayerRank >= 4 && player.alive) unlockAchievement('forum_user');
-  if (winner && winner.isPlayer && roundLoreState.maxPlayerRadius <= 2.5) unlockAchievement('bellmar');
-  awardEndOfRoundLoreDrop(winner);
+  if (playerWon && winner && winner.isPlayer && roundLoreState.maxPlayerRadius <= 2.5) unlockAchievement('bellmar');
+  awardEndOfRoundLoreDrop(playerWon);
 }
 
 function primeAudioFromStartGesture() {
@@ -6048,6 +6211,8 @@ function startGame() {
   // Player reset is handled via holes array (holes already created at page load).
   // Just flip running + UI.
   // Mode setup from the title-screen picker
+  pendingLoreDropId = '';
+  if (roundLoreState) roundLoreState.documentDropAwarded = true;
   invalidateRoundLifecycle();
   setDifficulty(difficultySelect.value);
   lmsMode = (selectedMode === 'lms');
@@ -6876,6 +7041,7 @@ function endGame() {
       }
     } else if (!player.alive) {
       reason = "You got devoured.";
+      subtitle = "You were eaten before the final records closed.";
     } else if (aliveHoles.length === 1 && aliveHoles[0].isPlayer) {
       reason = "Last hole standing. Devour complete.";
     } else if (gameTime <= 0) {
@@ -6883,7 +7049,7 @@ function endGame() {
     } else {
       reason = "Round over.";
     }
-    if (!wavesMode) {
+    if (!wavesMode && player.alive) {
       subtitle = player.radius >= 6.0
         ? "You grew massive. Absolute menace."
         : "Final leaderboard below.";
@@ -6896,7 +7062,9 @@ function endGame() {
   // Build leaderboard — sort ALL holes by score
   const ranked = [...holes].sort((a, b) => b.score - a.score);
   const playerFinalRank = Math.max(1, ranked.findIndex(h => h.isPlayer) + 1);
-  finalizeLoreRunTracking(ranked[0], playerFinalRank);
+  const endReasonForRewards = classifyGameEndReason(pendingPlayerEndReason, selectedMode, aliveHoles, ranked[0], playerFinalRank);
+  const playerWonRound = isPlayerWinForStats(endReasonForRewards, ranked[0], aliveHoles, playerFinalRank);
+  finalizeLoreRunTracking(ranked[0], playerFinalRank, playerWonRound);
   let html = '<div class="lb-title">Final Scores</div>';
   ranked.forEach((h, i) => {
     const colorHex = '#' + h.rimColor.toString(16).padStart(6, '0');
@@ -7865,6 +8033,7 @@ function triggerCarLossOfControl(car) {
   const side = { x: -forward.z * sideSign, z: forward.x * sideSign };
   car.crashing = true;
   car.crashTimer = HOLESY_CONFIG.traffic.crashDurationSeconds;
+  car.crashDistance = 0;
   car.crashVx = forward.x * car.currentSpeed * 0.85 + side.x * (5 + Math.random() * 4);
   car.crashVz = forward.z * car.currentSpeed * 0.85 + side.z * (5 + Math.random() * 4);
   car.crashSpin = sideSign * (1.8 + Math.random() * 2.4);
@@ -7987,15 +8156,20 @@ function updateMovingCars(dt) {
 
     if (car.crashing) {
       car.crashTimer -= dt;
+      const slideStep = Math.hypot(car.crashVx || 0, car.crashVz || 0) * dt;
+      car.crashDistance = (car.crashDistance || 0) + slideStep;
       car.x += car.crashVx * dt;
       car.z += car.crashVz * dt;
       car.mesh.position.x = car.x;
       car.mesh.position.z = car.z;
       car.mesh.rotation.y += car.crashSpin * dt;
-      car.crashVx *= 0.975;
-      car.crashVz *= 0.975;
+      const crashFriction = Math.pow(HOLESY_CONFIG.traffic.crashFrictionPerSecond, dt);
+      car.crashVx *= crashFriction;
+      car.crashVz *= crashFriction;
       const impact = findCarCrashImpact(car);
-      if (impact || car.crashTimer <= 0) stopCarAsWreck(car, impact);
+      const slowEnough = Math.hypot(car.crashVx || 0, car.crashVz || 0) <= HOLESY_CONFIG.traffic.crashStopSpeed;
+      const slidTooFar = car.crashDistance >= HOLESY_CONFIG.traffic.crashMaxSlideDistance;
+      if (impact || car.crashTimer <= 0 || slowEnough || slidTooFar) stopCarAsWreck(car, impact);
       continue;
     }
 

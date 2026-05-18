@@ -803,6 +803,19 @@ Fifth follow-up candidate and promotion evidence:
 - promotes the validated `Master 15.44` lore / archive / achievement-buff lineage plus build notes into `Master 16`
 - regenerates the website publish package from `Master 16` for production/mobile testing
 
+Production defect patch evidence:
+
+- `10_SOURCE/Masters/Master 16.html`
+- `40_RELEASE/Website_Publish_Package/holesy/index.html`
+- `00_ADMIN/Requirements/BUILD_CHANGELOG.md`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_1_MOBILE_AND_REWARD_FIXES.md`
+- labels the patched production package as `Master 16.1`
+- fixes mobile mode-select overflow by making the overlay scroll and tightening mobile spacing
+- fixes mobile Found Documents readability by letting the archive scroll as one page and limiting the document list height
+- fixes found-document rewards so losses never award documents and each completed run can roll at most once
+- clears stale pending document drops before a new run starts
+- caps panic-car skid duration/distance so loss-of-control crashes do not slide forever
+
 Notes:
 
 - the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it
@@ -810,7 +823,7 @@ Notes:
 - `Master 15.43` keeps the new player guidance inside the Archive so lore reading and buff discovery share the same scrapbook context
 - impossible-tier achievements are implemented as persistent unlocks first; exact long-tail balance can be tightened after the UX validates
 - Archive music should feel funny, whimsical, and conspiracy-adjacent without becoming horror ambience or drowning out reading
-- document pacing target is rarity, not completion speed: one document maximum per round, with none in most rounds
+- document pacing target is rarity, not completion speed: one document maximum per won round, with none in most rounds and no drops on losses
 - build-change notes now have an in-game surface and should be updated with each promoted candidate so they can become player-facing patch notes later
 
 ## Priority 3 — Physics Stack And Collapse System
@@ -999,7 +1012,7 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Mobile-test the promoted `Master 16` website package.
+1. Mobile-test the patched `Master 16.1` website package.
 2. Confirm the Archive music still fits the funny, whimsical, conspiracy-undertone direction while remaining readable.
 3. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
 4. Tune the new lore buffs through playtest, especially impossible-tier triggers and combo clarity.
@@ -1008,4 +1021,4 @@ Backlog items:
 
 The next active engineering task remains:
 
-- mobile-test `Master 16`, with special attention to long-idle tab cleanup, archive readability, Archive music fit, rare document drops, starter buff-pattern clarity, end-screen flow, feedback noise, skyscraper warning timing, lore-buff combo feel, and the new build-notes modal
+- mobile-test `Master 16.1`, with special attention to mobile menu fit, Archive scroll behavior, loss-state copy, no document drops on losses, no repeated document drops from stale end screens, car skid duration, rare document drops, starter buff-pattern clarity, end-screen flow, lore-buff combo feel, and the build-notes modal

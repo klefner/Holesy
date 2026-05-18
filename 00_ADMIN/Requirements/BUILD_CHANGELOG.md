@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.1 - 2026-05-18
+
+Mobile readability and end-of-round reward patch.
+
+- Compressed and scroll-enabled the mobile mode-selection screen.
+- Made the Found Documents archive scroll as one mobile page instead of letting the reader block most of the screen.
+- Restricted found-document drops to live player wins only, with at most one document roll per completed run.
+- Cleared stale pending document drops when a new run begins.
+- Capped runaway car skids with distance, speed, and friction limits.
+
 ## Master 16 - 2026-05-13
 
 Production promotion candidate for mobile testing.

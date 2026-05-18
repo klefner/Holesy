@@ -19,6 +19,7 @@ This package was generated from:
 - `index.html` is a bundled production/mobile-test build.
 - The bottom-left build badge opens in-game build notes for future patch-note publication.
 - This package includes the promoted lore Archive, found-document drops, achievement buffs, Archive music, starter Field Patterns, and the end-screen/feedback cleanup from the `Master 15.39` through `Master 15.45` candidate lineage.
+- Current patch label is `Master 16.1`, adding mobile menu fit, Archive mobile scrolling, win-only document drops, stale-drop cleanup, and capped panic-car skids.
 
 ## Publish Rule
 
