@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.1</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.2</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1090,7 +1090,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 1;
+const BUILD_SUB = 2;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1817,10 +1817,10 @@ const HOLESY_CONFIG = Object.freeze({
     panicCrashTopSpeedMultiplier: 3.0,
     panicWrongWayCrashMultiplier: 2.4,
     panicWobble: 1.75,
-    crashDurationSeconds: 1.05,
-    crashMaxSlideDistance: 10,
-    crashFrictionPerSecond: 0.16,
-    crashStopSpeed: 0.65,
+    crashDurationSeconds: 0.72,
+    crashMaxSlideDistance: 6,
+    crashFrictionPerSecond: 0.025,
+    crashStopSpeed: 1.05,
     carCollisionRadius: 2.25,
     carAvoidanceRadius: 5.0,
     carCrashImpactSpeed: 10.0,
@@ -1970,6 +1970,17 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.2',
+    date: '2026-05-19',
+    summary: 'Skyscraper collapse variation and shorter panic-car skids.',
+    changes: [
+      'Shortened panic-car skid duration and stopping distance.',
+      'Changed skyscraper collapse from radial burst to impact-side directional failure.',
+      'Added contiguous floor-band shearing so debris falls in related but varied directions.',
+      'Capped collapse spread so chunks stay near the building footprint instead of exploding outward.',
+    ],
+  },
   {
     label: 'Master 16.1',
     date: '2026-05-18',
@@ -2229,13 +2240,16 @@ for (const bp of blockPositions) {
 const objects = [];
 const physicsStackPieces = [];
 const activePhysicsStackIds = new Set();
+const stackCollapsePlans = new Map();
 let nextPhysicsStackId = 1;
 
 const STACK_PHYSICS_CONFIG = Object.freeze({
   gravity: 25,
   triggerPadding: 5.2,
-  shoveStrength: 7.4,
-  horizontalDamping: 0.972,
+  shoveStrength: 5.2,
+  horizontalDamping: 0.948,
+  maxHorizontalSpeed: 8.2,
+  maxCollapseSpread: 12.5,
   bounceDamping: 0.16,
   contactRadiusScale: 0.82,
   contactImpulse: 8.5,
@@ -2266,6 +2280,7 @@ function removeObjectFromActiveLists(obj) {
   if (stackIndex >= 0) physicsStackPieces.splice(stackIndex, 1);
   if (obj.stackId && !physicsStackPieces.some(piece => piece.stackId === obj.stackId)) {
     activePhysicsStackIds.delete(obj.stackId);
+    stackCollapsePlans.delete(obj.stackId);
   }
 }
 
@@ -2642,6 +2657,7 @@ function makeSkyscraper(pos) {
         obj.stackSettled = false;
         obj.stackRestTimer = 0;
         obj.stackIndex = i;
+        obj.stackFloorCount = floorCount;
         obj.stackPieceCount = pieceCount;
         obj.stackCollapseSize = collapseSize;
         obj.stackCenterX = pos.x;
@@ -6444,6 +6460,7 @@ function tearDownWorld() {
   objects.length = 0;
   physicsStackPieces.length = 0;
   activePhysicsStackIds.clear();
+  stackCollapsePlans.clear();
   movingCars.length = 0;
   movingPeople.length = 0;
   for (const fx of carCrashEffects) {
@@ -7424,6 +7441,64 @@ function sampleCollapseObstacleInfluence(piece) {
   return { x: ix, z: iz };
 }
 
+function normalize2(x, z, fallback = { x: 1, z: 0 }) {
+  const d = Math.hypot(x, z);
+  if (d <= 0.001) return { x: fallback.x, z: fallback.z };
+  return { x: x / d, z: z / d };
+}
+
+function clampVectorLength2(x, z, maxLength) {
+  const d = Math.hypot(x, z);
+  if (d <= maxLength || d <= 0.001) return { x, z };
+  const scale = maxLength / d;
+  return { x: x * scale, z: z * scale };
+}
+
+function createCollapsePlan(stackId, sourceHole, consumedPiece) {
+  const pieces = physicsStackPieces.filter(piece => piece.stackId === stackId);
+  const anchor = consumedPiece || pieces[0];
+  const centerX = anchor?.stackCenterX ?? anchor?.x ?? sourceHole.x;
+  const centerZ = anchor?.stackCenterZ ?? anchor?.z ?? sourceHole.z;
+  const hitX = consumedPiece?.x ?? sourceHole.x;
+  const hitZ = consumedPiece?.z ?? sourceHole.z;
+  const away = normalize2(centerX - sourceHole.x, centerZ - sourceHole.z, normalize2(centerX - hitX, centerZ - hitZ));
+  const jitter = randomBetween(-0.34, 0.34);
+  const cos = Math.cos(jitter);
+  const sin = Math.sin(jitter);
+  const fallDir = normalize2(away.x * cos - away.z * sin, away.x * sin + away.z * cos, away);
+  const lateral = { x: -fallDir.z, z: fallDir.x };
+  const floorCount = Math.max(1, ...pieces.map(piece => piece.stackFloorCount || piece.stackIndex || 1));
+  const bandCount = 3 + Math.floor(Math.random() * 3);
+  const bandShears = [];
+  for (let index = 0; index < bandCount; index++) {
+    const previous = index > 0 ? bandShears[index - 1] : 0;
+    bandShears.push(THREE.MathUtils.clamp(previous * 0.45 + randomBetween(-0.85, 0.85), -1, 1));
+  }
+  const styleRoll = Math.random();
+  return {
+    fallDir,
+    lateral,
+    centerX,
+    centerZ,
+    hitX,
+    hitZ,
+    floorCount,
+    bandCount,
+    bandShears,
+    toppling: styleRoll < 0.52 ? randomBetween(0.9, 1.35) : randomBetween(0.45, 0.82),
+    sideSlip: styleRoll >= 0.52 && styleRoll < 0.82 ? randomBetween(0.72, 1.05) : randomBetween(0.24, 0.55),
+    split: styleRoll >= 0.82 ? randomBetween(0.45, 0.8) : randomBetween(0.12, 0.32),
+    compression: randomBetween(0.18, 0.38),
+  };
+}
+
+function getCollapsePlan(stackId, sourceHole, consumedPiece) {
+  if (!stackCollapsePlans.has(stackId)) {
+    stackCollapsePlans.set(stackId, createCollapsePlan(stackId, sourceHole, consumedPiece));
+  }
+  return stackCollapsePlans.get(stackId);
+}
+
 function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null) {
   const requiredCollapseSize = consumedPiece?.stackCollapseSize || 0;
   if (requiredCollapseSize && sourceHole.radius * 0.95 < requiredCollapseSize) {
@@ -7447,6 +7522,7 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
     }
   }
 
+  const plan = getCollapsePlan(stackId, sourceHole, consumedPiece);
   for (const piece of physicsStackPieces) {
     if (piece.stackId !== stackId || piece.consumed || piece.falling || piece.stackActive) continue;
     piece.stackActive = true;
@@ -7454,24 +7530,30 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
     piece.stackRestTimer = 0;
     piece.stackCollapsedAt = getGameplayNow();
     piece.stackCollapsedBy = sourceHole;
-    const fromHoleX = piece.x - sourceHole.x;
-    const fromHoleZ = piece.z - sourceHole.z;
-    const fromHoleD = Math.hypot(fromHoleX, fromHoleZ) || 1;
     const fromCenterX = piece.stackLocalX || (piece.x - piece.stackCenterX);
     const fromCenterZ = piece.stackLocalZ || (piece.z - piece.stackCenterZ);
     const fromCenterD = Math.hypot(fromCenterX, fromCenterZ) || 1;
+    const floorT = piece.stackFloorCount > 1 ? piece.stackIndex / (piece.stackFloorCount - 1) : 0;
+    const sideT = THREE.MathUtils.clamp(((fromCenterX * plan.lateral.x) + (fromCenterZ * plan.lateral.z)) / Math.max(1, fromCenterD), -1, 1);
+    const frontT = THREE.MathUtils.clamp(((fromCenterX * plan.fallDir.x) + (fromCenterZ * plan.fallDir.z)) / Math.max(1, fromCenterD), -1, 1);
+    const bandIndex = Math.min(plan.bandCount - 1, Math.floor(floorT * plan.bandCount));
+    const bandShear = plan.bandShears[bandIndex] || 0;
     const obstruction = sampleCollapseObstacleInfluence(piece);
-    const heightFactor = 0.65 + Math.min(1.35, piece.stackIndex * 0.045);
+    const heightFactor = 0.55 + floorT * 1.25;
     const consumedBoost = piece === consumedPiece ? 1.25 : 1;
     const shove = STACK_PHYSICS_CONFIG.shoveStrength * heightFactor * consumedBoost;
-    const randomAngle = Math.random() * Math.PI * 2;
-    const randomSpill = 1.3 + Math.random() * 2.2;
-    piece.vx += (fromHoleX / fromHoleD) * shove * 0.55 + (fromCenterX / fromCenterD) * shove * 0.55 + obstruction.x * 2.2 + Math.cos(randomAngle) * randomSpill;
-    piece.vz += (fromHoleZ / fromHoleD) * shove * 0.55 + (fromCenterZ / fromCenterD) * shove * 0.55 + obstruction.z * 2.2 + Math.sin(randomAngle) * randomSpill;
-    piece.vy += 0.6 + Math.random() * 1.1 + piece.stackIndex * 0.015;
-    piece.avx += (Math.random() - 0.5) * 5.2 + (fromCenterZ / fromCenterD) * 1.8;
-    piece.avy += (Math.random() - 0.5) * 2.4;
-    piece.avz += (Math.random() - 0.5) * 5.2 - (fromCenterX / fromCenterD) * 1.8;
+    const sideSlip = (bandShear * plan.sideSlip) + (sideT * plan.split) + randomBetween(-0.18, 0.18);
+    const forwardLean = plan.toppling * (0.35 + floorT * 0.95) + Math.max(0, -frontT) * 0.22;
+    const crumple = plan.compression * (1 - floorT) * randomBetween(0.2, 0.75);
+    const vx = plan.fallDir.x * shove * forwardLean + plan.lateral.x * shove * sideSlip + (fromCenterX / fromCenterD) * shove * crumple + obstruction.x * 1.35;
+    const vz = plan.fallDir.z * shove * forwardLean + plan.lateral.z * shove * sideSlip + (fromCenterZ / fromCenterD) * shove * crumple + obstruction.z * 1.35;
+    const clamped = clampVectorLength2(vx, vz, STACK_PHYSICS_CONFIG.maxHorizontalSpeed);
+    piece.vx += clamped.x;
+    piece.vz += clamped.z;
+    piece.vy += 0.28 + Math.random() * 0.62 + floorT * 0.55;
+    piece.avx += randomBetween(-2.2, 2.2) + plan.lateral.z * (1.4 + floorT * 2.6);
+    piece.avy += randomBetween(-1.4, 1.4) + bandShear * 0.8;
+    piece.avz += randomBetween(-2.2, 2.2) - plan.lateral.x * (1.4 + floorT * 2.6);
   }
   return true;
 }
@@ -7527,6 +7609,16 @@ function updatePhysicsStackPieces(dt) {
     piece.vy -= STACK_PHYSICS_CONFIG.gravity * dt;
     piece.x += piece.vx * dt;
     piece.z += piece.vz * dt;
+    const spreadX = piece.x - piece.stackCenterX;
+    const spreadZ = piece.z - piece.stackCenterZ;
+    const spread = Math.hypot(spreadX, spreadZ);
+    if (spread > STACK_PHYSICS_CONFIG.maxCollapseSpread) {
+      const pullBack = (spread - STACK_PHYSICS_CONFIG.maxCollapseSpread) / spread;
+      piece.x -= spreadX * pullBack * 0.22;
+      piece.z -= spreadZ * pullBack * 0.22;
+      piece.vx *= 0.55;
+      piece.vz *= 0.55;
+    }
     piece.mesh.position.x = piece.x;
     piece.mesh.position.z = piece.z;
     piece.mesh.position.y += piece.vy * dt;

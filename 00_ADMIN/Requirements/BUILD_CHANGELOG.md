@@ -2,6 +2,15 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.2 - 2026-05-19
+
+Skyscraper collapse variation and shorter panic-car skids.
+
+- Shortened panic-car skid duration and stopping distance.
+- Changed skyscraper collapse from radial burst to impact-side directional failure.
+- Added contiguous floor-band shearing so debris falls in related but varied directions.
+- Capped collapse spread so chunks stay near the building footprint instead of exploding outward.
+
 ## Master 16.1 - 2026-05-18
 
 Mobile readability and end-of-round reward patch.
