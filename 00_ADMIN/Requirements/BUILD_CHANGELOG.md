@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.3 - 2026-05-19
+
+Replay flow blocker patch.
+
+- Fixed the post-game `Begin` button so it starts the selected mode instead of rebuilding the town behind the score screen.
+- Reset stale end-screen, input, and transient round state before each new run begins.
+- Guarded the `Begin` button against duplicate pointer, touch, and click activations from a single press.
+
 ## Master 16.2 - 2026-05-19
 
 Skyscraper collapse variation and shorter panic-car skids.

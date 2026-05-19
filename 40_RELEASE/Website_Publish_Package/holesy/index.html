@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.2</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.3</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1090,7 +1090,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 2;
+const BUILD_SUB = 3;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1970,6 +1970,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.3',
+    date: '2026-05-19',
+    summary: 'Replay flow blocker patch.',
+    changes: [
+      'Fixed the post-game Begin button so it starts the selected mode instead of rebuilding the town behind the score screen.',
+      'Reset stale end-screen, input, and transient round state before each new run begins.',
+      'Guarded the Begin button against duplicate pointer, touch, and click activations from a single press.',
+    ],
+  },
   {
     label: 'Master 16.2',
     date: '2026-05-19',
@@ -6224,12 +6234,17 @@ function flashConsumed(value, worldPos) {
 }
 
 function startGame() {
-  // Player reset is handled via holes array (holes already created at page load).
-  // Just flip running + UI.
-  // Mode setup from the title-screen picker
   pendingLoreDropId = '';
   if (roundLoreState) roundLoreState.documentDropAwarded = true;
   invalidateRoundLifecycle();
+  clearPlayerConsumedReturn();
+  clearTransientRoundUi();
+  hideActiveEffectsUi();
+  pauseOverlay.classList.add('hidden');
+  lmsChoice.classList.add('hidden');
+  finalWrap.classList.add('hidden');
+  leaderboardEl.innerHTML = '';
+  resetInputState();
   setDifficulty(difficultySelect.value);
   lmsMode = (selectedMode === 'lms');
   wavesMode = (selectedMode === 'waves');
@@ -6237,12 +6252,12 @@ function startGame() {
   setGameState(GAME_STATES.PLAYING);
   // Reset timer display class in case it was in LMS style from a previous round
   timerEl.classList.remove('lms-active');
-  showGameplayUi();
-  syncTitleAudioToGameState();
 
   if (wavesMode) {
     beginWaveRun();
     startLoreRunTracking();
+    showGameplayUi();
+    syncTitleAudioToGameState();
     return;
   }
 
@@ -6251,6 +6266,8 @@ function startGame() {
   populateCity();
   startLoreRunTracking();
   enterTimedOrLmsRound();
+  showGameplayUi();
+  syncTitleAudioToGameState();
 }
 
 function updatePauseButtonLabel() {
@@ -7159,13 +7176,18 @@ function updateHUD() {
 
 let lastPlayBtnActivationTs = 0;
 function handlePlayButtonPress(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const nowTs = performance.now();
-    if (nowTs - lastPlayBtnActivationTs < 250) return;
+    if (nowTs - lastPlayBtnActivationTs < 500) return;
     lastPlayBtnActivationTs = nowTs;
     if (playButtonAction === 'return_modes') {
       returnToModeSelect();
       return;
   }
+    if (!isGameState(GAME_STATES.TITLE, GAME_STATES.MODE_SELECT, GAME_STATES.GAME_OVER)) return;
     // On first interaction, browsers block audio until a gesture occurs on
     // the iframe/page. Begin should prime audio and start the game in the
     // same user gesture.

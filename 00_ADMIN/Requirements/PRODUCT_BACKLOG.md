@@ -828,6 +828,17 @@ Second production defect patch evidence:
 - adds contiguous floor-band shear so adjacent floors fall in related but varied directions
 - caps collapsed chunk spread so debris stays near the building footprint
 
+Third production defect patch evidence:
+
+- `10_SOURCE/Masters/Master 16.html`
+- `40_RELEASE/Website_Publish_Package/holesy/index.html`
+- `00_ADMIN/Requirements/BUILD_CHANGELOG.md`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_3_REPLAY_FLOW_BLOCKER.md`
+- labels the patched production package as `Master 16.3`
+- fixes the post-game `Begin` button blocker where the city rebuilt behind the score screen without entering gameplay
+- clears stale score, input, and transient round state before starting the next selected mode
+- debounces duplicate pointer, touch, and click activations from the same `Begin` press
+
 Notes:
 
 - the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it
