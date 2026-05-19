@@ -231,11 +231,11 @@
 
   /* Mode picker on title screen */
   #mode-picker {
-    display: flex; flex-direction: column; gap: 10px;
-    width: 100%; max-width: 360px; margin: 10px 0 18px 0;
+    display: flex; flex-direction: column; gap: 8px;
+    width: 100%; max-width: 360px; margin: 8px 0 12px 0;
   }
   #mode-picker .mode-option {
-    padding: 14px 18px; text-align: left; cursor: pointer;
+    padding: 11px 16px; text-align: left; cursor: pointer;
     background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
     border-radius: 12px; color: #fff;
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
@@ -258,10 +258,10 @@
     transform: none;
   }
   #mode-picker .mode-label {
-    display: block; font-size: 16px; font-weight: 800; margin-bottom: 3px;
+    display: block; font-size: 15px; font-weight: 800; margin-bottom: 2px;
   }
   #mode-picker .mode-desc {
-    display: block; font-size: 12px; opacity: 0.7; line-height: 1.45; font-weight: 500;
+    display: block; font-size: 11px; opacity: 0.7; line-height: 1.32; font-weight: 500;
   }
   #mode-picker .mode-soon {
     display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 700;
@@ -949,7 +949,7 @@
     </div>
   </div>
   <div class="panel panel-timer" style="text-align:right;">
-    <div class="label"><span id="wave-label" class="hidden">Wave <span id="wave-num">1</span>/4 · </span>Timer</div>
+    <div class="label"><span id="wave-label" class="hidden"><span id="wave-label-text">Wave</span> <span id="wave-num">1</span><span id="wave-total">/4</span> · </span>Timer</div>
     <div class="value" id="timer">2:00</div>
   </div>
 </div>
@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.5</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.6</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -993,6 +993,10 @@
       <div class="mode-option" data-mode="waves">
         <span class="mode-label">🌊 Waves</span>
         <span class="mode-desc">Four progressively brutal waves. Smaller boards, deadlier soldiers. Score accumulates.</span>
+      </div>
+      <div class="mode-option" data-mode="endless">
+        <span class="mode-label">∞ Endless Waves</span>
+        <span class="mode-desc">The lockdown never closes. Each district comes back meaner.</span>
       </div>
     </div>
   </div>
@@ -1090,7 +1094,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 5;
+const BUILD_SUB = 6;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1204,6 +1208,7 @@ function createEmptyGameStats() {
       timed: createModeStats(),
       lms: createModeStats(),
       waves: createModeStats(),
+      endless: createModeStats(),
     },
     difficulties: {
       normal: createDifficultyStats(),
@@ -1222,6 +1227,7 @@ function createModeStats() {
     abandoned: 0,
     totalDurationSeconds: 0,
     bestScore: 0,
+    bestWave: 0,
   };
 }
 
@@ -1287,6 +1293,7 @@ function recordGameRun(stats, run) {
   modeStats.games += 1;
   modeStats.totalDurationSeconds += durationSeconds;
   modeStats.bestScore = Math.max(modeStats.bestScore || 0, playerScore);
+  modeStats.bestWave = Math.max(modeStats.bestWave || 0, completedRun.wave || 0);
   if (outcome === 'win') modeStats.wins += 1;
   else if (outcome === 'abandoned') modeStats.abandoned += 1;
   else modeStats.losses += 1;
@@ -1314,6 +1321,10 @@ function formatReasonLabel(reason) {
     waves_survived: 'Waves survived',
     waves_lockdown_complete_score_win: 'Waves score win',
     waves_lockdown_complete_score_loss: 'Waves score loss',
+    endless_survived: 'Endless survived',
+    endless_score_win: 'Endless score lead',
+    endless_score_loss: 'Endless score loss',
+    voluntary_cashout: 'Voluntary cashout',
     abandoned: 'Abandoned',
     unknown: 'Unknown',
   };
@@ -1355,7 +1366,7 @@ function normalizeGameStats(stats) {
 }
 
 function normalizeMode(mode) {
-  if (mode === 'lms' || mode === 'waves' || mode === 'timed') return mode;
+  if (mode === 'lms' || mode === 'waves' || mode === 'endless' || mode === 'timed') return mode;
   return 'timed';
 }
 
@@ -1948,6 +1959,148 @@ const HOLESY_CONFIG = Object.freeze({
 let WAVE_CONFIGS = buildDifficultyWaveConfigs(HOLESY_CONFIG.waves.configs, activeDifficultyProfile);
 const POWERUP_CONFIGS = HOLESY_CONFIG.aidDrops.powerups;
 const POWERUP_BY_ID = new Map(POWERUP_CONFIGS.map(powerup => [powerup.id, powerup]));
+const ENDLESS_WAVE_TUNING = Object.freeze({
+  ultraReferenceWave: 75,
+  postReferenceSoftness: 0.18,
+  caps: Object.freeze({
+    soldierCountMin: 20,
+    soldierCountMax: 24,
+    spawnIntervalMin: 2.4,
+    spawnIntervalMax: 3.25,
+    soldierSpeedMult: 1.72,
+    soldierDamageMult: 4.25,
+    soldierHitChanceMult: 2.25,
+    worldScale: 0.58,
+  }),
+});
+
+let activeEndlessPressureProfile = null;
+
+function clamp01(value) {
+  return Math.max(0, Math.min(1, value));
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function lerpRound(a, b, t) {
+  return Math.round(lerp(a, b, t));
+}
+
+function getEffectiveDifficultyProfile() {
+  return activeEndlessPressureProfile || activeDifficultyProfile;
+}
+
+function isEndlessMode() {
+  return endlessMode || selectedMode === 'endless';
+}
+
+function isWaveBasedMode() {
+  return wavesMode || endlessMode;
+}
+
+function endlessDifficultyOffset() {
+  if (selectedDifficultyName === 'ultra') return 24;
+  if (selectedDifficultyName === 'hard') return 12;
+  return 0;
+}
+
+function endlessCurveT(waveNum) {
+  const effectiveWave = Math.max(1, waveNum + endlessDifficultyOffset());
+  return clamp01((effectiveWave - 1) / Math.max(1, ENDLESS_WAVE_TUNING.ultraReferenceWave - 1));
+}
+
+function endlessTail(waveNum) {
+  const effectiveWave = Math.max(1, waveNum + endlessDifficultyOffset());
+  return Math.max(0, effectiveWave - ENDLESS_WAVE_TUNING.ultraReferenceWave);
+}
+
+function buildEndlessPressureProfile(waveNum) {
+  const t = endlessCurveT(waveNum);
+  const tail = endlessTail(waveNum);
+  const tailBoost = Math.log1p(tail) * ENDLESS_WAVE_TUNING.postReferenceSoftness;
+  const normal = DIFFICULTY_PROFILES.normal;
+  const ultra = DIFFICULTY_PROFILES.ultra;
+  const harder = (key, cap) => Math.min(cap, lerp(normal[key], ultra[key], t) + tailBoost);
+  const lower = (key, floor) => Math.max(floor, lerp(normal[key], ultra[key], t) - tailBoost * 0.12);
+  return Object.freeze({
+    ...normal,
+    label: `Endless Wave ${waveNum}`,
+    description: 'The lockdown never closes. Each district comes back meaner.',
+    soldierDamageMult: harder('soldierDamageMult', 4.2),
+    soldierSpeedMult: harder('soldierSpeedMult', 1.7),
+    soldierCountBonus: Math.min(12, lerpRound(normal.soldierCountBonus, ultra.soldierCountBonus, t) + Math.floor(tailBoost * 1.5)),
+    soldierIntervalMult: lower('soldierIntervalMult', 0.28),
+    soldierHitChanceMult: harder('soldierHitChanceMult', 2.2),
+    parachuteFallMult: lower('parachuteFallMult', 0.42),
+    waveOneSoldiers: false,
+    aidDelayMult: harder('aidDelayMult', 3.5),
+    aiScanMult: harder('aiScanMult', 3.4),
+    aiDecisionMult: lower('aiDecisionMult', 0.28),
+    aiAidBonus: Math.min(0.58, lerp(normal.aiAidBonus, ultra.aiAidBonus, t) + tailBoost * 0.05),
+    aiVisionBonus: Math.min(54, lerpRound(normal.aiVisionBonus, ultra.aiVisionBonus, t) + Math.floor(tailBoost * 3)),
+    aiSpeedMult: harder('aiSpeedMult', 1.32),
+    aiWanderBiasMult: lower('aiWanderBiasMult', 0.08),
+    aiRouteLookahead: Math.min(1.85, lerp(normal.aiRouteLookahead, ultra.aiRouteLookahead, t) + tailBoost * 0.08),
+    aiReservationBreakMult: harder('aiReservationBreakMult', 3.0),
+    aiChaseBonus: Math.min(0.58, lerp(normal.aiChaseBonus, ultra.aiChaseBonus, t) + tailBoost * 0.04),
+    holeEatScoreMult: lower('holeEatScoreMult', 0.38),
+    holeEatGrowthMult: lower('holeEatGrowthMult', 0.28),
+    buildingBlockDensityMult: lower('buildingBlockDensityMult', 0.5),
+    skyscraperChanceMult: lower('skyscraperChanceMult', 0.18),
+    smallBuildingDensityMult: lower('smallBuildingDensityMult', 0.35),
+    sidewalkAssetDensityMult: lower('sidewalkAssetDensityMult', 0.35),
+    carDensityMult: lower('carDensityMult', 0.35),
+    parkAssetDensityMult: lower('parkAssetDensityMult', 0.32),
+    personChanceMult: lower('personChanceMult', 0.35),
+  });
+}
+
+function buildEndlessWaveConfig(waveNum) {
+  if (waveNum <= 1) {
+    return {
+      ...WAVE_CONFIGS[1],
+      wave: 1,
+      soldiersEnabled: false,
+      soldierCountMin: 0,
+      soldierCountMax: 0,
+      spawnIntervalMin: 99,
+      spawnIntervalMax: 99,
+    };
+  }
+  const normalConfigs = buildDifficultyWaveConfigs(HOLESY_CONFIG.waves.configs, DIFFICULTY_PROFILES.normal);
+  const ultraConfigs = buildDifficultyWaveConfigs(HOLESY_CONFIG.waves.configs, DIFFICULTY_PROFILES.ultra);
+  const start = normalConfigs[2];
+  const target = ultraConfigs[4];
+  const t = clamp01((Math.max(2, waveNum + endlessDifficultyOffset()) - 2) / Math.max(1, ENDLESS_WAVE_TUNING.ultraReferenceWave - 2));
+  const tail = endlessTail(waveNum);
+  const tailBoost = Math.log1p(tail) * ENDLESS_WAVE_TUNING.postReferenceSoftness;
+  const caps = ENDLESS_WAVE_TUNING.caps;
+  return {
+    wave: waveNum,
+    duration: Math.min(90, lerpRound(start.duration, target.duration, t) + Math.min(10, Math.floor(tailBoost * 2))),
+    soldiersEnabled: true,
+    worldScale: Math.max(caps.worldScale, lerp(start.worldScale, target.worldScale, t) - Math.min(0.12, tailBoost * 0.015)),
+    soldierSpeedMult: Math.min(caps.soldierSpeedMult, lerp(start.soldierSpeedMult, target.soldierSpeedMult, t) + tailBoost * 0.03),
+    soldierDamageMult: Math.min(caps.soldierDamageMult, lerp(start.soldierDamageMult, target.soldierDamageMult, t) + tailBoost * 0.08),
+    soldierHitChanceMult: Math.min(caps.soldierHitChanceMult, lerp(1, DIFFICULTY_PROFILES.ultra.soldierHitChanceMult, t) + tailBoost * 0.05),
+    spawnIntervalMin: Math.max(caps.spawnIntervalMin, lerp(start.spawnIntervalMin, target.spawnIntervalMin, t) - tailBoost * 0.16),
+    spawnIntervalMax: Math.max(caps.spawnIntervalMax, lerp(start.spawnIntervalMax, target.spawnIntervalMax, t) - tailBoost * 0.16),
+    soldierCountMin: Math.min(caps.soldierCountMin, lerpRound(start.soldierCountMin, target.soldierCountMin, t) + Math.floor(tailBoost * 1.2)),
+    soldierCountMax: Math.min(caps.soldierCountMax, lerpRound(start.soldierCountMax, target.soldierCountMax, t) + Math.floor(tailBoost * 1.2)),
+  };
+}
+
+function getWaveConfig(waveNum) {
+  if (endlessMode) return buildEndlessWaveConfig(waveNum);
+  return WAVE_CONFIGS[waveNum] || WAVE_CONFIGS[WAVE_CONFIGS.length - 1];
+}
+
+function setEndlessPressureForWave(waveNum) {
+  activeEndlessPressureProfile = endlessMode ? buildEndlessPressureProfile(waveNum) : null;
+  applyDifficultyToAiPersonalities();
+}
 
 // =========================================================================
 // SETUP
@@ -1970,6 +2123,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.6',
+    date: '2026-05-19',
+    summary: 'Endless Waves opens the lockdown into an unbounded survival run.',
+    changes: [
+      'Added Endless Waves as a fourth selectable game mode.',
+      'Generated wave pressure indefinitely, with current Ultra lockdown pressure reached around Wave 75.',
+      'Added Endless-specific HUD, end-state copy, stats tracking, and voluntary cashout handling.',
+    ],
+  },
   {
     label: 'Master 16.5',
     date: '2026-05-19',
@@ -2768,7 +2931,7 @@ function isCarDrivingAwayFromThreat(car, threat) {
 }
 
 function populateCity() {
-  const economy = activeDifficultyProfile;
+  const economy = getEffectiveDifficultyProfile();
   const buildingBlockDensity = economy.buildingBlockDensityMult || 1;
   const skyscraperChance = 0.35 * (economy.skyscraperChanceMult || 1);
   const midBuildingChance = 0.30;
@@ -3260,10 +3423,11 @@ function buildDifficultyPersonality(base, difficulty, index) {
 }
 
 function applyDifficultyToAiPersonalities() {
+  const effectiveDifficulty = getEffectiveDifficultyProfile();
   holes.forEach((h, idx) => {
     if (h.isPlayer) return;
     const aiIndex = idx - 1;
-    h.personality = buildDifficultyPersonality(AI_PERSONALITIES[aiIndex], activeDifficultyProfile, aiIndex);
+    h.personality = buildDifficultyPersonality(AI_PERSONALITIES[aiIndex], effectiveDifficulty, aiIndex);
   });
 }
 const PLAYER_COLOR = 0x4d9eff; // blue
@@ -3530,12 +3694,14 @@ let lmsMode = false;
 //   'timed' — standard 2-minute game, no end-of-timer choice modal
 //   'lms'   — starts with lmsMode = true immediately, no timer
 //   'waves' — progressive 4-wave run
+//   'endless' — unbounded wave run that keeps scaling until the player cashes out or is consumed
 let selectedMode = 'timed';
 
 // Waves mode state. Active only when selectedMode === 'waves'.
 // Survival across waves matters — eliminated holes stay eliminated. If only
 // one hole is left at a wave boundary, the run ends immediately as a win.
 let wavesMode = false;
+let endlessMode = false;
 let currentWave = 1; // 1..4
 let wavesTransitioning = false; // true during the "Wave N incoming!" interstitial
 let roundRunId = 0;
@@ -3920,13 +4086,13 @@ function updateDebugOverlay() {
     : 0;
   const windFilter = music.holeWind ? music.holeWind.noiseFilter.frequency.value.toFixed(0) : '--';
   const windGain = music.holeWind ? music.holeWind.noiseGain.gain.value.toFixed(3) : '--';
-  const cfg = wavesMode ? (WAVE_CONFIGS[currentWave] || null) : null;
+  const cfg = isWaveBasedMode() ? getWaveConfig(currentWave) : null;
   const inputSource = getDebugInputSource();
   const inputDetail = getDebugInputDetail();
   const aidDropDebug = getDebugAidDropCountdown();
   const waveRosterDebug = getDebugWaveRosterSummary();
-  const troopDeploySeconds = (wavesMode && soldiersEnabledThisWave) ? Math.max(0, waveTimer).toFixed(1) + 's' : '--';
-  const waveEndSeconds = wavesMode ? Math.max(0, gameTime).toFixed(1) + 's' : '--';
+  const troopDeploySeconds = (isWaveBasedMode() && soldiersEnabledThisWave) ? Math.max(0, waveTimer).toFixed(1) + 's' : '--';
+  const waveEndSeconds = isWaveBasedMode() ? Math.max(0, gameTime).toFixed(1) + 's' : '--';
   const rivalLines = holes
     .filter(h => !h.isPlayer)
     .map(h => `${h.name}: ${h.score.toLocaleString()} pts | r ${h.radius.toFixed(2)} | ${h.aiState}`)
@@ -3937,9 +4103,9 @@ function updateDebugOverlay() {
     `performance: ${HOLESY_CONFIG.performance.activeProfileName}`,
     `state: ${currentGameState}`,
     `mode: ${selectedModeLabel()}`,
-    `difficulty: ${activeDifficultyProfile.label}`,
+    `difficulty: ${activeDifficultyProfile.label}${activeEndlessPressureProfile ? ` | pressure ${activeEndlessPressureProfile.label}` : ''}`,
     `input: ${inputSource}${inputDetail ? ` | ${inputDetail}` : ''}`,
-    `wave: ${wavesMode ? currentWave : '-'}`,
+    `wave: ${isWaveBasedMode() ? currentWave : '-'}`,
     `gameTime: ${gameTime.toFixed(1)}s`,
     `wave end: ${waveEndSeconds}`,
     `countdown cue: ${lastWaveCountdownCueProof || '--'}`,
@@ -4012,9 +4178,12 @@ function getDebugWaveRosterSummary() {
 
 // Waves HUD elements
 const waveLabel = document.getElementById('wave-label');
+const waveLabelTextEl = document.getElementById('wave-label-text');
 const waveNumEl = document.getElementById('wave-num');
+const waveTotalEl = document.getElementById('wave-total');
 
 function selectedModeLabel() {
+  if (isEndlessMode()) return 'Endless Waves';
   if (wavesMode || selectedMode === 'waves') return 'Waves';
   if (lmsMode || selectedMode === 'lms') return 'Last Man Standing';
   return 'Timed';
@@ -4738,6 +4907,7 @@ function setDifficulty(name) {
 function modeLabelFromKey(mode) {
   if (mode === 'lms') return 'LMS';
   if (mode === 'waves') return 'Waves';
+  if (mode === 'endless') return 'Endless Waves';
   return 'Timed';
 }
 
@@ -4778,7 +4948,8 @@ function buildGameStatsMarkup() {
     .map(([mode, s]) => {
       const losses = s.losses || 0;
       const abandoned = s.abandoned || 0;
-      return `<div class="stats-line">${modeLabelFromKey(mode)}: ${s.wins || 0}W / ${losses}L / ${abandoned}A (${pct(s.wins || 0, s.games || 0)})</div>`;
+      const waveText = mode === 'endless' ? ` · best wave ${s.bestWave || 0}` : '';
+      return `<div class="stats-line">${modeLabelFromKey(mode)}: ${s.wins || 0}W / ${losses}L / ${abandoned}A (${pct(s.wins || 0, s.games || 0)})${waveText}</div>`;
     })
     .join('');
   const difficultyLines = Object.entries(summary.difficulties)
@@ -4881,7 +5052,7 @@ function finalizeTrackedGameRun(reasonOverride = '') {
   const mode = activeGameRun.mode;
   const durationSeconds = (performance.now() - activeGameRun.startedAtMs) / 1000;
   const reason = classifyGameEndReason(reasonOverride || pendingPlayerEndReason, mode, aliveHoles, leader, playerRank);
-  const outcome = reason === 'abandoned'
+  const outcome = (reason === 'abandoned' || reason === 'voluntary_cashout')
     ? 'abandoned'
     : isPlayerWinForStats(reason, leader, aliveHoles, playerRank) ? 'win' : 'loss';
 
@@ -4895,7 +5066,7 @@ function finalizeTrackedGameRun(reasonOverride = '') {
     playerScore: player.score,
     topScore: leader ? leader.score : player.score,
     winnerName: leader ? leader.name : '',
-    wave: wavesMode ? currentWave : 0,
+    wave: (mode === 'waves' || mode === 'endless') ? currentWave : 0,
   });
   refreshStatsWindow();
 }
@@ -4906,12 +5077,14 @@ function classifyGameEndReason(reasonOverride, mode, aliveHoles, leader, playerR
   if (mode === 'lms') return aliveHoles.length === 1 && aliveHoles[0].isPlayer ? 'survival_win' : 'survival_loss';
   if (mode === 'waves' && aliveHoles.length === 1 && aliveHoles[0].isPlayer) return 'waves_survived';
   if (mode === 'waves') return leader && leader.isPlayer ? 'waves_lockdown_complete_score_win' : 'waves_lockdown_complete_score_loss';
+  if (mode === 'endless' && aliveHoles.length === 1 && aliveHoles[0].isPlayer) return 'endless_survived';
+  if (mode === 'endless') return leader && leader.isPlayer ? 'endless_score_win' : 'endless_score_loss';
   return playerRank === 1 ? 'score_win' : 'score_loss';
 }
 
 function isPlayerWinForStats(reason, leader, aliveHoles, playerRank) {
-  if (reason === 'score_win' || reason === 'waves_lockdown_complete_score_win' || reason === 'survival_win' || reason === 'waves_survived') return true;
-  if (reason === 'score_loss' || reason === 'waves_lockdown_complete_score_loss' || reason === 'survival_loss' || reason === 'eaten_by_rival' || reason === 'shot_by_soldiers' || reason === 'abandoned') return false;
+  if (reason === 'score_win' || reason === 'waves_lockdown_complete_score_win' || reason === 'survival_win' || reason === 'waves_survived' || reason === 'endless_survived') return true;
+  if (reason === 'score_loss' || reason === 'waves_lockdown_complete_score_loss' || reason === 'endless_score_loss' || reason === 'survival_loss' || reason === 'eaten_by_rival' || reason === 'shot_by_soldiers' || reason === 'abandoned' || reason === 'voluntary_cashout') return false;
   if (!player.alive) return false;
   if (aliveHoles.length === 1 && aliveHoles[0].isPlayer) return true;
   return leader && leader.isPlayer && playerRank === 1;
@@ -5991,8 +6164,8 @@ function triggerWaveCountdownCue(second) {
 }
 
 function syncWaveCountdownCueToDisplayedTimer(displayedSeconds) {
-  if (!wavesMode || !isGameplayAudioAllowed() || gameTime <= 0 || gameTime >= 4) {
-    if (gameTime >= 4 || gameTime <= 0 || !wavesMode) {
+  if (!isWaveBasedMode() || !isGameplayAudioAllowed() || gameTime <= 0 || gameTime >= 4) {
+    if (gameTime >= 4 || gameTime <= 0 || !isWaveBasedMode()) {
       lastWaveCountdownCueSecond = null;
       lastWaveCountdownCueProof = '';
     }
@@ -6023,8 +6196,10 @@ function triggerUnitClearVisuals(h) {
 }
 
 function applyUnitClearSpeedBoost(h, roster) {
-  const soldierSpan = Math.max(1, WAVE_CONFIGS[4].soldierCountMax - WAVE_CONFIGS[2].soldierCountMin);
-  const normalizedUnitSize = Math.min(1, Math.max(0, ((roster.expected || 1) - WAVE_CONFIGS[2].soldierCountMin) / soldierSpan));
+  const lowWaveCfg = getWaveConfig(2);
+  const highWaveCfg = getWaveConfig(Math.max(4, currentWave));
+  const soldierSpan = Math.max(1, highWaveCfg.soldierCountMax - lowWaveCfg.soldierCountMin);
+  const normalizedUnitSize = Math.min(1, Math.max(0, ((roster.expected || 1) - lowWaveCfg.soldierCountMin) / soldierSpan));
   const boostDurationMs = UNIT_CLEAR_SPEED_BOOST_MIN_MS + normalizedUnitSize * (UNIT_CLEAR_SPEED_BOOST_MAX_MS - UNIT_CLEAR_SPEED_BOOST_MIN_MS);
   const boostMultiplier = UNIT_CLEAR_SPEED_BOOST_MIN_MULTIPLIER + normalizedUnitSize * (UNIT_CLEAR_SPEED_BOOST_MAX_MULTIPLIER - UNIT_CLEAR_SPEED_BOOST_MIN_MULTIPLIER);
   h.effects.speedMultiplier = Math.max(h.effects.speedMultiplier || 1, boostMultiplier);
@@ -6140,6 +6315,8 @@ function unfreezeGameplayTime() {
 
 function resetWaveRuntimeState() {
   wavesMode = false;
+  endlessMode = false;
+  activeEndlessPressureProfile = null;
   wavesTransitioning = false;
   resetWaveCountdownCue();
   currentWave = 1;
@@ -6170,7 +6347,7 @@ function scheduleNextWaveStart(nextWave, delayMs = HOLESY_CONFIG.eventMessaging.
     pendingWaveStartWave = null;
     pendingWaveStartDueAt = 0;
     if (scheduledRoundId !== roundRunId) return;
-    if (!wavesMode || !isGameState(GAME_STATES.WAVE_TRANSITION)) return;
+    if (!isWaveBasedMode() || !isGameState(GAME_STATES.WAVE_TRANSITION)) return;
     startWave(nextWave);
   }, delayMs);
 }
@@ -6198,6 +6375,8 @@ function hideGameplayUi() {
 }
 
 function resetStandardRoundTuning() {
+  activeEndlessPressureProfile = null;
+  applyDifficultyToAiPersonalities();
   soldiersEnabledThisWave = true;
   currentSoldierSpeedMult = activeDifficultyProfile.soldierSpeedMult;
   currentSoldierDamageMult = activeDifficultyProfile.soldierDamageMult;
@@ -6228,7 +6407,9 @@ function enterTimedOrLmsRound() {
 
 function beginWaveRun() {
   currentWave = 1;
-  setArenaScale(WAVE_CONFIGS[1].worldScale || 1.0);
+  setEndlessPressureForWave(1);
+  const cfg = getWaveConfig(1);
+  setArenaScale(cfg.worldScale || 1.0);
   rebuildWaveWorldForCurrentArena();
   startWave(1);
 }
@@ -6251,7 +6432,8 @@ function enterWaveTransition(nextWave) {
   setGameState(GAME_STATES.WAVE_TRANSITION);
   showStagePop('DISTRICT CONSUMED', 1800);
   showEventBanner(waveTransitionLore(nextWave), HOLESY_CONFIG.eventMessaging.waveTransitionDurationMs);
-  setArenaScale((WAVE_CONFIGS[nextWave] && WAVE_CONFIGS[nextWave].worldScale) || 1.0);
+  setEndlessPressureForWave(nextWave);
+  setArenaScale(getWaveConfig(nextWave).worldScale || 1.0);
   rebuildWaveWorldForCurrentArena();
   updatePauseButtonLabel();
   scheduleNextWaveStart(nextWave);
@@ -6294,12 +6476,15 @@ function startGame() {
   setDifficulty(difficultySelect.value);
   lmsMode = (selectedMode === 'lms');
   wavesMode = (selectedMode === 'waves');
+  endlessMode = (selectedMode === 'endless');
+  if (!endlessMode) activeEndlessPressureProfile = null;
+  applyDifficultyToAiPersonalities();
   startTrackedGameRun();
   setGameState(GAME_STATES.PLAYING);
   // Reset timer display class in case it was in LMS style from a previous round
   timerEl.classList.remove('lms-active');
 
-  if (wavesMode) {
+  if (isWaveBasedMode()) {
     beginWaveRun();
     startLoreRunTracking();
     showGameplayUi();
@@ -6318,6 +6503,7 @@ function startGame() {
 
 function updatePauseButtonLabel() {
   pauseBtn.textContent = isGameState(GAME_STATES.PAUSED) ? 'Resume' : 'Pause';
+  pauseExitBtn.textContent = endlessMode ? 'End Game' : 'Game Modes';
 }
 
 function canUsePauseMenu() {
@@ -6568,7 +6754,7 @@ function tearDownWorld() {
   // Any in-flight wave rosters (from the old wave's soldier spawns)
   clearWaveRosters();
   // Reset the next-wave soldier spawn timer so the new wave starts fresh.
-  const nextCfg = WAVE_CONFIGS[Math.min(currentWave + 1, WAVE_CONFIGS.length - 1)] || WAVE_CONFIGS[WAVE_CONFIGS.length - 1];
+  const nextCfg = getWaveConfig(currentWave + 1);
   waveTimer = nextCfg.spawnIntervalMin + Math.random() * (nextCfg.spawnIntervalMax - nextCfg.spawnIntervalMin);
 }
 
@@ -6609,7 +6795,8 @@ function repositionHolesForNewWave() {
 function startWave(waveNum) {
   unfreezeGameplayTime();
   currentWave = waveNum;
-  const cfg = WAVE_CONFIGS[waveNum];
+  setEndlessPressureForWave(waveNum);
+  const cfg = getWaveConfig(waveNum);
   applyWaveConfig(cfg);
   scheduleWaveAidDrop();
   wavesTransitioning = false;
@@ -6630,7 +6817,7 @@ function onWaveTimerExpired() {
   // If somehow only one hole is left at this point, end immediately as a win.
   const aliveCount = holes.filter(h => h.alive).length;
   if (aliveCount <= 1) { endGame(); return; }
-  if (currentWave >= WAVE_CONFIGS.length - 1) {
+  if (!endlessMode && currentWave >= WAVE_CONFIGS.length - 1) {
     // That was wave 4 — whole run is over, final leaderboard.
     endGame();
     return;
@@ -6640,14 +6827,20 @@ function onWaveTimerExpired() {
 
 // Shows a "WAVE N" banner briefly via the existing stage-pop element.
 function showWaveBanner(waveNum) {
-  showStagePop(WAVE_BANNER_LABELS[waveNum] || ('WAVE ' + waveNum));
+  showStagePop(endlessMode ? `ENDLESS WAVE ${waveNum}` : (WAVE_BANNER_LABELS[waveNum] || ('WAVE ' + waveNum)));
 }
 
 function waveThreatBriefing(waveNum) {
+  if (endlessMode) {
+    if (waveNum === 1) return 'Endless Wave 1: The first district is still pretending this can be contained.';
+    if (waveNum < ENDLESS_WAVE_TUNING.ultraReferenceWave) return `Endless Wave ${waveNum}: The next district has already learned from the last one.`;
+    return `Endless Wave ${waveNum}: The Parallax is no longer escalating. It is refining.`;
+  }
   return WAVE_THREAT_BRIEFINGS[waveNum] || WAVE_THREAT_BRIEFINGS[4];
 }
 
 function waveTransitionLore(nextWave) {
+  if (endlessMode) return `The district was recorded. Endless Wave ${nextWave} has already been edited.`;
   return WAVE_TRANSITION_LORE[nextWave] || WAVE_TRANSITION_LORE[4];
 }
 
@@ -6673,7 +6866,7 @@ function pickRandomPowerup() {
 }
 
 function difficultyAidDelay(seconds) {
-  return seconds * activeDifficultyProfile.aidDelayMult;
+  return seconds * getEffectiveDifficultyProfile().aidDelayMult;
 }
 
 function resetAidDropState() {
@@ -6690,7 +6883,7 @@ function resetAidDropState() {
 }
 
 function scheduleAidDropForCurrentMode() {
-  if (wavesMode) return;
+  if (isWaveBasedMode()) return;
   if (lmsMode) {
     aidDropCountdown = difficultyAidDelay(HOLESY_CONFIG.aidDrops.lmsIntervalSeconds);
     return;
@@ -7008,7 +7201,7 @@ function updateAidDrops(dt) {
   if (aidDropCountdown > 0) return;
 
   spawnAidDropShip();
-  if (wavesMode) {
+  if (isWaveBasedMode()) {
     aidDropCountdown = null;
   } else if (lmsMode) {
     aidDropCountdown = difficultyAidDelay(HOLESY_CONFIG.aidDrops.lmsIntervalSeconds);
@@ -7098,24 +7291,31 @@ function endGame() {
       subtitle = "Final leaderboard below.";
     }
   } else {
-    if (wavesMode) {
+    if (isWaveBasedMode()) {
       if (!player.alive) {
         if (aliveHoles.length === 1 && aliveHoles[0] && !aliveHoles[0].isPlayer) {
           const survivor = aliveHoles[0];
           reason = "You Were Consumed.";
           subtitle = survivor
             ? `${survivor.name} survived the breach and finished ahead of you.`
-            : "You were consumed before the district finished collapsing.";
+            : endlessMode ? `You were consumed on Endless Wave ${currentWave}.` : "You were consumed before the district finished collapsing.";
         } else {
           reason = "You Were Consumed.";
-          subtitle = "The breach stayed active, but your hole did not survive the crackdown.";
+          subtitle = endlessMode
+            ? `Endless Wave ${currentWave} kept going. You did not.`
+            : "The breach stayed active, but your hole did not survive the crackdown.";
         }
       } else if (aliveHoles.length === 1 && aliveHoles[0].isPlayer) {
-        reason = "Containment Survived.";
-        subtitle = "You outlasted the lockdown and devoured the district under maximum pressure.";
+        reason = endlessMode ? "Endless Breach Survived." : "Containment Survived.";
+        subtitle = endlessMode
+          ? `You were the last Hunger standing after Endless Wave ${currentWave}.`
+          : "You outlasted the lockdown and devoured the district under maximum pressure.";
+      } else if (pendingPlayerEndReason === 'voluntary_cashout') {
+        reason = "Withdrawal Recorded.";
+        subtitle = `You left the breach alive after Endless Wave ${currentWave}. The records hate that.`;
       } else if (gameTime <= 0) {
-        reason = "Lockdown Complete.";
-        subtitle = "The district is spent. Final standings are listed below.";
+        reason = endlessMode ? "Endless Breach Paused." : "Lockdown Complete.";
+        subtitle = endlessMode ? `Final standings after Endless Wave ${currentWave}.` : "The district is spent. Final standings are listed below.";
       } else {
         reason = "Round over.";
         subtitle = "Final leaderboard below.";
@@ -7130,7 +7330,7 @@ function endGame() {
     } else {
       reason = "Round over.";
     }
-    if (!wavesMode && player.alive) {
+    if (!isWaveBasedMode() && player.alive) {
       subtitle = player.radius >= 6.0
         ? "You grew massive. Absolute menace."
         : "Final leaderboard below.";
@@ -7145,7 +7345,8 @@ function endGame() {
   const playerFinalRank = Math.max(1, ranked.findIndex(h => h.isPlayer) + 1);
   const endReasonForRewards = classifyGameEndReason(pendingPlayerEndReason, selectedMode, aliveHoles, ranked[0], playerFinalRank);
   const playerWonRound = isPlayerWinForStats(endReasonForRewards, ranked[0], aliveHoles, playerFinalRank);
-  finalizeLoreRunTracking(ranked[0], playerFinalRank, playerWonRound);
+  const playerEligibleForLoreDrop = playerWonRound || (endReasonForRewards === 'voluntary_cashout' && player.alive && playerFinalRank === 1);
+  finalizeLoreRunTracking(ranked[0], playerFinalRank, playerEligibleForLoreDrop);
   let html = '<div class="lb-title">Final Scores</div>';
   ranked.forEach((h, i) => {
     const colorHex = '#' + h.rimColor.toString(16).padStart(6, '0');
@@ -7193,10 +7394,12 @@ function updateHUD() {
     timerEl.classList.remove('warn');
   }
 
-  // Wave indicator — shown only in Waves mode
-  if (wavesMode) {
+  // Wave indicator — shown only in wave-based modes
+  if (isWaveBasedMode()) {
     waveLabel.classList.remove('hidden');
+    if (waveLabelTextEl) waveLabelTextEl.textContent = endlessMode ? 'Endless Wave' : 'Wave';
     waveNumEl.textContent = currentWave;
+    if (waveTotalEl) waveTotalEl.textContent = endlessMode ? '' : '/4';
   } else {
     waveLabel.classList.add('hidden');
   }
@@ -7257,7 +7460,14 @@ pauseBtn.addEventListener('click', () => {
   else resumeGame();
 });
 pauseResumeBtn.addEventListener('click', () => resumeGame());
-pauseExitBtn.addEventListener('click', () => returnToModeSelect());
+pauseExitBtn.addEventListener('click', () => {
+  if (endlessMode && activeGameRun && !activeGameRun.recorded) {
+    pendingPlayerEndReason = 'voluntary_cashout';
+    endGame();
+    return;
+  }
+  returnToModeSelect();
+});
 
 window.addEventListener('keydown', (e) => {
   if (e.key === '`') {
@@ -7283,7 +7493,7 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-// Mode picker — click a mode to select it (Waves is disabled for now)
+// Mode picker — click a mode to select it.
 modePicker.addEventListener('click', (e) => {
   const option = e.target.closest('.mode-option');
   if (!option) return;
@@ -7394,12 +7604,13 @@ function holeEatsHole(eater, eaten) {
   // Big score reward — scales with victim's score and size
   // Reduced 50% from previous (was 500 + 60%score + 200×radius)
   const baseReward = 250 + Math.floor(eaten.score * 0.3) + Math.floor(eaten.radius * 100);
-  const reward = Math.max(1, Math.floor(baseReward * activeDifficultyProfile.holeEatScoreMult));
+  const effectiveDifficulty = getEffectiveDifficultyProfile();
+  const reward = Math.max(1, Math.floor(baseReward * effectiveDifficulty.holeEatScoreMult));
   // LMS keeps the same score reward pipeline as the other modes.
   eater.score += reward;
   // Direct bonus radius on top of score-driven growth (so predation stays
   // dramatic even in late game when log formula gives tiny per-point growth)
-  const holeEatGrowthMult = activeDifficultyProfile.holeEatGrowthMult || 1;
+  const holeEatGrowthMult = effectiveDifficulty.holeEatGrowthMult || 1;
   eater.bonusRadius = (eater.bonusRadius || 0) + eaten.radius * HOLE_EAT_RADIUS_BONUS * holeEatGrowthMult;
   // Also absorb some of the victim's bonus radius from prior eating sprees
   if (eaten.bonusRadius) eater.bonusRadius += eaten.bonusRadius * 0.5 * holeEatGrowthMult;
@@ -8569,7 +8780,7 @@ const SHOT_DAMAGE_AI = HOLESY_CONFIG.military.shotDamageAI;         // 25% of ba
 const MIN_HOLE_RADIUS = HOLESY_CONFIG.military.minHoleRadius;         // below this, hole is destroyed
 const PARACHUTE_FALL_TIME = HOLESY_CONFIG.military.parachuteFallTime;     // seconds
 function difficultyParachuteFallTime() {
-  return Math.max(0.75, PARACHUTE_FALL_TIME * (activeDifficultyProfile.parachuteFallMult || 1));
+  return Math.max(0.75, PARACHUTE_FALL_TIME * (getEffectiveDifficultyProfile().parachuteFallMult || 1));
 }
 const PLANE_SPEED = HOLESY_CONFIG.military.planeSpeed;              // fast, doesn't linger
 const PLANE_ALTITUDE = HOLESY_CONFIG.military.planeAltitude;
@@ -8756,7 +8967,7 @@ function makeParachuteMesh() {
 function spawnWave() {
   waveNumber++;
   const waveId = waveNumber;
-  const cfg = WAVE_CONFIGS[currentWave] || WAVE_CONFIGS[2];
+  const cfg = getWaveConfig(currentWave) || getWaveConfig(2);
   const soldierSpread = Math.max(0, cfg.soldierCountMax - cfg.soldierCountMin);
   const soldierCount = cfg.soldierCountMin + Math.floor(Math.random() * (soldierSpread + 1));
 
@@ -9217,7 +9428,7 @@ function updateWaves(dt) {
       return;
     }
     spawnWave();
-    const cfg = WAVE_CONFIGS[currentWave] || WAVE_CONFIGS[2];
+    const cfg = getWaveConfig(currentWave) || getWaveConfig(2);
     waveTimer = cfg.spawnIntervalMin + Math.random() * (cfg.spawnIntervalMax - cfg.spawnIntervalMin);
   }
 }
@@ -9464,7 +9675,7 @@ function updateWaveHudBanner() {
     ensureWaveHud();
     ensureWaveEndWarning();
     // Only show during active gameplay (not on title or end screens)
-    if (!isGameState(GAME_STATES.PLAYING) || !wavesMode || !soldiersEnabledThisWave) {
+    if (!isGameState(GAME_STATES.PLAYING) || !isWaveBasedMode() || !soldiersEnabledThisWave) {
       waveHudEl.style.display = 'none';
       waveEndWarnEl.style.display = 'none';
       return;
@@ -9612,7 +9823,7 @@ function animate(frameNow = performance.now()) {
       gameTime -= dt;
       if (gameTime <= 0) {
         gameTime = 0;
-        if (wavesMode) {
+        if (isWaveBasedMode()) {
           // Advance wave (or end run if wave 4)
           onWaveTimerExpired();
         } else if (player.alive) {

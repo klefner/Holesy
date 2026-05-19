@@ -1143,6 +1143,12 @@ Backlog items:
     - run history records best Endless wave reached
     - end screen distinguishes voluntary end, player eaten, and final wave reached
     - no document drops on losses; future tuning may grant higher drop odds for deeper Endless wins
+  - first implementation candidate:
+    - `10_SOURCE/Masters/Master 16.html` promoted to `Master 16.6`
+    - `40_RELEASE/Website_Publish_Package/holesy/index.html` refreshed from the source master
+    - `C:\Users\KentLefner\Downloads\holesy-production-upload\index.html` refreshed from the source master
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_6_ENDLESS_WAVES.md` records syntax, package, and browser smoke evidence
+    - v1 scope adds the unbounded mode foundation, generated scaling, HUD/end-state copy, stats persistence, and voluntary cashout; deeper balancing remains future tuning
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay
