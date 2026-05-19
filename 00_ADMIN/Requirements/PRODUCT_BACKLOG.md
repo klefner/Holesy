@@ -850,6 +850,16 @@ Fourth production defect patch evidence:
 - preserves active-window refresh behavior while preventing immediate post-expiry retriggers
 - upgrades skyscraper collapse from subtle numerical variation to visible collapse styles with staggered floor failure
 
+Fifth production defect patch evidence:
+
+- `10_SOURCE/Masters/Master 16.html`
+- `40_RELEASE/Website_Publish_Package/holesy/index.html`
+- `00_ADMIN/Requirements/BUILD_CHANGELOG.md`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_5_DEBRIS_SETTLE_FIX.md`
+- labels the patched production package as `Master 16.5`
+- fixes grounded skyscraper chunks that could stand in place and spin after falling
+- adds stronger ground angular friction and a grounded idle cutoff for collapsed debris
+
 Notes:
 
 - the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it

@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.4</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.5</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1090,7 +1090,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 4;
+const BUILD_SUB = 5;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1971,6 +1971,16 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.5',
+    date: '2026-05-19',
+    summary: 'Grounded skyscraper debris settle fix.',
+    changes: [
+      'Stopped fallen skyscraper chunks from spinning in place after their position has settled.',
+      'Added stronger ground friction for all rotation axes on collapsed building debris.',
+      'Added a grounded idle cutoff so low-motion chunks snap fully to rest.',
+    ],
+  },
+  {
     label: 'Master 16.4',
     date: '2026-05-19',
     summary: 'Buff cooldown and stronger skyscraper collapse variety.',
@@ -2278,6 +2288,10 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   restSpeed: 0.18,
   restAngularSpeed: 0.22,
   settleAfterSeconds: 0.45,
+  groundedAngularDamping: 0.72,
+  groundedSpinCutoff: 0.7,
+  groundedSpeedCutoff: 0.16,
+  groundedIdleSettleSeconds: 0.28,
 });
 
 function makeObject(mesh, size, tier, value, pos) {
@@ -7725,17 +7739,31 @@ function updatePhysicsStackPieces(dt) {
         piece.vx *= 0.72;
         piece.vz *= 0.72;
         piece.avx *= 0.75;
+        piece.avy *= 0.75;
         piece.avz *= 0.75;
       } else {
         piece.vy = 0;
       }
+      piece.avx *= STACK_PHYSICS_CONFIG.groundedAngularDamping;
+      piece.avy *= STACK_PHYSICS_CONFIG.groundedAngularDamping;
+      piece.avz *= STACK_PHYSICS_CONFIG.groundedAngularDamping;
     }
 
     const speed = Math.hypot(piece.vx, piece.vy, piece.vz);
     const angularSpeed = Math.hypot(piece.avx, piece.avy, piece.avz);
+    const groundedIdle = piece.mesh.position.y <= piece.stackFloorY + 0.001 &&
+      speed < STACK_PHYSICS_CONFIG.groundedSpeedCutoff &&
+      angularSpeed < STACK_PHYSICS_CONFIG.groundedSpinCutoff;
     if (piece.mesh.position.y <= piece.stackFloorY + 0.001 && speed < STACK_PHYSICS_CONFIG.restSpeed && angularSpeed < STACK_PHYSICS_CONFIG.restAngularSpeed) {
       piece.stackRestTimer += dt;
       if (piece.stackRestTimer >= STACK_PHYSICS_CONFIG.settleAfterSeconds) {
+        piece.stackSettled = true;
+        piece.vx = 0; piece.vy = 0; piece.vz = 0;
+        piece.avx = 0; piece.avy = 0; piece.avz = 0;
+      }
+    } else if (groundedIdle) {
+      piece.stackRestTimer += dt;
+      if (piece.stackRestTimer >= STACK_PHYSICS_CONFIG.groundedIdleSettleSeconds) {
         piece.stackSettled = true;
         piece.vx = 0; piece.vy = 0; piece.vz = 0;
         piece.avx = 0; piece.avy = 0; piece.avz = 0;

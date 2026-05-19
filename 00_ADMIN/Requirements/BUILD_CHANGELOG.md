@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.5 - 2026-05-19
+
+Grounded skyscraper debris settle fix.
+
+- Stopped fallen skyscraper chunks from spinning in place after their position has settled.
+- Added stronger ground friction for all rotation axes on collapsed building debris.
+- Added a grounded idle cutoff so low-motion chunks snap fully to rest.
+
 ## Master 16.4 - 2026-05-19
 
 Buff cooldown and stronger skyscraper collapse variety.
