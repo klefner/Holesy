@@ -6,7 +6,7 @@ Date:
 
 Status:
 
-- accepted direction; first proof slice created
+- accepted; PERF-010 closure evidence complete
 
 Context:
 
@@ -79,6 +79,7 @@ Second Safe Migration Slice:
 - Move build/version metadata into `Master 15.29 - build-info.js`.
 - Move difficulty-profile data into `Master 15.29 - difficulty-profiles.js`.
 - Leave the game loop, rendering, input, collision, scoring, audio, and AI behavior unchanged.
+- Browser smoke validation passed through `QA_REVIEW_MASTER15_29_MODULAR_JS_DATA_PROOF.md`; user validation of this extra proof remains optional follow-up evidence, not a blocker to the architecture decision.
 
 Acceptance:
 
@@ -96,3 +97,9 @@ Architectural Rationale:
 - Modularization does not automatically improve runtime FPS.
 - Python/server work should be reserved for server problems, not browser-frame problems.
 - The right path is incremental extraction with proof at each step.
+
+Closure:
+
+- PERF-010 is closed as the architecture decision gate.
+- The accepted direction is incremental client-side modularization with browser-native assets.
+- Full modular implementation remains future work and should be sized as feature-support work rather than left as an open Priority 1 blocker.

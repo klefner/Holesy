@@ -492,7 +492,7 @@ Priority:
 
 Status:
 
-- in progress; architecture decision recorded, CSS extraction proof passed user validation, and next JS/data extraction proof candidate created
+- completed; architecture decision accepted, first low-risk modular proof slice passed user validation, and JS/data extraction proof passed browser smoke
 
 Decision summary:
 
@@ -547,6 +547,12 @@ Notes:
   - `20_TESTS/Candidate_Builds/Master 15.29 - build-info.js`
   - `20_TESTS/Candidate_Builds/Master 15.29 - difficulty-profiles.js`
   - no gameplay loop changed; build metadata and difficulty-profile data were moved into JS modules
+- closure evidence:
+  - `00_ADMIN/Requirements/ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md` records the accepted client-side modularization direction
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_28_MODULAR_CSS_PROOF.md` confirms the first low-risk extraction proof passed user validation with no open validation items
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER15_29_MODULAR_JS_DATA_PROOF.md` confirms the JS/data extraction proof passed browser smoke; user validation remains optional future evidence and is not a PERF-010 closure blocker
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_PERF010_CLOSURE.md` maps the closure evidence to the acceptance criteria
+  - close scope is the architecture decision gate; full modular implementation remains future work and should be planned as normal feature-support work, not as an open PERF-010 blocker
 
 ### PERF-011 Idle Menu Lifecycle And Page-Exit Cleanup
 
