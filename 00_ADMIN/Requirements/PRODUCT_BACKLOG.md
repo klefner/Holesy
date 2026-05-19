@@ -870,6 +870,137 @@ Notes:
 - document pacing target is rarity, not completion speed: one document maximum per won round, with none in most rounds and no drops on losses
 - build-change notes now have an in-game surface and should be updated with each promoted candidate so they can become player-facing patch notes later
 
+## Priority 2B — Long-Term Progression, Rival Memory, And World Variety
+
+Goal: turn repeated play into a living progression loop where achievements, rivals, difficulty guidance, documents, and world changes remember the player without slowing the core game.
+
+Status:
+
+- new backlog lane; not yet designed or implemented
+
+Backlog items:
+
+### P2B.1 Add game-mode-specific achievements
+
+Intent:
+
+- add achievement families that only make sense inside specific modes, starting with Last Man Standing and Waves
+- examples for LMS:
+  - consume every person on the board
+  - consume every building on the board
+  - consume every car on the board
+  - consume every object on the board
+- future examples can include Timed score thresholds, Waves perfect-clears, Ultra-only survival feats, and no-aid wins
+
+Acceptance criteria:
+
+- achievement definitions can declare allowed game modes
+- achievement progress is tracked per run without slowing the main loop
+- achievements clearly explain their mode requirement in the Archive / achievement surface
+- achievements cannot unlock in the wrong mode
+
+### P2B.2 Track rival memory: who eats the player most
+
+Intent:
+
+- track which rival most often consumes the player so players develop a remembered nemesis
+- use this data for score-screen flavor, future taunts, and rival behavior tuning
+
+Acceptance criteria:
+
+- player death attribution persists by rival name / identity
+- score screen can identify the player's current most-dangerous rival
+- stats surface can show rival consumption history without cluttering the main menu
+- tracking works across Timed, LMS, and Waves
+
+### P2B.3 Add interactive rival message / taunt window
+
+Intent:
+
+- add a chat-like surface where rival holes send taunts, lore-flavored threats, and reactive messages
+- messages should feel funny, competitive, and conspiracy-adjacent rather than generic combat barks
+- future AI-generated message variants may influence how rivals behave toward the world and toward the player
+
+Acceptance criteria:
+
+- chat window is optional and does not block play
+- messages can be generated from structured game events first, with AI-generated variants treated as a later enhancement
+- rival personality / behavior hooks are explicit, testable, and bounded
+- content has fallback canned lines so gameplay does not require network access
+
+### P2B.4 Add lore-aware adaptive difficulty recommendations
+
+Intent:
+
+- if the player wins multiple consecutive non-Ultra games and is performing well, suggest raising the difficulty in lore-consistent language tied to the last played difficulty
+- if the player repeatedly loses or performs poorly, suggest lowering the difficulty in similarly lore-consistent language
+
+Acceptance criteria:
+
+- recommendation logic uses recent run history, difficulty, mode, win/loss, and performance signals
+- recommendations never appear during active gameplay
+- recommendations are framed as optional, not punitive
+- Ultra is never recommended downward solely because it is hard; repeated poor performance can still suggest returning to a lower containment tier
+
+### P2B.5 Add persistent achievement rewards and Inventory management
+
+Intent:
+
+- achievements can unlock permanent rewards that the player can equip or review later
+- rewards may include hole skins, titles, new towns/worlds, sound packs, cosmetic effects, and future permanent buffs for harder Waves / Endless progression
+- inventory should be lore-named rather than plain generic inventory
+
+Acceptance criteria:
+
+- reward definitions are separate from achievement trigger definitions
+- unlocked rewards persist locally
+- player can equip / unequip cosmetic and title rewards from a lore-themed inventory surface
+- permanent gameplay buffs are explicitly labeled and balanced separately from cosmetics
+- rewards can be earned from any game mode unless a specific achievement says otherwise
+
+### P2B.6 Build theme/world architecture for major visual and audio swaps
+
+Intent:
+
+- create an architecture that can swap the playfield's visual, audio, object, road/path, collectible, and environment rules without harming performance
+- keep the current downtown as one theme, then allow future themes such as sci-fi city, hellscape, wild west town, medieval settlement, space colony, prehistoric settlement, cartoon town, black-and-white town, and modified downtown variants
+- themes remain town-centered, but they should not require perfect-grid roads
+- future progression can rotate worlds after a number of completed waves / levels / wins to keep the game fresh
+
+Design notes:
+
+- theme packs should define object families, collectible categories, sounds, ambient music cues, palette, terrain/path generation, road/trail rules, props, readable lore labels, and spawn budgets
+- examples:
+  - wild west: trails, mountains, tumbleweeds, cactus, old towns, camps, desert creatures
+  - medieval: castles, hovels, hay bales, horses, market stalls, farms
+  - sci-fi / space: habitat modules, drones, shuttles, alien crowds, reactors
+  - prehistoric: camps, bones, flora, large creatures, stone structures
+  - hellscape: infernal roads, ruins, fire-lit props, corrupted townsfolk
+- architecture must support progressive theme transitions during long-form modes such as future Endless mode
+
+Acceptance criteria:
+
+- theme data is modular and loaded through a registry / factory layer
+- theme swaps do not require rewriting core consumption, scoring, AI, or wave logic
+- each theme can define a non-grid town layout while preserving reliable navigation and collision
+- inactive theme assets are not kept in active scene memory
+- performance budget is measured before adding multiple heavy theme packs
+
+### P2B.7 Make difficulty influence document drops and achievement eligibility
+
+Intent:
+
+- higher difficulty should increase document drop rate
+- some achievements should require higher difficulty levels so hard-mode progression has unique prestige
+
+Acceptance criteria:
+
+- document drop rate uses difficulty as an explicit multiplier / modifier
+- lower difficulty remains viable for lore discovery, but higher difficulty has a clear discovery advantage
+- achievements can declare minimum difficulty
+- locked achievements show difficulty requirements clearly enough that players understand why they did not unlock
+- drop-rate tuning preserves the existing pacing rule: zero or one document per won round, with no drops on losses
+
 ## Priority 3 — Physics Stack And Collapse System
 
 Goal: introduce `hole.io`-style stacked-object variety with convincing gravity-driven collapse while preserving the current battlefield systems.
