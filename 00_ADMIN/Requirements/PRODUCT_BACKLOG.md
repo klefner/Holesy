@@ -1106,21 +1106,42 @@ Goal: add modes and session structures that materially extend repeat play.
 
 Backlog items:
 
+- Endless Waves mode
+  - next requested product priority after currently open Priority 1 items are either closed or explicitly deferred
+  - use the same core wave system as `Waves`, but remove the automatic stop at `4/4`
+  - difficulty should continue scaling upward wave after wave with config-driven tuning
+  - scaling must be gentler than the current four-wave mode; the four-wave mode compresses a large difficulty jump into only four steps, while Endless should advance in smaller linear increments
+  - current `Ultra` four-wave difficulty should be treated as the target pressure around Endless Wave 70, not as the early Endless baseline
+  - define a baseline starting wave and linearly interpolate each difficulty factor from wave `X` to wave `X + 1`
+  - difficulty factors to scale include at minimum:
+    - soldier count / drop size
+    - soldier damage
+    - soldier hit chance
+    - soldier cadence / drop interval
+    - paratrooper fall time
+    - aid-drop scarcity
+    - rival AI efficiency / routing quality
+    - rival aggression / flee quality
+    - object scarcity and high-value object density
+    - score pressure / leaderboard compression
+  - preserve performance caps as separate ceilings; gameplay difficulty can rise beneath the active performance profile but must not exceed machine-budget limits
+  - treat the mode as conceptually unbounded `N` waves, even if early tuning only targets the first several dozen well
+  - long-term target: players chase best wave reached, best score, and world-transition milestones
+  - acceptance criteria:
+    - mode appears as a distinct selectable game mode
+    - HUD displays current Endless wave number without implying a fixed endpoint
+    - wave completion advances immediately or after a readable transition into the next scaled wave
+    - difficulty factors are generated from config, not hardcoded ad hoc wave branches
+    - current `Ultra` four-wave pressure maps approximately to Endless Wave 70
+    - wave-to-wave difficulty changes are noticeable over time but not abrupt from one wave to the next
+    - run history records best Endless wave reached
+    - end screen distinguishes voluntary end, player eaten, and final wave reached
+    - no document drops on losses; future tuning may grant higher drop odds for deeper Endless wins
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay
   - final score is percentage of total city mass consumed
   - aid ships drop enhancements more frequently than the standard cadence
-- Endless Mode
-  - use the same core wave system as `Waves`
-  - remove the automatic stop at the end of `4/4`
-  - difficulty should continue scaling upward wave after wave with config-driven tuning
-  - treat the mode as conceptually unbounded `N` waves, not a fixed cap, even if early versions only tune the first several dozen well
-  - the same AI pressure knobs used in current Waves tuning should remain variablized so Endless can progressively tighten:
-    - rival aid-drop interest / search behavior
-    - rival object-routing quality / scoring efficiency
-    - rival flee intelligence / survivability
-  - long-term target: players are chasing their own best wave reached and best score, not merely seeing a finite ending
 - Persistent records and run-history surface
   - retain and recall best score, best Waves round reached, and future Endless round milestones
   - celebrate new personal bests with explicit UI feedback such as `You broke a record`
@@ -1187,13 +1208,13 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Mobile-test the patched `Master 16.2` website package.
-2. Confirm the Archive music still fits the funny, whimsical, conspiracy-undertone direction while remaining readable.
-3. Expand the lore data module with the remaining approved Rival / Response corpus once the reader UX is accepted.
-4. Tune the new lore buffs through playtest, especially impossible-tier triggers and combo clarity.
-5. Resume the remaining Priority 1 wave-system performance backlog after the promoted lore build is proven stable.
-6. Then return to Waves tuning, physics stack, and broader powerup/mode expansion.
+1. Treat `Master 16.5` as the current production-test baseline.
+2. Close only those Priority 1 items with complete validation evidence; do not mark partially validated performance items complete just because later builds contain the code.
+3. If no additional Priority 1 item can be closed under governance, make `Endless Waves mode` the next product feature slice.
+4. Design Endless around gentler per-wave linear scaling, with current four-wave `Ultra` pressure landing around Endless Wave 70.
+5. Keep performance profiles separate from Endless difficulty scaling so machine-budget ceilings remain intact.
+6. After the Endless foundation exists, connect it to persistent records, progression rewards, and future theme/world transitions.
 
 The next active engineering task remains:
 
-- mobile-test `Master 16.2`, with special attention to mobile menu fit, Archive scroll behavior, loss-state copy, no document drops on losses, no repeated document drops from stale end screens, car skid duration, skyscraper collapse variety/direction/spread, rare document drops, starter buff-pattern clarity, end-screen flow, lore-buff combo feel, and the build-notes modal
+- review Priority 1 closure evidence; if no remaining P1 item can be closed immediately, start the first `Endless Waves mode` architecture slice from `Master 16.5`
