@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.3</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.4</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1090,7 +1090,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 3;
+const BUILD_SUB = 4;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1971,6 +1971,17 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.4',
+    date: '2026-05-19',
+    summary: 'Buff cooldown and stronger skyscraper collapse variety.',
+    changes: [
+      'Added a 5-second reacquire cooldown after timed lore buffs expire.',
+      'Prevented expired buffs from immediately retriggering the same effect during their cooldown window.',
+      'Gave skyscrapers distinct collapse styles: toppling, pancake drop, split shear, and twisting failure.',
+      'Added staggered floor collapse timing so buildings fail differently instead of all bursting at once.',
+    ],
+  },
+  {
     label: 'Master 16.3',
     date: '2026-05-19',
     summary: 'Replay flow blocker patch.',
@@ -2256,10 +2267,10 @@ let nextPhysicsStackId = 1;
 const STACK_PHYSICS_CONFIG = Object.freeze({
   gravity: 25,
   triggerPadding: 5.2,
-  shoveStrength: 5.2,
-  horizontalDamping: 0.948,
-  maxHorizontalSpeed: 8.2,
-  maxCollapseSpread: 12.5,
+  shoveStrength: 6.3,
+  horizontalDamping: 0.942,
+  maxHorizontalSpeed: 10.8,
+  maxCollapseSpread: 16.5,
   bounceDamping: 0.16,
   contactRadiusScale: 0.82,
   contactImpulse: 8.5,
@@ -3075,6 +3086,9 @@ function createHole(isPlayer, name, rimColor, startPos) {
       bulletDamageMultiplier: 1,
       bulletShieldSource: '',
     },
+    loreBuffs: {},
+    loreBuffCooldowns: {},
+    loreFirstBiteActive: false,
     group, disc, rim, well, vortexArcGroup, vortexArcs, labelSprite,
     // AI state
     aiState: 'wander', aiTargetObj: null, aiTimer: 0,
@@ -4906,6 +4920,7 @@ const LORE_DROP_BASE_CHANCE = 0.16;
 const LORE_DROP_WIN_BONUS = 0.08;
 const LORE_DROP_ACHIEVEMENT_BONUS = 0.07;
 const LORE_DROP_MAX_CHANCE = 0.31;
+const LORE_BUFF_REACQUIRE_COOLDOWN_MS = 5000;
 const ACHIEVEMENT_DEFS = Object.freeze({
   first_bite: { label: 'First Bite', playerName: 'First Bite', effectText: '+15% score from people all round', durationMs: 0, active: true },
   pedestrian_pull: { label: 'Pedestrian Pull', playerName: 'Crowd Magnet', effectText: 'Wider pull radius for 15s', durationMs: 15000, active: true },
@@ -5170,10 +5185,18 @@ function getBlockKeyForObject(obj) {
 function activateLoreTimedBuff(id, durationMs) {
   if (!player) return false;
   if (!player.loreBuffs) player.loreBuffs = {};
+  if (!player.loreBuffCooldowns) player.loreBuffCooldowns = {};
   const now = performance.now();
   const previous = player.loreBuffs[id] || 0;
+  const cooldownUntil = player.loreBuffCooldowns[id] || 0;
+  if (previous > 0 && previous <= now && now - previous < LORE_BUFF_REACQUIRE_COOLDOWN_MS) {
+    player.loreBuffCooldowns[id] = Math.max(cooldownUntil, previous + LORE_BUFF_REACQUIRE_COOLDOWN_MS);
+    return false;
+  }
+  if (cooldownUntil > now) return false;
   const next = Math.max(previous, now + durationMs);
   player.loreBuffs[id] = next;
+  player.loreBuffCooldowns[id] = 0;
   return previous <= now;
 }
 
@@ -5275,9 +5298,11 @@ function handleLoreConsume(h, obj) {
     if (gap >= 4600 && gap <= 5400) {
       unlockAchievement('linden_street');
       const lindenWasNew = activateLoreTimedBuff('linden_street', ACHIEVEMENT_DEFS.linden_street.durationMs);
-      h.score += 180;
-      h.bonusRadius = (h.bonusRadius || 0) + 0.28;
-      h.targetRadius = radiusFromScore(h);
+      if (lindenWasNew || getLoreTimedBuffRemaining('linden_street', now) > 0) {
+        h.score += 180;
+        h.bonusRadius = (h.bonusRadius || 0) + 0.28;
+        h.targetRadius = radiusFromScore(h);
+      }
       if (lindenWasNew) {
         showEventBanner('ACTIVE BUFF: Building Chain - buildings score more for 12 seconds. Combo risk: Crowd Magnet slows you.', 6800);
       }
@@ -6079,6 +6104,13 @@ function shiftHoleEffectExpiry(h, deltaMs) {
     if (typeof h.effects.speedBoostUntil === 'number' && h.effects.speedBoostUntil > 0) h.effects.speedBoostUntil += deltaMs;
     if (typeof h.effects.bulletShieldUntil === 'number' && h.effects.bulletShieldUntil > 0) h.effects.bulletShieldUntil += deltaMs;
   }
+  ['loreBuffs', 'loreBuffCooldowns'].forEach(groupKey => {
+    const group = h[groupKey];
+    if (!group) return;
+    Object.keys(group).forEach(key => {
+      if (typeof group[key] === 'number' && group[key] > 0) group[key] += deltaMs;
+    });
+  });
 }
 
 function freezeGameplayTime() {
@@ -6361,6 +6393,7 @@ function resetHoleState() {
     h.effects.bulletDamageMultiplier = 1;
     h.effects.bulletShieldSource = '';
     h.loreBuffs = {};
+    h.loreBuffCooldowns = {};
     h.loreFirstBiteActive = false;
     updateHoleVisual(h);
   });
@@ -7497,7 +7530,12 @@ function createCollapsePlan(stackId, sourceHole, consumedPiece) {
     bandShears.push(THREE.MathUtils.clamp(previous * 0.45 + randomBetween(-0.85, 0.85), -1, 1));
   }
   const styleRoll = Math.random();
+  const style = styleRoll < 0.28 ? 'topple'
+    : styleRoll < 0.54 ? 'pancake'
+      : styleRoll < 0.79 ? 'split'
+        : 'twist';
   return {
+    style,
     fallDir,
     lateral,
     centerX,
@@ -7507,10 +7545,14 @@ function createCollapsePlan(stackId, sourceHole, consumedPiece) {
     floorCount,
     bandCount,
     bandShears,
-    toppling: styleRoll < 0.52 ? randomBetween(0.9, 1.35) : randomBetween(0.45, 0.82),
-    sideSlip: styleRoll >= 0.52 && styleRoll < 0.82 ? randomBetween(0.72, 1.05) : randomBetween(0.24, 0.55),
-    split: styleRoll >= 0.82 ? randomBetween(0.45, 0.8) : randomBetween(0.12, 0.32),
-    compression: randomBetween(0.18, 0.38),
+    toppling: style === 'topple' ? randomBetween(1.45, 2.05) : style === 'twist' ? randomBetween(0.85, 1.18) : randomBetween(0.18, 0.62),
+    sideSlip: style === 'split' ? randomBetween(1.1, 1.6) : style === 'twist' ? randomBetween(0.62, 0.95) : randomBetween(0.16, 0.5),
+    split: style === 'split' ? randomBetween(0.95, 1.45) : style === 'twist' ? randomBetween(0.55, 0.92) : randomBetween(0.08, 0.36),
+    compression: style === 'pancake' ? randomBetween(0.82, 1.28) : randomBetween(0.16, 0.44),
+    delayBase: style === 'pancake' ? randomBetween(0.01, 0.035) : randomBetween(0.012, 0.05),
+    delayJitter: style === 'topple' ? randomBetween(0.08, 0.18) : randomBetween(0.02, 0.12),
+    maxSpread: style === 'pancake' ? randomBetween(8.2, 11.5) : style === 'split' ? randomBetween(13.5, 17.5) : randomBetween(11.5, 16.5),
+    twist: randomBetween(-1, 1),
   };
 }
 
@@ -7564,18 +7606,38 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
     const heightFactor = 0.55 + floorT * 1.25;
     const consumedBoost = piece === consumedPiece ? 1.25 : 1;
     const shove = STACK_PHYSICS_CONFIG.shoveStrength * heightFactor * consumedBoost;
-    const sideSlip = (bandShear * plan.sideSlip) + (sideT * plan.split) + randomBetween(-0.18, 0.18);
-    const forwardLean = plan.toppling * (0.35 + floorT * 0.95) + Math.max(0, -frontT) * 0.22;
-    const crumple = plan.compression * (1 - floorT) * randomBetween(0.2, 0.75);
-    const vx = plan.fallDir.x * shove * forwardLean + plan.lateral.x * shove * sideSlip + (fromCenterX / fromCenterD) * shove * crumple + obstruction.x * 1.35;
-    const vz = plan.fallDir.z * shove * forwardLean + plan.lateral.z * shove * sideSlip + (fromCenterZ / fromCenterD) * shove * crumple + obstruction.z * 1.35;
+    let sideSlip = (bandShear * plan.sideSlip) + (sideT * plan.split) + randomBetween(-0.24, 0.24);
+    let forwardLean = plan.toppling * (0.35 + floorT * 0.95) + Math.max(0, -frontT) * 0.24;
+    let crumple = plan.compression * (1 - floorT) * randomBetween(0.25, 0.95);
+    let spiral = 0;
+    if (plan.style === 'pancake') {
+      forwardLean *= 0.22;
+      sideSlip *= 0.35;
+      crumple *= 0.7;
+    } else if (plan.style === 'split') {
+      sideSlip += (sideT >= 0 ? 1 : -1) * plan.split * (0.45 + floorT * 0.75);
+      forwardLean *= 0.72;
+    } else if (plan.style === 'twist') {
+      spiral = plan.twist * (0.75 + floorT * 1.45);
+      sideSlip += spiral;
+      forwardLean *= 0.82 + Math.abs(sideT) * 0.32;
+    }
+    const vx = plan.fallDir.x * shove * forwardLean + plan.lateral.x * shove * sideSlip + (fromCenterX / fromCenterD) * shove * crumple + obstruction.x * 1.5;
+    const vz = plan.fallDir.z * shove * forwardLean + plan.lateral.z * shove * sideSlip + (fromCenterZ / fromCenterD) * shove * crumple + obstruction.z * 1.5;
     const clamped = clampVectorLength2(vx, vz, STACK_PHYSICS_CONFIG.maxHorizontalSpeed);
+    if (plan.style === 'pancake') piece.stackDelaySeconds = (1 - floorT) * plan.delayBase + Math.random() * 0.035;
+    else if (plan.style === 'topple') piece.stackDelaySeconds = floorT * plan.delayBase + Math.max(0, frontT) * plan.delayJitter + Math.random() * 0.03;
+    else if (plan.style === 'split') piece.stackDelaySeconds = Math.abs(sideT) * plan.delayBase + floorT * 0.045 + Math.random() * 0.05;
+    else piece.stackDelaySeconds = floorT * plan.delayBase + Math.abs(sideT) * 0.065 + Math.random() * 0.06;
+    piece.stackMaxSpread = plan.maxSpread;
     piece.vx += clamped.x;
     piece.vz += clamped.z;
-    piece.vy += 0.28 + Math.random() * 0.62 + floorT * 0.55;
-    piece.avx += randomBetween(-2.2, 2.2) + plan.lateral.z * (1.4 + floorT * 2.6);
-    piece.avy += randomBetween(-1.4, 1.4) + bandShear * 0.8;
-    piece.avz += randomBetween(-2.2, 2.2) - plan.lateral.x * (1.4 + floorT * 2.6);
+    piece.vy += plan.style === 'pancake'
+      ? randomBetween(-0.55, 0.12) - (1 - floorT) * 0.32
+      : 0.24 + Math.random() * 0.72 + floorT * 0.74;
+    piece.avx += randomBetween(-2.8, 2.8) + plan.lateral.z * (plan.style === 'pancake' ? 0.55 : 1.6 + floorT * 3.2);
+    piece.avy += randomBetween(-1.8, 1.8) + bandShear * 1.05 + spiral * 0.9;
+    piece.avz += randomBetween(-2.8, 2.8) - plan.lateral.x * (plan.style === 'pancake' ? 0.55 : 1.6 + floorT * 3.2);
   }
   return true;
 }
@@ -7627,6 +7689,8 @@ function updatePhysicsStackPieces(dt) {
     }
 
     if (piece.stackSettled) continue;
+    const collapseElapsed = Math.max(0, (getGameplayNow() - (piece.stackCollapsedAt || 0)) / 1000);
+    if (collapseElapsed < (piece.stackDelaySeconds || 0)) continue;
 
     piece.vy -= STACK_PHYSICS_CONFIG.gravity * dt;
     piece.x += piece.vx * dt;
@@ -7634,8 +7698,9 @@ function updatePhysicsStackPieces(dt) {
     const spreadX = piece.x - piece.stackCenterX;
     const spreadZ = piece.z - piece.stackCenterZ;
     const spread = Math.hypot(spreadX, spreadZ);
-    if (spread > STACK_PHYSICS_CONFIG.maxCollapseSpread) {
-      const pullBack = (spread - STACK_PHYSICS_CONFIG.maxCollapseSpread) / spread;
+    const maxSpread = piece.stackMaxSpread || STACK_PHYSICS_CONFIG.maxCollapseSpread;
+    if (spread > maxSpread) {
+      const pullBack = (spread - maxSpread) / spread;
       piece.x -= spreadX * pullBack * 0.22;
       piece.z -= spreadZ * pullBack * 0.22;
       piece.vx *= 0.55;

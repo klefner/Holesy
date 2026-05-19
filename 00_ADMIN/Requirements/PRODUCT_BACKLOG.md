@@ -839,6 +839,17 @@ Third production defect patch evidence:
 - clears stale score, input, and transient round state before starting the next selected mode
 - debounces duplicate pointer, touch, and click activations from the same `Begin` press
 
+Fourth production defect patch evidence:
+
+- `10_SOURCE/Masters/Master 16.html`
+- `40_RELEASE/Website_Publish_Package/holesy/index.html`
+- `00_ADMIN/Requirements/BUILD_CHANGELOG.md`
+- `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_4_BUFF_COOLDOWN_AND_COLLAPSE_VARIETY.md`
+- labels the patched production package as `Master 16.4`
+- adds a five-second reacquire cooldown after each timed lore buff expires
+- preserves active-window refresh behavior while preventing immediate post-expiry retriggers
+- upgrades skyscraper collapse from subtle numerical variation to visible collapse styles with staggered floor failure
+
 Notes:
 
 - the first candidate includes a playable archive and a deliberately scoped corpus slice; the backlog keeps the remaining corpus-import work explicit instead of hiding it

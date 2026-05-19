@@ -19,7 +19,7 @@ This package was generated from:
 - `index.html` is a bundled production/mobile-test build.
 - The bottom-left build badge opens in-game build notes for future patch-note publication.
 - This package includes the promoted lore Archive, found-document drops, achievement buffs, Archive music, starter Field Patterns, and the end-screen/feedback cleanup from the `Master 15.39` through `Master 15.45` candidate lineage.
-- Current patch label is `Master 16.3`, adding the replay-flow blocker fix on top of mobile menu fit, Archive mobile scrolling, win-only document drops, stale-drop cleanup, shorter panic-car skids, and varied impact-direction skyscraper collapse.
+- Current patch label is `Master 16.4`, adding timed-buff reacquire cooldowns and stronger skyscraper collapse variety on top of the Master 16.1-16.3 production fixes.
 
 ## Publish Rule
 

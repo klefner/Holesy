@@ -2,6 +2,15 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.4 - 2026-05-19
+
+Buff cooldown and stronger skyscraper collapse variety.
+
+- Added a 5-second reacquire cooldown after timed lore buffs expire.
+- Prevented expired buffs from immediately retriggering the same effect during their cooldown window.
+- Gave skyscrapers distinct collapse styles: toppling, pancake drop, split shear, and twisting failure.
+- Added staggered floor collapse timing so buildings fail differently instead of all bursting at once.
+
 ## Master 16.3 - 2026-05-19
 
 Replay flow blocker patch.
