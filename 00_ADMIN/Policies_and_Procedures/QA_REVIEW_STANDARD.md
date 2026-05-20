@@ -30,10 +30,12 @@ For chat-quality inspections triggered by the user, the QA pass must also:
 
 - use `00_ADMIN/Policies_and_Procedures/QA_CHAT_RISK_AND_CONTROL_MATRIX.md`
 - follow `00_ADMIN/Reviews_and_Reports/AUDIT_WORKPLAN_UNIFIED_QA_AND_RELEASE_CONTROLS.md`
+- reread the current process/procedure governance corpus rather than relying on prior chat memory
 - tie material findings to a specific risk/control area
 - determine whether key controls are effectively designed to prevent or detect the stated risks
 - determine whether any risks became actual issues
 - identify lessons learned and any needed control updates
+- update the relevant process/procedure documents when the current controls are incomplete or stale
 - review the shared issue log and verify:
   - resolved issues are truly resolved
   - unresolved issues are escalated to the Project Manager persona and the user

@@ -43,6 +43,10 @@ Last approved candidate promoted into `Master 16`:
 - Distinguish local file state, git state, GitHub branch state, `main` state, and live website state
 - Keep unrelated local modifications out of commits
 - Every developer chat other than the current one is primary-source context when available
+- Before release packaging or material implementation, run:
+  - `00_ADMIN/Policies_and_Procedures/RELEASE_SOURCE_OF_TRUTH_MANIFEST.md`
+  - `00_ADMIN/Policies_and_Procedures/PRODUCT_INTENT_GATE.md`
+- Do not treat the current bundled `index.html` package as the long-term architecture target; the accepted target remains modular browser assets under `ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`
 
 ## 4. Current Priority
 
@@ -53,6 +57,7 @@ Last approved candidate promoted into `Master 16`:
   - rare document pacing and buff-effect clarity descended from `Master 15.42`
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
 - current gameplay validation should also cover Endless Waves continuity, player-death exit behavior, rival respawn behavior, save/load expectations, and runaway growth tuning
+- governance recovery added on 2026-05-20: product-intent continuity and modular architecture awareness are now monitor-controlled under `QA-011`
 - broader lore expansion should wait until the current `Master 16` UX validates
 - remaining Priority 1 wave-system performance work resumes after `Master 16` proves stable
 

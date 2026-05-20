@@ -18,8 +18,19 @@ Required inputs:
 - `00_ADMIN/Policies_and_Procedures/QA_CHAT_RISK_AND_CONTROL_MATRIX.md`
 - `00_ADMIN/Policies_and_Procedures/QA_REVIEW_STANDARD.md`
 - `00_ADMIN/Policies_and_Procedures/RISK_AND_CONTROLS_POLICY.md`
+- `00_ADMIN/Policies_and_Procedures/GITHUB_OPERATING_MODEL.md`
+- `00_ADMIN/Policies_and_Procedures/STANDALONE_WEBSITE_PUBLISH_WORKFLOW.md`
+- `00_ADMIN/Policies_and_Procedures/RELEASE_SOURCE_OF_TRUTH_MANIFEST.md`
+- `00_ADMIN/Policies_and_Procedures/PRODUCT_INTENT_GATE.md`
+- `00_ADMIN/Policies_and_Procedures/NEW_CHAT_TEAM_SYNC_PROTOCOL.md`
+- newest `00_ADMIN/Policies_and_Procedures/NEXT_CODEX_CHAT_HANDOFF_MASTER*.md`
+- `10_SOURCE/Current/CURRENT_BASIS.md`
+- `00_ADMIN/Requirements/PRODUCT_BACKLOG.md`
+- relevant architecture decision records in `00_ADMIN/Requirements`
 - `00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md`
 - the specific chat, files, branches, and artifacts being evaluated
+
+Every audit must reread the current process and procedure governance corpus. Do not rely on a prior audit's memory of these controls.
 
 ## When To Use
 
@@ -41,6 +52,7 @@ Required inputs:
 6. Determine whether any risks became actual issues and what lessons learned should update controls.
 7. Verify resolved issues are truly resolved and unresolved issues are escalated to the Project Manager persona and the user.
 8. Periodically improve the matrix and this workplan when new failure patterns appear.
+9. Determine whether current process/procedure governance documents themselves need revision based on the audit evidence, and update them when needed.
 
 ## Unified Control Matrix
 
@@ -63,6 +75,8 @@ Required inputs:
 | Control design effectiveness | A control exists but is not specific or strong enough to work in practice | Controls must be testable, timely, and clearly linked to the risk they address | 1. Inspect the control design. 2. Ask whether it would really detect or prevent the failure. 3. Flag vague or late controls. | Control wording, timing, evidence requirement |
 | Issue management | Risks that became issues are not logged, verified, or escalated | QA must review the shared issue log, retest claimed resolutions, and escalate unresolved material items | 1. Open issue log. 2. Review resolved and unresolved items. 3. Verify evidence. 4. Escalate open material items. | Issue log, retest evidence, escalation note |
 | Continuous improvement | Repeated failure modes are not folded into controls | Each audit must consider whether the matrix or workplan needs enhancement | 1. Review findings. 2. Decide whether a control update is needed. | Matrix/workplan revision note |
+| Product intent continuity | Approved product, design, or architecture decisions are lost across chats | Product Intent Gate must run before release, architecture, backlog, or material implementation decisions | 1. Open the Product Intent Gate. 2. Inspect relevant ADRs, backlog, basis, handoff, and issue log. 3. Confirm the requested action preserves or explicitly excepts prior decisions. | Product intent gate result, governing docs, exception note if any |
+| Process/procedure currency | The auditor relies on stale knowledge of project controls | Every audit must study all current process/procedure docs and decide whether they need updates | 1. Open the governance corpus listed in Required inputs. 2. Compare controls to observed failure modes. 3. Update procedures, matrix, workplan, or issue log when controls are incomplete. | List of governance docs inspected, control-update decision, changed docs if needed |
 
 ## Standard Audit Steps
 
@@ -86,19 +100,23 @@ Pass evidence:
 ## B. Gather Evidence
 
 1. Read the relevant chat messages.
-2. Open referenced repo files, governance docs, and existing reports.
-3. Check current repo state when relevant:
+2. Open the current process/procedure governance corpus listed in Required inputs.
+3. Open referenced repo files, governance docs, and existing reports.
+4. Check current repo state when relevant:
    - `git status --short --branch`
    - current branch
    - staged and unstaged scope
-4. Capture test evidence or explicit lack of it.
-5. If GitHub or live website state matters, inspect those states or state the limitation clearly.
-6. Open the shared issue log and identify items relevant to the review target.
+5. Capture test evidence or explicit lack of it.
+6. If GitHub or live website state matters, inspect those states or state the limitation clearly.
+7. Open the shared issue log and identify items relevant to the review target.
+8. Decide whether any process/procedure docs need updates; if yes, update them as part of the audit package.
 
 Pass evidence:
 
 - inspected files and repo state are listed
+- process/procedure docs inspected are listed
 - key claims can be traced to evidence
+- procedure update decision is stated
 
 ## C. Run Chat-Quality Controls
 
@@ -106,6 +124,7 @@ Apply the chat-quality portions of the matrix, at minimum:
 
 - scope control
 - source-of-truth clarity
+- product intent continuity
 - evidence quality
 - risk disclosure
 - testing sufficiency
@@ -113,11 +132,13 @@ Apply the chat-quality portions of the matrix, at minimum:
 - communication honesty
 - control design effectiveness
 - issue management
+- process/procedure currency
 
 Pass evidence:
 
 - each material chat finding ties to a matrix control area
 - the audit states whether key controls are effectively designed or not
+- the audit states whether current procedures needed updates and what changed
 
 ## D. Run Repository And Release Controls
 
@@ -195,6 +216,9 @@ Run before publishing the live website.
    - GitHub branch state
    - `main` state
    - live website state
+6. Run the Product Intent Gate.
+7. If the publish artifact is bundled as `index.html`, confirm whether that is a temporary deployment artifact or the accepted architecture target.
+8. If the accepted architecture target is modular, require the final publish guidance to distinguish immediate upload files from future modular package requirements.
 
 Pass evidence:
 
@@ -202,6 +226,8 @@ Pass evidence:
 - rollback copy path
 - GitHub branch tree
 - live URL test result or explicit limitation
+- product intent gate result
+- modular architecture alignment or exception statement
 
 ### Candidate Traceability Audit
 

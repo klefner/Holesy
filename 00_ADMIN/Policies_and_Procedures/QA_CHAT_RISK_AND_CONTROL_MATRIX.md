@@ -47,6 +47,7 @@ Use it together with:
 | C15 | Continuous improvement | Repeated failure modes are noticed but not folded into controls | Same mistakes recur across reviews without matrix updates | Each audit should consider whether the matrix or workplan needs enhancement | Did this review add or refine any control for future use? | Matrix revision note, workplan update note |
 | C16 | Control design effectiveness | A stated control exists on paper but is too weak, vague, or misaligned to actually prevent or detect the risk | Checklist item exists but would not catch the failure in practice | QA must assess whether the control design is specific, timely, testable, and matched to the risk | Would this control realistically prevent or detect the issue before damage occurs? Is the owner, trigger, and evidence clear? | Control wording, testability, timing, evidence requirement |
 | C17 | Issue management | Known risks become actual issues but are not logged, retested, or escalated properly | Same defect recurs, resolved item is not truly fixed, or open issue lacks escalation | QA must review the shared issue log, verify resolved items, and escalate unresolved material items | Did any risk become an issue? Is it logged? Is "resolved" supported by evidence? Were open issues escalated to the Project Manager persona and the user? | Shared issue log, regression evidence, escalation note, retest evidence |
+| C18 | Product intent continuity | Assistant loses or disregards prior product, design, or architecture decisions across chats | Current file shape or latest request is treated as permission to ignore approved architecture, backlog direction, or product rationale | Before packaging, publishing, or material implementation, run the Product Intent Gate and cite the governing decision docs that constrain the work | Did the answer preserve prior product intent? Did it check architecture decisions and backlog state before acting? Were temporary exceptions clearly labeled? | Product intent gate result, ADR/backlog references, source-of-truth manifest, issue-log review |
 
 ## Minimum Control Expectations For Every Chat Inspection
 
@@ -57,6 +58,7 @@ Use it together with:
 - Assess whether the relevant controls are effectively designed, not just whether they exist.
 - Identify whether any reviewed risks became actual issues.
 - Review the shared issue log.
+- Run the Product Intent Gate for release, architecture, backlog, or material implementation decisions.
 - State whether the matrix or workplan should be enhanced based on new failure patterns.
 
 ## Enhancement Rule

@@ -554,6 +554,57 @@ Notes:
   - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_PERF010_CLOSURE.md` maps the closure evidence to the acceptance criteria
   - close scope is the architecture decision gate; full modular implementation remains future work and should be planned as normal feature-support work, not as an open PERF-010 blocker
 
+### PERF-012 Incremental Modular Production Package Migration
+
+Type:
+
+- Architecture / Maintainability / Release packaging
+
+Priority:
+
+- high; should be planned before the next major content system that naturally wants external data, assets, or reward tables
+
+Status:
+
+- not started; recovery control added 2026-05-20 after bundled publish guidance failed to preserve the accepted modular architecture target
+
+Description:
+
+- migrate the current bundled Master 16 line toward the accepted modular browser-client structure without changing gameplay behavior in the same slice
+- treat a single-file `index.html` as a temporary deployment artifact only, not as the future project direction
+- preserve GoDaddy upload simplicity by packaging a complete `/holesy/` directory with all required subfolders
+
+Target direction:
+
+- `index.html`
+- `css/styles.css`
+- `js/main.js`
+- `js/gameLoop.js`
+- `js/player.js`
+- `js/enemies.js`
+- `js/levels.js`
+- `js/ui.js`
+- `js/saveSystem.js`
+- `assets/images/`
+- `assets/audio/`
+- `data/levels.json`
+- future progression data files such as rewards, quests, lore documents, achievements, and theme definitions
+
+Acceptance criteria:
+
+- publish package includes every required file and directory for GoDaddy upload
+- release README distinguishes immediate upload contents from source architecture decisions
+- no production package guidance claims `index.html` is the long-term architecture target unless the ADR is changed
+- at least one low-risk production-scope extraction is promoted from the current Master 16 line
+- browser smoke confirms external files load without console errors
+- mobile smoke confirms startup and game mode selection still work
+
+Notes:
+
+- likely first production-scope extraction candidates are styles, build metadata, lore/document data, reward/quest tables, or non-loop UI data
+- do not combine this migration with physics, Endless balancing, or new reward systems in the same implementation slice
+- this item exists because future content growth will become painful and risky if the project keeps stuffing all systems into one HTML file
+
 ### PERF-011 Idle Menu Lifecycle And Page-Exit Cleanup
 
 Type:
@@ -1258,13 +1309,14 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `Master 16.5` as the current production-test baseline.
-2. Close only those Priority 1 items with complete validation evidence; do not mark partially validated performance items complete just because later builds contain the code.
-3. If no additional Priority 1 item can be closed under governance, make `Endless Waves mode` the next product feature slice.
-4. Design Endless around gentler per-wave linear scaling, with current four-wave `Ultra` pressure landing around Endless Wave 70.
-5. Keep performance profiles separate from Endless difficulty scaling so machine-budget ceilings remain intact.
-6. After the Endless foundation exists, connect it to persistent records, progression rewards, and future theme/world transitions.
+1. Treat `10_SOURCE/Masters/Master 16.html` with in-game label `Master 16.15` as the current governed production-test baseline.
+2. Do not treat the current bundled `index.html` release package as the long-term architecture target; the accepted direction remains incremental modular browser-client assets.
+3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
+4. Keep `QA-006` and `QA-007` in monitor until real long-idle and real-gameplay validation exists.
+5. Treat the newly captured product-intent failure as a governance recovery issue; do not resume new PB implementation until the recovery controls are committed and pushed.
+6. After recovery, the next technical architecture priority should be `PERF-012 Incremental Modular Production Package Migration` unless the user explicitly approves a temporary bundled hotfix path.
+7. After the modular package path is under control, return to the current gameplay intake: pause-save confirmation visibility, improved collapse physics, medium/house cube breakup, and daily/weekly quest/reward architecture.
 
 The next active engineering task remains:
 
-- review Priority 1 closure evidence; if no remaining P1 item can be closed immediately, start the first `Endless Waves mode` architecture slice from `Master 16.5`
+- complete and verify the product-intent governance recovery, then decide whether the immediate next implementation slice is modular package migration or a narrowly approved gameplay hotfix.
