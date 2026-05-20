@@ -1183,6 +1183,10 @@ Backlog items:
     - save data is stored locally and restores Endless wave, score, hole size, rival state, timers, active buffs/cooldowns, soldiers, planes, aid, and board object positions
     - timed effects are saved as remaining time so taking a break does not drain buffs, shields, aid timers, or wave timers
     - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_14_ENDLESS_SAVE_LOAD.md` records syntax, package, and browser smoke evidence
+  - Endless player-death stop defect:
+    - `Master 16.15` stops world simulation immediately when the player is eaten or shot in Endless
+    - player death now routes to the end screen instead of allowing the run to continue underneath
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_15_ENDLESS_PLAYER_DEATH_STOP.md` records syntax, package, and browser smoke evidence
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay

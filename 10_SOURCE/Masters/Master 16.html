@@ -982,7 +982,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.14</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.15</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1111,7 +1111,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 14;
+const BUILD_SUB = 15;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -2143,6 +2143,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.15',
+    date: '2026-05-20',
+    summary: 'Player death now hard-stops Endless simulation instead of letting the run continue underneath.',
+    changes: [
+      'Stopped world simulation immediately when the player is eaten by a rival.',
+      'Stopped world simulation immediately when soldiers kill the player.',
+      'Preserved the existing eaten/fade return flow while preventing indefinite gameplay after death.',
+    ],
+  },
   {
     label: 'Master 16.14',
     date: '2026-05-19',
@@ -6368,6 +6378,12 @@ function clearPlayerConsumedReturn() {
 function schedulePlayerConsumedReturn(eater) {
   if (playerConsumedReturnTimer) return;
   pendingPlayerEndReason = 'eaten_by_rival';
+  running = false;
+  syncAlienAidLoop(true);
+  stopAllPlaneEngines(false);
+  stopHoleWindNow();
+  updatePauseButtonLabel();
+  updateWaveHudBanner();
   finalizeTrackedGameRun('eaten_by_rival');
   showStagePop('EATEN BY ' + eater.name.toUpperCase(), 2200);
   playerConsumedFadeTimer = setTimeout(() => {
@@ -6376,7 +6392,7 @@ function schedulePlayerConsumedReturn(eater) {
   playerConsumedReturnTimer = setTimeout(() => {
     playerConsumedFadeTimer = null;
     playerConsumedReturnTimer = null;
-    returnToModeSelect();
+    endGame();
   }, 5000);
 }
 
@@ -10233,7 +10249,14 @@ function applyShotDamage(h) {
     scene.remove(h.group);
     if (h.isPlayer) {
       pendingPlayerEndReason = 'shot_by_soldiers';
+      running = false;
+      syncAlienAidLoop(true);
+      stopAllPlaneEngines(false);
+      stopHoleWindNow();
+      updatePauseButtonLabel();
+      updateWaveHudBanner();
       showStagePop('SHOT DOWN!');
+      endGame();
     }
   }
 }
