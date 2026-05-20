@@ -1154,6 +1154,10 @@ Backlog items:
     - `Master 16.7` keeps Endless running when only the player would otherwise remain
     - `Master 16.7` tightens panic-car loss-of-control timing and crash slide caps to reduce unreasonably long skids
     - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_7_ENDLESS_RESPAWN_AND_CAR_SKID.md` records syntax, package, and browser smoke evidence
+  - scoreboard restart defect fix:
+    - `Master 16.8` resets all hole life/state before starting a fresh wave-based run from the scoreboard
+    - this prevents `Begin` from rebuilding the town behind the final-score screen and immediately returning to the same end state
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_8_SCOREBOARD_RESTART.md` records syntax, package, and browser smoke evidence
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay
