@@ -1,4 +1,4 @@
-# Architecture Alignment Review: Master 16.16 Modular Client Split
+# Architecture Alignment Review: Master 16.16 To Master 16.17 Modular Client Split
 
 Date: 2026-05-20
 
@@ -6,9 +6,28 @@ Reviewer: Codex
 
 ## Executive Finding
 
-Holesy is committed to the accepted modular browser-client architecture. The current `Master 16.16` production-test source and GoDaddy upload package are not aligned with that architecture yet because they remain bundled into one large HTML file.
+Holesy is committed to the accepted modular browser-client architecture. This review originally found that the `Master 16.16` production-test source and GoDaddy upload package were not aligned with that architecture yet because they remained bundled into one large HTML file.
 
-The single-file `index.html` package is a temporary release artifact only. It must not be described as the project direction or as the normal production architecture.
+`Master 16.17` completed the Phase 1 correction: the governed source, release package, and upload convenience folder now use the modular package shape with `index.html`, `css/styles.css`, `js/main.js`, `assets/`, and `data/`.
+
+`index.html` is now the package entry point only. It must not be described as the entire game package or as a return to single-file architecture.
+
+## Master 16.17 Update
+
+Phase 1 is aligned:
+
+- Governed source package: `10_SOURCE/Masters/Master 16/`
+- Source entry point: `10_SOURCE/Masters/Master 16/index.html`
+- Source stylesheet: `10_SOURCE/Masters/Master 16/css/styles.css`
+- Source game module: `10_SOURCE/Masters/Master 16/js/main.js`
+- Release package: `40_RELEASE/Website_Publish_Package/holesy/`
+- Upload convenience package: `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\`
+
+Remaining architecture work:
+
+- `js/main.js` is still intentionally large after Phase 1.
+- Phase 2 should extract build metadata, difficulty profiles, lore documents, and similarly stable data/configuration.
+- Later phases should extract UI/archive, save/load, levels/theme, rewards/quests, and eventually gameplay systems when slices can be tested safely.
 
 ## Governing Decision
 
@@ -40,7 +59,7 @@ Key constraints:
 - do not replace the browser game loop with Python/server code for FPS/performance
 - preserve governed candidate/master/release workflow during migration
 
-## Current State Inspected
+## Original State Inspected
 
 Current source basis:
 
@@ -75,7 +94,7 @@ Current package shape:
   - `Master 15.40` through `Master 15.45` external lore/stats/build CSS/JS proof artifacts
 - Release package README already labels the current bundled package as temporary.
 
-## Not Aligned
+## Original Gaps Found
 
 - `Master 16.16` source is still a giant HTML file.
 - The website publish package is still a giant HTML file.
@@ -86,7 +105,7 @@ Current package shape:
 
 ## Required Alignment Plan
 
-### Phase 1: Production Package Skeleton
+### Phase 1: Production Package Skeleton - Completed In Master 16.17
 
 - Create a production package directory with the committed target structure:
   - `index.html`
@@ -96,7 +115,7 @@ Current package shape:
   - `assets/audio/`
   - `data/`
 - Move the full inline stylesheet from `Master 16.16` into `css/styles.css`.
-- Keep JavaScript bundled inside `index.html` for this first production-scope slice.
+- Move the primary game module into `js/main.js`.
 - Validate that CSS loads locally and on mobile.
 
 ### Phase 2: Low-Risk JS/Data Extraction
@@ -123,17 +142,17 @@ Current package shape:
 
 Every future chat must treat this as a committed architecture constraint:
 
-- Current bundled package is a temporary exception.
-- The default next architecture task is `PERF-012`.
+- `index.html` is the package entry point only.
+- The default next architecture task is `PERF-012` Phase 2.
 - Any release/package answer must identify the full package shape and whether it aligns with the modular target.
 - A single-file production answer is incomplete unless the user explicitly approves a temporary exception for that specific release.
 
 ## Recommended Next Engineering Action
 
-Start `PERF-012` with Phase 1:
+Continue `PERF-012` with Phase 2:
 
-- externalize `Master 16.16` CSS into `40_RELEASE/Website_Publish_Package/holesy/css/styles.css`
-- update `40_RELEASE/Website_Publish_Package/holesy/index.html` to reference it
-- create matching source-side modular candidate artifacts
-- validate browser/mobile startup and game mode selection
-- update release manifest and QA evidence
+- extract build metadata to `js/build-info.js`
+- extract difficulty profiles to a stable config/data module
+- extract lore documents to a stable data module
+- preserve gameplay behavior in each slice
+- run local browser smoke and mobile smoke before promotion

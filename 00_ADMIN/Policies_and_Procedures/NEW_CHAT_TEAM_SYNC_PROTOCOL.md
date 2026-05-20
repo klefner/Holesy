@@ -89,7 +89,7 @@ Do not use `-WriteSnapshot` casually in every chat unless the resulting file wil
 
 No future chat may answer packaging, release, architecture, or backlog questions from memory alone. It must run this protocol or explicitly say it has not done so.
 
-The modular browser-client split is a committed architecture constraint. No future chat may describe the single-file `index.html` package as the normal project direction. Until `PERF-012` is complete, release/package answers must identify the bundled package as a temporary exception and must route alignment work back to the modular production package migration.
+The modular browser-client split is a committed architecture constraint. No future chat may describe `index.html` as the whole game package. `Master 16.17` completed `PERF-012` Phase 1, so release/package answers must identify the full modular package contents and route remaining architecture work to the next `PERF-012` phase.
 
 ## Completeness Boundary
 

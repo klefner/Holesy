@@ -12,8 +12,9 @@ This document is the takeover package for any new Codex chat that needs to conti
 
 Current promoted master:
 
-- `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16.html`
-- current in-game label: `Master 16.16`
+- `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
+- playable entry point: `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
+- current in-game label: `Master 16.17`
 
 Current basis note:
 
@@ -31,6 +32,7 @@ What `Master 16` specifically represents:
 - it includes clickable in-game build notes from `Master 15.45`
 - it has since advanced through the local `Master 16.x` line with Endless Waves, Endless save/load, rival respawn behavior, buff cooldown tuning, rival-devour growth tempering, and player-death stop fixes
 - `Master 16.16` adds saved-skyscraper visual restoration after loading Endless saves, post-soldier growth recovery, tighter car skid tuning, and always-visible build version in the Pause menu
+- `Master 16.17` completes `PERF-012` Phase 1 by moving the governed source and publish package to the modular browser-client folder shape, with `css/styles.css` and `js/main.js` externalized from the former single-file build
 
 Last approved candidate promoted into `Master 16`:
 
@@ -48,13 +50,13 @@ Last approved candidate promoted into `Master 16`:
 - Before release packaging or material implementation, run:
   - `00_ADMIN/Policies_and_Procedures/RELEASE_SOURCE_OF_TRUTH_MANIFEST.md`
   - `00_ADMIN/Policies_and_Procedures/PRODUCT_INTENT_GATE.md`
-- Do not treat the current bundled `index.html` package as the long-term architecture target; the accepted target remains modular browser assets under `ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`
-- The modular architecture target is a committed constraint, not an optional preference. The current bundled `index.html` package is a temporary exception only.
+- Do not treat `index.html` as the whole game package; the accepted target remains modular browser assets under `ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`
+- The modular architecture target is a committed constraint, not an optional preference. `Master 16.17` is the first production-scope modular package alignment.
 - Before answering any production/upload/package question, read `ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md` and state whether the requested upload aligns with the modular target.
 
 ## 4. Current Priority
 
-- immediate focus is restoring architectural alignment through `PERF-012 Incremental Modular Production Package Migration`, then validating the promoted `Master 16.16` gameplay fixes on real devices and real gameplay
+- immediate focus is regression testing `Master 16.17` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
 - active monitor items carried from the latest QA evidence:
   - long-idle tab-close behavior descended from `Master 15.39`
   - archive readability and music fit
@@ -68,12 +70,14 @@ Last approved candidate promoted into `Master 16`:
 
 ## 5. Immediate Next Move
 
-- treat `Master 16.16` as the current source basis within `10_SOURCE/Masters/Master 16.html`
-- treat the current single-file release package as a temporary exception, not the target architecture
-- start with `PERF-012` Phase 1 unless the user explicitly directs an emergency temporary bundled hotfix
+- treat `Master 16.17` as the current source basis within `10_SOURCE/Masters/Master 16/`
+- treat `index.html` as the package entry point only; production upload requires the full modular `/holesy/` folder contents
+- start with regression testing `Master 16.17`, then continue `PERF-012` Phase 2
 - validate the promoted website package and local master against the current recommendation:
-  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16.html`
+  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
+  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\css\styles.css`
+  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\js\main.js`
 - validation focus:
   - confirm the original long-idle Chrome tab-close stall is materially improved after a real idle wait
   - confirm Archive readability and that the Archive music still fits the intended funny, whimsical, conspiracy-undertone direction

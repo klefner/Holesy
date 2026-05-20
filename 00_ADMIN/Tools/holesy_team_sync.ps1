@@ -11,9 +11,9 @@ $scriptPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Resolve-Path (Join-Path $scriptPath '..\..')
 Set-Location $repoRoot
 
-$sourceMasterPath = '10_SOURCE/Masters/Master 16.html'
+$sourceMasterPath = '10_SOURCE/Masters/Master 16/index.html'
 $releasePackagePath = '40_RELEASE/Website_Publish_Package/holesy/index.html'
-$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.16\holesy\index.html'
+$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\index.html'
 $automationPath = 'C:\Users\KentLefner\.codex\automations\daily-qa-audit\automation.toml'
 $auditorPromptPath = '00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md'
 $issueLogPath = '00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md'
@@ -411,10 +411,10 @@ function Get-ProductIntentAssessment {
   $conflicts = New-Object System.Collections.Generic.List[string]
 
   if ($lower -match 'publish|package|upload|godaddy|production|prod') {
-    $conflicts.Add('Release/package request detected: modular browser-client split is a committed architecture constraint; single-file upload is a temporary exception only, and PERF-012 remains the required alignment path.')
+    $conflicts.Add('Release/package request detected: modular browser-client split is a committed architecture constraint; index.html is only the package entry point, and the full modular /holesy/ package must be preserved.')
   }
   if ($lower -match 'modular|architecture|split|js|css|asset') {
-    $conflicts.Add('Architecture request detected: must preserve accepted modular browser-client split, read the Master 16.16 alignment review, and route production-package work through PERF-012.')
+    $conflicts.Add('Architecture request detected: must preserve accepted modular browser-client split, read the Master 16.16 to Master 16.17 alignment review, and route follow-on package work through PERF-012.')
   }
   if ($lower -match 'defect|bug|fix|gameplay|feature|build|implement') {
     $conflicts.Add('Implementation request detected: must check issue-log monitors and current backlog recommendation before coding.')
@@ -478,6 +478,24 @@ if ($releaseFact.Exists -and $uploadFact.Exists) {
     Add-Lines '- Release/upload hash comparison: WARNING - hashes differ'
   }
 }
+$modularAssets = @(
+  @{ Name = 'css/styles.css'; Source = '10_SOURCE/Masters/Master 16/css/styles.css'; Release = '40_RELEASE/Website_Publish_Package/holesy/css/styles.css'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\css\styles.css' },
+  @{ Name = 'js/main.js'; Source = '10_SOURCE/Masters/Master 16/js/main.js'; Release = '40_RELEASE/Website_Publish_Package/holesy/js/main.js'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\js\main.js' }
+)
+foreach ($asset in $modularAssets) {
+  $sourceAssetFact = Get-FileFact $asset.Source
+  $releaseAssetFact = Get-FileFact $asset.Release
+  $uploadAssetFact = Get-FileFact $asset.Upload
+  if (-not ($sourceAssetFact.Exists -and $releaseAssetFact.Exists -and $uploadAssetFact.Exists)) {
+    Add-Warning ("Modular asset missing from source/release/upload package: " + $asset.Name)
+    Add-Lines ('- Modular asset `' + $asset.Name + '`: WARNING - missing from at least one package layer')
+  } elseif ($sourceAssetFact.Sha256 -eq $releaseAssetFact.Sha256 -and $releaseAssetFact.Sha256 -eq $uploadAssetFact.Sha256) {
+    Add-Lines ('- Modular asset `' + $asset.Name + '` hash comparison: OK')
+  } else {
+    Add-Warning ("Modular asset hash mismatch across source/release/upload package: " + $asset.Name)
+    Add-Lines ('- Modular asset `' + $asset.Name + '` hash comparison: WARNING - hashes differ')
+  }
+}
 
 Add-Lines (Section 'Live Site Verification')
 Add-Lines (Get-LiveVerificationLines)
@@ -533,7 +551,7 @@ if ($handoff) {
 
 Add-Lines (Section 'Required Next-Chat Declaration')
 Add-Lines 'A new assistant must explicitly state whether the user request conflicts with the manifest, product intent gate, architecture decision, architecture alignment review, issue log, or backlog recommendation before acting.'
-Add-Lines 'The modular browser-client split is a committed architecture constraint. Treat single-file production packaging as a temporary exception only, and route architecture/package alignment through PERF-012.'
+Add-Lines 'The modular browser-client split is a committed architecture constraint. Treat index.html as the package entry point only, require the full modular /holesy/ package for upload, and route follow-on architecture/package alignment through PERF-012.'
 
 Add-Lines (Section 'Confidence Footer')
 if ($script:ConfidenceFailures.Count -gt 0) {

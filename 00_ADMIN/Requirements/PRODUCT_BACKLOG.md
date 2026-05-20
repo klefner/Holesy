@@ -566,13 +566,13 @@ Priority:
 
 Status:
 
-- ready for immediate execution; recovery control added 2026-05-20 after bundled publish guidance failed to preserve the accepted modular architecture target
-- `ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md` maps current alignment gaps and defines the required migration phases
+- Phase 1 completed in `Master 16.17`; source, release, and upload package folders now use the committed modular browser-client package shape
+- `ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md` maps the original alignment gaps and the remaining migration phases
 
 Description:
 
 - migrate the current bundled Master 16 line toward the accepted modular browser-client structure without changing gameplay behavior in the same slice
-- treat a single-file `index.html` as a temporary deployment artifact only, not as the future project direction
+- treat `index.html` as the entry point only, not the whole game package
 - preserve GoDaddy upload simplicity by packaging a complete `/holesy/` directory with all required subfolders
 
 Target direction:
@@ -602,6 +602,12 @@ Acceptance criteria:
 
 Notes:
 
+- Phase 1 evidence:
+  - source package: `10_SOURCE/Masters/Master 16/index.html`
+  - source stylesheet: `10_SOURCE/Masters/Master 16/css/styles.css`
+  - source game module: `10_SOURCE/Masters/Master 16/js/main.js`
+  - release package mirrors that structure under `40_RELEASE/Website_Publish_Package/holesy/`
+  - upload convenience folder mirrors that structure under `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\`
 - likely first production-scope extraction candidates are styles, build metadata, lore/document data, reward/quest tables, or non-loop UI data
 - do not combine this migration with physics, Endless balancing, or new reward systems in the same implementation slice
 - this item exists because future content growth will become painful and risky if the project keeps stuffing all systems into one HTML file
@@ -1355,14 +1361,14 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `10_SOURCE/Masters/Master 16.html` with in-game label `Master 16.16` as the current governed production-test baseline.
-2. Do not treat the current bundled `index.html` release package as the long-term architecture target; the accepted direction remains incremental modular browser-client assets.
+1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.17` as the current governed production-test baseline.
+2. Treat `index.html` as the entry point for the modular package, not the whole game package; production upload requires the full `/holesy/` folder contents.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Keep `QA-006` and `QA-007` in monitor until real long-idle and real-gameplay validation exists.
 5. Treat product-intent recovery controls as the immediate governance baseline; Team Sync v2 should be run at new-chat startup and before material release/package/architecture decisions.
-6. The next technical architecture priority is `PERF-012 Incremental Modular Production Package Migration`. A bundled single-file release is a temporary exception only and must be explicitly identified as such.
-7. After the modular package path is under control, return to the current gameplay intake: pause-save confirmation visibility, improved collapse physics, medium/house cube breakup, and daily/weekly quest/reward architecture.
+6. The next technical architecture priority is `PERF-012` Phase 2: extract build metadata, difficulty profiles, lore documents, and similarly stable data/configuration out of `js/main.js` without changing gameplay behavior.
+7. After the modular package path is under control and regression tested, return to the current gameplay intake: pause-save confirmation visibility, improved collapse physics, medium/house cube breakup, and daily/weekly quest/reward architecture.
 
 The next active engineering task is:
 
-- execute `PERF-012` Phase 1 modular package migration unless the user explicitly directs an emergency temporary bundled hotfix.
+- regression test `Master 16.17` through the modular package URL, then continue `PERF-012` Phase 2 as the next architecture slice.

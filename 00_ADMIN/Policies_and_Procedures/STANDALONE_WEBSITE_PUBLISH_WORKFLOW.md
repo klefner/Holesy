@@ -13,18 +13,22 @@ This workflow must be read together with:
 ## Current Decision
 
 - WordPress can remain as the content/admin system for the broader site
-- The Holesy game should be deployed as a standalone file at:
+- The Holesy game should be deployed as a standalone package at:
   - `https://ptbooksinc.com/holesy/`
-- The currently approved publish artifact is bundled as:
+- The currently approved publish artifact is the full modular `holesy/` package containing:
   - `index.html`
-- This bundled artifact is a current release convenience, not the long-term architecture target.
+  - `css/styles.css`
+  - `js/main.js`
+  - `assets/`
+  - `data/`
+- `index.html` is the package entry point only, not the whole game package.
 - The accepted architecture target remains incremental client-side modularization into browser-native assets such as `css/`, `js/`, `assets/`, and `data/`.
 
 ## Canonical Publish Source
 
 Unless a newer master is explicitly approved, publish from:
 
-- `10_SOURCE/Masters/Master 16.html`
+- `10_SOURCE/Masters/Master 16/`
 
 Before publishing, confirm the in-game build label inside the publish artifact matches the intended approved build line.
 
@@ -33,10 +37,8 @@ Before publishing, confirm the in-game build label inside the publish artifact m
 For live website publication:
 
 1. Run the Product Intent Gate.
-2. Confirm whether this publish is using:
-   - the current temporary bundled `index.html` artifact, or
-   - a modular package containing `index.html`, `css/`, `js/`, `assets/`, and `data/`.
-3. If publishing the current bundled artifact, explicitly state that the bundle is a temporary deployment artifact and does not replace the accepted modular architecture target.
+2. Confirm the publish package contains `index.html`, `css/`, `js/`, `assets/`, and `data/`.
+3. Confirm `index.html` is treated as the entry point only.
 4. Copy the approved source into the release package.
 5. Upload the package contents into the live `/holesy/` directory.
 
@@ -72,7 +74,7 @@ In GoDaddy File Browser:
 1. Open the site root
 2. Open the `holesy` directory
 3. Upload the release package contents
-4. Replace older files only after confirming the new publish package is the intended master or explicitly approved temporary exception
+4. Replace older files only after confirming the new publish package is the intended master
 
 ### 4. Test the live URL
 
@@ -93,7 +95,7 @@ Check:
 
 If the standalone file fails:
 
-1. Re-upload the previous `index.html`
+1. Re-upload the previous full `holesy/` package
 2. Or temporarily restore the WordPress slug path if necessary
 
 ## Release Discipline
@@ -104,11 +106,11 @@ For every public publish:
 2. Promote it into `10_SOURCE/Masters`
 3. Refresh the website publish package
 4. Push the updated repo state to GitHub
-5. Confirm the package respects, or explicitly documents a temporary exception from, the modular architecture target
+5. Confirm the package respects the modular architecture target
 6. Upload the package to GoDaddy
 
 ## Recommendation
 
 Do not publish directly from a candidate build unless it has been explicitly approved and promoted or explicitly designated as a temporary hotfix candidate.
 
-Do not answer "only `index.html` is required" without also checking the Release Source Of Truth Manifest and the accepted modular architecture decision.
+Do not answer "only `index.html` is required." Check the Release Source Of Truth Manifest and the accepted modular architecture decision, then identify the full package contents required for upload.

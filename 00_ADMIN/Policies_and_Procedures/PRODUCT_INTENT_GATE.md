@@ -22,7 +22,7 @@ Run this gate before:
 2. What prior product, architecture, or governance decisions constrain this answer?
 3. What governed document proves those constraints?
 4. Does the requested action preserve those constraints?
-5. If it does not, is this an explicit temporary exception approved by the user?
+5. If it does not, is this an explicit exception approved by the user and documented for rollback?
 6. What artifact will future chats read so this decision survives context loss?
 
 ## Required Evidence
@@ -38,14 +38,14 @@ At minimum, inspect:
 
 ## Release Packaging Rule
 
-The accepted architecture is modular browser-client assets. The current single-file package is a temporary exception only.
+The accepted architecture is modular browser-client assets. The current production package uses the modular folder shape; `index.html` is the entry point only.
 
 For every release/package/upload answer, the final answer must say both:
 
 - what is required for the immediate upload artifact
-- whether that artifact aligns with or temporarily diverges from the modular architecture target
-- whether `PERF-012 Incremental Modular Production Package Migration` remains the next required architecture alignment task
+- whether that artifact aligns with the modular architecture target
+- whether `PERF-012 Incremental Modular Production Package Migration` has additional follow-on phase work remaining
 
 Never describe a bundled single-file package as the project direction unless the architecture decision has been explicitly changed.
 
-Do not recommend a single-file production upload as the normal path. A single-file upload can only be presented as a temporary exception for the specific release being discussed.
+Do not recommend a single-file production upload as the normal path. Production upload requires the full modular package contents.
