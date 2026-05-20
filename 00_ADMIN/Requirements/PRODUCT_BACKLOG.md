@@ -1156,6 +1156,46 @@ Backlog items:
 - Soldier Hijack powerup
   - soldiers target rivals instead of the player
   - leverages the unique military simulation
+- Containment Bait / poison-pill hazard system
+  - add lore-relevant hazardous targets that look edible but have been prepared by the city, military, or emergency-response bureaucracy to punish careless consumption
+  - primary downtown variant: `Containment Charges`
+    - a building can be wired with a visible crooked cable running from the structure to the sidewalk
+    - a human in an orange utility vest stands near the cable with a detonator
+    - when any hole consumes that building, the handler triggers the charge
+    - the building explodes, leaves roughly half its debris as edible scraps, and applies a hazardous effect to the consuming hole
+  - damage should not always mean instant death
+    - standard charge damage reduces hole size by a tuned percentage, initially in the 20% to 60% range
+    - if minimum bomb damage exceeds the hole's current size/mass threshold, the hole is destroyed
+    - higher difficulty and deeper Endless waves increase damage, blast radius, handler reaction speed, and the chance of stronger variants
+  - poison-pill effects can vary by hazard type so the system is more interesting than "bomb equals death"
+    - `Containment Charge`: immediate size/mass loss, explosion debris remains partly edible
+    - `Quieting Device`: temporarily suppresses pull radius and disables timed lore-buff acquisition
+    - `Surveyor Snare`: slows movement and makes nearby soldiers/rivals path toward the affected hole
+    - `False Archive`: briefly scrambles HUD/buff labels or hides object-value cues without damaging size
+    - `Salted Foundation`: building collapses into low-value debris and applies a short growth penalty
+    - `Marking Dye`: tags the hole so soldiers gain accuracy against it for a limited time
+  - traps must be readable before impact
+    - obvious enough that attentive players can avoid them
+    - subtle enough that frantic high-score play creates real risk
+    - visual tells should be lore-aligned, such as cables, vests, survey stakes, blinking municipal boxes, warning paint, or suspiciously quiet crowds
+  - traps can affect rivals too
+    - rival AI should sometimes avoid visible traps
+    - smarter rivals should be better at avoidance
+    - low-skill rivals may blunder into traps, creating funny/chaotic moments
+  - difficulty and level scaling
+    - low difficulty: rare, slow, clearly telegraphed, mostly non-lethal
+    - normal/hard: moderate frequency, stronger damage, more mixed effects
+    - ultra/deep Endless: more frequent, faster detonation, wider blast consequences, and occasional lethal charges
+    - scaling must be config-driven and respect performance caps
+  - acceptance criteria:
+    - poison-pill hazards are represented as data/config, not hardcoded one-off branches
+    - each hazard has a visible pre-consumption tell, trigger condition, effect, duration if applicable, and scaling profile
+    - hazards can target the player or rival holes using the same rules
+    - building-charge explosions leave partial debris and do not erase all reward value
+    - damage can wound or kill depending on hole size and configured minimum damage
+    - active effects are clearly shown to the player with readable HUD language and timers where relevant
+    - saved Endless games preserve armed hazards, handler state, cooldowns, and active hazard effects
+    - Archive/lore docs can later hint at or explain why the city is learning to bait Hungers
 
 ## Priority 5 — New Modes And Replayability
 
