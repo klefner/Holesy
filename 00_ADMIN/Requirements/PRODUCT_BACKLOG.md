@@ -1168,6 +1168,11 @@ Backlog items:
     - each timed lore buff now has a five-second cooldown after expiry before the same pattern can reacquire it
     - Building Chain's instant mass side effect is also limited to fresh acquisition so repeating the pattern during the active window cannot stack runaway growth
     - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_11_BUFF_COOLDOWN.md` records syntax, package, and browser smoke evidence
+  - Crowd Magnet early-wave tuning:
+    - `Master 16.12` reduces Pedestrian Pull / Crowd Magnet from a 15-second effect to a 5-second tactical burst
+    - `Master 16.12` also reduces Crowd Magnet bonus reach from +75% hole radius to +35%, and the Block Party combo reach from +105% to +55%
+    - this keeps the lore-pattern reward visible while reducing early Endless Waves runaway city collection
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_12_CROWD_MAGNET_TUNING.md` records syntax, package, and browser smoke evidence
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay

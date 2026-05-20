@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.11</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.12</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1094,7 +1094,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 11;
+const BUILD_SUB = 12;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -2124,6 +2124,17 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.12',
+    date: '2026-05-19',
+    summary: 'Crowd Magnet is now a shorter, tighter pull burst instead of an early-wave growth engine.',
+    changes: [
+      'Reduced Pedestrian Pull / Crowd Magnet duration from 15 seconds to 5 seconds.',
+      'Reduced Crowd Magnet bonus reach from +75% hole radius to +35%, with the Block Party combo reduced from +105% to +55%.',
+      'Updated active-buff text and banner copy to show the shorter timer.',
+      'Kept the five-second post-expiry reacquire cooldown from Master 16.11.',
+    ],
+  },
   {
     label: 'Master 16.11',
     date: '2026-05-19',
@@ -5156,7 +5167,7 @@ const LORE_DROP_MAX_CHANCE = 0.31;
 const LORE_BUFF_REACQUIRE_COOLDOWN_MS = 5000;
 const ACHIEVEMENT_DEFS = Object.freeze({
   first_bite: { label: 'First Bite', playerName: 'First Bite', effectText: '+15% score from people all round', durationMs: 0, active: true },
-  pedestrian_pull: { label: 'Pedestrian Pull', playerName: 'Crowd Magnet', effectText: 'Wider pull radius for 15s', durationMs: 15000, active: true },
+  pedestrian_pull: { label: 'Pedestrian Pull', playerName: 'Crowd Magnet', effectText: 'Wider pull radius for 5s', durationMs: 5000, active: true },
   tree_hugger: { label: 'Tree Hugger', playerName: 'Tree Feast', effectText: 'Trees score x2 for 20s', durationMs: 20000, active: true },
   forum_user: { label: 'The Forum User', playerName: 'Forum User', effectText: 'Achievement only: survived while staying low-profile', durationMs: 0, active: false },
   quiet_block: { label: 'The Quiet Block', playerName: 'Block Sweep', effectText: '+50% score from everything for 15s', durationMs: 15000, active: true },
@@ -5517,7 +5528,7 @@ function handleLoreConsume(h, obj) {
     if (roundLoreState.peopleTimes.length >= 10) {
       unlockAchievement('pedestrian_pull');
       if (activateLoreTimedBuff('pedestrian_pull', ACHIEVEMENT_DEFS.pedestrian_pull.durationMs)) {
-        showEventBanner('ACTIVE BUFF: Crowd Magnet - nearby objects pull from farther away for 15 seconds.', 6200);
+        showEventBanner('ACTIVE BUFF: Crowd Magnet - nearby objects pull from farther away for 5 seconds.', 5200);
       }
     }
   }
@@ -10058,7 +10069,7 @@ function animate(frameNow = performance.now()) {
         if (obj.size > maxConsumeSize) continue;
         const d = Math.hypot(obj.x - h.x, obj.z - h.z);
         const lorePullBonus = h.isPlayer && getLoreTimedBuffRemaining('pedestrian_pull') > 0
-          ? h.radius * (getLoreComboState('block_party') ? 1.05 : 0.75)
+          ? h.radius * (getLoreComboState('block_party') ? 0.55 : 0.35)
           : 0;
         if (d < h.radius + obj.size + lorePullBonus && d < pullD) {
           puller = h; pullD = d;
@@ -10069,7 +10080,7 @@ function animate(frameNow = performance.now()) {
         const dzo = obj.z - puller.z;
         const d = pullD;
         const lorePullBonus = puller.isPlayer && getLoreTimedBuffRemaining('pedestrian_pull') > 0
-          ? puller.radius * (getLoreComboState('block_party') ? 1.05 : 0.75)
+          ? puller.radius * (getLoreComboState('block_party') ? 0.55 : 0.35)
           : 0;
         const pull = Math.max(0, (puller.radius + obj.size + lorePullBonus - d)) * 8 * dt;
         const nx = dxo / (d + 0.001);
