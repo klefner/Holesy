@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.6</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.7</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1094,7 +1094,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 6;
+const BUILD_SUB = 7;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1824,14 +1824,15 @@ const HOLESY_CONFIG = Object.freeze({
     panicCrashMinSpeed: 8.75,
     panicCrashWarmupSeconds: 0.35,
     panicCrashForcedSeconds: 1.1,
+    panicLossOfControlMaxSeconds: 1.45,
     panicCrashForcedChancePerSecond: 2.6,
     panicCrashTopSpeedMultiplier: 3.0,
     panicWrongWayCrashMultiplier: 2.4,
     panicWobble: 1.75,
-    crashDurationSeconds: 0.72,
-    crashMaxSlideDistance: 6,
+    crashDurationSeconds: 0.52,
+    crashMaxSlideDistance: 4.25,
     crashFrictionPerSecond: 0.025,
-    crashStopSpeed: 1.05,
+    crashStopSpeed: 1.35,
     carCollisionRadius: 2.25,
     carAvoidanceRadius: 5.0,
     carCrashImpactSpeed: 10.0,
@@ -2123,6 +2124,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.7',
+    date: '2026-05-19',
+    summary: 'Endless Waves now stays endless after rival holes are eaten.',
+    changes: [
+      'Respawned rival holes smaller and far from the player after they are consumed in Endless Waves.',
+      'Prevented Endless Waves from ending just because only the player remains briefly.',
+      'Tightened panic-car loss-of-control timing and crash slide caps to reduce long skids.',
+    ],
+  },
   {
     label: 'Master 16.6',
     date: '2026-05-19',
@@ -6790,6 +6801,65 @@ function repositionHolesForNewWave() {
   });
 }
 
+function pickEndlessRespawnPoint(eaten, eater) {
+  const minPlayerDistance = Math.min(currentArenaHalf * 0.72, Math.max(34, player.radius * 9));
+  const minEaterDistance = Math.min(currentArenaHalf * 0.58, Math.max(26, eater.radius * 7));
+  const padding = 10;
+  let best = null;
+  let bestScore = -Infinity;
+  for (let i = 0; i < 48; i++) {
+    const x = randomBetween(-currentArenaHalf + padding, currentArenaHalf - padding);
+    const z = randomBetween(-currentArenaHalf + padding, currentArenaHalf - padding);
+    const playerDistance = Math.hypot(x - player.x, z - player.z);
+    const eaterDistance = Math.hypot(x - eater.x, z - eater.z);
+    const nearestOther = holes.reduce((nearest, h) => {
+      if (h === eaten || !h.alive) return nearest;
+      return Math.min(nearest, Math.hypot(x - h.x, z - h.z));
+    }, Infinity);
+    const score = playerDistance * 1.5 + eaterDistance + nearestOther * 0.7;
+    if (score > bestScore) {
+      bestScore = score;
+      best = { x, z, playerDistance, eaterDistance };
+    }
+    if (playerDistance >= minPlayerDistance && eaterDistance >= minEaterDistance && nearestOther >= 16) return { x, z };
+  }
+  return best || { x: -Math.sign(player.x || 1) * (currentArenaHalf - padding), z: -Math.sign(player.z || 1) * (currentArenaHalf - padding) };
+}
+
+function respawnEndlessRivalHole(eaten, eater) {
+  const point = pickEndlessRespawnPoint(eaten, eater);
+  eaten.alive = true;
+  eaten.group.visible = true;
+  if (!eaten.group.parent) scene.add(eaten.group);
+  eaten.score = Math.max(0, Math.floor((eaten.score || 0) * 0.24));
+  eaten.bonusRadius = Math.max(0, (eaten.bonusRadius || 0) * 0.12);
+  eaten.recentSoldierDamageRadius = 0;
+  eaten.x = point.x;
+  eaten.z = point.z;
+  eaten.targetX = point.x;
+  eaten.targetZ = point.z;
+  eaten.wanderX = point.x;
+  eaten.wanderZ = point.z;
+  eaten.aiTargetObj = null;
+  eaten.aiState = 'wander';
+  eaten.aiTimer = 0.45 + Math.random() * 0.8;
+  eaten.threatAwareSince = 0;
+  eaten.lastSeenThreat = null;
+  eaten.hitFlashUntil = 0;
+  eaten.effects.speedBoostUntil = 0;
+  eaten.effects.speedMultiplier = 1;
+  eaten.effects.speedSource = '';
+  eaten.effects.bulletShieldUntil = 0;
+  eaten.effects.bulletDamageMultiplier = 1;
+  eaten.effects.bulletShieldSource = '';
+  eaten.loreBuffs = {};
+  eaten.loreBuffCooldowns = {};
+  eaten.loreFirstBiteActive = false;
+  eaten.radius = Math.max(MIN_RADIUS, Math.min(eaten.radius * 0.48, radiusFromScore(eaten)));
+  eaten.targetRadius = Math.max(MIN_RADIUS, radiusFromScore(eaten));
+  updateHoleVisual(eaten);
+}
+
 // Starts or advances a wave. waveNum is 1-based. Called from startGame (wave 1)
 // and from the wave-end path for 2+.
 function startWave(waveNum) {
@@ -6816,7 +6886,7 @@ function onWaveTimerExpired() {
   if (!player.alive && playerConsumedReturnTimer) return;
   // If somehow only one hole is left at this point, end immediately as a win.
   const aliveCount = holes.filter(h => h.alive).length;
-  if (aliveCount <= 1) { endGame(); return; }
+  if (!endlessMode && aliveCount <= 1) { endGame(); return; }
   if (!endlessMode && currentWave >= WAVE_CONFIGS.length - 1) {
     // That was wave 4 — whole run is over, final leaderboard.
     endGame();
@@ -7615,8 +7685,8 @@ function holeEatsHole(eater, eaten) {
   // Also absorb some of the victim's bonus radius from prior eating sprees
   if (eaten.bonusRadius) eater.bonusRadius += eaten.bonusRadius * 0.5 * holeEatGrowthMult;
   eater.targetRadius = radiusFromScore(eater);
-  // Remove eaten from scene
-  scene.remove(eaten.group);
+  // Remove eaten from scene unless Endless needs the rival recycled.
+  if (!endlessMode || eaten.isPlayer) scene.remove(eaten.group);
   // Visual feedback
   if (eater.isPlayer) {
     showStagePop('DEVOURED ' + eaten.name.toUpperCase() + '!');
@@ -7626,6 +7696,10 @@ function holeEatsHole(eater, eaten) {
   } else if (eaten.isPlayer) {
     pendingPlayerEndReason = 'eaten_by_rival';
     schedulePlayerConsumedReturn(eater);
+  }
+  if (endlessMode && !eaten.isPlayer) {
+    respawnEndlessRivalHole(eaten, eater);
+    if (eater.isPlayer) showEventBanner(`${eaten.name} was recorded smaller and dropped somewhere else. Endless does not run out of rivals.`, 4200);
   }
 }
 
@@ -8452,9 +8526,9 @@ function triggerCarLossOfControl(car) {
   car.crashing = true;
   car.crashTimer = HOLESY_CONFIG.traffic.crashDurationSeconds;
   car.crashDistance = 0;
-  car.crashVx = forward.x * car.currentSpeed * 0.85 + side.x * (5 + Math.random() * 4);
-  car.crashVz = forward.z * car.currentSpeed * 0.85 + side.z * (5 + Math.random() * 4);
-  car.crashSpin = sideSign * (1.8 + Math.random() * 2.4);
+  car.crashVx = forward.x * car.currentSpeed * 0.62 + side.x * (3.2 + Math.random() * 2.6);
+  car.crashVz = forward.z * car.currentSpeed * 0.62 + side.z * (3.2 + Math.random() * 2.6);
+  car.crashSpin = sideSign * (1.4 + Math.random() * 1.8);
 }
 
 function carForwardSpeed(car) {
@@ -8637,6 +8711,10 @@ function updateMovingCars(dt) {
     if (car.currentSpeed < 0) car.currentSpeed = 0;
 
     if (car.panicking && car.currentSpeed >= HOLESY_CONFIG.traffic.panicCrashMinSpeed && car.panicTimer >= HOLESY_CONFIG.traffic.panicCrashWarmupSeconds) {
+      if (car.panicTimer >= HOLESY_CONFIG.traffic.panicLossOfControlMaxSeconds) {
+        triggerCarLossOfControl(car);
+        continue;
+      }
       const forced = car.panicTimer >= HOLESY_CONFIG.traffic.panicCrashForcedSeconds;
       const topSpeedRatio = Math.min(1, car.currentSpeed / Math.max(1, HOLESY_CONFIG.traffic.panicMaxSpeed));
       const topSpeedMultiplier = 1 + Math.pow(topSpeedRatio, 2) * HOLESY_CONFIG.traffic.panicCrashTopSpeedMultiplier;
@@ -9976,7 +10054,7 @@ function animate(frameNow = performance.now()) {
 
     // --- End game if only one hole remains ---
     const aliveCount = holes.filter(h => h.alive).length;
-    if (aliveCount <= 1 && running && !playerConsumedReturnTimer) {
+    if (aliveCount <= 1 && running && !playerConsumedReturnTimer && !endlessMode) {
       endGame();
     }
 

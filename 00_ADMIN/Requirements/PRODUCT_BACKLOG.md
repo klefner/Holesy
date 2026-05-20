@@ -1149,6 +1149,11 @@ Backlog items:
     - `C:\Users\KentLefner\Downloads\holesy-production-upload\index.html` refreshed from the source master
     - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_6_ENDLESS_WAVES.md` records syntax, package, and browser smoke evidence
     - v1 scope adds the unbounded mode foundation, generated scaling, HUD/end-state copy, stats persistence, and voluntary cashout; deeper balancing remains future tuning
+  - defect fix candidate:
+    - `Master 16.7` removes the Endless "win by elimination" outcome by respawning consumed rival holes smaller and away from the player
+    - `Master 16.7` keeps Endless running when only the player would otherwise remain
+    - `Master 16.7` tightens panic-car loss-of-control timing and crash slide caps to reduce unreasonably long skids
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_7_ENDLESS_RESPAWN_AND_CAR_SKID.md` records syntax, package, and browser smoke evidence
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay
