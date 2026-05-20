@@ -566,7 +566,8 @@ Priority:
 
 Status:
 
-- not started; recovery control added 2026-05-20 after bundled publish guidance failed to preserve the accepted modular architecture target
+- ready for immediate execution; recovery control added 2026-05-20 after bundled publish guidance failed to preserve the accepted modular architecture target
+- `ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md` maps current alignment gaps and defines the required migration phases
 
 Description:
 
@@ -1359,9 +1360,9 @@ Backlog items:
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Keep `QA-006` and `QA-007` in monitor until real long-idle and real-gameplay validation exists.
 5. Treat product-intent recovery controls as the immediate governance baseline; Team Sync v2 should be run at new-chat startup and before material release/package/architecture decisions.
-6. The next technical architecture priority should be `PERF-012 Incremental Modular Production Package Migration` unless the user explicitly approves a temporary bundled hotfix path.
+6. The next technical architecture priority is `PERF-012 Incremental Modular Production Package Migration`. A bundled single-file release is a temporary exception only and must be explicitly identified as such.
 7. After the modular package path is under control, return to the current gameplay intake: pause-save confirmation visibility, improved collapse physics, medium/house cube breakup, and daily/weekly quest/reward architecture.
 
-The next active engineering task remains:
+The next active engineering task is:
 
-- decide whether the immediate next implementation slice is `PERF-012` modular package migration or a narrowly approved gameplay hotfix.
+- execute `PERF-012` Phase 1 modular package migration unless the user explicitly directs an emergency temporary bundled hotfix.

@@ -49,10 +49,12 @@ Last approved candidate promoted into `Master 16`:
   - `00_ADMIN/Policies_and_Procedures/RELEASE_SOURCE_OF_TRUTH_MANIFEST.md`
   - `00_ADMIN/Policies_and_Procedures/PRODUCT_INTENT_GATE.md`
 - Do not treat the current bundled `index.html` package as the long-term architecture target; the accepted target remains modular browser assets under `ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`
+- The modular architecture target is a committed constraint, not an optional preference. The current bundled `index.html` package is a temporary exception only.
+- Before answering any production/upload/package question, read `ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md` and state whether the requested upload aligns with the modular target.
 
 ## 4. Current Priority
 
-- immediate focus is validation of the promoted `Master 16.16` website package and the active `Master 16.x` gameplay fixes on real devices and real gameplay
+- immediate focus is restoring architectural alignment through `PERF-012 Incremental Modular Production Package Migration`, then validating the promoted `Master 16.16` gameplay fixes on real devices and real gameplay
 - active monitor items carried from the latest QA evidence:
   - long-idle tab-close behavior descended from `Master 15.39`
   - archive readability and music fit
@@ -62,11 +64,13 @@ Last approved candidate promoted into `Master 16`:
 - current gameplay validation should specifically re-check saved skyscraper visuals after loading, growth after soldier damage, and panic-car skid distance
 - governance recovery added on 2026-05-20: product-intent continuity and modular architecture awareness are now monitor-controlled under `QA-011`
 - broader lore expansion should wait until the current `Master 16` UX validates
-- remaining Priority 1 wave-system performance work resumes after `Master 16` proves stable
+- remaining Priority 1 wave-system performance work resumes after the modular production package path is under control and `Master 16` proves stable
 
 ## 5. Immediate Next Move
 
 - treat `Master 16.16` as the current source basis within `10_SOURCE/Masters/Master 16.html`
+- treat the current single-file release package as a temporary exception, not the target architecture
+- start with `PERF-012` Phase 1 unless the user explicitly directs an emergency temporary bundled hotfix
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16.html`
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`

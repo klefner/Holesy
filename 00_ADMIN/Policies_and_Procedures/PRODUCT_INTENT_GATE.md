@@ -38,9 +38,14 @@ At minimum, inspect:
 
 ## Release Packaging Rule
 
-If the current package is single-file but the accepted architecture is modular, the final answer must say both:
+The accepted architecture is modular browser-client assets. The current single-file package is a temporary exception only.
+
+For every release/package/upload answer, the final answer must say both:
 
 - what is required for the immediate upload artifact
 - whether that artifact aligns with or temporarily diverges from the modular architecture target
+- whether `PERF-012 Incremental Modular Production Package Migration` remains the next required architecture alignment task
 
 Never describe a bundled single-file package as the project direction unless the architecture decision has been explicitly changed.
+
+Do not recommend a single-file production upload as the normal path. A single-file upload can only be presented as a temporary exception for the specific release being discussed.

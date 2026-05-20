@@ -4,7 +4,7 @@
 
 This package is the website-ready build for the live `/holesy/` directory.
 
-## File To Upload
+## Current Temporary File To Upload
 
 - `index.html`
 
@@ -12,6 +12,7 @@ Important architecture note:
 
 - this package is currently a bundled single-file deployment artifact
 - the accepted product architecture target is still modular browser assets, not a permanent single-file game
+- this package shape is a temporary exception, not the normal target for future production releases
 - see `00_ADMIN/Requirements/ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`
 - see `00_ADMIN/Policies_and_Procedures/RELEASE_SOURCE_OF_TRUTH_MANIFEST.md`
 
@@ -48,4 +49,4 @@ Recommended upload structure:
 - This package is intended for public website publishing
 - Candidate builds should not replace it unless explicitly approved
 - When a newer master is approved, regenerate this package from the new master
-- Future packages should move toward the modular structure captured in the architecture decision; if a single bundled file is used again, call it a temporary exception or temporary artifact, not the project architecture target
+- Future packages must move toward the modular structure captured in the architecture decision; if a single bundled file is used again, call it a temporary exception or temporary artifact, not the project architecture target

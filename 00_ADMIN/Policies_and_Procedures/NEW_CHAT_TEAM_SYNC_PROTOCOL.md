@@ -37,7 +37,7 @@ Before making any recommendation or changing any file, the assistant must report
 5. approved source master and in-game build label
 6. release package state, including hash/build-label comparison against the source master
 7. GoDaddy upload-copy state, if the manifest names one
-8. accepted architecture target
+8. accepted architecture target and current modular alignment review
 9. actual Daily QA Audit automation drift check against the governed automation prompt intent
 10. governance corpus inventory, including missing expected process/procedure docs
 11. open and monitor issue-log items, including counts
@@ -66,6 +66,7 @@ Use these flags when the user's request makes the extra evidence relevant:
 - `00_ADMIN/Policies_and_Procedures/PRODUCT_INTENT_GATE.md`
 - `00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md`
 - `00_ADMIN/Requirements/ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`
+- `00_ADMIN/Reviews_and_Reports/ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md`
 - `00_ADMIN/Requirements/PRODUCT_BACKLOG.md`
 - `00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md`
 - newest `00_ADMIN/Policies_and_Procedures/NEXT_CODEX_CHAT_HANDOFF_MASTER*.md`
@@ -87,6 +88,8 @@ Do not use `-WriteSnapshot` casually in every chat unless the resulting file wil
 ## Non-Negotiable Rule
 
 No future chat may answer packaging, release, architecture, or backlog questions from memory alone. It must run this protocol or explicitly say it has not done so.
+
+The modular browser-client split is a committed architecture constraint. No future chat may describe the single-file `index.html` package as the normal project direction. Until `PERF-012` is complete, release/package answers must identify the bundled package as a temporary exception and must route alignment work back to the modular production package migration.
 
 ## Completeness Boundary
 

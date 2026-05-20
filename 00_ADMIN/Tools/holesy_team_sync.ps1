@@ -265,6 +265,7 @@ function Get-GovernanceInventory {
     '00_ADMIN/Policies_and_Procedures/NEW_CHAT_TEAM_SYNC_PROTOCOL.md',
     '00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md',
     '00_ADMIN/Requirements/ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md',
+    '00_ADMIN/Reviews_and_Reports/ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md',
     '00_ADMIN/Requirements/PRODUCT_BACKLOG.md',
     '00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md',
     '10_SOURCE/Current/CURRENT_BASIS.md'
@@ -410,10 +411,10 @@ function Get-ProductIntentAssessment {
   $conflicts = New-Object System.Collections.Generic.List[string]
 
   if ($lower -match 'publish|package|upload|godaddy|production|prod') {
-    $conflicts.Add('Release/package request detected: must distinguish temporary bundled upload artifact from modular architecture target.')
+    $conflicts.Add('Release/package request detected: modular browser-client split is a committed architecture constraint; single-file upload is a temporary exception only, and PERF-012 remains the required alignment path.')
   }
   if ($lower -match 'modular|architecture|split|js|css|asset') {
-    $conflicts.Add('Architecture request detected: must preserve accepted modular browser-client split and PERF-012 direction.')
+    $conflicts.Add('Architecture request detected: must preserve accepted modular browser-client split, read the Master 16.16 alignment review, and route production-package work through PERF-012.')
   }
   if ($lower -match 'defect|bug|fix|gameplay|feature|build|implement') {
     $conflicts.Add('Implementation request detected: must check issue-log monitors and current backlog recommendation before coding.')
@@ -502,6 +503,9 @@ Add-Lines (Read-IfExists '10_SOURCE/Current/CURRENT_BASIS.md' 80)
 Add-Lines (Section 'Architecture Decision')
 Add-Lines (Read-IfExists '00_ADMIN/Requirements/ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md' 140)
 
+Add-Lines (Section 'Architecture Alignment Review')
+Add-Lines (Read-IfExists '00_ADMIN/Reviews_and_Reports/ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md' 180)
+
 Add-Lines (Section 'Current Backlog Recommendation')
 Add-Lines (Get-CurrentRecommendation)
 
@@ -528,7 +532,8 @@ if ($handoff) {
 }
 
 Add-Lines (Section 'Required Next-Chat Declaration')
-Add-Lines 'A new assistant must explicitly state whether the user request conflicts with the manifest, product intent gate, architecture decision, issue log, or backlog recommendation before acting.'
+Add-Lines 'A new assistant must explicitly state whether the user request conflicts with the manifest, product intent gate, architecture decision, architecture alignment review, issue log, or backlog recommendation before acting.'
+Add-Lines 'The modular browser-client split is a committed architecture constraint. Treat single-file production packaging as a temporary exception only, and route architecture/package alignment through PERF-012.'
 
 Add-Lines (Section 'Confidence Footer')
 if ($script:ConfidenceFailures.Count -gt 0) {
