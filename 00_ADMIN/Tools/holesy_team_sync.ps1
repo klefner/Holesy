@@ -13,7 +13,7 @@ Set-Location $repoRoot
 
 $sourceMasterPath = '10_SOURCE/Masters/Master 16.html'
 $releasePackagePath = '40_RELEASE/Website_Publish_Package/holesy/index.html'
-$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.15\holesy\index.html'
+$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.16\holesy\index.html'
 $automationPath = 'C:\Users\KentLefner\.codex\automations\daily-qa-audit\automation.toml'
 $auditorPromptPath = '00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md'
 $issueLogPath = '00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md'

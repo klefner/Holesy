@@ -14,9 +14,9 @@ Before any release packaging, live upload, master promotion, backlog sequencing,
 | Active branch | `codex/publish-master4-structure` | Branch carrying the current governed history and recent Master 16.x work. |
 | Stable `main` | stale relative to active branch | `main` is not the current gameplay source of truth until an explicit PR/merge updates it. |
 | Current approved source master | `10_SOURCE/Masters/Master 16.html` | Governed source basis for the current playable build line. |
-| Current in-game build label | `Master 16.15` | Latest current patch label inside the approved Master 16 source file. |
+| Current in-game build label | `Master 16.16` | Latest current patch label inside the approved Master 16 source file. |
 | Current release package | `40_RELEASE/Website_Publish_Package/holesy/index.html` | Current GoDaddy upload artifact; currently bundled as one HTML file. |
-| Current GoDaddy upload folder | `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.15\holesy\index.html` | Convenience copy for manual upload; not itself the source of truth. |
+| Current GoDaddy upload folder | `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.16\holesy\index.html` | Convenience copy for manual upload; not itself the source of truth. |
 | Live site | `https://ptbooksinc.com/holesy/` | Must be verified separately after upload; do not infer live state from local package state. |
 | Accepted architecture target | modular browser client split | The long-term target is not a single-file game. See `ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`. |
 

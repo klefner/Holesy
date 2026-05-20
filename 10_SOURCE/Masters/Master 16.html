@@ -726,6 +726,14 @@
   #pause-overlay .pause-sub {
     font-size: 14px; opacity: 0.78; margin-bottom: 22px; max-width: 360px; line-height: 1.5;
   }
+  #pause-overlay .pause-version {
+    margin: -10px 0 20px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.62);
+  }
   #pause-overlay .pause-btns {
     display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px;
   }
@@ -1057,6 +1065,7 @@
 <div id="pause-overlay" class="hidden">
   <h2>Paused</h2>
   <div class="pause-sub">Take a breather, then jump back in or return to the game mode selector.</div>
+  <div class="pause-version" id="pause-version-label">Master 16.16</div>
   <div class="pause-btns">
     <button class="pause-resume" id="pause-resume-btn" type="button">Resume</button>
     <button class="pause-save" id="pause-save-btn" type="button">Save Endless</button>
@@ -1111,7 +1120,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 15;
+const BUILD_SUB = 16;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1848,10 +1857,11 @@ const HOLESY_CONFIG = Object.freeze({
     panicCrashTopSpeedMultiplier: 3.0,
     panicWrongWayCrashMultiplier: 2.4,
     panicWobble: 1.75,
-    crashDurationSeconds: 0.52,
-    crashMaxSlideDistance: 4.25,
-    crashFrictionPerSecond: 0.025,
-    crashStopSpeed: 1.35,
+    crashDurationSeconds: 0.34,
+    crashMaxSlideDistance: 2.7,
+    crashFrictionPerSecond: 0.006,
+    crashStopSpeed: 2.1,
+    crashMaxInitialSpeed: 7.5,
     carCollisionRadius: 2.25,
     carAvoidanceRadius: 5.0,
     carCrashImpactSpeed: 10.0,
@@ -2144,6 +2154,18 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.16',
+    date: '2026-05-20',
+    summary: 'Saved Endless visual restore and soldier-damage recovery hotfix.',
+    changes: [
+      'Restored saved skyscraper chunks with windowed skyscraper-piece geometry instead of generic block placeholders.',
+      'Prevented soldier damage from creating a permanent negative-growth debt after the player escapes.',
+      'Made consumed objects repair bullet-gouged radius debt before applying new growth.',
+      'Tightened panic-car loss-of-control slide distance and initial crash velocity again.',
+      'Added the current build label to the Pause menu.',
+    ],
+  },
+  {
     label: 'Master 16.15',
     date: '2026-05-20',
     summary: 'Player death now hard-stops Endless simulation instead of letting the run continue underneath.',
@@ -2362,6 +2384,7 @@ const BUILD_CHANGELOG = Object.freeze([
 ]);
 const buildVersionBtn = document.getElementById('build-version');
 buildVersionBtn.textContent = BUILD_LABEL;
+if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;
 
 const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({
@@ -2965,6 +2988,8 @@ function makeSkyscraper(pos) {
         obj.stackLocalZ = localZ;
         obj.stackFloorY = blockH / 2;
         obj.stackHeight = blockH;
+        obj.stackPieceW = cellW;
+        obj.stackPieceD = cellD;
         obj.vx = 0;
         obj.vy = 0;
         obj.vz = 0;
@@ -3217,6 +3242,10 @@ function scoreForGrowth(h) {
   return Math.max(0, h.score || 0);
 }
 
+function baseRadiusFromScore(h) {
+  return MIN_RADIUS + GROWTH_K * Math.log(1 + scoreForGrowth(h) / GROWTH_SCALE);
+}
+
 function getEndlessRadiusCap() {
   if (!endlessMode) return Infinity;
   return Math.max(MIN_RADIUS, currentArenaHalf * ENDLESS_RADIUS_CAP_BOARD_SHARE);
@@ -3224,8 +3253,8 @@ function getEndlessRadiusCap() {
 
 // Compute a hole's radius from score earned since the last Endless world shift + any eating bonuses.
 function radiusFromScore(h) {
-  const rawRadius = MIN_RADIUS + GROWTH_K * Math.log(1 + scoreForGrowth(h) / GROWTH_SCALE) + (h.bonusRadius || 0);
-  return Math.min(rawRadius, getEndlessRadiusCap());
+  const rawRadius = baseRadiusFromScore(h) + (h.bonusRadius || 0);
+  return Math.max(MIN_HOLE_RADIUS - 0.01, Math.min(rawRadius, getEndlessRadiusCap()));
 }
 
 // Cosmetic tier labels shown in HUD based on current radius (not gameplay gated)
@@ -3865,6 +3894,7 @@ const pauseOverlay = document.getElementById('pause-overlay');
 const pauseResumeBtn = document.getElementById('pause-resume-btn');
 const pauseSaveBtn = document.getElementById('pause-save-btn');
 const pauseExitBtn = document.getElementById('pause-exit-btn');
+const pauseVersionLabel = document.getElementById('pause-version-label');
 eventBannerBackdrop.style.background = `rgba(6, 9, 18, ${HOLESY_CONFIG.eventMessaging.backdropOpacity})`;
 
 // LMS choice modal — shown when timer hits zero if player is still alive
@@ -6875,6 +6905,8 @@ function serializeObjectState(obj) {
     stackLocalZ: obj.stackLocalZ || 0,
     stackFloorY: obj.stackFloorY || 0,
     stackHeight: obj.stackHeight || 0,
+    stackPieceW: obj.stackPieceW || 0,
+    stackPieceD: obj.stackPieceD || 0,
     vx: obj.vx || 0, vy: obj.vy || 0, vz: obj.vz || 0,
     avx: obj.avx || 0, avy: obj.avy || 0, avz: obj.avz || 0,
     stackCollapsedRemainingMs: getRemainingMs(obj.stackCollapsedAt),
@@ -6884,8 +6916,8 @@ function serializeObjectState(obj) {
 function makeSavedGenericObject(state) {
   const colorByType = {
     prop: 0x8a8f98,
-    skyscraperChunk: 0x3d5a80,
   };
+  if (state.type === 'skyscraperChunk') return makeSavedSkyscraperChunk(state);
   const g = new THREE.Group();
   const h = Math.max(0.4, state.stackHeight || state.size || 0.8);
   const w = Math.max(0.6, (state.size || 0.8) * 1.7);
@@ -6903,6 +6935,57 @@ function makeSavedGenericObject(state) {
   } else {
     obj.isProp = true;
   }
+  return obj;
+}
+
+function makeSavedSkyscraperChunk(state) {
+  const g = new THREE.Group();
+  const pieceCount = Math.max(4, state.stackPieceCount || 4);
+  const cols = Math.max(2, Math.round(pieceCount / 2));
+  const floorWidth = Math.max(1, (state.stackCollapseSize || state.size || 2) * 2);
+  const fallbackCellW = floorWidth / cols;
+  const fallbackCellD = floorWidth / 2;
+  const cellW = Math.max(0.75, state.stackPieceW || fallbackCellW);
+  const cellD = Math.max(0.75, state.stackPieceD || fallbackCellD);
+  const h = Math.max(0.44, state.stackHeight || 0.72);
+  const isTop = state.stackFloorCount > 0 && state.stackIndex >= state.stackFloorCount - 1;
+  const wallMat = sharedBoxMat(0x3d5a80);
+  const glassMat = sharedBoxMat(0x98c1d9);
+  const capMat = sharedBoxMat(0x293548);
+  const core = new THREE.Mesh(new THREE.BoxGeometry(cellW, h, cellD), isTop ? capMat : wallMat);
+  core.position.y = 0;
+  g.add(core);
+  if (!isTop) {
+    const localX = state.stackLocalX || 0;
+    const localZ = state.stackLocalZ || 0;
+    const halfW = Math.max(cellW, floorWidth) / 2;
+    const halfD = Math.max(cellD, floorWidth) / 2;
+    const isLeft = localX < -halfW + cellW * 0.75;
+    const isRight = localX > halfW - cellW * 0.75;
+    const isBack = localZ < -halfD + cellD * 0.75;
+    const isFront = localZ > halfD - cellD * 0.75;
+    const addFrontBackBand = (z) => {
+      const band = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
+      band.position.set(0, 0.02, z);
+      g.add(band);
+    };
+    const addSideBand = (x) => {
+      const band = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
+      band.position.set(x, 0.02, 0);
+      g.add(band);
+    };
+    if (isFront) addFrontBackBand(cellD / 2 + 0.021);
+    if (isBack) addFrontBackBand(-cellD / 2 - 0.021);
+    if (isRight) addSideBand(cellW / 2 + 0.021);
+    if (isLeft) addSideBand(-cellW / 2 - 0.021);
+  }
+  g.children.forEach(c => c.castShadow = true);
+  const obj = makeObject(g, state.size || Math.max(0.58, Math.hypot(cellW, cellD) * 0.36), state.tier || 2, state.value || 10, { x: state.x, y: state.y || 0, z: state.z });
+  obj.isBuilding = true;
+  obj.buildingSize = 'large';
+  obj.isSkyscraperChunk = true;
+  obj.physicsStackPiece = true;
+  physicsStackPieces.push(obj);
   return obj;
 }
 
@@ -6985,6 +7068,8 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
       stackLocalZ: state.stackLocalZ || 0,
       stackFloorY: state.stackFloorY || 0,
       stackHeight: state.stackHeight || 0,
+      stackPieceW: state.stackPieceW || obj.stackPieceW || 0,
+      stackPieceD: state.stackPieceD || obj.stackPieceD || 0,
       vx: state.vx || 0, vy: state.vy || 0, vz: state.vz || 0,
       avx: state.avx || 0, avy: state.avy || 0, avz: state.avz || 0,
       stackCollapsedAt: restoreFutureTimestamp(state.stackCollapsedRemainingMs, now),
@@ -8398,6 +8483,10 @@ function beginConsume(h, obj) {
   const loreScoreMultiplier = getLoreScoreMultiplier(h, obj);
   const scoreValue = Math.max(1, Math.round(obj.value * loreScoreMultiplier));
   h.score += scoreValue;
+  if ((h.bonusRadius || 0) < 0) {
+    const repairRadius = Math.min(-(h.bonusRadius || 0), 0.04 + scoreValue * 0.0045);
+    h.bonusRadius += repairRadius;
+  }
   if (obj.isPowerup) applyPowerupToHole(h, obj.powerupId);
   h.targetRadius = radiusFromScore(h);
   // Category-based sound effect — distance-attenuated relative to player camera
@@ -9286,12 +9375,14 @@ function triggerCarLossOfControl(car) {
   const forward = getCarForwardVector(car);
   const sideSign = Math.random() < 0.5 ? -1 : 1;
   const side = { x: -forward.z * sideSign, z: forward.x * sideSign };
+  const cappedSpeed = Math.min(car.currentSpeed || 0, HOLESY_CONFIG.traffic.crashMaxInitialSpeed || car.currentSpeed || 0);
   car.crashing = true;
   car.crashTimer = HOLESY_CONFIG.traffic.crashDurationSeconds;
   car.crashDistance = 0;
-  car.crashVx = forward.x * car.currentSpeed * 0.62 + side.x * (3.2 + Math.random() * 2.6);
-  car.crashVz = forward.z * car.currentSpeed * 0.62 + side.z * (3.2 + Math.random() * 2.6);
-  car.crashSpin = sideSign * (1.4 + Math.random() * 1.8);
+  car.crashVx = forward.x * cappedSpeed * 0.42 + side.x * (1.7 + Math.random() * 1.25);
+  car.crashVz = forward.z * cappedSpeed * 0.42 + side.z * (1.7 + Math.random() * 1.25);
+  car.currentSpeed = Math.min(car.currentSpeed || 0, cappedSpeed * 0.55);
+  car.crashSpin = sideSign * (1.1 + Math.random() * 1.15);
 }
 
 function carForwardSpeed(car) {
@@ -10236,7 +10327,9 @@ function applyShotDamage(h) {
   // bonusRadius go negative — the radius function clamps via Math.max below.
   const baseDmg = h.isPlayer ? SHOT_DAMAGE_PLAYER : SHOT_DAMAGE_AI;
   const shotRadiusDamage = baseDmg * currentSoldierDamageMult * getHoleBulletDamageMultiplier(h);
-  h.bonusRadius = (h.bonusRadius || 0) - shotRadiusDamage;
+  const baseRadius = baseRadiusFromScore(h);
+  const minimumSurvivableBonus = (MIN_HOLE_RADIUS - 0.01) - baseRadius;
+  h.bonusRadius = Math.max((h.bonusRadius || 0) - shotRadiusDamage, minimumSurvivableBonus);
   h.recentSoldierDamageRadius = Math.min(3, (h.recentSoldierDamageRadius || 0) + shotRadiusDamage);
   h.targetRadius = Math.max(MIN_HOLE_RADIUS - 0.01, radiusFromScore(h));
 

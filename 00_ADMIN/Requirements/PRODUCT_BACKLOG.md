@@ -1278,6 +1278,11 @@ Backlog items:
     - `Master 16.15` stops world simulation immediately when the player is eaten or shot in Endless
     - player death now routes to the end screen instead of allowing the run to continue underneath
     - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_15_ENDLESS_PLAYER_DEATH_STOP.md` records syntax, package, and browser smoke evidence
+  - saved-run visuals / growth / skid hotfix:
+    - `Master 16.16` restores saved skyscraper chunks with skyscraper-piece graphics instead of generic block placeholders
+    - `Master 16.16` prevents soldier damage from creating a persistent no-growth state after the player escapes
+    - `Master 16.16` tightens panic-car loss-of-control slide distance and adds the current build label to the Pause menu
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_16_SAVE_GROWTH_SKID_PAUSE.md` records syntax, package, hash, and residual live-play validation evidence
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay
@@ -1349,7 +1354,7 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `10_SOURCE/Masters/Master 16.html` with in-game label `Master 16.15` as the current governed production-test baseline.
+1. Treat `10_SOURCE/Masters/Master 16.html` with in-game label `Master 16.16` as the current governed production-test baseline.
 2. Do not treat the current bundled `index.html` release package as the long-term architecture target; the accepted direction remains incremental modular browser-client assets.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Keep `QA-006` and `QA-007` in monitor until real long-idle and real-gameplay validation exists.

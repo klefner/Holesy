@@ -27,7 +27,7 @@ This package was generated from:
 - The bundled shape is a temporary publish convenience until the modular production package migration is completed.
 - The bottom-left build badge opens in-game build notes for future patch-note publication.
 - This package includes the promoted lore Archive, found-document drops, achievement buffs, Archive music, starter Field Patterns, and the end-screen/feedback cleanup from the `Master 15.39` through `Master 15.45` candidate lineage.
-- Current patch label is `Master 16.15`.
+- Current patch label is `Master 16.16`.
 - The current package also includes the `Master 16.x` Endless Waves line through player-death stop handling, Endless save/load, rival respawn behavior, buff cooldown tuning, rival-devour growth tempering, and Endless growth reset/tuning fixes.
 
 ## Publish Rule

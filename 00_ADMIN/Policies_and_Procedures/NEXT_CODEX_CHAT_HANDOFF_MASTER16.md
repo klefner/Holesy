@@ -13,6 +13,7 @@ This document is the takeover package for any new Codex chat that needs to conti
 Current promoted master:
 
 - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16.html`
+- current in-game label: `Master 16.16`
 
 Current basis note:
 
@@ -29,6 +30,7 @@ What `Master 16` specifically represents:
 - it includes end-screen, feedback-noise, skyscraper-warning, and aid-drop color cleanup from `Master 15.44`
 - it includes clickable in-game build notes from `Master 15.45`
 - it has since advanced through the local `Master 16.x` line with Endless Waves, Endless save/load, rival respawn behavior, buff cooldown tuning, rival-devour growth tempering, and player-death stop fixes
+- `Master 16.16` adds saved-skyscraper visual restoration after loading Endless saves, post-soldier growth recovery, tighter car skid tuning, and always-visible build version in the Pause menu
 
 Last approved candidate promoted into `Master 16`:
 
@@ -50,20 +52,21 @@ Last approved candidate promoted into `Master 16`:
 
 ## 4. Current Priority
 
-- immediate focus is validation of the promoted `Master 16` website package and the active `Master 16.x` gameplay fixes on real devices and real gameplay
+- immediate focus is validation of the promoted `Master 16.16` website package and the active `Master 16.x` gameplay fixes on real devices and real gameplay
 - active monitor items carried from the latest QA evidence:
   - long-idle tab-close behavior descended from `Master 15.39`
   - archive readability and music fit
   - rare document pacing and buff-effect clarity descended from `Master 15.42`
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
 - current gameplay validation should also cover Endless Waves continuity, player-death exit behavior, rival respawn behavior, save/load expectations, and runaway growth tuning
+- current gameplay validation should specifically re-check saved skyscraper visuals after loading, growth after soldier damage, and panic-car skid distance
 - governance recovery added on 2026-05-20: product-intent continuity and modular architecture awareness are now monitor-controlled under `QA-011`
 - broader lore expansion should wait until the current `Master 16` UX validates
 - remaining Priority 1 wave-system performance work resumes after `Master 16` proves stable
 
 ## 5. Immediate Next Move
 
-- treat `Master 16` as the current source basis
+- treat `Master 16.16` as the current source basis within `10_SOURCE/Masters/Master 16.html`
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16.html`
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
