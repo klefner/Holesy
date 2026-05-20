@@ -17,7 +17,7 @@ Holesy Team Sync. Run the new-chat startup protocol from the governed repo befor
 The assistant must then run:
 
 ```powershell
-.\00_ADMIN\Tools\holesy_team_sync.ps1
+.\00_ADMIN\Tools\holesy_team_sync.ps1 -RequestText "<paste the user's opening request here>"
 ```
 
 from:
@@ -31,27 +31,46 @@ C:\Users\KentLefner\Desktop\game-repo\Holesy
 Before making any recommendation or changing any file, the assistant must report:
 
 1. repo root
-2. active branch and upstream state
+2. active branch, upstream, and ahead/behind state after `git fetch --prune`
 3. latest commits
-4. whether `main` is current or stale
+4. whether `main` is current, stale, or divergent
 5. approved source master and in-game build label
-6. release package state
-7. accepted architecture target
-8. open and monitor issue-log items
-9. current backlog recommendation
-10. Product Intent Gate result for the user's requested action
+6. release package state, including hash/build-label comparison against the source master
+7. GoDaddy upload-copy state, if the manifest names one
+8. accepted architecture target
+9. actual Daily QA Audit automation drift check against the governed automation prompt intent
+10. governance corpus inventory, including missing expected process/procedure docs
+11. open and monitor issue-log items, including counts
+12. current backlog recommendation
+13. started/not-complete backlog signals and Priority 1 item list
+14. Product Intent Gate result for the user's requested action
+15. confidence footer that says whether the result is fully verified, verified with stated limitations, or blocked by missing evidence
 
 If any of those cannot be verified, the assistant must say so and stop before implementation.
+
+## Optional Verification Flags
+
+Use these flags when the user's request makes the extra evidence relevant:
+
+```powershell
+.\00_ADMIN\Tools\holesy_team_sync.ps1 -RequestText "<request>" -VerifyLive
+```
+
+- `-VerifyLive` checks the public Holesy URL and reports the live build label and content hash. Use it for production, GoDaddy, upload, live-site, or release-verification questions.
+- `-WriteSnapshot` writes `00_ADMIN/Reviews_and_Reports/NEW_CHAT_CONTEXT_SNAPSHOT_CURRENT.md`. Use it for audit/handoff evidence, not as routine chat startup.
+- `-SkipFetch` is allowed only when network/Git remote checks are blocked; if used, the assistant must report that remote freshness was not verified.
 
 ## Required Files To Inspect
 
 - `00_ADMIN/Policies_and_Procedures/RELEASE_SOURCE_OF_TRUTH_MANIFEST.md`
 - `00_ADMIN/Policies_and_Procedures/PRODUCT_INTENT_GATE.md`
+- `00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md`
 - `00_ADMIN/Requirements/ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`
 - `00_ADMIN/Requirements/PRODUCT_BACKLOG.md`
 - `00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md`
 - newest `00_ADMIN/Policies_and_Procedures/NEXT_CODEX_CHAT_HANDOFF_MASTER*.md`
 - `10_SOURCE/Current/CURRENT_BASIS.md`
+- actual automation file at `C:\Users\KentLefner\.codex\automations\daily-qa-audit\automation.toml`, when available
 
 ## Snapshot Artifact
 
@@ -68,3 +87,7 @@ Do not use `-WriteSnapshot` casually in every chat unless the resulting file wil
 ## Non-Negotiable Rule
 
 No future chat may answer packaging, release, architecture, or backlog questions from memory alone. It must run this protocol or explicitly say it has not done so.
+
+## Completeness Boundary
+
+This protocol is considered complete for current startup awareness only at the moment it runs. It cannot prove future changes made by another chat after the sync. When production state matters, the assistant must rerun the sync with `-VerifyLive` rather than inferring live state from local files.

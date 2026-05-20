@@ -23,6 +23,8 @@ Required inputs:
 - `00_ADMIN/Policies_and_Procedures/RELEASE_SOURCE_OF_TRUTH_MANIFEST.md`
 - `00_ADMIN/Policies_and_Procedures/PRODUCT_INTENT_GATE.md`
 - `00_ADMIN/Policies_and_Procedures/NEW_CHAT_TEAM_SYNC_PROTOCOL.md`
+- `00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md`
+- `00_ADMIN/Tools/holesy_team_sync.ps1` output when startup context, release state, automation drift, or package integrity is part of the audit
 - newest `00_ADMIN/Policies_and_Procedures/NEXT_CODEX_CHAT_HANDOFF_MASTER*.md`
 - `10_SOURCE/Current/CURRENT_BASIS.md`
 - `00_ADMIN/Requirements/PRODUCT_BACKLOG.md`

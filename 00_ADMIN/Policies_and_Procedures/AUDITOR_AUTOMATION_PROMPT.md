@@ -31,6 +31,7 @@ The Daily QA Audit automation must:
 - update the issue log
 - verify tracked-state expectations
 - clearly distinguish local state, branch/GitHub state, `main`, release package, and live-site state
+- use the governed Team Sync script as a state-verification input when appropriate, including automation drift, governance corpus inventory, issue-log counts, backlog readiness, and source/package integrity checks
 
 ## Automation Updated
 

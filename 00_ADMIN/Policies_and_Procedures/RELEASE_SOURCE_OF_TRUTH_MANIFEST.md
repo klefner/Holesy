@@ -42,6 +42,10 @@ Before any future Codex chat packages, publishes, or begins a meaningful impleme
 7. live-site verification status if the user is discussing production
 8. relevant architecture decisions
 9. relevant open or monitor issue-log items
-10. whether the requested action conflicts with any of the above
+10. whether the actual Daily QA Audit automation still matches governed prompt intent
+11. whether any required process/procedure governance documents are missing
+12. whether the requested action conflicts with any of the above
 
 If a conflict exists, stop and surface it before creating files, packaging, or coding.
+
+Use `00_ADMIN/Tools/holesy_team_sync.ps1` as the preferred implementation of this gate. For production or live-site questions, run it with `-VerifyLive`.

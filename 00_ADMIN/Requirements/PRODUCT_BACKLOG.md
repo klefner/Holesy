@@ -1313,10 +1313,10 @@ Backlog items:
 2. Do not treat the current bundled `index.html` release package as the long-term architecture target; the accepted direction remains incremental modular browser-client assets.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Keep `QA-006` and `QA-007` in monitor until real long-idle and real-gameplay validation exists.
-5. Treat the newly captured product-intent failure as a governance recovery issue; do not resume new PB implementation until the recovery controls are committed and pushed.
-6. After recovery, the next technical architecture priority should be `PERF-012 Incremental Modular Production Package Migration` unless the user explicitly approves a temporary bundled hotfix path.
+5. Treat product-intent recovery controls as the immediate governance baseline; Team Sync v2 should be run at new-chat startup and before material release/package/architecture decisions.
+6. The next technical architecture priority should be `PERF-012 Incremental Modular Production Package Migration` unless the user explicitly approves a temporary bundled hotfix path.
 7. After the modular package path is under control, return to the current gameplay intake: pause-save confirmation visibility, improved collapse physics, medium/house cube breakup, and daily/weekly quest/reward architecture.
 
 The next active engineering task remains:
 
-- complete and verify the product-intent governance recovery, then decide whether the immediate next implementation slice is modular package migration or a narrowly approved gameplay hotfix.
+- decide whether the immediate next implementation slice is `PERF-012` modular package migration or a narrowly approved gameplay hotfix.
