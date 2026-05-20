@@ -316,7 +316,8 @@
     margin: 8px 0 2px 0;
   }
   #stats-window-btn,
-  #lore-archive-btn {
+  #lore-archive-btn,
+  #load-endless-save-btn {
     margin: 8px 0 2px 0;
     padding: 8px 13px;
     border: 1px solid rgba(255,255,255,0.16);
@@ -330,9 +331,14 @@
     cursor: pointer;
   }
   #stats-window-btn:hover,
-  #lore-archive-btn:hover {
+  #lore-archive-btn:hover,
+  #load-endless-save-btn:hover:not(:disabled) {
     border-color: rgba(128,255,245,0.38);
     color: #fff;
+  }
+  #load-endless-save-btn:disabled {
+    opacity: 0.42;
+    cursor: default;
   }
   #lore-modal {
     position: fixed;
@@ -731,6 +737,15 @@
     background: linear-gradient(135deg, #4d9eff, #67b3ff);
     box-shadow: 0 8px 20px rgba(77,158,255,0.35);
   }
+  #pause-overlay .pause-save {
+    background: linear-gradient(135deg, #38d9a9, #4dabf7);
+    box-shadow: 0 8px 20px rgba(56,217,169,0.28);
+  }
+  #pause-overlay .pause-save:disabled {
+    opacity: 0.45;
+    cursor: default;
+    box-shadow: none;
+  }
   #pause-overlay .pause-menu {
     background: rgba(255,255,255,0.09);
     border: 1px solid rgba(255,255,255,0.16);
@@ -967,7 +982,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.13</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.14</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1004,6 +1019,7 @@
   <div id="menu-action-row">
     <button id="stats-window-btn" type="button">Stats</button>
     <button id="lore-archive-btn" type="button">Archive</button>
+    <button id="load-endless-save-btn" type="button" disabled>Load Endless</button>
   </div>
 
   <button class="play" id="play-btn">Begin</button>
@@ -1043,6 +1059,7 @@
   <div class="pause-sub">Take a breather, then jump back in or return to the game mode selector.</div>
   <div class="pause-btns">
     <button class="pause-resume" id="pause-resume-btn" type="button">Resume</button>
+    <button class="pause-save" id="pause-save-btn" type="button">Save Endless</button>
     <button class="pause-menu" id="pause-exit-btn" type="button">Game Modes</button>
   </div>
 </div>
@@ -1094,7 +1111,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 13;
+const BUILD_SUB = 14;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1196,6 +1213,8 @@ const DIFFICULTY_PROFILES = Object.freeze({
 
 
 const STORAGE_KEY = 'holesyGameStatsV1';
+const ENDLESS_SAVE_KEY = 'holesy.endless.save.v1';
+const ENDLESS_SAVE_SCHEMA = 1;
 const MAX_RECENT_RUNS = 12;
 
 function createEmptyGameStats() {
@@ -2124,6 +2143,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.14',
+    date: '2026-05-19',
+    summary: 'Endless Waves can now be saved from Pause and loaded later from the menu.',
+    changes: [
+      'Added a Pause-menu Save Endless action that snapshots the current Endless run into local storage.',
+      'Added a menu Load Endless action that restores wave, timers, holes, active buffs, aid, soldiers, planes, and board contents.',
+      'Saved timed effects as remaining time so an hour away from the browser does not drain the saved run.',
+    ],
+  },
   {
     label: 'Master 16.13',
     date: '2026-05-19',
@@ -3824,6 +3853,7 @@ const pauseBtn = document.getElementById('pause-btn');
 const gameControls = document.getElementById('game-controls');
 const pauseOverlay = document.getElementById('pause-overlay');
 const pauseResumeBtn = document.getElementById('pause-resume-btn');
+const pauseSaveBtn = document.getElementById('pause-save-btn');
 const pauseExitBtn = document.getElementById('pause-exit-btn');
 eventBannerBackdrop.style.background = `rgba(6, 9, 18, ${HOLESY_CONFIG.eventMessaging.backdropOpacity})`;
 
@@ -3840,6 +3870,7 @@ const difficultySelect = document.getElementById('difficulty-select');
 const difficultyDesc = document.getElementById('difficulty-desc');
 const statsWindowBtn = document.getElementById('stats-window-btn');
 const loreArchiveBtn = document.getElementById('lore-archive-btn');
+const loadEndlessSaveBtn = document.getElementById('load-endless-save-btn');
 const loreModal = document.getElementById('lore-modal');
 const loreCloseBtn = document.getElementById('lore-close-btn');
 const loreProgressEl = document.getElementById('lore-progress');
@@ -4972,6 +5003,7 @@ function setDifficulty(name) {
   if (!DIFFICULTY_PROFILES[name]) name = 'normal';
   selectedDifficultyName = name;
   activeDifficultyProfile = DIFFICULTY_PROFILES[name];
+  if (difficultySelect) difficultySelect.value = name;
   if (difficultyDesc) difficultyDesc.textContent = activeDifficultyProfile.description;
   WAVE_CONFIGS = buildDifficultyWaveConfigs(HOLESY_CONFIG.waves.configs, activeDifficultyProfile);
   saveDifficultyName(name);
@@ -6563,6 +6595,7 @@ function startGame() {
   applyDifficultyToAiPersonalities();
   startTrackedGameRun();
   setGameState(GAME_STATES.PLAYING);
+  refreshEndlessSaveControls();
   // Reset timer display class in case it was in LMS style from a previous round
   timerEl.classList.remove('lms-active');
 
@@ -6586,6 +6619,7 @@ function startGame() {
 function updatePauseButtonLabel() {
   pauseBtn.textContent = isGameState(GAME_STATES.PAUSED) ? 'Resume' : 'Pause';
   pauseExitBtn.textContent = endlessMode ? 'End Game' : 'Game Modes';
+  refreshEndlessSaveControls();
 }
 
 function canUsePauseMenu() {
@@ -6644,6 +6678,605 @@ function resumeGame() {
   syncAlienAidLoop();
   updatePauseButtonLabel();
   pausedStateBeforePause = null;
+}
+
+function getRemainingMs(timestamp, now = getGameplayNow()) {
+  return Math.max(0, (timestamp || 0) - now);
+}
+
+function restoreFutureTimestamp(remainingMs, now = performance.now()) {
+  return remainingMs > 0 ? now + remainingMs : 0;
+}
+
+function serializeTimedMap(map, now = getGameplayNow()) {
+  const out = {};
+  if (!map) return out;
+  Object.keys(map).forEach(key => {
+    out[key] = getRemainingMs(map[key], now);
+  });
+  return out;
+}
+
+function restoreTimedMap(map, now = performance.now()) {
+  const out = {};
+  if (!map) return out;
+  Object.keys(map).forEach(key => {
+    out[key] = restoreFutureTimestamp(map[key], now);
+  });
+  return out;
+}
+
+function serializeHoleState(h, now = getGameplayNow()) {
+  return {
+    name: h.name,
+    isPlayer: !!h.isPlayer,
+    alive: !!h.alive,
+    visible: h.group ? h.group.visible !== false : !!h.alive,
+    x: h.x, z: h.z, targetX: h.targetX, targetZ: h.targetZ,
+    wanderX: h.wanderX, wanderZ: h.wanderZ,
+    radius: h.radius,
+    targetRadius: h.targetRadius,
+    score: h.score,
+    bonusRadius: h.bonusRadius || 0,
+    sizeResetScoreFloor: h.sizeResetScoreFloor || 0,
+    recentSoldierDamageRadius: h.recentSoldierDamageRadius || 0,
+    aiState: h.aiState,
+    aiTimer: h.aiTimer || 0,
+    threatAwareSince: h.threatAwareSince || 0,
+    lastSeenThreat: h.lastSeenThreat ? { x: h.lastSeenThreat.x, z: h.lastSeenThreat.z } : null,
+    hitFlashRemainingMs: getRemainingMs(h.hitFlashUntil, now),
+    unitClearPulseRemainingMs: getRemainingMs(h.unitClearPulseUntil, now),
+    unitClearGlowRemainingMs: getRemainingMs(h.unitClearGlowUntil, now),
+    unitClearShakeRemainingMs: getRemainingMs(h.unitClearShakeUntil, now),
+    effects: {
+      speedMultiplier: h.effects?.speedMultiplier || 1,
+      speedBoostRemainingMs: getRemainingMs(h.effects?.speedBoostUntil, now),
+      speedSource: h.effects?.speedSource || '',
+      bulletDamageMultiplier: h.effects?.bulletDamageMultiplier || 1,
+      bulletShieldRemainingMs: getRemainingMs(h.effects?.bulletShieldUntil, now),
+      bulletShieldSource: h.effects?.bulletShieldSource || '',
+    },
+    loreBuffs: serializeTimedMap(h.loreBuffs, now),
+    loreBuffCooldowns: serializeTimedMap(h.loreBuffCooldowns, now),
+    loreFirstBiteActive: !!h.loreFirstBiteActive,
+  };
+}
+
+function restoreHoleState(h, state, now = performance.now()) {
+  h.alive = state.alive !== false;
+  if (h.group) {
+    if (!h.group.parent) scene.add(h.group);
+    h.group.visible = state.visible !== false && h.alive;
+  }
+  h.x = state.x ?? h.spawnX;
+  h.z = state.z ?? h.spawnZ;
+  h.targetX = state.targetX ?? h.x;
+  h.targetZ = state.targetZ ?? h.z;
+  h.wanderX = state.wanderX ?? h.x;
+  h.wanderZ = state.wanderZ ?? h.z;
+  h.radius = Math.min(state.radius ?? MIN_RADIUS, getEndlessRadiusCap());
+  h.score = state.score || 0;
+  h.bonusRadius = state.bonusRadius || 0;
+  h.sizeResetScoreFloor = state.sizeResetScoreFloor || 0;
+  h.recentSoldierDamageRadius = state.recentSoldierDamageRadius || 0;
+  h.targetRadius = Math.min(state.targetRadius ?? radiusFromScore(h), getEndlessRadiusCap());
+  h.aiTargetObj = null;
+  h.aiState = state.aiState || 'wander';
+  h.aiTimer = state.aiTimer || 0;
+  h.threatAwareSince = state.threatAwareSince || 0;
+  h.lastSeenThreat = state.lastSeenThreat || null;
+  h.hitFlashUntil = restoreFutureTimestamp(state.hitFlashRemainingMs, now);
+  h.unitClearPulseUntil = restoreFutureTimestamp(state.unitClearPulseRemainingMs, now);
+  h.unitClearGlowUntil = restoreFutureTimestamp(state.unitClearGlowRemainingMs, now);
+  h.unitClearShakeUntil = restoreFutureTimestamp(state.unitClearShakeRemainingMs, now);
+  h.effects = {
+    speedMultiplier: state.effects?.speedMultiplier || 1,
+    speedBoostUntil: restoreFutureTimestamp(state.effects?.speedBoostRemainingMs, now),
+    speedSource: state.effects?.speedSource || '',
+    bulletDamageMultiplier: state.effects?.bulletDamageMultiplier || 1,
+    bulletShieldUntil: restoreFutureTimestamp(state.effects?.bulletShieldRemainingMs, now),
+    bulletShieldSource: state.effects?.bulletShieldSource || '',
+  };
+  h.loreBuffs = restoreTimedMap(state.loreBuffs, now);
+  h.loreBuffCooldowns = restoreTimedMap(state.loreBuffCooldowns, now);
+  h.loreFirstBiteActive = !!state.loreFirstBiteActive;
+  h.group.position.set(h.x, 0, h.z);
+  updateHoleVisual(h);
+}
+
+function getSavedObjectType(obj) {
+  if (obj.isPowerup) return 'powerup';
+  if (obj.isSkyscraperChunk) return 'skyscraperChunk';
+  if (obj.isBuilding) return obj.buildingSize === 'mid' ? 'midBuilding' : obj.buildingSize === 'large' ? 'skyscraperChunk' : 'smallBuilding';
+  if (obj.isCar) return 'car';
+  if (obj.isPerson) return 'person';
+  if (obj.isTree) return 'tree';
+  if (obj.isProp && obj.value === 22) return 'lamp';
+  if (obj.isProp && obj.value === 20) return 'bench';
+  if (obj.isProp && obj.value === 15) return 'hydrant';
+  if (obj.isProp && obj.value === 12) return 'trash';
+  if (obj.isProp && obj.value === 8) return 'cone';
+  return 'prop';
+}
+
+function serializeObjectState(obj) {
+  if (!obj || obj.consumed) return null;
+  return {
+    type: getSavedObjectType(obj),
+    x: obj.x,
+    z: obj.z,
+    y: obj.mesh?.position?.y || 0,
+    rotX: obj.mesh?.rotation?.x || 0,
+    rotY: obj.mesh?.rotation?.y || 0,
+    rotZ: obj.mesh?.rotation?.z || 0,
+    size: obj.size,
+    tier: obj.tier,
+    value: obj.value,
+    falling: !!obj.falling,
+    fallVel: obj.fallVel || 0,
+    spin: obj.spin || 0,
+    moving: !!obj.moving,
+    bounds: obj.bounds || null,
+    walkDir: obj.walkDir || 0,
+    walkSpeed: obj.walkSpeed || 0,
+    panicSpeed: obj.panicSpeed || 0,
+    walkTimer: obj.walkTimer || 0,
+    panicking: !!obj.panicking,
+    powerupId: obj.powerupId || '',
+    hoverPhase: obj.hoverPhase || 0,
+    airDropping: !!obj.airDropping,
+    airDropVel: obj.airDropVel || 0,
+    airDropTargetX: obj.airDropTargetX || obj.x,
+    airDropTargetZ: obj.airDropTargetZ || obj.z,
+    axis: obj.axis || '',
+    direction: obj.direction || '',
+    roadIdx: obj.roadIdx || 0,
+    lane: obj.lane || 0,
+    baseTargetSpeed: obj.baseTargetSpeed || 0,
+    targetSpeed: obj.targetSpeed || 0,
+    currentSpeed: obj.currentSpeed || 0,
+    panicTimer: obj.panicTimer || 0,
+    crashed: !!obj.crashed,
+    crashing: !!obj.crashing,
+    crashTimer: obj.crashTimer || 0,
+    crashSmokeTimer: obj.crashSmokeTimer || 0,
+    crashVx: obj.crashVx || 0,
+    crashVz: obj.crashVz || 0,
+    crashDistance: obj.crashDistance || 0,
+    drivingValue: obj.drivingValue || 70,
+    crashedValue: obj.crashedValue || 40,
+    stackId: obj.stackId || 0,
+    stackActive: !!obj.stackActive,
+    stackSettled: !!obj.stackSettled,
+    stackRestTimer: obj.stackRestTimer || 0,
+    stackIndex: obj.stackIndex || 0,
+    stackFloorCount: obj.stackFloorCount || 0,
+    stackPieceCount: obj.stackPieceCount || 0,
+    stackCollapseSize: obj.stackCollapseSize || 0,
+    stackCenterX: obj.stackCenterX || obj.x,
+    stackCenterZ: obj.stackCenterZ || obj.z,
+    stackLocalX: obj.stackLocalX || 0,
+    stackLocalZ: obj.stackLocalZ || 0,
+    stackFloorY: obj.stackFloorY || 0,
+    stackHeight: obj.stackHeight || 0,
+    vx: obj.vx || 0, vy: obj.vy || 0, vz: obj.vz || 0,
+    avx: obj.avx || 0, avy: obj.avy || 0, avz: obj.avz || 0,
+    stackCollapsedRemainingMs: getRemainingMs(obj.stackCollapsedAt),
+  };
+}
+
+function makeSavedGenericObject(state) {
+  const colorByType = {
+    prop: 0x8a8f98,
+    skyscraperChunk: 0x3d5a80,
+  };
+  const g = new THREE.Group();
+  const h = Math.max(0.4, state.stackHeight || state.size || 0.8);
+  const w = Math.max(0.6, (state.size || 0.8) * 1.7);
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), sharedBoxMat(colorByType[state.type] || 0x8a8f98));
+  mesh.position.y = h / 2;
+  g.add(mesh);
+  g.children.forEach(c => c.castShadow = true);
+  const obj = makeObject(g, state.size || 0.6, state.tier || 1, state.value || 10, { x: state.x, y: state.y || 0, z: state.z });
+  if (state.type === 'skyscraperChunk') {
+    obj.isBuilding = true;
+    obj.buildingSize = 'large';
+    obj.isSkyscraperChunk = true;
+    obj.physicsStackPiece = true;
+    physicsStackPieces.push(obj);
+  } else {
+    obj.isProp = true;
+  }
+  return obj;
+}
+
+function makePowerupFromSavedState(state) {
+  const powerup = POWERUP_BY_ID.get(state.powerupId) || POWERUP_CONFIGS[0];
+  const obj = makeObject(makeAidPowerupMesh(powerup), state.size || 0.52, state.tier || 1, state.value || powerup.value, { x: state.x, y: state.y || 0.45, z: state.z });
+  obj.isPowerup = true;
+  obj.isProp = false;
+  obj.powerupId = powerup.id;
+  return obj;
+}
+
+function restoreObjectCommonState(obj, state, now = performance.now()) {
+  obj.x = state.x;
+  obj.z = state.z;
+  obj.size = state.size || obj.size;
+  obj.tier = state.tier || obj.tier;
+  obj.value = state.value || obj.value;
+  obj.falling = !!state.falling;
+  obj.fallVel = state.fallVel || 0;
+  obj.spin = state.spin || 0;
+  if (obj.mesh) {
+    obj.mesh.position.set(state.x, state.y || obj.mesh.position.y || 0, state.z);
+    obj.mesh.rotation.set(state.rotX || 0, state.rotY || 0, state.rotZ || 0);
+  }
+  if (obj.isPerson) {
+    obj.moving = !!state.moving;
+    obj.bounds = state.bounds || null;
+    obj.walkDir = state.walkDir || 0;
+    obj.walkSpeed = state.walkSpeed || 1;
+    obj.panicSpeed = state.panicSpeed || 3.5;
+    obj.walkTimer = state.walkTimer || 0;
+    obj.panicking = !!state.panicking;
+    if (obj.moving && !movingPeople.includes(obj)) movingPeople.push(obj);
+  }
+  if (obj.isCar) {
+    Object.assign(obj, {
+      moving: !!state.moving,
+      axis: state.axis || obj.axis,
+      direction: state.direction || obj.direction,
+      roadIdx: state.roadIdx || 0,
+      lane: state.lane || 0,
+      baseTargetSpeed: state.baseTargetSpeed || state.targetSpeed || 0,
+      targetSpeed: state.targetSpeed || 0,
+      currentSpeed: state.currentSpeed || 0,
+      panicking: !!state.panicking,
+      panicTimer: state.panicTimer || 0,
+      crashed: !!state.crashed,
+      crashing: !!state.crashing,
+      crashTimer: state.crashTimer || 0,
+      crashSmokeTimer: state.crashSmokeTimer || 0,
+      crashVx: state.crashVx || 0,
+      crashVz: state.crashVz || 0,
+      crashDistance: state.crashDistance || 0,
+      drivingValue: state.drivingValue || 70,
+      crashedValue: state.crashedValue || 40,
+    });
+    if (obj.moving && !movingCars.includes(obj)) movingCars.push(obj);
+  }
+  if (obj.isPowerup) {
+    obj.hoverPhase = state.hoverPhase || 0;
+    obj.airDropping = !!state.airDropping;
+    obj.airDropVel = state.airDropVel || 0;
+    obj.airDropTargetX = state.airDropTargetX || state.x;
+    obj.airDropTargetZ = state.airDropTargetZ || state.z;
+  }
+  if (obj.isSkyscraperChunk) {
+    Object.assign(obj, {
+      stackId: state.stackId || 0,
+      stackActive: !!state.stackActive,
+      stackSettled: !!state.stackSettled,
+      stackRestTimer: state.stackRestTimer || 0,
+      stackIndex: state.stackIndex || 0,
+      stackFloorCount: state.stackFloorCount || 0,
+      stackPieceCount: state.stackPieceCount || 0,
+      stackCollapseSize: state.stackCollapseSize || 0,
+      stackCenterX: state.stackCenterX || state.x,
+      stackCenterZ: state.stackCenterZ || state.z,
+      stackLocalX: state.stackLocalX || 0,
+      stackLocalZ: state.stackLocalZ || 0,
+      stackFloorY: state.stackFloorY || 0,
+      stackHeight: state.stackHeight || 0,
+      vx: state.vx || 0, vy: state.vy || 0, vz: state.vz || 0,
+      avx: state.avx || 0, avy: state.avy || 0, avz: state.avz || 0,
+      stackCollapsedAt: restoreFutureTimestamp(state.stackCollapsedRemainingMs, now),
+    });
+    if (obj.stackActive) activePhysicsStackIds.add(obj.stackId);
+  }
+}
+
+function restoreSavedObject(state, now = performance.now()) {
+  let obj;
+  if (state.type === 'person') obj = makePerson({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'tree') obj = makeTree({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'car') obj = makeCar({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'smallBuilding') obj = makeSmallBuilding({ x: state.x, z: state.z });
+  else if (state.type === 'midBuilding') obj = makeMidBuilding({ x: state.x, z: state.z });
+  else if (state.type === 'powerup') obj = makePowerupFromSavedState(state);
+  else if (state.type === 'lamp') obj = makeLamp({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'bench') obj = makeBench({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'hydrant') obj = makeHydrant({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'trash') obj = makeTrash({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'cone') obj = makeCone({ x: state.x, y: state.y || 0, z: state.z });
+  else obj = makeSavedGenericObject(state);
+  restoreObjectCommonState(obj, state, now);
+  return obj;
+}
+
+function serializeSoldierState(s) {
+  return {
+    x: s.x, z: s.z,
+    rotY: s.mesh?.rotation?.y || 0,
+    burstRounds: s.burstRounds || 0,
+    burstCooldown: s.burstCooldown || 0,
+    reloading: !!s.reloading,
+    voiceCooldown: s.voiceCooldown || 0,
+    alive: s.alive !== false,
+    waveId: s.waveId || 0,
+  };
+}
+
+function restoreSoldierState(state) {
+  const mesh = makeSoldierMesh();
+  mesh.position.set(state.x, 0, state.z);
+  mesh.rotation.y = state.rotY || 0;
+  scene.add(mesh);
+  soldiers.push({
+    mesh,
+    x: state.x,
+    z: state.z,
+    burstRounds: state.burstRounds || 0,
+    burstCooldown: state.burstCooldown || 0,
+    reloading: !!state.reloading,
+    voiceCooldown: state.voiceCooldown || 0,
+    isSoldier: true,
+    alive: state.alive !== false,
+    waveId: state.waveId || 0,
+  });
+}
+
+function serializeParatrooperState(p) {
+  return {
+    targetX: p.targetX, targetZ: p.targetZ,
+    startY: p.startY || PLANE_ALTITUDE,
+    t: p.t || 0,
+    totalT: p.totalT || difficultyParachuteFallTime(),
+    waveId: p.waveId || 0,
+  };
+}
+
+function restoreParatrooperState(state) {
+  const para = new THREE.Group();
+  const soldier = makeSoldierMesh();
+  const chute = makeParachuteMesh();
+  para.add(soldier);
+  para.add(chute);
+  para.position.set(state.targetX, state.startY || PLANE_ALTITUDE, state.targetZ);
+  scene.add(para);
+  paratroopers.push({
+    mesh: para,
+    soldierMesh: soldier,
+    chuteMesh: chute,
+    targetX: state.targetX,
+    targetZ: state.targetZ,
+    startY: state.startY || PLANE_ALTITUDE,
+    t: state.t || 0,
+    totalT: state.totalT || difficultyParachuteFallTime(),
+    waveId: state.waveId || 0,
+  });
+}
+
+function serializePlaneState(p) {
+  return {
+    x: p.mesh?.position?.x || p.startX,
+    z: p.mesh?.position?.z || p.startZ,
+    startX: p.startX, startZ: p.startZ, endX: p.endX, endZ: p.endZ,
+    dropX: p.dropX, dropZ: p.dropZ,
+    deployed: !!p.deployed,
+    soldierCount: p.soldierCount || 0,
+    engineAudioAccumulator: p.engineAudioAccumulator || PLANE_ENGINE_AUDIO_INTERVAL,
+    waveId: p.waveId || 0,
+  };
+}
+
+function restorePlaneState(state) {
+  const mesh = makePlaneMesh();
+  mesh.position.set(state.x, PLANE_ALTITUDE, state.z);
+  mesh.rotation.y = Math.atan2(state.endX - state.startX, state.endZ - state.startZ);
+  scene.add(mesh);
+  planes.push({
+    mesh,
+    startX: state.startX, startZ: state.startZ, endX: state.endX, endZ: state.endZ,
+    dropX: state.dropX, dropZ: state.dropZ,
+    deployed: !!state.deployed,
+    soldierCount: state.soldierCount || 0,
+    engine: createPlaneEngineDrone(),
+    engineAudioAccumulator: state.engineAudioAccumulator || PLANE_ENGINE_AUDIO_INTERVAL,
+    waveId: state.waveId || 0,
+  });
+}
+
+function serializeAidShipState(ship) {
+  return {
+    x: ship.mesh?.position?.x || ship.startX,
+    z: ship.mesh?.position?.z || ship.startZ,
+    startX: ship.startX, startZ: ship.startZ, endX: ship.endX, endZ: ship.endZ,
+    dropX: ship.dropX, dropZ: ship.dropZ,
+    dropped: !!ship.dropped,
+    bobPhase: ship.bobPhase || 0,
+    powerupId: ship.powerupId || '',
+  };
+}
+
+function restoreAidShipState(state) {
+  const mesh = makeAlienAidShipMesh();
+  mesh.position.set(state.x, HOLESY_CONFIG.aidDrops.shipAltitude, state.z);
+  mesh.rotation.y = Math.atan2(state.endX - state.startX, state.endZ - state.startZ);
+  scene.add(mesh);
+  aidShips.push({ ...state, mesh });
+}
+
+function serializeRoundLoreState(now = getGameplayNow()) {
+  if (!roundLoreState) return null;
+  return {
+    ...roundLoreState,
+    lastEatAgoMs: now - (roundLoreState.lastEatAt || now),
+    peopleAgoMs: (roundLoreState.peopleTimes || []).map(t => now - t),
+  };
+}
+
+function restoreRoundLoreState(state, now = performance.now()) {
+  if (!state) {
+    startLoreRunTracking();
+    return;
+  }
+  roundLoreState = {
+    ...state,
+    lastEatAt: now - (state.lastEatAgoMs || 0),
+    peopleTimes: (state.peopleAgoMs || []).map(age => now - age),
+  };
+  delete roundLoreState.lastEatAgoMs;
+  delete roundLoreState.peopleAgoMs;
+}
+
+function refreshEndlessSaveControls() {
+  const hasSave = hasEndlessSave();
+  if (loadEndlessSaveBtn) {
+    loadEndlessSaveBtn.disabled = !hasSave || isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION);
+    loadEndlessSaveBtn.textContent = hasSave ? 'Load Endless' : 'No Endless Save';
+  }
+  if (pauseSaveBtn) {
+    pauseSaveBtn.disabled = !endlessMode || !isGameState(GAME_STATES.PAUSED);
+    pauseSaveBtn.textContent = endlessMode ? 'Save Endless' : 'Save Endless (Endless only)';
+  }
+}
+
+function hasEndlessSave() {
+  try {
+    return !!(window.localStorage && window.localStorage.getItem(ENDLESS_SAVE_KEY));
+  } catch (err) {
+    return false;
+  }
+}
+
+function buildEndlessSaveState() {
+  const now = getGameplayNow();
+  return {
+    schemaVersion: ENDLESS_SAVE_SCHEMA,
+    buildLabel: BUILD_LABEL,
+    savedAt: new Date().toISOString(),
+    selectedDifficultyName,
+    currentWave,
+    gameTime,
+    waveTimer,
+    waveNumber,
+    soldiersEnabledThisWave,
+    currentSoldierSpeedMult,
+    currentSoldierDamageMult,
+    currentSoldierHitChanceMult,
+    currentArenaScale,
+    activeGameRunElapsedMs: activeGameRun ? performance.now() - activeGameRun.startedAtMs : 0,
+    pendingPlayerEndReason,
+    aidDropCountdown,
+    holes: holes.map(h => serializeHoleState(h, now)),
+    objects: objects.map(serializeObjectState).filter(Boolean),
+    soldiers: soldiers.map(serializeSoldierState),
+    paratroopers: paratroopers.map(serializeParatrooperState),
+    planes: planes.map(serializePlaneState),
+    aidShips: aidShips.map(serializeAidShipState),
+    roundLoreState: serializeRoundLoreState(now),
+  };
+}
+
+function saveEndlessGame() {
+  if (!endlessMode || !isGameState(GAME_STATES.PAUSED)) {
+    showEventBanner('Endless can only be saved from the pause menu.', 3200);
+    return false;
+  }
+  try {
+    window.localStorage.setItem(ENDLESS_SAVE_KEY, JSON.stringify(buildEndlessSaveState()));
+    refreshEndlessSaveControls();
+    showEventBanner(`Endless Wave ${currentWave} recorded. The city will remember this version.`, 4200);
+    return true;
+  } catch (err) {
+    console.warn('Endless save failed', err);
+    showEventBanner('The Archive failed to save this Endless run.', 4200);
+    return false;
+  }
+}
+
+function loadEndlessGame() {
+  let save;
+  try {
+    const raw = window.localStorage && window.localStorage.getItem(ENDLESS_SAVE_KEY);
+    if (!raw) {
+      showEventBanner('No Endless save exists yet.', 3000);
+      refreshEndlessSaveControls();
+      return false;
+    }
+    save = JSON.parse(raw);
+  } catch (err) {
+    console.warn('Endless save read failed', err);
+    showEventBanner('The Endless save could not be read.', 3600);
+    return false;
+  }
+  if (!save || save.schemaVersion !== ENDLESS_SAVE_SCHEMA || !Array.isArray(save.holes)) {
+    showEventBanner('The Endless save is from an incompatible record.', 3600);
+    return false;
+  }
+
+  pendingLoreDropId = '';
+  invalidateRoundLifecycle();
+  clearPlayerConsumedReturn();
+  clearTransientRoundUi();
+  hideActiveEffectsUi();
+  pauseOverlay.classList.add('hidden');
+  lmsChoice.classList.add('hidden');
+  finalWrap.classList.add('hidden');
+  leaderboardEl.innerHTML = '';
+  resetInputState();
+  selectedMode = 'endless';
+  setDifficulty(save.selectedDifficultyName || selectedDifficultyName || 'normal');
+  lmsMode = false;
+  wavesMode = false;
+  endlessMode = true;
+  setEndlessPressureForWave(save.currentWave || 1);
+  currentWave = save.currentWave || 1;
+  waveNumber = save.waveNumber || 0;
+  gameTime = save.gameTime || getWaveConfig(currentWave).duration;
+  waveTimer = save.waveTimer || 0;
+  soldiersEnabledThisWave = save.soldiersEnabledThisWave !== false;
+  currentSoldierSpeedMult = save.currentSoldierSpeedMult || activeDifficultyProfile.soldierSpeedMult;
+  currentSoldierDamageMult = save.currentSoldierDamageMult || activeDifficultyProfile.soldierDamageMult;
+  currentSoldierHitChanceMult = save.currentSoldierHitChanceMult || activeDifficultyProfile.soldierHitChanceMult;
+  pendingPlayerEndReason = save.pendingPlayerEndReason || '';
+  aidDropCountdown = typeof save.aidDropCountdown === 'number' ? save.aidDropCountdown : null;
+  setArenaScale(save.currentArenaScale || getWaveConfig(currentWave).worldScale || 1.0);
+  tearDownWorld();
+
+  const now = performance.now();
+  save.holes.forEach((state, i) => {
+    if (holes[i]) restoreHoleState(holes[i], state, now);
+  });
+  (save.objects || []).forEach(state => restoreSavedObject(state, now));
+  (save.soldiers || []).forEach(restoreSoldierState);
+  (save.paratroopers || []).forEach(restoreParatrooperState);
+  (save.planes || []).forEach(restorePlaneState);
+  (save.aidShips || []).forEach(restoreAidShipState);
+  restoreRoundLoreState(save.roundLoreState, now);
+
+  activeGameRun = {
+    mode: 'endless',
+    difficulty: selectedDifficultyName,
+    startedAtMs: performance.now() - (save.activeGameRunElapsedMs || 0),
+    recorded: false,
+  };
+  gameplayTimeFrozenAt = 0;
+  running = true;
+  restoreGameplayAudioMix();
+  setGameState(GAME_STATES.PLAYING);
+  timerEl.classList.remove('lms-active');
+  showGameplayUi();
+  updateHUD();
+  updateWaveHudBanner();
+  syncAlienAidLoop();
+  syncTitleAudioToGameState();
+  lastT = performance.now();
+  refreshEndlessSaveControls();
+  showEventBanner(`Endless Wave ${currentWave} restored. The district resumes from the saved record.`, 4600);
+  return true;
 }
 
 function resetHoleState() {
@@ -7443,6 +8076,7 @@ function endGame() {
     running = false;
     silenceNonMusicAudioForMenuState();
     setGameState(GAME_STATES.GAME_OVER);
+    refreshEndlessSaveControls();
     hideGameplayUi();
     pauseOverlay.classList.add('hidden');
     clearTransientRoundUi();
@@ -7636,6 +8270,7 @@ pauseBtn.addEventListener('click', () => {
   else resumeGame();
 });
 pauseResumeBtn.addEventListener('click', () => resumeGame());
+pauseSaveBtn.addEventListener('click', () => saveEndlessGame());
 pauseExitBtn.addEventListener('click', () => {
   if (endlessMode && activeGameRun && !activeGameRun.recorded) {
     pendingPlayerEndReason = 'voluntary_cashout';
@@ -7705,6 +8340,7 @@ difficultySelect.addEventListener('change', () => {
 
 if (statsWindowBtn) statsWindowBtn.addEventListener('click', openStatsWindow);
 if (loreArchiveBtn) loreArchiveBtn.addEventListener('click', () => openLoreArchive());
+if (loadEndlessSaveBtn) loadEndlessSaveBtn.addEventListener('click', () => loadEndlessGame());
 if (loreCloseBtn) loreCloseBtn.addEventListener('click', closeLoreArchive);
 if (buildVersionBtn) buildVersionBtn.addEventListener('click', openBuildNotes);
 if (buildNotesCloseBtn) buildNotesCloseBtn.addEventListener('click', closeBuildNotes);
@@ -7725,6 +8361,7 @@ leaderboardEl.addEventListener('click', (e) => {
   if (!dropBtn || !pendingLoreDropId) return;
   openLoreArchive(pendingLoreDropId);
 });
+refreshEndlessSaveControls();
 
 // =========================================================================
 // MAIN LOOP

@@ -1178,6 +1178,11 @@ Backlog items:
     - `Master 16.13` reduces direct rival-devour radius bonus and inherited bonus-radius compounding
     - Endless Waves now caps hole radius at 50% of the active board width between fifth-wave world-shift resets
     - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_13_RIVAL_DEVOUR_TUNING.md` records syntax, package, and browser smoke evidence
+  - Endless save / load:
+    - `Master 16.14` adds a Pause-menu `Save Endless` action and a menu `Load Endless` action
+    - save data is stored locally and restores Endless wave, score, hole size, rival state, timers, active buffs/cooldowns, soldiers, planes, aid, and board object positions
+    - timed effects are saved as remaining time so taking a break does not drain buffs, shields, aid timers, or wave timers
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_14_ENDLESS_SAVE_LOAD.md` records syntax, package, and browser smoke evidence
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay
