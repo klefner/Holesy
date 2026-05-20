@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.10</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.11</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1094,7 +1094,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 10;
+const BUILD_SUB = 11;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -2124,6 +2124,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.11',
+    date: '2026-05-19',
+    summary: 'Timed lore buffs no longer refresh themselves into runaway growth loops.',
+    changes: [
+      'Ignored repeat pattern triggers while the matching timed lore buff is already active.',
+      'Kept each timed lore buff on a five-second cooldown after it expires before it can be acquired again.',
+      'Stopped Building Chain from granting repeated instant mass while its timed buff is already running.',
+    ],
+  },
   {
     label: 'Master 16.10',
     date: '2026-05-19',
@@ -5412,15 +5422,24 @@ function activateLoreTimedBuff(id, durationMs) {
   const now = performance.now();
   const previous = player.loreBuffs[id] || 0;
   const cooldownUntil = player.loreBuffCooldowns[id] || 0;
-  if (previous > 0 && previous <= now && now - previous < LORE_BUFF_REACQUIRE_COOLDOWN_MS) {
-    player.loreBuffCooldowns[id] = Math.max(cooldownUntil, previous + LORE_BUFF_REACQUIRE_COOLDOWN_MS);
+
+  if (previous > now) return false;
+
+  if (previous > 0) {
+    const reacquireAt = previous + LORE_BUFF_REACQUIRE_COOLDOWN_MS;
+    if (now < reacquireAt) {
+      player.loreBuffCooldowns[id] = Math.max(cooldownUntil, reacquireAt);
+      return false;
+    }
+  }
+
+  if (cooldownUntil > now) {
     return false;
   }
-  if (cooldownUntil > now) return false;
-  const next = Math.max(previous, now + durationMs);
-  player.loreBuffs[id] = next;
+
+  player.loreBuffs[id] = now + durationMs;
   player.loreBuffCooldowns[id] = 0;
-  return previous <= now;
+  return true;
 }
 
 function getLoreTimedBuffRemaining(id, now = performance.now()) {
@@ -5521,12 +5540,10 @@ function handleLoreConsume(h, obj) {
     if (gap >= 4600 && gap <= 5400) {
       unlockAchievement('linden_street');
       const lindenWasNew = activateLoreTimedBuff('linden_street', ACHIEVEMENT_DEFS.linden_street.durationMs);
-      if (lindenWasNew || getLoreTimedBuffRemaining('linden_street', now) > 0) {
+      if (lindenWasNew) {
         h.score += 180;
         h.bonusRadius = (h.bonusRadius || 0) + 0.28;
         h.targetRadius = radiusFromScore(h);
-      }
-      if (lindenWasNew) {
         showEventBanner('ACTIVE BUFF: Building Chain - buildings score more for 12 seconds. Combo risk: Crowd Magnet slows you.', 6800);
       }
     }

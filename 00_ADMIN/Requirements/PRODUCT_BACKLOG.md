@@ -1163,6 +1163,11 @@ Backlog items:
     - the game keeps going after the reset; Endless still has no win condition, only voluntary exit or player death
     - this is the hard constraint and future hook for graphical world/theme changes every fifth wave
     - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_10_ENDLESS_WORLD_SHIFT.md` records syntax, package, and browser smoke evidence
+  - timed lore buff anti-runaway fix:
+    - `Master 16.11` prevents timed lore buffs from refreshing their own timers while active
+    - each timed lore buff now has a five-second cooldown after expiry before the same pattern can reacquire it
+    - Building Chain's instant mass side effect is also limited to fresh acquisition so repeating the pattern during the active window cannot stack runaway growth
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_11_BUFF_COOLDOWN.md` records syntax, package, and browser smoke evidence
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay
