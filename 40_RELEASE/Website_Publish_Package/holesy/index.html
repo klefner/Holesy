@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.8</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.10</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1094,7 +1094,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 8;
+const BUILD_SUB = 10;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -2125,6 +2125,16 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.10',
+    date: '2026-05-19',
+    summary: 'Endless Waves now fully resets the land economy every fifth wave.',
+    changes: [
+      'Reset every hole score and size on Waves 5, 10, 15, and so on.',
+      'Cleared bonus-radius, recent soldier-damage size modifiers, and temporary effects during each fifth-wave world shift.',
+      'Added Endless world-shift messaging as the future hook for new lands and theme changes.',
+    ],
+  },
+  {
     label: 'Master 16.8',
     date: '2026-05-19',
     summary: 'Fixed replaying wave-based modes from the scoreboard.',
@@ -3132,9 +3142,13 @@ const HOLE_EAT_RADIUS_BONUS = HOLESY_CONFIG.growth.holeEatRadiusBonus; // multip
 // HUD progress bar reference — just for display, not a cap
 const MAX_RADIUS_REF = HOLESY_CONFIG.growth.maxRadiusRef;
 
-// Compute a hole's radius purely from its cumulative score + any eating bonuses
+function scoreForGrowth(h) {
+  return Math.max(0, h.score || 0);
+}
+
+// Compute a hole's radius from score earned since the last Endless world shift + any eating bonuses.
 function radiusFromScore(h) {
-  return MIN_RADIUS + GROWTH_K * Math.log(1 + h.score / GROWTH_SCALE) + (h.bonusRadius || 0);
+  return MIN_RADIUS + GROWTH_K * Math.log(1 + scoreForGrowth(h) / GROWTH_SCALE) + (h.bonusRadius || 0);
 }
 
 // Cosmetic tier labels shown in HUD based on current radius (not gameplay gated)
@@ -3274,6 +3288,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
     radius: MIN_RADIUS,
     targetRadius: MIN_RADIUS,
     bonusRadius: 0, // accumulated from eating other holes; added on top of score-driven radius
+    sizeResetScoreFloor: 0,
     recentSoldierDamageRadius: 0,
     score: 0,
     effects: {
@@ -6599,6 +6614,7 @@ function resetHoleState() {
     h.targetRadius = MIN_RADIUS;
     h.score = 0;
     h.bonusRadius = 0;
+    h.sizeResetScoreFloor = 0;
     h.recentSoldierDamageRadius = 0;
     h.aiTargetObj = null;
     h.aiState = 'wander';
@@ -6844,6 +6860,7 @@ function respawnEndlessRivalHole(eaten, eater) {
   if (!eaten.group.parent) scene.add(eaten.group);
   eaten.score = Math.max(0, Math.floor((eaten.score || 0) * 0.24));
   eaten.bonusRadius = Math.max(0, (eaten.bonusRadius || 0) * 0.12);
+  eaten.sizeResetScoreFloor = eaten.score;
   eaten.recentSoldierDamageRadius = 0;
   eaten.x = point.x;
   eaten.z = point.z;
@@ -6871,6 +6888,32 @@ function respawnEndlessRivalHole(eaten, eater) {
   updateHoleVisual(eaten);
 }
 
+function isEndlessWorldShiftWave(waveNum) {
+  return endlessMode && waveNum > 1 && waveNum % 5 === 0;
+}
+
+function resetHoleSizesForEndlessWorldShift() {
+  holes.forEach(h => {
+    h.score = 0;
+    h.sizeResetScoreFloor = 0;
+    h.bonusRadius = 0;
+    h.recentSoldierDamageRadius = 0;
+    h.radius = MIN_RADIUS;
+    h.targetRadius = MIN_RADIUS;
+    h.effects.speedBoostUntil = 0;
+    h.effects.speedMultiplier = 1;
+    h.effects.speedSource = '';
+    h.effects.bulletShieldUntil = 0;
+    h.effects.bulletDamageMultiplier = 1;
+    h.effects.bulletShieldSource = '';
+    h.loreBuffs = {};
+    h.loreBuffCooldowns = {};
+    h.loreFirstBiteActive = false;
+    updateHoleVisual(h);
+  });
+  hideActiveEffectsUi();
+}
+
 // Starts or advances a wave. waveNum is 1-based. Called from startGame (wave 1)
 // and from the wave-end path for 2+.
 function startWave(waveNum) {
@@ -6879,6 +6922,8 @@ function startWave(waveNum) {
   setEndlessPressureForWave(waveNum);
   const cfg = getWaveConfig(waveNum);
   applyWaveConfig(cfg);
+  const worldShift = isEndlessWorldShiftWave(waveNum);
+  if (worldShift) resetHoleSizesForEndlessWorldShift();
   scheduleWaveAidDrop();
   wavesTransitioning = false;
   running = true;
@@ -6888,7 +6933,7 @@ function startWave(waveNum) {
   updateHUD();
   // Banner to announce the wave briefly
   showWaveBanner(waveNum);
-    showEventBanner(waveThreatBriefing(waveNum), HOLESY_CONFIG.eventMessaging.waveBriefingDurationMs);
+    showEventBanner(waveThreatBriefing(waveNum), worldShift ? 8200 : HOLESY_CONFIG.eventMessaging.waveBriefingDurationMs);
 }
 
 // Called when the wave timer hits zero in Waves mode. Either advances to
@@ -6908,11 +6953,16 @@ function onWaveTimerExpired() {
 
 // Shows a "WAVE N" banner briefly via the existing stage-pop element.
 function showWaveBanner(waveNum) {
+  if (isEndlessWorldShiftWave(waveNum)) {
+    showStagePop(`WORLD SHIFT - WAVE ${waveNum}`, 1900);
+    return;
+  }
   showStagePop(endlessMode ? `ENDLESS WAVE ${waveNum}` : (WAVE_BANNER_LABELS[waveNum] || ('WAVE ' + waveNum)));
 }
 
 function waveThreatBriefing(waveNum) {
   if (endlessMode) {
+    if (isEndlessWorldShiftWave(waveNum)) return `Endless Wave ${waveNum}: The Parallax moved the breach. Scores remain. Bodies do not. Every Hunger is small again.`;
     if (waveNum === 1) return 'Endless Wave 1: The first district is still pretending this can be contained.';
     if (waveNum < ENDLESS_WAVE_TUNING.ultraReferenceWave) return `Endless Wave ${waveNum}: The next district has already learned from the last one.`;
     return `Endless Wave ${waveNum}: The Parallax is no longer escalating. It is refining.`;

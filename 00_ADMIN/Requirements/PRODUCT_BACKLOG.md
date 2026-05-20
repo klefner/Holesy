@@ -1158,6 +1158,11 @@ Backlog items:
     - `Master 16.8` resets all hole life/state before starting a fresh wave-based run from the scoreboard
     - this prevents `Begin` from rebuilding the town behind the final-score screen and immediately returning to the same end state
     - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_8_SCOREBOARD_RESTART.md` records syntax, package, and browser smoke evidence
+  - fifth-wave world-shift mechanic:
+    - `Master 16.10` resets every hole to starting size and resets the live land score on Endless Waves 5, 10, 15, and so on
+    - the game keeps going after the reset; Endless still has no win condition, only voluntary exit or player death
+    - this is the hard constraint and future hook for graphical world/theme changes every fifth wave
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_10_ENDLESS_WORLD_SHIFT.md` records syntax, package, and browser smoke evidence
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay
