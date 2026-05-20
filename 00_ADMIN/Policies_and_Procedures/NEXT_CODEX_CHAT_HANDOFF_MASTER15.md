@@ -49,16 +49,25 @@ Last approved candidate promoted into `Master 15`:
 
 ## 4. Current Priority
 
-- `Priority 2 — Waves Mode Completion and Tuning` remains open
+- immediate focus is validation of the latest monitored candidates before further backlog expansion
 - new work should branch from `Master 15`
-- the next development focus is continued Waves difficulty / pacing tuning from the now-approved stronger baseline rather than reviving the failed `14.5` branch wholesale
+- active validation targets:
+  - `Master 15.39 - idle-lifecycle-cleanup.html`
+  - `Master 15.42 - buff-clarity-and-rare-docs.html`
+- performance backlog continuation resumes after those validation passes close
+- broader Waves tuning remains downstream work, not the current handoff target
 
 ## 5. Immediate Next Move
 
 - treat `Master 15` as the current source basis
-- continue Priority 2 from a fresh candidate under `20_TESTS/Candidate_Builds`
-- keep future Waves changes narrow and browser-validated before promotion
-- current in-flight candidate:
-  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Candidate_Builds\Master 15.8 - aid-stutter-camera-and-mid-ai-buff.html`
-- current candidate focus:
-  - remove stale post-aid stutter, lower the transition camera, and make Void/Maw feel more competitive
+- validate the current monitored candidates before starting a new slice:
+  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Candidate_Builds\Master 15.39 - idle-lifecycle-cleanup.html`
+  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\20_TESTS\Candidate_Builds\Master 15.42 - buff-clarity-and-rare-docs.html`
+- validation focus for `15.39`:
+  - confirm the original long-idle Chrome tab-close stall is materially improved after a real idle wait
+- validation focus for `15.42`:
+  - confirm archive readability, Archive music fit, rare document pacing, buff-effect clarity, and lore-buff combo feel in real gameplay
+- only after those validations:
+  - expand the lore corpus if the reader UX is accepted
+  - continue the remaining Priority 1 performance backlog
+  - then return to Waves tuning, physics stack work, and broader powerup expansion
