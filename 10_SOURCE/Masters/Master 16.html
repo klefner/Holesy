@@ -967,7 +967,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-  <button id="build-version" type="button" aria-label="Show build notes">Master 16.12</button>
+  <button id="build-version" type="button" aria-label="Show build notes">Master 16.13</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -1094,7 +1094,7 @@
 <script type="module">
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 12;
+const BUILD_SUB = 13;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 const DIFFICULTY_PROFILES = Object.freeze({
@@ -1809,7 +1809,7 @@ const HOLESY_CONFIG = Object.freeze({
     minRadius: 0.9,
     growthK: 0.95,
     growthScale: 40,
-    holeEatRadiusBonus: 0.6,
+    holeEatRadiusBonus: 0.22,
     maxRadiusRef: 8.0,
   },
   traffic: {
@@ -2124,6 +2124,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.13',
+    date: '2026-05-19',
+    summary: 'Rival-hole devours now scale by victim size and cannot balloon Endless beyond half-board scale.',
+    changes: [
+      'Tempered hole-eating score and direct radius gains so tiny recycled rivals give much smaller rewards.',
+      'Reduced bonus-radius inheritance from devoured holes to stop rival recycling from compounding runaway size.',
+      'Added an Endless radius cap at 50% of the active board width between fifth-wave world shifts.',
+    ],
+  },
   {
     label: 'Master 16.12',
     date: '2026-05-19',
@@ -3162,14 +3172,21 @@ const GROWTH_SCALE = HOLESY_CONFIG.growth.growthScale;
 const HOLE_EAT_RADIUS_BONUS = HOLESY_CONFIG.growth.holeEatRadiusBonus; // multiplied by victim's radius
 // HUD progress bar reference — just for display, not a cap
 const MAX_RADIUS_REF = HOLESY_CONFIG.growth.maxRadiusRef;
+const ENDLESS_RADIUS_CAP_BOARD_SHARE = 0.5;
 
 function scoreForGrowth(h) {
   return Math.max(0, h.score || 0);
 }
 
+function getEndlessRadiusCap() {
+  if (!endlessMode) return Infinity;
+  return Math.max(MIN_RADIUS, currentArenaHalf * ENDLESS_RADIUS_CAP_BOARD_SHARE);
+}
+
 // Compute a hole's radius from score earned since the last Endless world shift + any eating bonuses.
 function radiusFromScore(h) {
-  return MIN_RADIUS + GROWTH_K * Math.log(1 + scoreForGrowth(h) / GROWTH_SCALE) + (h.bonusRadius || 0);
+  const rawRadius = MIN_RADIUS + GROWTH_K * Math.log(1 + scoreForGrowth(h) / GROWTH_SCALE) + (h.bonusRadius || 0);
+  return Math.min(rawRadius, getEndlessRadiusCap());
 }
 
 // Cosmetic tier labels shown in HUD based on current radius (not gameplay gated)
@@ -7760,19 +7777,23 @@ function beginConsume(h, obj) {
 function holeEatsHole(eater, eaten) {
   if (!eaten.alive) return;
   eaten.alive = false;
-  // Big score reward — scales with victim's score and size
-  // Reduced 50% from previous (was 500 + 60%score + 200×radius)
-  const baseReward = 250 + Math.floor(eaten.score * 0.3) + Math.floor(eaten.radius * 100);
   const effectiveDifficulty = getEffectiveDifficultyProfile();
+  const relativeVictimSize = THREE.MathUtils.clamp(eaten.radius / Math.max(MIN_RADIUS, eater.radius), 0.05, 1);
+  const relativeRewardScale = Math.pow(relativeVictimSize, 1.35);
+  // Rival-hole rewards now care about relative size. Eating a recycled small rival
+  // should help, but it should not rebuild the player into a whole-board hole.
+  const scoreTransferRate = 0.05 + 0.15 * relativeRewardScale;
+  const baseReward = 80 + Math.floor(eaten.score * scoreTransferRate) + Math.floor(eaten.radius * (28 + 72 * relativeRewardScale));
   const reward = Math.max(1, Math.floor(baseReward * effectiveDifficulty.holeEatScoreMult));
   // LMS keeps the same score reward pipeline as the other modes.
   eater.score += reward;
   // Direct bonus radius on top of score-driven growth (so predation stays
   // dramatic even in late game when log formula gives tiny per-point growth)
   const holeEatGrowthMult = effectiveDifficulty.holeEatGrowthMult || 1;
-  eater.bonusRadius = (eater.bonusRadius || 0) + eaten.radius * HOLE_EAT_RADIUS_BONUS * holeEatGrowthMult;
+  const directGrowthScale = 0.18 + 0.82 * relativeRewardScale;
+  eater.bonusRadius = (eater.bonusRadius || 0) + eaten.radius * HOLE_EAT_RADIUS_BONUS * holeEatGrowthMult * directGrowthScale;
   // Also absorb some of the victim's bonus radius from prior eating sprees
-  if (eaten.bonusRadius) eater.bonusRadius += eaten.bonusRadius * 0.5 * holeEatGrowthMult;
+  if (eaten.bonusRadius) eater.bonusRadius += eaten.bonusRadius * 0.12 * holeEatGrowthMult * directGrowthScale;
   eater.targetRadius = radiusFromScore(eater);
   // Remove eaten from scene unless Endless needs the rival recycled.
   if (!endlessMode || eaten.isPlayer) scene.remove(eaten.group);

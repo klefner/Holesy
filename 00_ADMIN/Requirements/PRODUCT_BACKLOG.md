@@ -1173,6 +1173,11 @@ Backlog items:
     - `Master 16.12` also reduces Crowd Magnet bonus reach from +75% hole radius to +35%, and the Block Party combo reach from +105% to +55%
     - this keeps the lore-pattern reward visible while reducing early Endless Waves runaway city collection
     - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_12_CROWD_MAGNET_TUNING.md` records syntax, package, and browser smoke evidence
+  - rival-hole devour growth tuning:
+    - `Master 16.13` scales rival-hole score and growth rewards by relative victim size so smaller recycled rivals produce much less growth
+    - `Master 16.13` reduces direct rival-devour radius bonus and inherited bonus-radius compounding
+    - Endless Waves now caps hole radius at 50% of the active board width between fifth-wave world-shift resets
+    - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_MASTER16_13_RIVAL_DEVOUR_TUNING.md` records syntax, package, and browser smoke evidence
 - Solo 100% Clear mode
   - no rivals
   - timer pressure plus passive size decay
