@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.26 - 2026-05-21
+
+How to Play graphic restoration and hard traffic skid cap.
+
+- Restored the full-height How to Play summary graphic from the user-approved layout instead of the cropped/rebuilt short asset.
+- Added a hard movement cap for panic-car crash slides so a car cannot skid multiple city blocks or across the city after a bad frame.
+- Reduced panic-car crash duration, slide distance, and initial loss-of-control velocity.
+
 ## Master 16.25 - 2026-05-21
 
 How to Play upload dependency fix.

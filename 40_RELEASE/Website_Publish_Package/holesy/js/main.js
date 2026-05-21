@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 25;
+const BUILD_SUB = 26;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -753,11 +753,11 @@ const HOLESY_CONFIG = Object.freeze({
     panicCrashTopSpeedMultiplier: 3.0,
     panicWrongWayCrashMultiplier: 2.4,
     panicWobble: 1.75,
-    crashDurationSeconds: 0.34,
-    crashMaxSlideDistance: 2.7,
+    crashDurationSeconds: 0.22,
+    crashMaxSlideDistance: 1.35,
     crashFrictionPerSecond: 0.006,
-    crashStopSpeed: 2.1,
-    crashMaxInitialSpeed: 7.5,
+    crashStopSpeed: 2.4,
+    crashMaxInitialSpeed: 4.5,
     carCollisionRadius: 2.25,
     carAvoidanceRadius: 5.0,
     carCrashImpactSpeed: 10.0,
@@ -1049,6 +1049,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.26',
+    date: '2026-05-21',
+    summary: 'How to Play graphic restoration and hard traffic skid cap.',
+    changes: [
+      'Restored the full-height How to Play summary graphic layout.',
+      'Added a hard crash-slide movement clamp so cars cannot skid multiple city blocks after a bad frame.',
+      'Reduced panic-car crash duration, slide distance, and initial crash velocity.',
+    ],
+  },
   {
     label: 'Master 16.25',
     date: '2026-05-21',
@@ -8394,6 +8404,26 @@ function triggerCarLossOfControl(car) {
   car.crashSpin = sideSign * (1.1 + Math.random() * 1.15);
 }
 
+function settleCarCrashStep(car, dt) {
+  const vx = car.crashVx || 0;
+  const vz = car.crashVz || 0;
+  const speed = Math.hypot(vx, vz);
+  if (speed <= 0.001) return true;
+  const maxSlide = HOLESY_CONFIG.traffic.crashMaxSlideDistance;
+  const remaining = Math.max(0, maxSlide - (car.crashDistance || 0));
+  if (remaining <= 0) return true;
+  const plannedStep = speed * dt;
+  const actualStep = Math.min(plannedStep, remaining);
+  const scale = actualStep / speed;
+  car.x += vx * scale;
+  car.z += vz * scale;
+  car.mesh.position.x = car.x;
+  car.mesh.position.z = car.z;
+  car.mesh.rotation.y += (car.crashSpin || 0) * Math.min(dt, 0.08);
+  car.crashDistance = (car.crashDistance || 0) + actualStep;
+  return plannedStep >= remaining;
+}
+
 function carForwardSpeed(car) {
   return Math.max(0, car.currentSpeed || Math.hypot(car.crashVx || 0, car.crashVz || 0));
 }
@@ -8491,6 +8521,7 @@ function updateCarCrashEffects(dt) {
 }
 
 function updateMovingCars(dt) {
+  dt = Math.min(dt, 0.05);
   const STOP_DISTANCE_BEFORE_INTERSECTION = HOLESY_CONFIG.traffic.stopDistanceBeforeIntersection;
   const FOLLOW_DISTANCE = HOLESY_CONFIG.traffic.followDistance; // stay this far behind the car ahead
 
@@ -8511,20 +8542,14 @@ function updateMovingCars(dt) {
 
     if (car.crashing) {
       car.crashTimer -= dt;
-      const slideStep = Math.hypot(car.crashVx || 0, car.crashVz || 0) * dt;
-      car.crashDistance = (car.crashDistance || 0) + slideStep;
-      car.x += car.crashVx * dt;
-      car.z += car.crashVz * dt;
-      car.mesh.position.x = car.x;
-      car.mesh.position.z = car.z;
-      car.mesh.rotation.y += car.crashSpin * dt;
+      const hitDistanceCap = settleCarCrashStep(car, dt);
       const crashFriction = Math.pow(HOLESY_CONFIG.traffic.crashFrictionPerSecond, dt);
       car.crashVx *= crashFriction;
       car.crashVz *= crashFriction;
       const impact = findCarCrashImpact(car);
       const slowEnough = Math.hypot(car.crashVx || 0, car.crashVz || 0) <= HOLESY_CONFIG.traffic.crashStopSpeed;
       const slidTooFar = car.crashDistance >= HOLESY_CONFIG.traffic.crashMaxSlideDistance;
-      if (impact || car.crashTimer <= 0 || slowEnough || slidTooFar) stopCarAsWreck(car, impact);
+      if (impact || car.crashTimer <= 0 || slowEnough || slidTooFar || hitDistanceCap) stopCarAsWreck(car, impact);
       continue;
     }
 

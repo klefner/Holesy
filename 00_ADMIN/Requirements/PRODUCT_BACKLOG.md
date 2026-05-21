@@ -1361,7 +1361,7 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.25` as the current governed production-test baseline.
+1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.26` as the current governed production-test baseline.
 2. Treat `index.html` as the entry point for the modular package, not the whole game package; the full `/holesy/` folder remains the governed release baseline, while routine GoDaddy uploads should use a changed-files-only delta package when live is already on the previous master.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Keep `QA-006` and `QA-007` in monitor until real long-idle and real-gameplay validation exists.
@@ -1371,4 +1371,4 @@ Backlog items:
 
 The next active engineering task is:
 
-- regression test `Master 16.25` through the modular package URL, then continue `PERF-012` Phase 2 as the next architecture slice.
+- regression test `Master 16.26` through the modular package URL, then continue `PERF-012` Phase 2 as the next architecture slice.
