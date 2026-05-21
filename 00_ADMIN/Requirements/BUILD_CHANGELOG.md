@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.24 - 2026-05-21
+
+Project artifact and GoDaddy delta packaging cleanup.
+
+- Removed the Archive Map spider diagram from the player-facing How to Play popup.
+- Preserved the archive-to-achievement spider diagram as a governed project artifact.
+- Established changed-files-only GoDaddy delta upload packages as the default manual publish artifact when live is already on the previous master.
+
 ## Master 16.5 - 2026-05-19
 
 Grounded skyscraper debris settle fix.

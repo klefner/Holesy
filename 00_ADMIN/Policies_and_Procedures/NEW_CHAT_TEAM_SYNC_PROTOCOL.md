@@ -89,7 +89,7 @@ Do not use `-WriteSnapshot` casually in every chat unless the resulting file wil
 
 No future chat may answer packaging, release, architecture, or backlog questions from memory alone. It must run this protocol or explicitly say it has not done so.
 
-The modular browser-client split is a committed architecture constraint. No future chat may describe `index.html` as the whole game package. `Master 16.23` is the current modular source baseline, with `Master 16.18` completing `PERF-012` Phase 1 and `Master 16.23` opening the separate How to Play field manual through the popup-window pattern. Release/package answers must identify the full modular package contents and route remaining architecture work to the next `PERF-012` phase.
+The modular browser-client split is a committed architecture constraint. No future chat may describe `index.html` as the whole game package. `Master 16.24` is the current modular source baseline, with `Master 16.18` completing `PERF-012` Phase 1 and `Master 16.24` keeping the archive/achievement spider map as a project artifact rather than shipped game UI. Release/package answers must identify the full modular package baseline, provide a changed-files-only GoDaddy delta package by default when the live site is already on the prior master, and route remaining architecture work to the next `PERF-012` phase.
 
 ## Completeness Boundary
 

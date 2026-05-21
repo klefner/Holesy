@@ -6,8 +6,8 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current in-game label is `Master 16.23`
-- `Master 16.23` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current in-game label is `Master 16.24`
+- `Master 16.24` is the current governed source basis and includes:
   - the full approved `Master 15` gameplay baseline
   - the idle lifecycle cleanup candidate lineage from `Master 15.39`
   - the playable Archive / found-document / lore-achievement-buff system from `Master 15.40`
@@ -21,6 +21,7 @@ Current status:
   - the `PERF-012` Phase 1 modular production package migration: primary stylesheet extracted to `css/styles.css`, primary game module extracted to `js/main.js`, and source/release/upload package folders aligned to the committed modular browser-client structure
   - the modular startup hotfix from `Master 16.18` so menu mode selection, Begin, and build notes remain clickable after externalizing the client module
   - the separate How to Play field manual popup from `Master 16.23`, covering core controls, modes, Archive, buffs, save/load, stats, and survival basics
+  - the `Master 16.24` cleanup that keeps the archive/achievement spider map as a project artifact instead of a shipped game screen
 - New candidate work should branch from `Master 16` unless a newer file is explicitly promoted
 - The last approved candidate lineage that became this master was `20_TESTS/Candidate_Builds/Master 15.45 - in-game-build-notes.html`
 

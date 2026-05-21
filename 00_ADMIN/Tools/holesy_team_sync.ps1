@@ -13,7 +13,8 @@ Set-Location $repoRoot
 
 $sourceMasterPath = '10_SOURCE/Masters/Master 16/index.html'
 $releasePackagePath = '40_RELEASE/Website_Publish_Package/holesy/index.html'
-$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.23\holesy\index.html'
+$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.24\holesy\index.html'
+$godaddyDeltaUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.24-from-16.23\holesy'
 $automationPath = 'C:\Users\KentLefner\.codex\automations\daily-qa-audit\automation.toml'
 $auditorPromptPath = '00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md'
 $issueLogPath = '00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md'
@@ -411,7 +412,7 @@ function Get-ProductIntentAssessment {
   $conflicts = New-Object System.Collections.Generic.List[string]
 
   if ($lower -match 'publish|package|upload|godaddy|production|prod') {
-    $conflicts.Add('Release/package request detected: modular browser-client split is a committed architecture constraint; index.html is only the package entry point, and the full modular /holesy/ package must be preserved.')
+    $conflicts.Add('Release/package request detected: modular browser-client split is a committed architecture constraint; index.html is only the package entry point, the full modular /holesy/ package must be preserved as baseline, and routine GoDaddy upload packages should be changed-files-only deltas when live is already on the previous master.')
   }
   if ($lower -match 'modular|architecture|split|js|css|asset') {
     $conflicts.Add('Architecture request detected: must preserve accepted modular browser-client split, read the Master 16.16 to Master 16.17 alignment review and Master 16.18 startup hotfix, and route follow-on package work through PERF-012.')
@@ -479,9 +480,9 @@ if ($releaseFact.Exists -and $uploadFact.Exists) {
   }
 }
 $modularAssets = @(
-  @{ Name = 'how-to-play.html'; Source = '10_SOURCE/Masters/Master 16/how-to-play.html'; Release = '40_RELEASE/Website_Publish_Package/holesy/how-to-play.html'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.23\holesy\how-to-play.html' },
-  @{ Name = 'css/styles.css'; Source = '10_SOURCE/Masters/Master 16/css/styles.css'; Release = '40_RELEASE/Website_Publish_Package/holesy/css/styles.css'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.23\holesy\css\styles.css' },
-  @{ Name = 'js/main.js'; Source = '10_SOURCE/Masters/Master 16/js/main.js'; Release = '40_RELEASE/Website_Publish_Package/holesy/js/main.js'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.23\holesy\js\main.js' }
+  @{ Name = 'how-to-play.html'; Source = '10_SOURCE/Masters/Master 16/how-to-play.html'; Release = '40_RELEASE/Website_Publish_Package/holesy/how-to-play.html'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.24\holesy\how-to-play.html' },
+  @{ Name = 'css/styles.css'; Source = '10_SOURCE/Masters/Master 16/css/styles.css'; Release = '40_RELEASE/Website_Publish_Package/holesy/css/styles.css'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.24\holesy\css\styles.css' },
+  @{ Name = 'js/main.js'; Source = '10_SOURCE/Masters/Master 16/js/main.js'; Release = '40_RELEASE/Website_Publish_Package/holesy/js/main.js'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.24\holesy\js\main.js' }
 )
 foreach ($asset in $modularAssets) {
   $sourceAssetFact = Get-FileFact $asset.Source
@@ -496,6 +497,19 @@ foreach ($asset in $modularAssets) {
     Add-Warning ("Modular asset hash mismatch across source/release/upload package: " + $asset.Name)
     Add-Lines ('- Modular asset `' + $asset.Name + '` hash comparison: WARNING - hashes differ')
   }
+}
+Add-Lines '- GoDaddy manual upload default: changed-files-only delta package when live is already on the previous approved master.'
+if (Test-Path -LiteralPath $godaddyDeltaUploadRoot) {
+  Add-Lines "- Current GoDaddy delta package root: $godaddyDeltaUploadRoot"
+  $deltaFiles = Get-ChildItem -LiteralPath $godaddyDeltaUploadRoot -Recurse -File | ForEach-Object {
+    $_.FullName.Substring($godaddyDeltaUploadRoot.Length).TrimStart('\')
+  }
+  foreach ($deltaFile in $deltaFiles) {
+    Add-Lines ("  - " + $deltaFile)
+  }
+} else {
+  Add-Warning 'Current GoDaddy delta package folder is missing.'
+  Add-Lines "- Current GoDaddy delta package root missing: $godaddyDeltaUploadRoot"
 }
 
 Add-Lines (Section 'Live Site Verification')
@@ -552,7 +566,7 @@ if ($handoff) {
 
 Add-Lines (Section 'Required Next-Chat Declaration')
 Add-Lines 'A new assistant must explicitly state whether the user request conflicts with the manifest, product intent gate, architecture decision, architecture alignment review, issue log, or backlog recommendation before acting.'
-Add-Lines 'The modular browser-client split is a committed architecture constraint. Treat index.html as the package entry point only, require the full modular /holesy/ package for upload, and route follow-on architecture/package alignment through PERF-012.'
+Add-Lines 'The modular browser-client split is a committed architecture constraint. Treat index.html as the package entry point only, keep the full modular /holesy/ package as baseline, provide changed-files-only GoDaddy delta packages by default, and route follow-on architecture/package alignment through PERF-012.'
 
 Add-Lines (Section 'Confidence Footer')
 if ($script:ConfidenceFailures.Count -gt 0) {

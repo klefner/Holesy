@@ -48,4 +48,8 @@ For every release/package/upload answer, the final answer must say both:
 
 Never describe a bundled single-file package as the project direction unless the architecture decision has been explicitly changed.
 
-Do not recommend a single-file production upload as the normal path. Production upload requires the full modular package contents.
+Do not recommend a single-file production upload as the normal path. The governed release baseline is the full modular package.
+
+For manual GoDaddy updates, the normal immediate upload artifact is now a changed-files-only delta package when the live site is already on the previous approved master. The delta package must preserve the modular relative paths under `/holesy/`. If the live site is drifted, missing older files, or being rebuilt, state that the full modular package is required for that upload instead.
+
+If a master removes a file, call out the removed live path explicitly. Uploading a delta package cannot delete an old live file by itself.

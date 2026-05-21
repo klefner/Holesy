@@ -4,9 +4,19 @@
 
 This package is the website-ready build for the live `/holesy/` directory.
 
-## Current Modular Package To Upload
+## Current Modular Release Package
 
-- upload the full contents of `holesy/`
+The governed release package is the complete modular `holesy/` folder. Keep it intact as the source for clean installs, rollback, and package integrity checks.
+
+For routine manual GoDaddy updates, provide a changed-files-only delta package by default. The delta package must preserve the same relative paths under `/holesy/` and should include only files changed since the previous approved master.
+
+Current manual delta package:
+
+- `C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.24-from-16.23\holesy\`
+
+Current full resync package:
+
+- `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.24\holesy\`
 
 Important architecture note:
 
@@ -29,10 +39,10 @@ This package was generated from:
 - `js/main.js` contains the primary game module.
 - The bottom-left build badge opens in-game build notes for future patch-note publication.
 - This package includes the promoted lore Archive, found-document drops, achievement buffs, Archive music, starter Field Patterns, and the end-screen/feedback cleanup from the `Master 15.39` through `Master 15.45` candidate lineage.
-- Current patch label is `Master 16.23`.
+- Current patch label is `Master 16.24`.
 - The current package also includes the `Master 16.x` Endless Waves line through player-death stop handling, Endless save/load, rival respawn behavior, buff cooldown tuning, rival-devour growth tempering, and Endless growth reset/tuning fixes.
 - The current package completes `PERF-012` Phase 1 by aligning the source, release, and upload package folders to the committed modular browser-client structure.
-- `Master 16.23` opens the separate How to Play field manual through the same explicit popup-window pattern used by the stats surface.
+- `Master 16.24` keeps the archive/achievement spider map as a project artifact only and removes it from the player-facing game package.
 
 ## Publish Rule
 
@@ -42,9 +52,10 @@ Upload this package file to:
 
 using the GoDaddy File Browser.
 
-Recommended upload structure:
+Recommended manual GoDaddy upload structure:
 
-- upload the contents of the local `holesy/` folder into the live GoDaddy `/holesy/` directory
+- if the live site is already on the previous approved master, upload only the changed-files delta package into the matching live GoDaddy `/holesy/` paths
+- if the live site is missing older modular files, badly drifted, or being rebuilt, upload the full governed `holesy/` release package once to resync it
 - the live `/holesy/` directory should contain `index.html`, `css/`, `js/`, `assets/`, and `data/` at its root
 
 ## Important
@@ -53,3 +64,4 @@ Recommended upload structure:
 - Candidate builds should not replace it unless explicitly approved
 - When a newer master is approved, regenerate this package from the new master
 - Future packages must preserve the modular structure captured in the architecture decision; a single bundled file is no longer the normal publish shape
+- Delta packages are an upload convenience only; they do not replace the full modular release package as the governed baseline
