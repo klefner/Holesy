@@ -13,8 +13,8 @@ Set-Location $repoRoot
 
 $sourceMasterPath = '10_SOURCE/Masters/Master 16/index.html'
 $releasePackagePath = '40_RELEASE/Website_Publish_Package/holesy/index.html'
-$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.26\holesy\index.html'
-$godaddyDeltaUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.26-from-16.25\holesy'
+$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.27\holesy\index.html'
+$godaddyDeltaUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.27-from-16.26\holesy'
 $automationPath = 'C:\Users\KentLefner\.codex\automations\daily-qa-audit\automation.toml'
 $auditorPromptPath = '00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md'
 $issueLogPath = '00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md'
@@ -480,10 +480,10 @@ if ($releaseFact.Exists -and $uploadFact.Exists) {
   }
 }
 $modularAssets = @(
-  @{ Name = 'how-to-play.html'; Source = '10_SOURCE/Masters/Master 16/how-to-play.html'; Release = '40_RELEASE/Website_Publish_Package/holesy/how-to-play.html'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.26\holesy\how-to-play.html' },
-  @{ Name = 'css/styles.css'; Source = '10_SOURCE/Masters/Master 16/css/styles.css'; Release = '40_RELEASE/Website_Publish_Package/holesy/css/styles.css'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.26\holesy\css\styles.css' },
-  @{ Name = 'js/main.js'; Source = '10_SOURCE/Masters/Master 16/js/main.js'; Release = '40_RELEASE/Website_Publish_Package/holesy/js/main.js'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.26\holesy\js\main.js' },
-  @{ Name = 'assets/images/how-to-play-game-summary.svg'; Source = '10_SOURCE/Masters/Master 16/assets/images/how-to-play-game-summary.svg'; Release = '40_RELEASE/Website_Publish_Package/holesy/assets/images/how-to-play-game-summary.svg'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.26\holesy\assets\images\how-to-play-game-summary.svg' }
+  @{ Name = 'how-to-play.html'; Source = '10_SOURCE/Masters/Master 16/how-to-play.html'; Release = '40_RELEASE/Website_Publish_Package/holesy/how-to-play.html'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.27\holesy\how-to-play.html' },
+  @{ Name = 'css/styles.css'; Source = '10_SOURCE/Masters/Master 16/css/styles.css'; Release = '40_RELEASE/Website_Publish_Package/holesy/css/styles.css'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.27\holesy\css\styles.css' },
+  @{ Name = 'js/main.js'; Source = '10_SOURCE/Masters/Master 16/js/main.js'; Release = '40_RELEASE/Website_Publish_Package/holesy/js/main.js'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.27\holesy\js\main.js' },
+  @{ Name = 'assets/images/how-to-play-game-summary.svg'; Source = '10_SOURCE/Masters/Master 16/assets/images/how-to-play-game-summary.svg'; Release = '40_RELEASE/Website_Publish_Package/holesy/assets/images/how-to-play-game-summary.svg'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.27\holesy\assets\images\how-to-play-game-summary.svg' }
 )
 foreach ($asset in $modularAssets) {
   $sourceAssetFact = Get-FileFact $asset.Source

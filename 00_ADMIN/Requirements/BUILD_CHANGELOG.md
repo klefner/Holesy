@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.27 - 2026-05-21
+
+Mobile menu actions and post-soldier growth repair.
+
+- Bound Stats, Archive, How to Play, and Load Endless through the same touch-safe menu-action button handler.
+- Made the How to Play control use the same explicit menu-action button styling as the neighboring menu controls.
+- Changed soldier damage from hidden negative-growth debt to a lowered growth baseline, so devouring objects visibly grows the hole after being shot.
+
 ## Master 16.26 - 2026-05-21
 
 How to Play graphic restoration and hard traffic skid cap.

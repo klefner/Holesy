@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 26;
+const BUILD_SUB = 27;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1049,6 +1049,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.27',
+    date: '2026-05-21',
+    summary: 'Mobile menu actions and post-soldier growth repair.',
+    changes: [
+      'Bound menu action controls through the same touch-safe activation path as desktop click handling.',
+      'Made the How to Play control use the same explicit menu-action button class as Stats, Archive, and Load Endless.',
+      'Changed soldier damage from hidden negative-growth debt to a lowered growth baseline, so devouring objects visibly grows the hole after being shot.',
+    ],
+  },
   {
     label: 'Master 16.26',
     date: '2026-05-21',
@@ -2224,11 +2234,16 @@ const MAX_RADIUS_REF = HOLESY_CONFIG.growth.maxRadiusRef;
 const ENDLESS_RADIUS_CAP_BOARD_SHARE = 0.5;
 
 function scoreForGrowth(h) {
-  return Math.max(0, h.score || 0);
+  return Math.max(0, (h.score || 0) - (h.sizeResetScoreFloor || 0));
 }
 
 function baseRadiusFromScore(h) {
   return MIN_RADIUS + GROWTH_K * Math.log(1 + scoreForGrowth(h) / GROWTH_SCALE);
+}
+
+function growthScoreForBaseRadius(radius) {
+  const normalized = Math.max(0, (radius - MIN_RADIUS) / GROWTH_K);
+  return Math.max(0, GROWTH_SCALE * (Math.exp(normalized) - 1));
 }
 
 function getEndlessRadiusCap() {
@@ -4150,16 +4165,26 @@ document.addEventListener('click', function(event) {
   statsWindowRef.document.close();
 }
 
+function openGamePopup(url, name, features) {
+  return isTouchDevice ? window.open(url, name) : window.open(url, name, features);
+}
+
 function openStatsWindow() {
-  statsWindowRef = window.open('', 'holesyStatsWindow', 'width=720,height=860');
-  if (!statsWindowRef) return;
+  statsWindowRef = openGamePopup('', 'holesyStatsWindow', 'width=720,height=860');
+  if (!statsWindowRef) {
+    showEventBanner('Stats popup was blocked. Allow popups for this site to see the record room.', 4200);
+    return;
+  }
   renderStatsWindow();
   statsWindowRef.focus();
 }
 
 function openHowToPlayWindow() {
-  const manualWindow = window.open('how-to-play.html', 'holesyHowToPlayWindow', 'width=920,height=760');
-  if (!manualWindow) return;
+  const manualWindow = openGamePopup('how-to-play.html', 'holesyHowToPlayWindow', 'width=920,height=760');
+  if (!manualWindow) {
+    window.location.href = 'how-to-play.html';
+    return;
+  }
   manualWindow.focus();
 }
 
@@ -7456,10 +7481,29 @@ difficultySelect.addEventListener('change', () => {
   setDifficulty(difficultySelect.value);
 });
 
-if (statsWindowBtn) statsWindowBtn.addEventListener('click', openStatsWindow);
-if (loreArchiveBtn) loreArchiveBtn.addEventListener('click', () => openLoreArchive());
-if (howToPlayBtn) howToPlayBtn.addEventListener('click', openHowToPlayWindow);
-if (loadEndlessSaveBtn) loadEndlessSaveBtn.addEventListener('click', () => loadEndlessGame());
+function bindMenuActionButton(button, action) {
+  if (!button) return;
+  let lastActivation = 0;
+  const activate = (event) => {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    if (button.disabled) return;
+    const now = performance.now();
+    if (now - lastActivation < 450) return;
+    lastActivation = now;
+    action();
+  };
+  button.addEventListener('click', activate);
+  button.addEventListener('touchend', activate, { passive: false });
+  button.addEventListener('pointerup', activate);
+}
+
+bindMenuActionButton(statsWindowBtn, openStatsWindow);
+bindMenuActionButton(loreArchiveBtn, () => openLoreArchive());
+bindMenuActionButton(howToPlayBtn, openHowToPlayWindow);
+bindMenuActionButton(loadEndlessSaveBtn, () => loadEndlessGame());
 if (loreCloseBtn) loreCloseBtn.addEventListener('click', closeLoreArchive);
 if (buildVersionBtn) buildVersionBtn.addEventListener('click', openBuildNotes);
 if (buildNotesCloseBtn) buildNotesCloseBtn.addEventListener('click', closeBuildNotes);
@@ -9356,14 +9400,25 @@ function updateSoldiers(dt) {
 // ---- Apply shot damage to a hole ----
 function applyShotDamage(h) {
   if (!h.alive) return;
-  // Reduce bonusRadius first; if exhausted, reduce base by creating/growing a damage offset.
-  // Since radiusFromScore(h) uses a log formula plus bonusRadius, we can just make
-  // bonusRadius go negative — the radius function clamps via Math.max below.
   const baseDmg = h.isPlayer ? SHOT_DAMAGE_PLAYER : SHOT_DAMAGE_AI;
   const shotRadiusDamage = baseDmg * currentSoldierDamageMult * getHoleBulletDamageMultiplier(h);
-  const baseRadius = baseRadiusFromScore(h);
-  const minimumSurvivableBonus = (MIN_HOLE_RADIUS - 0.01) - baseRadius;
-  h.bonusRadius = Math.max((h.bonusRadius || 0) - shotRadiusDamage, minimumSurvivableBonus);
+  let remainingDamage = shotRadiusDamage;
+  const positiveBonus = Math.max(0, h.bonusRadius || 0);
+  if (positiveBonus > 0) {
+    const absorbedByBonus = Math.min(positiveBonus, remainingDamage);
+    h.bonusRadius = positiveBonus - absorbedByBonus;
+    remainingDamage -= absorbedByBonus;
+  } else if ((h.bonusRadius || 0) < 0) {
+    h.bonusRadius = 0;
+  }
+  if (remainingDamage > 0) {
+    const currentGrowthScore = scoreForGrowth(h);
+    const currentBaseRadius = baseRadiusFromScore(h);
+    const desiredBaseRadius = Math.max(MIN_HOLE_RADIUS - 0.01, currentBaseRadius - remainingDamage);
+    const desiredGrowthScore = growthScoreForBaseRadius(desiredBaseRadius);
+    const growthScoreBurn = Math.max(0, currentGrowthScore - desiredGrowthScore);
+    h.sizeResetScoreFloor = Math.min(h.score || 0, (h.sizeResetScoreFloor || 0) + growthScoreBurn);
+  }
   h.recentSoldierDamageRadius = Math.min(3, (h.recentSoldierDamageRadius || 0) + shotRadiusDamage);
   h.targetRadius = Math.max(MIN_HOLE_RADIUS - 0.01, radiusFromScore(h));
 
