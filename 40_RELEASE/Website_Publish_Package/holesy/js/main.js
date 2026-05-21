@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 20;
+const BUILD_SUB = 21;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1049,6 +1049,15 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.21',
+    date: '2026-05-21',
+    summary: 'How to Play opens on a visual Game Summary.',
+    changes: [
+      'Added a top Game Summary topic to the How to Play popup.',
+      'Added a modular summary graphic that explains the core loop: move, eat, grow, and avoid enemies.',
+    ],
+  },
   {
     label: 'Master 16.20',
     date: '2026-05-21',

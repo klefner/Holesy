@@ -607,7 +607,7 @@ Notes:
   - source stylesheet: `10_SOURCE/Masters/Master 16/css/styles.css`
   - source game module: `10_SOURCE/Masters/Master 16/js/main.js`
   - release package mirrors that structure under `40_RELEASE/Website_Publish_Package/holesy/`
-  - upload convenience folder mirrors that structure under `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.20\holesy\`
+  - upload convenience folder mirrors that structure under `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.21\holesy\`
 - likely first production-scope extraction candidates are styles, build metadata, lore/document data, reward/quest tables, or non-loop UI data
 - do not combine this migration with physics, Endless balancing, or new reward systems in the same implementation slice
 - this item exists because future content growth will become painful and risky if the project keeps stuffing all systems into one HTML file
@@ -1361,7 +1361,7 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.20` as the current governed production-test baseline.
+1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.21` as the current governed production-test baseline.
 2. Treat `index.html` as the entry point for the modular package, not the whole game package; production upload requires the full `/holesy/` folder contents.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Keep `QA-006` and `QA-007` in monitor until real long-idle and real-gameplay validation exists.
@@ -1371,5 +1371,5 @@ Backlog items:
 
 The next active engineering task is:
 
-- regression test `Master 16.20` through the modular package URL, then continue `PERF-012` Phase 2 as the next architecture slice.
+- regression test `Master 16.21` through the modular package URL, then continue `PERF-012` Phase 2 as the next architecture slice.
 

@@ -68,7 +68,7 @@
     overflow: auto;
   }
   .manual-frame {
-    max-width: 760px;
+    max-width: 860px;
     min-height: calc(100vh - 52px);
     padding: 18px;
     border: 1px solid rgba(255,255,255,0.12);
@@ -101,6 +101,18 @@
     font-size: 13px;
     line-height: 1.45;
   }
+  .summary-graphic-wrap {
+    margin: 0;
+    padding: 0;
+  }
+  .summary-graphic {
+    display: block;
+    width: min(100%, 760px);
+    height: auto;
+    margin: 0 auto;
+    border-radius: 8px;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+  }
   @media (max-width: 720px) {
     .manual-shell { display: block; }
     .manual-index {
@@ -124,7 +136,8 @@
     <nav class="manual-index" aria-label="How to Play topics">
       <div class="manual-kicker">Aldine Field Manual</div>
       <h1 class="manual-title">How to Play</h1>
-      <div class="manual-build">Master 16.20</div>
+      <div class="manual-build">Master 16.21</div>
+      <a href="#summary">Game Summary</a>
       <a href="#hunger">The Hunger</a>
       <a href="#controls">Controls</a>
       <a href="#feeding">Eating and Growing</a>
@@ -141,6 +154,13 @@
     <main class="manual-reader">
       <div class="manual-frame">
         <p class="manual-intro">The city calls it a game because that sounds safer than an incident report. Learn the rules, then eat the evidence.</p>
+
+        <section id="summary" class="help-section">
+          <h2>Game Summary</h2>
+          <figure class="summary-graphic-wrap">
+            <img class="summary-graphic" src="assets/images/how-to-play-game-summary.svg" alt="How to Play Downtown Devour: move as a hole, eat objects, grow bigger, and avoid enemies." />
+          </figure>
+        </section>
 
         <section id="hunger" class="help-section">
           <h2>The Hunger</h2>
