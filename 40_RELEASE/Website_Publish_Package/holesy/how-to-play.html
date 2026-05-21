@@ -113,6 +113,14 @@
     border-radius: 8px;
     box-shadow: 0 16px 36px rgba(0,0,0,0.28);
   }
+  .archive-spider {
+    display: block;
+    width: min(100%, 820px);
+    height: auto;
+    margin: 0 auto;
+    border-radius: 8px;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+  }
   @media (max-width: 720px) {
     .manual-shell { display: block; }
     .manual-index {
@@ -136,7 +144,7 @@
     <nav class="manual-index" aria-label="How to Play topics">
       <div class="manual-kicker">Aldine Field Manual</div>
       <h1 class="manual-title">How to Play</h1>
-      <div class="manual-build">Master 16.21</div>
+      <div class="manual-build">Master 16.22</div>
       <a href="#summary">Game Summary</a>
       <a href="#hunger">The Hunger</a>
       <a href="#controls">Controls</a>
@@ -146,6 +154,7 @@
       <a href="#difficulty">Difficulty</a>
       <a href="#winning">Winning</a>
       <a href="#archives">Archives</a>
+      <a href="#archive-map">Archive Map</a>
       <a href="#buffs">Field Patterns</a>
       <a href="#save-load">Save and Load</a>
       <a href="#stats">Stats</a>
@@ -217,6 +226,12 @@
           <p>Win, or safely withdraw from Endless while leading, for a rare chance to recover one document.</p>
           <p>If you lose, the file is gone. No document drops on losses.</p>
           <p>Some documents hint at secret buffs and achievements. Read the strange details, then try them in the city.</p>
+        </section>
+
+        <section id="archive-map" class="help-section">
+          <h2>Archive Map</h2>
+          <p>The Archive groups recovered files into Witnesses, The Pattern, and Origins. Gold links mark files that point toward a known field pattern, achievement, or buff.</p>
+          <img class="archive-spider" src="assets/images/archive-achievement-spider.svg" alt="Spider diagram showing archive groups, their documents, and linked achievements or buffs." />
         </section>
 
         <section id="buffs" class="help-section">
