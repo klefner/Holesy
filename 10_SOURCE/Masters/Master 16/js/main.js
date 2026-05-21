@@ -1,7 +1,23 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 17;
+const BUILD_SUB = 18;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
+
+function markBootStep(step) {
+  try {
+    document.documentElement.setAttribute('data-holesy-boot', step);
+  } catch (e) {}
+}
+
+function markBootError(message) {
+  try {
+    document.documentElement.setAttribute('data-holesy-boot-error', String(message || 'Unknown startup error'));
+  } catch (e) {}
+}
+
+window.addEventListener('error', (event) => markBootError(event.message));
+window.addEventListener('unhandledrejection', (event) => markBootError(event.reason && event.reason.message ? event.reason.message : event.reason));
+markBootStep('module-start');
 
 const DIFFICULTY_PROFILES = Object.freeze({
   normal: Object.freeze({
@@ -1034,6 +1050,16 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.18',
+    date: '2026-05-20',
+    summary: 'Modular menu startup hotfix.',
+    changes: [
+      'Removed custom global/window state writes that could halt modular startup before menu listeners were wired.',
+      'Kept music and stats-reset state inside the module so Begin, mode selection, and build notes remain clickable.',
+      'Added cache-busted modular asset references for the source and release package.',
+    ],
+  },
+  {
     label: 'Master 16.16',
     date: '2026-05-20',
     summary: 'Saved Endless visual restore and soldier-damage recovery hotfix.',
@@ -1263,10 +1289,12 @@ const BUILD_CHANGELOG = Object.freeze([
   },
 ]);
 const buildVersionBtn = document.getElementById('build-version');
+const pauseVersionLabel = document.getElementById('pause-version-label');
 buildVersionBtn.textContent = BUILD_LABEL;
 if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;
 
 const canvas = document.getElementById('game');
+markBootStep('before-renderer');
 const renderer = new THREE.WebGLRenderer({
   canvas,
   antialias: HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.antialias,
@@ -1277,6 +1305,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowsEnabled;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.setClearColor(0x87ceeb);
+markBootStep('after-renderer');
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x9ec7e8, 80, HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.fogFar);
@@ -2162,7 +2191,7 @@ function tierLabel(radius) {
 
 const holes = []; // all holes (player at index 0)
 let windStreakTexture = null;
-globalThis.__holesyMusic = null;
+let holesyMusicState = null;
 
 function getWindStreakTexture() {
   if (windStreakTexture) return windStreakTexture;
@@ -2356,7 +2385,7 @@ function updateHoleVisual(h) {
   h.labelSprite.position.y = Math.max(2.5, h.radius * 1.5 + 1);
 
   if (h.vortexArcGroup && h.vortexArcs) {
-    const musicState = globalThis.__holesyMusic;
+    const musicState = holesyMusicState;
     const visual = (h.isPlayer && musicState && musicState.holeWind && musicState.holeWind.visualState) ? musicState.holeWind.visualState : null;
     const sizeFactor = visual ? visual.sizeFactor : 0;
     const speedFactor = visual ? visual.speedFactor : 0;
@@ -2774,7 +2803,6 @@ const pauseOverlay = document.getElementById('pause-overlay');
 const pauseResumeBtn = document.getElementById('pause-resume-btn');
 const pauseSaveBtn = document.getElementById('pause-save-btn');
 const pauseExitBtn = document.getElementById('pause-exit-btn');
-const pauseVersionLabel = document.getElementById('pause-version-label');
 eventBannerBackdrop.style.background = `rgba(6, 9, 18, ${HOLESY_CONFIG.eventMessaging.backdropOpacity})`;
 
 // LMS choice modal — shown when timer hits zero if player is still alive
@@ -3222,7 +3250,7 @@ function selectedModeLabel() {
 // ostinato, low brass stabs, melodic lead, and timpani hits.
 // Loops indefinitely while the title overlay is visible.
 
-const music = globalThis.__holesyMusic = {
+const music = holesyMusicState = {
   ctx: null,
   masterGain: null,
   ambienceGain: null,
@@ -3250,6 +3278,7 @@ const music = globalThis.__holesyMusic = {
   duckedUntil: 0,
   holeWind: null,
 };
+markBootStep('after-music-state');
 
 // Musical constants
 const BPM = 128;
@@ -4035,7 +4064,7 @@ ${markup}
 <script>
 document.addEventListener('click', function(event) {
   if (!event.target.closest('[data-stats-reset]')) return;
-  if (window.opener && window.opener.__holesyResetGameStats) window.opener.__holesyResetGameStats();
+  if (window.opener) window.opener.postMessage({ type: 'holesy:reset-stats' }, '*');
 });
 <\/script>
 </body>
@@ -4054,10 +4083,16 @@ function refreshStatsWindow() {
   if (statsWindowRef && !statsWindowRef.closed) renderStatsWindow();
 }
 
-window.__holesyResetGameStats = function resetStatsFromWindow() {
+function resetStatsFromStatsWindow() {
   gameStats = resetGameStats();
   refreshStatsWindow();
-};
+}
+
+window.addEventListener('message', (event) => {
+  if (!event.data || event.data.type !== 'holesy:reset-stats') return;
+  if (statsWindowRef && event.source !== statsWindowRef) return;
+  resetStatsFromStatsWindow();
+});
 
 function startTrackedGameRun() {
   activeGameRun = {
@@ -7331,6 +7366,7 @@ loreModal.addEventListener('click', (e) => {
 buildNotesModal.addEventListener('click', (e) => {
   if (e.target === buildNotesModal) closeBuildNotes();
 });
+markBootStep('menu-listeners-ready');
 loreDocListEl.addEventListener('click', (e) => {
   const btn = e.target.closest('.lore-doc-btn');
   if (!btn) return;

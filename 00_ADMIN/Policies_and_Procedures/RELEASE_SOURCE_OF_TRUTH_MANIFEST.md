@@ -15,16 +15,16 @@ Before any release packaging, live upload, master promotion, backlog sequencing,
 | Stable `main` | stale relative to active branch | `main` is not the current gameplay source of truth until an explicit PR/merge updates it. |
 | Current approved source master | `10_SOURCE/Masters/Master 16/` | Governed modular source package for the current playable build line. |
 | Current source entry point | `10_SOURCE/Masters/Master 16/index.html` | Browser entry point for the modular source package. |
-| Current in-game build label | `Master 16.17` | Latest current patch label inside the approved Master 16 source package. |
+| Current in-game build label | `Master 16.18` | Latest current patch label inside the approved Master 16 source package. |
 | Current release package | `40_RELEASE/Website_Publish_Package/holesy/` | Current GoDaddy upload package; now follows the modular browser-client folder shape. |
-| Current GoDaddy upload folder | `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\` | Convenience copy for manual upload; not itself the source of truth. |
+| Current GoDaddy upload folder | `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.18\holesy\` | Convenience copy for manual upload; not itself the source of truth. |
 | Live site | `https://ptbooksinc.com/holesy/` | Must be verified separately after upload; do not infer live state from local package state. |
 | Accepted architecture target | modular browser client split | The committed target is not a single-file game. See `ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`. |
 | Current architecture alignment review | `00_ADMIN/Reviews_and_Reports/ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md` | Current gap analysis and required migration plan for `PERF-012`. |
 
 ## Non-Negotiable Distinctions
 
-- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target.
+- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.18` is the current modular startup hotfix on that architecture line.
 - The production package must preserve the modular folder shape unless an emergency temporary bundled hotfix is explicitly approved and documented.
 - The modular browser-client split is a committed architecture constraint, not an optional future preference.
 - A local file existing is not the same as being branch-visible on GitHub.

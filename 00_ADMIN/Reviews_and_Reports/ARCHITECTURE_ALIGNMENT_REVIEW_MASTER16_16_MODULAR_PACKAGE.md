@@ -10,6 +10,8 @@ Holesy is committed to the accepted modular browser-client architecture. This re
 
 `Master 16.17` completed the Phase 1 correction: the governed source, release package, and upload convenience folder now use the modular package shape with `index.html`, `css/styles.css`, `js/main.js`, `assets/`, and `data/`.
 
+`Master 16.18` preserves that package shape and fixes the first startup regression found during regression testing: the menu rendered, but module execution halted before mode-selection and Begin listeners were wired.
+
 `index.html` is now the package entry point only. It must not be described as the entire game package or as a return to single-file architecture.
 
 ## Master 16.17 Update
@@ -21,7 +23,13 @@ Phase 1 is aligned:
 - Source stylesheet: `10_SOURCE/Masters/Master 16/css/styles.css`
 - Source game module: `10_SOURCE/Masters/Master 16/js/main.js`
 - Release package: `40_RELEASE/Website_Publish_Package/holesy/`
-- Upload convenience package: `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\`
+- Upload convenience package: `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.18\holesy\`
+
+Master 16.18 hotfix evidence:
+
+- corrected DOM initialization order for the pause-version label
+- removed custom global/window state writes from module startup
+- verified Endless mode selection and Begin via the modular package URL
 
 Remaining architecture work:
 

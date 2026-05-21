@@ -13,7 +13,7 @@ Set-Location $repoRoot
 
 $sourceMasterPath = '10_SOURCE/Masters/Master 16/index.html'
 $releasePackagePath = '40_RELEASE/Website_Publish_Package/holesy/index.html'
-$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\index.html'
+$godaddyUploadPath = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.18\holesy\index.html'
 $automationPath = 'C:\Users\KentLefner\.codex\automations\daily-qa-audit\automation.toml'
 $auditorPromptPath = '00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md'
 $issueLogPath = '00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md'
@@ -414,7 +414,7 @@ function Get-ProductIntentAssessment {
     $conflicts.Add('Release/package request detected: modular browser-client split is a committed architecture constraint; index.html is only the package entry point, and the full modular /holesy/ package must be preserved.')
   }
   if ($lower -match 'modular|architecture|split|js|css|asset') {
-    $conflicts.Add('Architecture request detected: must preserve accepted modular browser-client split, read the Master 16.16 to Master 16.17 alignment review, and route follow-on package work through PERF-012.')
+    $conflicts.Add('Architecture request detected: must preserve accepted modular browser-client split, read the Master 16.16 to Master 16.17 alignment review and Master 16.18 startup hotfix, and route follow-on package work through PERF-012.')
   }
   if ($lower -match 'defect|bug|fix|gameplay|feature|build|implement') {
     $conflicts.Add('Implementation request detected: must check issue-log monitors and current backlog recommendation before coding.')
@@ -479,8 +479,8 @@ if ($releaseFact.Exists -and $uploadFact.Exists) {
   }
 }
 $modularAssets = @(
-  @{ Name = 'css/styles.css'; Source = '10_SOURCE/Masters/Master 16/css/styles.css'; Release = '40_RELEASE/Website_Publish_Package/holesy/css/styles.css'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\css\styles.css' },
-  @{ Name = 'js/main.js'; Source = '10_SOURCE/Masters/Master 16/js/main.js'; Release = '40_RELEASE/Website_Publish_Package/holesy/js/main.js'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.17\holesy\js\main.js' }
+  @{ Name = 'css/styles.css'; Source = '10_SOURCE/Masters/Master 16/css/styles.css'; Release = '40_RELEASE/Website_Publish_Package/holesy/css/styles.css'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.18\holesy\css\styles.css' },
+  @{ Name = 'js/main.js'; Source = '10_SOURCE/Masters/Master 16/js/main.js'; Release = '40_RELEASE/Website_Publish_Package/holesy/js/main.js'; Upload = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.18\holesy\js\main.js' }
 )
 foreach ($asset in $modularAssets) {
   $sourceAssetFact = Get-FileFact $asset.Source
@@ -577,3 +577,4 @@ if ($WriteSnapshot) {
   Write-Host ''
   Write-Host "Snapshot written to $outPath"
 }
+
