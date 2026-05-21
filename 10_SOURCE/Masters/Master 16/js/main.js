@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 24;
+const BUILD_SUB = 25;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1049,6 +1049,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.25',
+    date: '2026-05-21',
+    summary: 'How to Play upload dependency fix.',
+    changes: [
+      'Made all menu action controls use the same button styling path.',
+      'Expanded the GoDaddy delta package to include missing unchanged dependencies when live needs them.',
+      'Included the How to Play summary image in the upload delta so the field manual renders correctly on production.',
+    ],
+  },
   {
     label: 'Master 16.24',
     date: '2026-05-21',

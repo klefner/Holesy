@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.25 - 2026-05-21
+
+How to Play upload dependency fix.
+
+- Made all menu action controls use the same button styling path.
+- Included the How to Play summary image in the GoDaddy delta package because the live site was missing that dependency.
+- Clarified that delta packages may include unchanged dependencies when live upload testing proves the server is missing them.
+
 ## Master 16.24 - 2026-05-21
 
 Project artifact and GoDaddy delta packaging cleanup.

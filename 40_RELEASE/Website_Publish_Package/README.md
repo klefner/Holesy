@@ -12,11 +12,11 @@ For routine manual GoDaddy updates, provide a changed-files-only delta package b
 
 Current manual delta package:
 
-- `C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.24-from-16.23\holesy\`
+- `C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.25-from-16.24\holesy\`
 
 Current full resync package:
 
-- `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.24\holesy\`
+- `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.25\holesy\`
 
 Important architecture note:
 
@@ -39,10 +39,11 @@ This package was generated from:
 - `js/main.js` contains the primary game module.
 - The bottom-left build badge opens in-game build notes for future patch-note publication.
 - This package includes the promoted lore Archive, found-document drops, achievement buffs, Archive music, starter Field Patterns, and the end-screen/feedback cleanup from the `Master 15.39` through `Master 15.45` candidate lineage.
-- Current patch label is `Master 16.24`.
+- Current patch label is `Master 16.25`.
 - The current package also includes the `Master 16.x` Endless Waves line through player-death stop handling, Endless save/load, rival respawn behavior, buff cooldown tuning, rival-devour growth tempering, and Endless growth reset/tuning fixes.
 - The current package completes `PERF-012` Phase 1 by aligning the source, release, and upload package folders to the committed modular browser-client structure.
 - `Master 16.24` keeps the archive/achievement spider map as a project artifact only and removes it from the player-facing game package.
+- `Master 16.25` fixes the How to Play menu button styling and includes the missing How to Play summary image in the manual GoDaddy delta package.
 
 ## Publish Rule
 

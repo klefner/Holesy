@@ -308,10 +308,9 @@
     justify-content: center;
     margin: 8px 0 2px 0;
   }
-  #stats-window-btn,
-  #lore-archive-btn,
-  #how-to-play-btn,
-  #load-endless-save-btn {
+  #menu-action-row button {
+    appearance: none;
+    font-family: inherit;
     margin: 8px 0 2px 0;
     padding: 8px 13px;
     border: 1px solid rgba(255,255,255,0.16);
@@ -326,10 +325,7 @@
     text-transform: uppercase;
     cursor: pointer;
   }
-  #stats-window-btn:hover,
-  #lore-archive-btn:hover,
-  #how-to-play-btn:hover,
-  #load-endless-save-btn:hover:not(:disabled) {
+  #menu-action-row button:hover:not(:disabled) {
     border-color: rgba(128,255,245,0.38);
     color: #fff;
   }
