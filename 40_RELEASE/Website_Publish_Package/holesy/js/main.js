@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 19;
+const BUILD_SUB = 20;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1049,6 +1049,15 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.20',
+    date: '2026-05-21',
+    summary: 'How to Play now opens with the popup-window pattern.',
+    changes: [
+      'Changed the How to Play menu control from a plain new-tab link to an explicit popup window opener.',
+      'Kept the field manual as its own modular page while matching the Stats window launch behavior.',
+    ],
+  },
   {
     label: 'Master 16.19',
     date: '2026-05-20',
@@ -2828,6 +2837,7 @@ const difficultySelect = document.getElementById('difficulty-select');
 const difficultyDesc = document.getElementById('difficulty-desc');
 const statsWindowBtn = document.getElementById('stats-window-btn');
 const loreArchiveBtn = document.getElementById('lore-archive-btn');
+const howToPlayBtn = document.getElementById('how-to-play-btn');
 const loadEndlessSaveBtn = document.getElementById('load-endless-save-btn');
 const loreModal = document.getElementById('lore-modal');
 const loreCloseBtn = document.getElementById('lore-close-btn');
@@ -4087,6 +4097,12 @@ function openStatsWindow() {
   if (!statsWindowRef) return;
   renderStatsWindow();
   statsWindowRef.focus();
+}
+
+function openHowToPlayWindow() {
+  const manualWindow = window.open('how-to-play.html', 'holesyHowToPlayWindow', 'width=920,height=760');
+  if (!manualWindow) return;
+  manualWindow.focus();
 }
 
 function refreshStatsWindow() {
@@ -7366,6 +7382,7 @@ difficultySelect.addEventListener('change', () => {
 
 if (statsWindowBtn) statsWindowBtn.addEventListener('click', openStatsWindow);
 if (loreArchiveBtn) loreArchiveBtn.addEventListener('click', () => openLoreArchive());
+if (howToPlayBtn) howToPlayBtn.addEventListener('click', openHowToPlayWindow);
 if (loadEndlessSaveBtn) loadEndlessSaveBtn.addEventListener('click', () => loadEndlessGame());
 if (loreCloseBtn) loreCloseBtn.addEventListener('click', closeLoreArchive);
 if (buildVersionBtn) buildVersionBtn.addEventListener('click', openBuildNotes);
