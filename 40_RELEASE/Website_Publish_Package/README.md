@@ -29,10 +29,10 @@ This package was generated from:
 - `js/main.js` contains the primary game module.
 - The bottom-left build badge opens in-game build notes for future patch-note publication.
 - This package includes the promoted lore Archive, found-document drops, achievement buffs, Archive music, starter Field Patterns, and the end-screen/feedback cleanup from the `Master 15.39` through `Master 15.45` candidate lineage.
-- Current patch label is `Master 16.18`.
+- Current patch label is `Master 16.19`.
 - The current package also includes the `Master 16.x` Endless Waves line through player-death stop handling, Endless save/load, rival respawn behavior, buff cooldown tuning, rival-devour growth tempering, and Endless growth reset/tuning fixes.
 - The current package completes `PERF-012` Phase 1 by aligning the source, release, and upload package folders to the committed modular browser-client structure.
-- `Master 16.18` fixes the modular startup regression where menu event listeners did not wire after the script halted during initialization.
+- `Master 16.19` adds the separate How to Play field manual window on top of the `Master 16.18` modular startup hotfix.
 
 ## Publish Rule
 

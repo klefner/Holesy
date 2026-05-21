@@ -310,6 +310,7 @@
   }
   #stats-window-btn,
   #lore-archive-btn,
+  #how-to-play-btn,
   #load-endless-save-btn {
     margin: 8px 0 2px 0;
     padding: 8px 13px;
@@ -320,11 +321,14 @@
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.6px;
+    line-height: 1;
+    text-decoration: none;
     text-transform: uppercase;
     cursor: pointer;
   }
   #stats-window-btn:hover,
   #lore-archive-btn:hover,
+  #how-to-play-btn:hover,
   #load-endless-save-btn:hover:not(:disabled) {
     border-color: rgba(128,255,245,0.38);
     color: #fff;
@@ -836,7 +840,9 @@
       margin: 2px 0;
     }
     #stats-window-btn,
-    #lore-archive-btn {
+    #lore-archive-btn,
+    #how-to-play-btn,
+    #load-endless-save-btn {
       margin: 2px 0;
       padding: 7px 11px;
       font-size: 10px;

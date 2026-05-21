@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 18;
+const BUILD_SUB = 19;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1049,6 +1049,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.19',
+    date: '2026-05-20',
+    summary: 'Separate How to Play field manual window.',
+    changes: [
+      'Added a menu-accessible How to Play window with a left-side topic index and concise lore-forward instructions.',
+      'Covered controls, game modes, win conditions, Archive access, Endless save/load, Stats, buffs, and survival notes.',
+      'Kept the help surface as a separate lightweight popup so the main menu remains focused and fast.',
+    ],
+  },
   {
     label: 'Master 16.18',
     date: '2026-05-20',
