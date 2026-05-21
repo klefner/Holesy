@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 22;
+const BUILD_SUB = 23;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1049,6 +1049,15 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.23',
+    date: '2026-05-21',
+    summary: 'Endless save confirmation now appears on the Pause screen.',
+    changes: [
+      'Added a visible status line inside the pause overlay.',
+      'Moved Endless save success and failure feedback into that pause status area so it is not hidden behind the blurred game board.',
+    ],
+  },
   {
     label: 'Master 16.22',
     date: '2026-05-21',
@@ -2840,6 +2849,7 @@ const pauseOverlay = document.getElementById('pause-overlay');
 const pauseResumeBtn = document.getElementById('pause-resume-btn');
 const pauseSaveBtn = document.getElementById('pause-save-btn');
 const pauseExitBtn = document.getElementById('pause-exit-btn');
+const pauseStatusMessage = document.getElementById('pause-status-message');
 eventBannerBackdrop.style.background = `rgba(6, 9, 18, ${HOLESY_CONFIG.eventMessaging.backdropOpacity})`;
 
 // LMS choice modal — shown when timer hits zero if player is still alive
@@ -5638,6 +5648,7 @@ function pauseWaveTransition() {
     ? Math.max(0, pendingWaveStartDueAt - performance.now())
     : HOLESY_CONFIG.eventMessaging.waveTransitionDelayMs;
   clearPendingWaveStart();
+  clearPauseStatus();
   setGameState(GAME_STATES.PAUSED);
   pauseOverlay.classList.remove('hidden');
   syncAlienAidLoop();
@@ -5653,6 +5664,7 @@ function pauseGame() {
   if (!running) return;
   running = false;
   pausedStateBeforePause = GAME_STATES.PLAYING;
+  clearPauseStatus();
   setGameState(GAME_STATES.PAUSED);
   pauseOverlay.classList.remove('hidden');
   syncAlienAidLoop();
@@ -5663,6 +5675,7 @@ function pauseGame() {
 function resumeGame() {
   if (!canUsePauseMenu() || pauseOverlay.classList.contains('hidden')) return;
   pauseOverlay.classList.add('hidden');
+  clearPauseStatus();
   if (pausedStateBeforePause === GAME_STATES.WAVE_TRANSITION) {
     setGameState(GAME_STATES.WAVE_TRANSITION);
     scheduleNextWaveStart(
@@ -6211,6 +6224,19 @@ function hasEndlessSave() {
   }
 }
 
+function showPauseStatus(message, tone = 'info') {
+  if (!pauseStatusMessage) return;
+  pauseStatusMessage.textContent = message;
+  pauseStatusMessage.classList.toggle('error', tone === 'error');
+  pauseStatusMessage.classList.add('show');
+}
+
+function clearPauseStatus() {
+  if (!pauseStatusMessage) return;
+  pauseStatusMessage.textContent = '';
+  pauseStatusMessage.classList.remove('show', 'error');
+}
+
 function buildEndlessSaveState() {
   const now = getGameplayNow();
   return {
@@ -6242,16 +6268,18 @@ function buildEndlessSaveState() {
 
 function saveEndlessGame() {
   if (!endlessMode || !isGameState(GAME_STATES.PAUSED)) {
+    showPauseStatus('Endless can only be saved from the pause menu.', 'error');
     showEventBanner('Endless can only be saved from the pause menu.', 3200);
     return false;
   }
   try {
     window.localStorage.setItem(ENDLESS_SAVE_KEY, JSON.stringify(buildEndlessSaveState()));
     refreshEndlessSaveControls();
-    showEventBanner(`Endless Wave ${currentWave} recorded. The city will remember this version.`, 4200);
+    showPauseStatus(`Game Saved. Endless Wave ${currentWave} has been recorded.`, 'info');
     return true;
   } catch (err) {
     console.warn('Endless save failed', err);
+    showPauseStatus('Save failed. The Archive could not record this run.', 'error');
     showEventBanner('The Archive failed to save this Endless run.', 4200);
     return false;
   }

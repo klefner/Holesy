@@ -731,6 +731,32 @@
     text-transform: uppercase;
     color: rgba(255,255,255,0.62);
   }
+  #pause-overlay .pause-status {
+    width: 100%;
+    max-width: 360px;
+    min-height: 42px;
+    margin: -8px 0 16px;
+    padding: 10px 12px;
+    border: 1px solid rgba(128,255,245,0.28);
+    border-radius: 10px;
+    background: rgba(128,255,245,0.08);
+    color: #dffcff;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.35;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.16s ease, transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+  }
+  #pause-overlay .pause-status.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  #pause-overlay .pause-status.error {
+    border-color: rgba(255,94,126,0.46);
+    background: rgba(255,94,126,0.12);
+    color: #ffd8df;
+  }
   #pause-overlay .pause-btns {
     display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 320px;
   }
