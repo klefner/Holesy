@@ -14,7 +14,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.27`
+- current in-game label: `Master 16.28`
 
 Current basis note:
 
@@ -38,6 +38,7 @@ What `Master 16` specifically represents:
 - `Master 16.25` repairs the How to Play upload package by restoring matching menu-button styling and including the missing summary image dependency in the GoDaddy delta package
 - `Master 16.26` restores the full-height How to Play summary graphic and adds a hard panic-car crash-slide movement cap
 - `Master 16.27` makes menu action buttons touch-safe on mobile and changes soldier damage so normal object devours visibly grow the hole after being shot
+- `Master 16.28` re-aligns active moving traffic to lane direction and removes hidden soldier-damage growth debt
 
 Last approved candidate promoted into `Master 16`:
 
@@ -61,12 +62,15 @@ Last approved candidate promoted into `Master 16`:
 
 ## 4. Current Priority
 
-- immediate focus is regression testing `Master 16.27` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
+- immediate focus is regression testing `Master 16.28` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
 - active monitor items carried from the latest QA evidence:
   - long-idle tab-close behavior descended from `Master 15.39`
   - archive readability and music fit
   - rare document pacing and buff-effect clarity descended from `Master 15.42`
+  - mobile Stats / How to Play tap behavior and post-soldier growth visibility from `Master 16.27`
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
+- current governance blocker from the 2026-05-22 daily audit:
+  - `QA-017` open because this repo session could not create `.git/index.lock`, so the 2026-05-22 audit artifacts are still local-only until a fresh session can stage and commit them
 - current gameplay validation should also cover Endless Waves continuity, player-death exit behavior, rival respawn behavior, save/load expectations, and runaway growth tuning
 - current gameplay validation should specifically re-check saved skyscraper visuals after loading, growth after soldier damage, and panic-car skid distance
 - governance recovery added on 2026-05-20: product-intent continuity and modular architecture awareness are now monitor-controlled under `QA-011`
@@ -75,10 +79,11 @@ Last approved candidate promoted into `Master 16`:
 
 ## 5. Immediate Next Move
 
-- treat `Master 16.27` as the current source basis within `10_SOURCE/Masters/Master 16/`
+- treat `Master 16.28` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
-- start with regression testing `Master 16.27`, then continue `PERF-012` Phase 2
+- before calling the latest audit state durable, restore Git publishability for this checkout and commit the local 2026-05-22 audit artifacts
+- start with regression testing `Master 16.28`, then continue `PERF-012` Phase 2
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
@@ -87,7 +92,9 @@ Last approved candidate promoted into `Master 16`:
 - validation focus:
   - confirm the original long-idle Chrome tab-close stall is materially improved after a real idle wait
   - confirm Archive readability and that the Archive music still fits the intended funny, whimsical, conspiracy-undertone direction
+  - confirm on a real mobile device that Stats and How to Play respond to taps through the intended popup/action path
   - confirm rare document pacing, buff-effect clarity, combo readability, starter Field Pattern usefulness, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal in real gameplay
+  - confirm in real gameplay that ordinary object devours visibly grow the hole after soldier damage in the same wave
 - only after those validations:
   - expand the lore data module with the remaining approved Rival / Response corpus
   - resume the remaining Priority 1 performance backlog

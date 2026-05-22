@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 27;
+const BUILD_SUB = 28;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1049,6 +1049,16 @@ const WAVE_TRANSITION_LORE = {
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
 const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.28',
+    date: '2026-05-22',
+    summary: 'Traffic orientation and soldier-damage growth repair.',
+    changes: [
+      'Re-aligned active traffic to its lane every frame so cars cannot keep driving while visually stuck sideways.',
+      'Removed the collision yaw drift that could make normal driving look like an endless skid.',
+      'Changed soldier damage to shrink the current hole radius without creating hidden score debt, so later devouring grows normally.'
+    ]
+  },
   {
     label: 'Master 16.27',
     date: '2026-05-21',
@@ -7547,8 +7557,7 @@ function beginConsume(h, obj) {
   const scoreValue = Math.max(1, Math.round(obj.value * loreScoreMultiplier));
   h.score += scoreValue;
   if ((h.bonusRadius || 0) < 0) {
-    const repairRadius = Math.min(-(h.bonusRadius || 0), 0.04 + scoreValue * 0.0045);
-    h.bonusRadius += repairRadius;
+    h.bonusRadius = 0;
   }
   if (obj.isPowerup) applyPowerupToHole(h, obj.powerupId);
   h.targetRadius = radiusFromScore(h);
@@ -8472,6 +8481,17 @@ function carForwardSpeed(car) {
   return Math.max(0, car.currentSpeed || Math.hypot(car.crashVx || 0, car.crashVz || 0));
 }
 
+function carLaneRotation(car) {
+  if (car.axis === 'vertical') return car.direction === 'S' ? Math.PI : 0;
+  return car.direction === 'E' ? -Math.PI / 2 : Math.PI / 2;
+}
+
+function alignDrivingCarMesh(car, yawOffset = 0) {
+  if (!car || !car.moving || car.crashed || car.crashing || car.consumed || car.falling) return;
+  car.mesh.rotation.y = carLaneRotation(car) + yawOffset;
+  car.mesh.rotation.z = 0;
+}
+
 function separateCars(a, b, dist, minDist) {
   const dx = b.x - a.x;
   const dz = b.z - a.z;
@@ -8522,8 +8542,8 @@ function resolveMovingCarCollisions(dt) {
         }
         a.currentSpeed *= HOLESY_CONFIG.traffic.carContactBrake;
         b.currentSpeed *= HOLESY_CONFIG.traffic.carContactBrake;
-        a.mesh.rotation.y += (Math.random() - 0.5) * 0.18;
-        b.mesh.rotation.y += (Math.random() - 0.5) * 0.18;
+        alignDrivingCarMesh(a);
+        alignDrivingCarMesh(b);
       } else if (!sameLane) {
         const nx = dist > 0.001 ? dx / dist : 1;
         const nz = dist > 0.001 ? dz / dist : 0;
@@ -8662,6 +8682,7 @@ function updateMovingCars(dt) {
     // Apply motion
     const step = car.currentSpeed * dt;
     const wobble = car.panicking ? Math.sin(performance.now() * 0.018 + car.x + car.z) * HOLESY_CONFIG.traffic.panicWobble * dt : 0;
+    const yawWobble = car.panicking ? Math.sin(performance.now() * 0.014 + car.x * 0.7 + car.z) * 0.08 : 0;
     if (car.axis === 'vertical') {
       const sign = (car.direction === 'S') ? 1 : -1;
       car.mesh.position.z += step * sign;
@@ -8675,6 +8696,7 @@ function updateMovingCars(dt) {
       car.x = car.mesh.position.x;
       car.z = car.mesh.position.z;
     }
+    alignDrivingCarMesh(car, yawWobble);
 
     // Wrap around to other end of map if car drives off the edge
     const WRAP_LIMIT = currentArenaHalf + HOLESY_CONFIG.traffic.wrapLimitPadding;
@@ -9412,15 +9434,12 @@ function applyShotDamage(h) {
     h.bonusRadius = 0;
   }
   if (remainingDamage > 0) {
-    const currentGrowthScore = scoreForGrowth(h);
-    const currentBaseRadius = baseRadiusFromScore(h);
-    const desiredBaseRadius = Math.max(MIN_HOLE_RADIUS - 0.01, currentBaseRadius - remainingDamage);
-    const desiredGrowthScore = growthScoreForBaseRadius(desiredBaseRadius);
-    const growthScoreBurn = Math.max(0, currentGrowthScore - desiredGrowthScore);
-    h.sizeResetScoreFloor = Math.min(h.score || 0, (h.sizeResetScoreFloor || 0) + growthScoreBurn);
+    const floorRadius = MIN_HOLE_RADIUS - 0.01;
+    const currentTarget = Math.max(floorRadius, h.targetRadius || radiusFromScore(h));
+    h.targetRadius = Math.max(floorRadius, currentTarget - remainingDamage);
+    h.radius = Math.max(floorRadius, Math.min(h.radius, h.targetRadius));
   }
   h.recentSoldierDamageRadius = Math.min(3, (h.recentSoldierDamageRadius || 0) + shotRadiusDamage);
-  h.targetRadius = Math.max(MIN_HOLE_RADIUS - 0.01, radiusFromScore(h));
 
   // Red flash indicator — set timestamp; render logic will interpret it
   h.hitFlashUntil = performance.now() + 300;

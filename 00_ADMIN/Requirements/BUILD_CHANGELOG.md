@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.28 - 2026-05-22
+
+Traffic orientation and soldier-damage growth repair.
+
+- Re-aligned active traffic to its lane every frame so cars cannot keep driving while visually stuck sideways.
+- Removed the collision yaw drift that could make normal driving look like an endless skid.
+- Changed soldier damage to shrink the current hole radius without creating hidden score debt, so later devouring grows normally.
+
 ## Master 16.27 - 2026-05-21
 
 Mobile menu actions and post-soldier growth repair.
