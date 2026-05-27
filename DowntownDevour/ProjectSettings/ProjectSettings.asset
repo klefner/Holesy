@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!129 &1
+PlayerSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 24
+  productName: DowntownDevour
+  companyName: DefaultCompany
+  defaultCursor: {fileID: 0}
+  cursorHotspot: {x: 0, y: 0}
+  m_SplashScreenLogos: []
+  m_VirtualRealitySplashScreen: {fileID: 0}
+  defaultScreenWidth: 1920
+  defaultScreenHeight: 1080
+  m_RenderingPath: 1
+  m_ActiveColorSpace: 0
+  m_MTRendering: 1
+  m_StackTraceTypes: 010000000100000001000000010000000100000001000000
+  iosShowActivityIndicatorOnLoading: -1
+  androidShowActivityIndicatorOnLoading: -1
+  m_StripUnusedMeshComponents: 1
+  m_VertexChannelCompressionMask: 4054
+  m_BuildTargetPlatformSettings: []
+  m_BuildTargetGroupSettings: []
+  m_ApplicationBundleVersion: 1.0
+  m_BuildNumber:
+    Standalone: 0
+  m_ApiCompatibilityLevelPerPlatform: {}
+  m_GraphicsAPIs:
+    Standalone: []
+  m_AutoGraphicsAPI:
+    Standalone: 1
+  scriptingDefineSymbols: {}
+  platformArchitecture: {}
+  scriptingBackend: {}
+  il2cppCompilerConfiguration: {}
+  managedStrippingLevel: {}
+  incrementalIl2cppBuild: {}
