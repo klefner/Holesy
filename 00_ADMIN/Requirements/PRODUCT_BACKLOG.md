@@ -1146,6 +1146,13 @@ Status:
 
 - backlog delta accepted; not yet implemented
 
+Product / technical alignment:
+
+- this feature set supports the MVP objective of a readable, configurable, cross-device browser game
+- the PBI is accepted as a bundled shared-infrastructure slice because settings state, audio gates, haptics gates, How To Play access, and gamepad focus all touch common UI/input paths
+- the source PBI's `title and pause only` settings-access language is superseded by locked decision `LD-002`; the aligned product requirement is Settings access on Title, Pause, and Game Over screens
+- live-game settings access remains out of scope except through the existing pause flow
+
 ### Locked Decisions
 
 #### LD-001 — Unsupported Haptics UX
@@ -1206,6 +1213,90 @@ Future additions may include:
 - contact link
 - credits page
 
+### PBI — Settings Menu, Haptics, How To Play Access, And Gamepad Support
+
+Type:
+
+- Feature, bundled shared infrastructure
+
+Priority:
+
+- High
+
+Status:
+
+- Ready for development
+
+User story:
+
+- As a Downtown Devour player, I want to control audio, haptics, and view How To Play info from non-gameplay screens, and play with a gamepad, so that I can tailor the experience to my device and preferences and use my preferred input method.
+
+Description:
+
+- add a persistent Settings menu with Audio, Haptics, How To Play access, and About
+- introduce haptic feedback as a new feature
+- surface How To Play access across approved non-gameplay screens
+- add gamepad support for gameplay steering and menu navigation
+- replace the current top-right music quick-toggle with a gear icon on Title and Pause screens
+- preserve `LD-002` by also exposing Settings from the Game Over screen
+
+Implementation order:
+
+1. Settings state object and localStorage load / save
+2. Haptics module with trigger function and capability detection
+3. Settings menu UI shell
+4. Wire toggles to settings state and the three gates: music, SFX, haptics
+5. How To Play modal component wired to Pause, Settings, and Game Over screens
+6. Gamepad input for gameplay steering
+7. Gamepad menu navigation with focus model, A-to-select, and debounce
+8. Replace top-right music quick-toggle with gear icon on Title and Pause screens
+
+Architecture notes:
+
+- single source of truth: one settings object read by all subsystems
+- three gates:
+  - music master gain
+  - `playSample` gateway
+  - haptics trigger function
+- How To Play uses one content source with multiple approved access points
+- gamepad support uses per-frame polling inside the existing animation loop
+- localStorage settings persistence should use a reusable pattern for future records, unlocks, and profile data
+
+Out of scope:
+
+- direct live-game settings access without pausing
+- controller button prompts in UI, such as `(A)` labels on focused elements
+- multiplayer, Steam wrapper, or other v2+ platform work
+- audio licensing audit, which remains tracked separately as a compliance blocker
+
+Test matrix:
+
+- settings persist after reload, tab close / reopen, and browser restart
+- each audio toggle independently affects only its own system
+- How To Play modal opens and closes cleanly from Pause, Settings, and Game Over screens
+- Title screen passive How To Play tips remain visible
+- gamepad connects mid-game and mid-menu
+- gamepad disconnects mid-game without freezing input
+- A-button does not double-fire when held
+- haptics fire only on intended events and do not trigger on small-object consumption
+- unsupported haptics devices show the disabled visible toggle and explanatory text from `LD-001`
+- all approved non-gameplay screens have working How To Play access
+
+Known gotchas:
+
+- Gamepad API may only register controllers after the first button press in some browsers
+- gamepad polling can register held buttons as repeated presses unless debounced
+- Web Vibration API is unsupported on some mobile browsers, including iOS Safari
+- menu focus is new infrastructure; existing UI does not currently have a consistent focused-element model
+
+Dependencies:
+
+- existing pause system
+- existing music system, with gating point at master gain
+- existing `playSample` SFX gateway
+- existing animation loop for gamepad polling
+- existing mouse, keyboard, and touch input branches
+
 ### PB-HAP-003 — Unsupported Device UX
 
 Priority:
@@ -1228,6 +1319,87 @@ Acceptance criteria:
 - WHEN a player views the disabled toggle THEN explanatory text is displayed
 - WHEN haptics are unsupported THEN no vibration API calls execute
 
+### PB-HAP-004 — Haptics Trigger Architecture
+
+Priority:
+
+- High
+
+Dependencies:
+
+- PB-HAP-003 Unsupported Device UX
+- shared settings state
+
+Description:
+
+- add centralized haptic feedback for meaningful game events while preventing noisy vibration from routine small-object consumption
+
+Acceptance criteria:
+
+- WHEN haptics are enabled THEN one central haptics trigger function governs all vibration calls
+- WHEN haptics are disabled THEN no Web Vibration API or Gamepad Haptic Actuator API calls execute
+- WHEN a rival hole is consumed THEN a short strong haptic pattern can fire
+- WHEN the player tiers up / stages up THEN a distinct double-buzz pattern can fire
+- WHEN the player is eaten by a rival THEN a distinct long-buzz pattern can fire
+- WHEN a building or vehicle is consumed THEN a light haptic pattern can fire
+- WHEN people, trees, or other small objects are consumed THEN no haptic pattern fires
+- WHEN a gamepad supports haptic actuators THEN the same settings gate applies to gamepad haptics
+
+### PB-UI-001 — Settings Menu
+
+Priority:
+
+- High
+
+Dependencies:
+
+- existing pause system
+- existing music system
+- existing `playSample` SFX gateway
+- localStorage persistence pattern
+
+Description:
+
+- add a persistent Settings menu for Audio, Haptics, How To Play, and About while replacing the top-right music quick-toggle with a more durable gear-based configuration entry point
+
+Acceptance criteria:
+
+- WHEN Settings is opened THEN it contains Audio, Haptics, How To Play, and About sections
+- WHEN Audio is shown THEN Music and SFX toggles are available
+- WHEN Haptics is shown THEN the haptics toggle follows `LD-001`
+- WHEN How To Play is selected THEN the shared How To Play modal opens
+- WHEN About is shown THEN it follows `LD-003`
+- WHEN the Title screen is shown THEN a gear button opens Settings
+- WHEN the Pause screen is shown THEN Settings is available in the pause button stack
+- WHEN the Game Over screen is shown THEN Settings is available per `LD-002`
+- WHEN Settings opens during a run THEN the existing pause state is active first
+- WHEN any setting changes THEN the settings state updates immediately
+- WHEN the page reloads THEN settings load from localStorage with defaults on first run
+
+### PB-AUD-001 — Audio Settings Gates
+
+Priority:
+
+- High
+
+Dependencies:
+
+- PB-UI-001 Settings Menu
+- existing music master gain
+- existing `playSample` function
+
+Description:
+
+- route all player-facing audio muting through explicit music and SFX gates instead of scattered checks
+
+Acceptance criteria:
+
+- WHEN Music is disabled THEN the music system is gated at master gain
+- WHEN SFX is disabled THEN `playSample` exits through one central gateway
+- WHEN Music is disabled THEN SFX can still play if SFX is enabled
+- WHEN SFX is disabled THEN Music can still play if Music is enabled
+- WHEN either toggle changes THEN the change applies immediately and persists
+
 ### PB-HELP-003 — Add How To Play Access To All Screens
 
 Priority:
@@ -1248,6 +1420,8 @@ Acceptance criteria:
 - WHEN on Pause Screen THEN a How To Play button opens the shared modal
 - WHEN on Settings Screen THEN a How To Play button opens the shared modal
 - WHEN on Game Over Screen THEN a How To Play button opens the shared modal
+- WHEN How To Play content is updated THEN all access points use the same content source
+- WHEN the modal is closed THEN the player returns cleanly to the screen that opened it
 
 ### PB-UI-004 — About Section
 
@@ -1300,6 +1474,35 @@ Acceptance criteria:
 - WHEN Settings is closed THEN the player returns to the Game Over screen
 - WHEN settings are changed THEN changes apply immediately
 - WHEN the player restarts the game THEN settings persist
+
+### PB-INPUT-001 — Gamepad Support
+
+Priority:
+
+- High
+
+Dependencies:
+
+- existing animation loop
+- existing input handling branches
+- PB-UI-001 Settings Menu focus model
+
+Description:
+
+- add gamepad as a fourth supported input branch for gameplay steering and menu navigation without replacing mouse, keyboard, or touch
+
+Acceptance criteria:
+
+- WHEN a gamepad is connected THEN the left stick steers the hole during gameplay
+- WHEN mouse, keyboard, touch, and gamepad input are present THEN gamepad steering is additive and does not disable other input methods
+- WHEN a menu is open THEN the left stick navigates focus up and down between interactive elements
+- WHEN the A button is pressed THEN the focused menu element is selected
+- WHEN the left stick is near center THEN a deadzone prevents drift
+- WHEN the A button is held THEN debounce prevents repeated double-fire selection
+- WHEN a gamepad connects mid-game THEN gameplay steering can begin without reload
+- WHEN a gamepad connects mid-menu THEN menu navigation can begin without reload
+- WHEN a gamepad disconnects mid-game THEN other inputs continue without freezing
+- WHEN Settings is open THEN a focused element exists at all times
 
 Implementation note:
 
