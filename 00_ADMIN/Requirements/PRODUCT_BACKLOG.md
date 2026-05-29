@@ -159,6 +159,69 @@ Suggested implementation order:
 
 `PERF-008` remains deferred until heavier unit types are ready. `PERF-009` is an ongoing standing review rule.
 
+## Priority 1A — Medium Office Building Voxel Collapse
+
+Goal: replace medium office buildings with aligned cube/floor stacks that collapse column-by-column as the hole passes underneath, creating the `hole.io`-style rain of individually falling pieces while preserving skyscrapers as a distinct large-chunk collapse model.
+
+Priority:
+
+- Priority 1 gameplay/physics item because it establishes the reusable stacked-object pattern for many future object families and theme packs
+- should be implemented after the modular package source path is stable enough to avoid adding another large physics system back into a monolithic file
+
+Design intent:
+
+- medium office buildings are not skyscrapers and are not houses
+- skyscrapers remain large segmented structures that destabilize as a building event after the hole qualifies to collapse them
+- medium office buildings become grids of equal cube units, initially aligned so the object still reads as a normal office building
+- each cube has equal dimensions where `X = Y = Z`
+- first target layout starts at approximately `8` cubes per row by `6` cubes per column, with enough depth/floor rows to make the building read as an office block
+- visible faces should preserve office-building language: floors, windows, and facade colors should align while standing
+- once disturbed, cubes fall as individual cubes with their own gravity, tumble, collision, and consumption checks
+
+Core gameplay behavior:
+
+- the whole medium building should no longer be consumed as one giant object
+- only the cube column or columns above the hole begin dropping when the hole touches or passes under that footprint area
+- example: if the hole reaches the bottom-right corner of a medium building, only the bottom-right column starts to fall first
+- as the hole moves left, forward, or across the footprint, newly overlapped columns start to fall
+- untouched columns remain standing until the hole reaches their footprint
+- falling cubes are not guaranteed to be eaten; if the hole moves away before a cube reaches ground/hole level, that cube can miss the hole, land, bounce, settle, and remain as normal debris
+- columns may cascade vertically because lower cubes drop first and upper cubes follow, but nearby untouched columns should not all drop automatically
+
+Physics / feel:
+
+- cubes should have small randomized offsets, angular velocity, and bounce/settle variation so the collapse looks organic
+- cube travel should remain local to the building footprint and nearby streets; cubes should not shoot across the city
+- falling cubes should be satisfying in bulk: when the player parks under a building, pieces should rain down into the hole
+- performance must remain bounded through pooling or lightweight custom physics; this feature should not require a full heavy physics engine unless a proof shows it is worth the cost
+
+Architecture requirements:
+
+- implement through a reusable stack/voxel object definition rather than hardcoding medium buildings only
+- expose stack dimensions, cube size, facade/material mapping, point value, and collapse behavior through data/config where practical
+- preserve a future path for procedural stacked shapes beyond office buildings
+- future theme packs should be able to use the same system for other stacked structures or object piles
+- save/load must persist standing columns, falling cubes, settled cubes, consumed cubes, cube transforms, and per-cube point state for Endless saves
+
+Acceptance criteria:
+
+- medium office buildings render as aligned cube stacks with coherent floor/window visuals while standing
+- touching one corner/column drops only that column at first, not the whole building
+- moving under additional columns causes only those columns to begin falling
+- falling cubes can be missed if the hole moves away before they are consumed
+- consumed cubes award points and growth per cube, with total building value comparable to the old medium-building value unless tuning intentionally changes it
+- rival holes can consume fallen or falling cubes using the same rules as the player
+- no skyscraper behavior regresses; skyscrapers keep their distinct large-piece collapse model
+- no house behavior regresses; house cube-breakup remains a separate future item
+- mobile and desktop performance remains within the current Master 16 performance budget
+- save/load restores medium-building cube state without replacing cubes with generic placeholders
+
+Notes:
+
+- this item supersedes the vague "medium building cube breakup" phrasing in the current gameplay intake
+- this is the first reusable procedural stack pattern for future content, not just a visual polish pass
+- future houses may use smaller cube breakup, but houses should be scoped separately because their shape, scale, and consumption feel are different
+
 ### PERF-001 Establish Performance Profile System
 
 Type:
@@ -794,6 +857,11 @@ Implementation order:
    - Witnesses, Pattern, and Origins documents from the approved baseline
    - buff-hint documents for First Bite, Pedestrian Pull, Tree Hugger, The Forum User, The Quiet Block, Linden Street, Bellmar, and The Quiet
 4. Continue expanding the corpus until all approved lore threads are represented in data, including earlier Rival / Response documents not yet present in the first playable slice.
+5. Improve lore clarity across buff and achievement communication:
+   - rewrite active buff descriptions so players can immediately tell what changed: speed, pull radius, score, defense, size, cooldown, or downside
+   - preserve lore voice, but put the functional meaning first enough that a casual player can understand it without reading the code
+   - align Archive clues, starter field patterns, HUD buff tiles, event banners, and How to Play language
+   - keep secret triggers secret where the Archive is supposed to hint rather than reveal, but make unlocked/active effects plain
 
 Acceptance criteria:
 
@@ -933,6 +1001,7 @@ Notes:
 - Archive music should feel funny, whimsical, and conspiracy-adjacent without becoming horror ambience or drowning out reading
 - document pacing target is rarity, not completion speed: one document maximum per won round, with none in most rounds and no drops on losses
 - build-change notes now have an in-game surface and should be updated with each promoted candidate so they can become player-facing patch notes later
+- user validation on 2026-05-28 closed the `QA-007` monitor item for current document pacing and broad buff UX, but left a product backlog improvement for clearer lore/buff wording across the game.
 
 ## Priority 2B — Long-Term Progression, Rival Memory, And World Variety
 
@@ -1364,10 +1433,11 @@ Backlog items:
 1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.28` as the current governed production-test baseline.
 2. Treat `index.html` as the entry point for the modular package, not the whole game package; the full `/holesy/` folder remains the governed release baseline, while routine GoDaddy uploads should use a changed-files-only delta package when live is already on the previous master.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
-4. Keep `QA-006` and `QA-007` in monitor until real long-idle and real-gameplay validation exists.
+4. Treat `QA-006`, `QA-007`, `QA-016`, and the `Master 16.28` traffic/soldier-growth regression set as user-validated closed as of 2026-05-28; continue the new lore-clarity backlog item as product improvement, not as an open QA defect.
 5. Treat product-intent recovery controls as the immediate governance baseline; Team Sync v2 should be run at new-chat startup and before material release/package/architecture decisions.
 6. The next technical architecture priority is `PERF-012` Phase 2: extract build metadata, difficulty profiles, lore documents, and similarly stable data/configuration out of `js/main.js` without changing gameplay behavior.
-7. After the modular package path is under control and regression tested, return to the current gameplay intake: pause-save confirmation visibility, improved collapse physics, medium/house cube breakup, and daily/weekly quest/reward architecture.
+7. The next Priority 1 gameplay/physics item after the modular package path is stable is `Priority 1A - Medium Office Building Voxel Collapse`: medium office buildings become aligned cube/floor stacks that drop individual columns only when the hole passes underneath them.
+8. After that stack pattern is validated, return to the remaining gameplay intake: lore/buff wording clarity, pause-save confirmation visibility, improved skyscraper collapse variation, house cube breakup, and daily/weekly quest/reward architecture.
 
 The next active engineering task is:
 

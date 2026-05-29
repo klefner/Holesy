@@ -63,26 +63,30 @@ Last approved candidate promoted into `Master 16`:
 ## 4. Current Priority
 
 - immediate focus is regression testing `Master 16.28` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
+- newly promoted Priority 1 gameplay/physics item after the modular path is stable: medium office buildings must become aligned cube/floor stacks whose individual columns fall only when the hole moves underneath them; this is distinct from skyscraper large-piece collapse and from future house cube breakup
 - active monitor items carried from the latest QA evidence:
-  - long-idle tab-close behavior descended from `Master 15.39`
   - archive readability and music fit
-  - rare document pacing and buff-effect clarity descended from `Master 15.42`
-  - mobile Stats / How to Play tap behavior and post-soldier growth visibility from `Master 16.27`
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
-- current governance blocker from the 2026-05-22 daily audit:
-  - `QA-017` open because this repo session could not create `.git/index.lock`, so the 2026-05-22 audit artifacts are still local-only until a fresh session can stage and commit them
+- current governance blockers from the 2026-05-28 daily audit:
+  - `QA-017` open because this repo session still cannot create `.git/index.lock` and also cannot refresh `.git/FETCH_HEAD`, so the 2026-05-22 and 2026-05-28 audit artifacts remain local-only and fresh remote verification is limited
+- recently closed by user validation and governance repair:
+  - `QA-006` closed after user confirmed the long-idle tab-close defect no longer reproduces
+  - `QA-007` closed for the current defect state; ongoing buff/lore wording clarity remains a product-backlog improvement item
+  - `QA-016` and the `Master 16.28` traffic/soldier-growth regression set closed after user validation
+  - `QA-018` resolved by documenting the unrecoverable 2026-05-23 through 2026-05-27 missing-run gap and adding a missed-run backstop to the actual automation prompt plus governed QA procedures
 - current gameplay validation should also cover Endless Waves continuity, player-death exit behavior, rival respawn behavior, save/load expectations, and runaway growth tuning
 - current gameplay validation should specifically re-check saved skyscraper visuals after loading, growth after soldier damage, and panic-car skid distance
 - governance recovery added on 2026-05-20: product-intent continuity and modular architecture awareness are now monitor-controlled under `QA-011`
 - broader lore expansion should wait until the current `Master 16` UX validates
 - remaining Priority 1 wave-system performance work resumes after the modular production package path is under control and `Master 16` proves stable
+- do not collapse the medium-office-building voxel item into generic collapse polish; it is the reusable stack/voxel pattern for future procedural stacked structures and theme objects
 
 ## 5. Immediate Next Move
 
 - treat `Master 16.28` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
-- before calling the latest audit state durable, restore Git publishability for this checkout and commit the local 2026-05-22 audit artifacts
+- before calling the latest audit state branch-visible, restore Git publishability for this checkout and commit the local 2026-05-22, 2026-05-28, and 2026-05-23-through-2026-05-27 missing-run audit artifacts
 - start with regression testing `Master 16.28`, then continue `PERF-012` Phase 2
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
@@ -90,7 +94,7 @@ Last approved candidate promoted into `Master 16`:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\css\styles.css`
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\js\main.js`
 - validation focus:
-  - confirm the original long-idle Chrome tab-close stall is materially improved after a real idle wait
+  - keep future daily audits checking for missing dated reports before completion
   - confirm Archive readability and that the Archive music still fits the intended funny, whimsical, conspiracy-undertone direction
   - confirm on a real mobile device that Stats and How to Play respond to taps through the intended popup/action path
   - confirm rare document pacing, buff-effect clarity, combo readability, starter Field Pattern usefulness, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal in real gameplay

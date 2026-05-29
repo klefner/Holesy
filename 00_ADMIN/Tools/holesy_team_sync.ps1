@@ -243,7 +243,7 @@ function Get-IssueFacts {
   if ($open.Count -gt 0) {
     Add-Warning "Issue log has $($open.Count) open QA item(s)."
   }
-  if ($monitor.Count -gt 0) {
+  if (($open.Count + $monitor.Count) -gt 0) {
     $lines.Add('')
     $lines.Add('Open/monitor rows:')
     Add-Collection $lines ($open + $monitor)
@@ -318,7 +318,9 @@ function Get-AutomationDriftLines {
     'release source-of-truth manifest',
     'Product Intent Gate',
     'new-chat team sync protocol',
-    'issue log'
+    'issue log',
+    'newest dated daily-audit report',
+    'missing-run or skipped-run note'
   )
   $missing = @()
   foreach ($phrase in $requiredPhrases) {

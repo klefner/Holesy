@@ -32,7 +32,10 @@ The Daily QA Audit automation must:
 - verify tracked-state expectations
 - clearly distinguish local state, branch/GitHub state, `main`, release package, and live-site state
 - use the governed Team Sync script as a state-verification input when appropriate, including automation drift, governance corpus inventory, issue-log counts, backlog readiness, and source/package integrity checks
+- before completing each audit, compare the current date, the newest dated daily-audit report in the governed repo, and the automation memory
+- if any expected daily-audit date since the previous governed audit has no report, create an explicit governed missing-run or skipped-run note for the missing date range, update the issue log, and state whether the gap was caused by automation not running, an unavailable worktree, Git publication failure, or unknown scheduler behavior
+- if the current audit cannot write or publish its dated report, report that as a blocker rather than treating automation memory as durable evidence
 
 ## Automation Updated
 
-The local Codex automation `daily-qa-audit` was updated on 2026-05-20 to reflect this prompt intent.
+The local Codex automation `daily-qa-audit` was updated on 2026-05-28 to reflect this prompt intent, including the missed-run backstop added after `QA-018`.

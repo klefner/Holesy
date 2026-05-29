@@ -36,6 +36,7 @@ For chat-quality inspections triggered by the user, the QA pass must also:
 - determine whether any risks became actual issues
 - identify lessons learned and any needed control updates
 - update the relevant process/procedure documents when the current controls are incomplete or stale
+- for scheduled daily audits, verify that expected daily audit dates since the prior governed report are covered by dated reports or explicit missing/skipped-run notes
 - review the shared issue log and verify:
   - resolved issues are truly resolved
   - unresolved issues are escalated to the Project Manager persona and the user

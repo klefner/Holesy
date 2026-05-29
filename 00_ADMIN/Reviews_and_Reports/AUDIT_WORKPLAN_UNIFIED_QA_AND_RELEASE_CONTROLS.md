@@ -79,6 +79,7 @@ Every audit must reread the current process and procedure governance corpus. Do 
 | Continuous improvement | Repeated failure modes are not folded into controls | Each audit must consider whether the matrix or workplan needs enhancement | 1. Review findings. 2. Decide whether a control update is needed. | Matrix/workplan revision note |
 | Product intent continuity | Approved product, design, or architecture decisions are lost across chats | Product Intent Gate must run before release, architecture, backlog, or material implementation decisions | 1. Open the Product Intent Gate. 2. Inspect relevant ADRs, backlog, basis, handoff, and issue log. 3. Confirm the requested action preserves or explicitly excepts prior decisions. | Product intent gate result, governing docs, exception note if any |
 | Process/procedure currency | The auditor relies on stale knowledge of project controls | Every audit must study all current process/procedure docs and decide whether they need updates | 1. Open the governance corpus listed in Required inputs. 2. Compare controls to observed failure modes. 3. Update procedures, matrix, workplan, or issue log when controls are incomplete. | List of governance docs inspected, control-update decision, changed docs if needed |
+| Daily-audit cadence evidence | Scheduled audits fail silently or leave no governed report | Every daily audit must prove the prior expected audit dates are represented by dated reports or explicit missing/skipped-run notes | 1. Compare current date to the newest governed daily-audit report. 2. Check automation memory for the same period. 3. If expected dates are missing, write a missing-run or skipped-run note and update the issue log. | Dated report list, automation memory check, missing/skipped-run note when needed |
 
 ## Standard Audit Steps
 
@@ -112,6 +113,7 @@ Pass evidence:
 6. If GitHub or live website state matters, inspect those states or state the limitation clearly.
 7. Open the shared issue log and identify items relevant to the review target.
 8. Decide whether any process/procedure docs need updates; if yes, update them as part of the audit package.
+9. For scheduled daily audits, compare the current date to the newest governed daily-audit report and automation memory; if expected dates are missing, write an explicit missing-run or skipped-run note before claiming the cadence control is healthy.
 
 Pass evidence:
 
@@ -119,6 +121,7 @@ Pass evidence:
 - process/procedure docs inspected are listed
 - key claims can be traced to evidence
 - procedure update decision is stated
+- daily-audit cadence gaps are either absent or explicitly documented as missing/skipped-run evidence
 
 ## C. Run Chat-Quality Controls
 
