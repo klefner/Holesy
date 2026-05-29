@@ -165,7 +165,7 @@ Goal: replace medium office buildings with aligned cube/floor stacks that collap
 
 Status:
 
-- first slice implemented in `Master 16.29`; procedural-size and visible-hole falling refinement implemented in `Master 16.30`; pending user regression validation
+- first slice implemented in `Master 16.29`; procedural-size and visible-hole falling refinement implemented in `Master 16.30`; support-gated cube release, cube separation, and oversized-object jam/eject behavior implemented in `Master 16.31`; pending user regression validation
 
 Priority:
 
@@ -1434,15 +1434,15 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.30` as the current governed production-test baseline.
+1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.31` as the current governed production-test baseline.
 2. Treat `index.html` as the entry point for the modular package, not the whole game package; the full `/holesy/` folder remains the governed release baseline, while routine GoDaddy uploads should use a changed-files-only delta package when live is already on the previous master.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Treat `QA-006`, `QA-007`, `QA-016`, and the `Master 16.28` traffic/soldier-growth regression set as user-validated closed as of 2026-05-28; continue the new lore-clarity backlog item as product improvement, not as an open QA defect.
 5. Treat product-intent recovery controls as the immediate governance baseline; Team Sync v2 should be run at new-chat startup and before material release/package/architecture decisions.
 6. The next technical architecture priority is `PERF-012` Phase 2: extract build metadata, difficulty profiles, lore documents, and similarly stable data/configuration out of `js/main.js` without changing gameplay behavior.
-7. The `Priority 1A - Medium Office Building Voxel Collapse` pattern is implemented through `Master 16.30`; validate that medium office buildings vary from 5 to 10 cubes per axis, use larger readable cubes, drop individual cube columns, and no longer visually drain falling pieces into a tiny center point while skyscrapers and houses keep their distinct behaviors.
+7. The `Priority 1A - Medium Office Building Voxel Collapse` pattern is implemented through `Master 16.31`; validate that medium office buildings vary from 5 to 10 cubes per axis, use larger readable cubes, drop individual cube columns, upper cubes wait for support failure, active cubes collide/separate instead of overlapping, oversized cubes can jam/eject, and skyscrapers/houses keep their distinct behaviors.
 8. After that stack pattern is user-validated, return to `PERF-012` Phase 2 and the remaining gameplay intake: lore/buff wording clarity, improved skyscraper collapse variation, house cube breakup, and daily/weekly quest/reward architecture.
 
 The next active engineering task is:
 
-- regression test `Master 16.30` through the modular package URL, then continue `PERF-012` Phase 2 as the next architecture slice.
+- regression test `Master 16.31` through the modular package URL, then continue `PERF-012` Phase 2 as the next architecture slice.

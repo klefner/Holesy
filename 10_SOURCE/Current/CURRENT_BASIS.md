@@ -6,8 +6,8 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current in-game label is `Master 16.30`
-- `Master 16.30` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current in-game label is `Master 16.31`
+- `Master 16.31` is the current governed source basis and includes:
   - the full approved `Master 15` gameplay baseline
   - the idle lifecycle cleanup candidate lineage from `Master 15.39`
   - the playable Archive / found-document / lore-achievement-buff system from `Master 15.40`
@@ -28,6 +28,7 @@ Current status:
   - the `Master 16.28` defect repair that re-aligns moving traffic to lane direction and removes hidden soldier-damage growth debt
   - the `Master 16.29` Priority 1A medium-office-building voxel collapse slice, replacing whole-object office consumption with aligned cube columns that fall independently when the hole passes underneath
   - the `Master 16.30` voxel refinement that enlarges medium-office cubes, procedurally varies office dimensions from 5 to 10 cubes per axis, and changes falling-object drift to preserve the visible-hole entry point instead of snapping toward a tiny center drain
+  - the `Master 16.31` physics refinement that makes upper office cubes wait for support failure, separates active cubes in 3D, and adds oversized-object jam/eject behavior for future larger cube content
 - New candidate work should branch from `Master 16` unless a newer file is explicitly promoted
 - The last approved candidate lineage that became this master was `20_TESTS/Candidate_Builds/Master 15.45 - in-game-build-notes.html`
 

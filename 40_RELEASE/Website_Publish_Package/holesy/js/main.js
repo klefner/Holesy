@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 30;
+const BUILD_SUB = 31;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1050,6 +1050,15 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.31',
+    summary: 'Support-gated voxel falling and oversized object jams.',
+    changes: [
+      'Medium-office upper cubes now wait for support to fail before falling, then accelerate under gravity.',
+      'Active medium-office cubes push apart in 3D so falling pieces collide instead of visually overlapping.',
+      'Oversized objects can jam in a hole, get dragged, and require enough smaller-object impacts to knock loose.'
+    ]
+  },
+  {
     label: 'Master 16.30',
     summary: 'Procedural office voxels and rim-based falling.',
     changes: [
@@ -1589,6 +1598,9 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   triggerPadding: 5.2,
   voxelTriggerPadding: 0.34,
   voxelColumnSpread: 3.4,
+  voxelSupportDropFraction: 0.38,
+  voxelReleaseDelayMin: 0.055,
+  voxelReleaseDelayMax: 0.18,
   shoveStrength: 6.3,
   horizontalDamping: 0.942,
   maxHorizontalSpeed: 10.8,
@@ -1604,6 +1616,15 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   groundedSpinCutoff: 0.7,
   groundedSpeedCutoff: 0.16,
   groundedIdleSettleSeconds: 0.28,
+});
+
+const HOLE_JAM_CONFIG = Object.freeze({
+  minEjectRatio: 0.7,
+  maxEjectRatio: 1.08,
+  dragLerp: 0.78,
+  impactRangePadding: 0.28,
+  impactVelocityScale: 0.08,
+  ejectSpeed: 8.5,
 });
 
 function makeObject(mesh, size, tier, value, pos) {
@@ -1992,6 +2013,9 @@ function makeMidBuilding(pos) {
         obj.avx = 0;
         obj.avy = 0;
         obj.avz = 0;
+        obj.stackReleased = false;
+        obj.stackSupportLostAt = 0;
+        obj.stackSupportDelaySeconds = randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax);
         obj.x = x;
         obj.z = z;
         physicsStackPieces.push(obj);
@@ -5994,6 +6018,12 @@ function serializeObjectState(obj) {
     fallVel: obj.fallVel || 0,
     fallTargetX: obj.fallTargetX ?? obj.x,
     fallTargetZ: obj.fallTargetZ ?? obj.z,
+    jammedInHole: !!obj.jammedInHole,
+    jammedHoleIndex: obj.jammedHole ? holes.indexOf(obj.jammedHole) : -1,
+    jamOffsetX: obj.jamOffsetX || 0,
+    jamOffsetZ: obj.jamOffsetZ || 0,
+    jamImpactMass: obj.jamImpactMass || 0,
+    jamEjectMass: obj.jamEjectMass || 0,
     spin: obj.spin || 0,
     moving: !!obj.moving,
     bounds: obj.bounds || null,
@@ -6049,6 +6079,9 @@ function serializeObjectState(obj) {
     voxelFloorsY: obj.voxelFloorsY || obj.stackFloorCount || 0,
     vx: obj.vx || 0, vy: obj.vy || 0, vz: obj.vz || 0,
     avx: obj.avx || 0, avy: obj.avy || 0, avz: obj.avz || 0,
+    stackReleased: !!obj.stackReleased,
+    stackSupportLostRemainingMs: getRemainingMs(obj.stackSupportLostAt),
+    stackSupportDelaySeconds: obj.stackSupportDelaySeconds || 0,
     stackCollapsedRemainingMs: getRemainingMs(obj.stackCollapsedAt),
   };
 }
@@ -6186,6 +6219,12 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
   obj.fallVel = state.fallVel || 0;
   obj.fallTargetX = state.fallTargetX ?? state.x;
   obj.fallTargetZ = state.fallTargetZ ?? state.z;
+  obj.jammedInHole = !!state.jammedInHole;
+  obj.jammedHole = state.jammedHoleIndex >= 0 ? holes[state.jammedHoleIndex] : null;
+  obj.jamOffsetX = state.jamOffsetX || 0;
+  obj.jamOffsetZ = state.jamOffsetZ || 0;
+  obj.jamImpactMass = state.jamImpactMass || 0;
+  obj.jamEjectMass = state.jamEjectMass || 0;
   obj.spin = state.spin || 0;
   if (obj.mesh) {
     obj.mesh.position.set(state.x, state.y || obj.mesh.position.y || 0, state.z);
@@ -6258,6 +6297,9 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
       voxelFloorsY: state.voxelFloorsY || state.stackFloorCount || obj.voxelFloorsY || 0,
       vx: state.vx || 0, vy: state.vy || 0, vz: state.vz || 0,
       avx: state.avx || 0, avy: state.avy || 0, avz: state.avz || 0,
+      stackReleased: !!state.stackReleased,
+      stackSupportLostAt: restoreFutureTimestamp(state.stackSupportLostRemainingMs, now),
+      stackSupportDelaySeconds: state.stackSupportDelaySeconds || randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax),
       stackCollapsedAt: restoreFutureTimestamp(state.stackCollapsedRemainingMs, now),
     });
     if (obj.stackActive) activePhysicsStackIds.add(obj.stackId);
@@ -7695,6 +7737,101 @@ refreshEndlessSaveControls();
 // MAIN LOOP
 // =========================================================================
 
+function canObjectFitHole(h, obj) {
+  return getObjectLargestDimension(obj) <= h.radius * 2 * 0.95 && obj.size <= h.radius * 0.98;
+}
+
+function tryJamOversizedObject(h, obj) {
+  if (!h?.alive || !obj || obj.jammedInHole || obj.consumed || obj.falling || obj.isPowerup) return false;
+  if (canObjectFitHole(h, obj)) return false;
+  const d = Math.hypot(obj.x - h.x, obj.z - h.z);
+  if (d > Math.max(0.4, h.radius - Math.min(obj.size || 0, h.radius * 0.35))) return false;
+
+  obj.jammedInHole = true;
+  obj.jammedHole = h;
+  obj.jamOffsetX = THREE.MathUtils.clamp(obj.x - h.x, -h.radius * 0.45, h.radius * 0.45);
+  obj.jamOffsetZ = THREE.MathUtils.clamp(obj.z - h.z, -h.radius * 0.45, h.radius * 0.45);
+  obj.jamImpactMass = 0;
+  obj.jamEjectMass = getObjectLargestDimension(obj) * randomBetween(HOLE_JAM_CONFIG.minEjectRatio, HOLE_JAM_CONFIG.maxEjectRatio);
+  obj.jamLastX = obj.x;
+  obj.jamLastZ = obj.z;
+  obj.stackSettled = true;
+  obj.vx = 0; obj.vy = 0; obj.vz = 0;
+  obj.avx = 0; obj.avy = 0; obj.avz = 0;
+  if (h.isPlayer) showStagePop('JAMMED IN THE BREACH', 950);
+  return true;
+}
+
+function ejectJammedObject(obj, dx = 1, dz = 0) {
+  const dir = normalize2(dx, dz, { x: 1, z: 0 });
+  obj.jammedInHole = false;
+  obj.jammedHole = null;
+  obj.jamImpactMass = 0;
+  obj.x += dir.x * Math.max(1, obj.size || 1);
+  obj.z += dir.z * Math.max(1, obj.size || 1);
+  obj.vx = dir.x * HOLE_JAM_CONFIG.ejectSpeed;
+  obj.vz = dir.z * HOLE_JAM_CONFIG.ejectSpeed;
+  obj.vy = Math.max(obj.vy || 0, 2.2);
+  obj.stackActive = true;
+  obj.stackSettled = false;
+  obj.stackReleased = true;
+  obj.stackRestTimer = 0;
+  obj.stackMaxSpread = Math.max(obj.stackMaxSpread || 0, 4.5);
+  if (obj.mesh) {
+    obj.mesh.position.x = obj.x;
+    obj.mesh.position.z = obj.z;
+  }
+}
+
+function updateJammedObjects(dt) {
+  for (const obj of objects) {
+    if (!obj.jammedInHole || obj.consumed || obj.falling) continue;
+    const h = obj.jammedHole;
+    if (!h?.alive) {
+      ejectJammedObject(obj, randomBetween(-1, 1), randomBetween(-1, 1));
+      continue;
+    }
+
+    const targetX = h.x + (obj.jamOffsetX || 0);
+    const targetZ = h.z + (obj.jamOffsetZ || 0);
+    const previousX = obj.x;
+    const previousZ = obj.z;
+    obj.x += (targetX - obj.x) * Math.min(1, HOLE_JAM_CONFIG.dragLerp);
+    obj.z += (targetZ - obj.z) * Math.min(1, HOLE_JAM_CONFIG.dragLerp);
+    obj.mesh.position.x = obj.x;
+    obj.mesh.position.z = obj.z;
+    const jamSpeed = Math.hypot(obj.x - previousX, obj.z - previousZ) / Math.max(dt, 0.001);
+
+    for (const other of objects) {
+      if (other === obj || other.consumed || other.falling || other.jammedInHole || other.airDropping) continue;
+      if (other.physicsStackPiece && !other.stackActive) continue;
+      const dx = other.x - obj.x;
+      const dz = other.z - obj.z;
+      const dist = Math.hypot(dx, dz) || 0.001;
+      const minDist = (obj.size || 1) + (other.size || 0.5) + HOLE_JAM_CONFIG.impactRangePadding;
+      if (dist > minDist) continue;
+      const dir = normalize2(dx, dz, { x: 1, z: 0 });
+      const shove = (minDist - dist) * 0.62;
+      other.x += dir.x * shove;
+      other.z += dir.z * shove;
+      if (other.mesh) {
+        other.mesh.position.x = other.x;
+        other.mesh.position.z = other.z;
+      }
+      if (other.physicsStackPiece) {
+        other.vx = (other.vx || 0) + dir.x * shove * 5;
+        other.vz = (other.vz || 0) + dir.z * shove * 5;
+      }
+      obj.jamImpactMass += getObjectLargestDimension(other) * Math.max(0.35, 1 + jamSpeed * HOLE_JAM_CONFIG.impactVelocityScale);
+      if (obj.jamImpactMass >= (obj.jamEjectMass || 1)) {
+        ejectJammedObject(obj, -dir.x, -dir.z);
+        if (h.isPlayer) showStagePop('JAM CLEARED', 800);
+        break;
+      }
+    }
+  }
+}
+
 // Helper: a hole consumes an object (triggered when it starts falling)
 function beginConsume(h, obj) {
   if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
@@ -7890,6 +8027,54 @@ function clampVectorLength2(x, z, maxLength) {
   return { x: x * scale, z: z * scale };
 }
 
+function getObjectLargestDimension(obj) {
+  if (!obj) return 0;
+  const dims = [
+    obj.stackPieceW,
+    obj.stackPieceD,
+    obj.stackHeight,
+    obj.size ? obj.size * 2 : 0,
+  ].filter(value => Number.isFinite(value) && value > 0);
+  return dims.length ? Math.max(...dims) : (obj.size || 0) * 2;
+}
+
+function getVoxelSupportPiece(piece) {
+  if (!piece?.isVoxelBuildingCube || piece.stackIndex <= 0) return null;
+  return physicsStackPieces.find(other =>
+    other.stackId === piece.stackId &&
+    other.isVoxelBuildingCube &&
+    other.voxelColX === piece.voxelColX &&
+    other.voxelColZ === piece.voxelColZ &&
+    other.stackIndex === piece.stackIndex - 1 &&
+    !other.consumed
+  ) || null;
+}
+
+function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
+  if (!piece.isVoxelBuildingCube) return true;
+  if (piece.stackReleased) return true;
+
+  const support = getVoxelSupportPiece(piece);
+  const supportDrop = (piece.stackHeight || 1) * STACK_PHYSICS_CONFIG.voxelSupportDropFraction;
+  const supportLost = !support || support.falling || support.consumed ||
+    (support.stackActive && support.stackReleased && support.mesh.position.y < (piece.mesh.position.y - supportDrop));
+
+  if (!supportLost) return false;
+  if (!piece.stackSupportLostAt) piece.stackSupportLostAt = now;
+  const elapsed = (now - piece.stackSupportLostAt) / 1000;
+  if (elapsed < (piece.stackSupportDelaySeconds || STACK_PHYSICS_CONFIG.voxelReleaseDelayMin)) return false;
+
+  piece.stackReleased = true;
+  if (piece.stackIndex > 0) {
+    piece.vx += randomBetween(-0.35, 0.35);
+    piece.vz += randomBetween(-0.35, 0.35);
+    piece.avx += randomBetween(-1.1, 1.1);
+    piece.avy += randomBetween(-0.8, 0.8);
+    piece.avz += randomBetween(-1.1, 1.1);
+  }
+  return true;
+}
+
 function createCollapsePlan(stackId, sourceHole, consumedPiece) {
   const pieces = physicsStackPieces.filter(piece => piece.stackId === stackId);
   const anchor = consumedPiece || pieces[0];
@@ -8043,11 +8228,15 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.stackRestTimer = 0;
     piece.stackCollapsedAt = now;
     piece.stackCollapsedBy = sourceHole;
-    piece.stackDelaySeconds = piece.stackIndex * randomBetween(0.035, 0.075) + Math.random() * 0.035;
+    piece.stackReleased = piece.stackIndex === 0;
+    piece.stackSupportLostAt = piece.stackReleased ? now : 0;
+    piece.stackSupportDelaySeconds = randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax);
+    piece.stackDelaySeconds = piece.stackReleased ? Math.random() * 0.025 : 0;
     piece.stackMaxSpread = STACK_PHYSICS_CONFIG.voxelColumnSpread;
-    piece.vx += outward.x * randomBetween(0.18, 0.82) + randomBetween(-0.72, 0.72);
-    piece.vz += outward.z * randomBetween(0.18, 0.82) + randomBetween(-0.72, 0.72);
-    piece.vy += randomBetween(0.04, 0.58) + floorT * 0.18;
+    const releaseScale = piece.stackReleased ? 1 : 0.2;
+    piece.vx += (outward.x * randomBetween(0.18, 0.82) + randomBetween(-0.72, 0.72)) * releaseScale;
+    piece.vz += (outward.z * randomBetween(0.18, 0.82) + randomBetween(-0.72, 0.72)) * releaseScale;
+    piece.vy += piece.stackReleased ? randomBetween(0.02, 0.28) : 0;
     piece.avx += randomBetween(-2.4, 2.4);
     piece.avy += randomBetween(-2.1, 2.1);
     piece.avz += randomBetween(-2.4, 2.4);
@@ -8065,7 +8254,7 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
 }
 
 function resolvePhysicsStackContacts(dt) {
-  const activePieces = physicsStackPieces.filter(piece => piece.stackActive && !piece.stackSettled && !piece.consumed && !piece.falling);
+  const activePieces = physicsStackPieces.filter(piece => piece.stackActive && !piece.stackSettled && !piece.consumed && !piece.falling && !piece.jammedInHole);
   for (let i = 0; i < activePieces.length; i++) {
     const a = activePieces[i];
     for (let j = i + 1; j < activePieces.length; j++) {
@@ -8091,11 +8280,69 @@ function resolvePhysicsStackContacts(dt) {
       b.avx -= nz * impulse * 0.55;
     }
   }
+
+  const voxelPieces = activePieces.filter(piece => piece.isVoxelBuildingCube);
+  for (let i = 0; i < voxelPieces.length; i++) {
+    const a = voxelPieces[i];
+    for (let j = i + 1; j < voxelPieces.length; j++) {
+      const b = voxelPieces[j];
+      if (a.stackId !== b.stackId) continue;
+      const halfX = ((a.stackPieceW || a.size * 2 || 1) + (b.stackPieceW || b.size * 2 || 1)) * 0.5;
+      const halfY = ((a.stackHeight || a.size * 2 || 1) + (b.stackHeight || b.size * 2 || 1)) * 0.5;
+      const halfZ = ((a.stackPieceD || a.size * 2 || 1) + (b.stackPieceD || b.size * 2 || 1)) * 0.5;
+      const dx = b.x - a.x;
+      const dy = b.mesh.position.y - a.mesh.position.y;
+      const dz = b.z - a.z;
+      const overlapX = halfX - Math.abs(dx);
+      const overlapY = halfY - Math.abs(dy);
+      const overlapZ = halfZ - Math.abs(dz);
+      if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0) continue;
+
+      const relVx = b.vx - a.vx;
+      const relVy = b.vy - a.vy;
+      const relVz = b.vz - a.vz;
+      const impact = Math.hypot(relVx, relVy, relVz);
+      const push = 0.5 + Math.min(1.4, impact * 0.045);
+      if (overlapY <= overlapX && overlapY <= overlapZ) {
+        const sy = dy >= 0 ? 1 : -1;
+        const correction = overlapY * push * 0.52;
+        a.mesh.position.y -= sy * correction;
+        b.mesh.position.y += sy * correction;
+        const impulse = Math.max(0.08, overlapY * (2.2 + impact * 0.24));
+        a.vy -= sy * impulse * dt;
+        b.vy += sy * impulse * dt;
+      } else if (overlapX <= overlapZ) {
+        const sx = dx >= 0 ? 1 : -1;
+        const correction = overlapX * push * 0.52;
+        a.x -= sx * correction;
+        b.x += sx * correction;
+        const impulse = Math.max(0.08, overlapX * (2.4 + impact * 0.26));
+        a.vx -= sx * impulse * dt;
+        b.vx += sx * impulse * dt;
+        a.avz -= sx * impulse * 0.08;
+        b.avz += sx * impulse * 0.08;
+      } else {
+        const sz = dz >= 0 ? 1 : -1;
+        const correction = overlapZ * push * 0.52;
+        a.z -= sz * correction;
+        b.z += sz * correction;
+        const impulse = Math.max(0.08, overlapZ * (2.4 + impact * 0.26));
+        a.vz -= sz * impulse * dt;
+        b.vz += sz * impulse * dt;
+        a.avx += sz * impulse * 0.08;
+        b.avx -= sz * impulse * 0.08;
+      }
+      a.mesh.position.x = a.x;
+      a.mesh.position.z = a.z;
+      b.mesh.position.x = b.x;
+      b.mesh.position.z = b.z;
+    }
+  }
 }
 
 function updatePhysicsStackPieces(dt) {
   for (const piece of physicsStackPieces) {
-    if (piece.consumed || piece.falling) continue;
+    if (piece.consumed || piece.falling || piece.jammedInHole) continue;
 
     if (!piece.stackActive) {
       for (const h of holes) {
@@ -8118,6 +8365,7 @@ function updatePhysicsStackPieces(dt) {
     if (piece.stackSettled) continue;
     const collapseElapsed = Math.max(0, (getGameplayNow() - (piece.stackCollapsedAt || 0)) / 1000);
     if (collapseElapsed < (piece.stackDelaySeconds || 0)) continue;
+    if (piece.isVoxelBuildingCube && !ensureVoxelPieceReleased(piece)) continue;
 
     piece.vy -= STACK_PHYSICS_CONFIG.gravity * dt;
     piece.x += piece.vx * dt;
@@ -10117,11 +10365,13 @@ function animate(frameNow = performance.now()) {
     consumeSoldiersByHoles();
     updateAidDrops(dt);
     updatePhysicsStackPieces(dt);
+    updateJammedObjects(dt);
     updateWaveHudBanner();
 
     // --- Object consumption (all holes compete for objects) ---
     for (const obj of objects) {
       if (obj.consumed || obj.falling) continue;
+      if (obj.jammedInHole) continue;
       if (obj.physicsStackPiece && !obj.stackActive) continue;
 
       // Find the FIRST hole that can eat this object (closest + big enough)
@@ -10129,11 +10379,13 @@ function animate(frameNow = performance.now()) {
       let bestD = Infinity;
       for (const h of holes) {
         if (!h.alive) continue;
-        const maxConsumeSize = h.radius * 0.95;
-        if (obj.size > maxConsumeSize) continue;
         const dxo = obj.x - h.x;
         const dzo = obj.z - h.z;
         const d = Math.hypot(dxo, dzo);
+        if (!canObjectFitHole(h, obj)) {
+          if (d < h.radius - 0.1) tryJamOversizedObject(h, obj);
+          continue;
+        }
         // Within falling range
         if (d < h.radius - 0.1 && d < bestD) {
           eater = h; bestD = d;
@@ -10151,8 +10403,7 @@ function animate(frameNow = performance.now()) {
       for (const h of holes) {
         if (!h.alive) continue;
         if (obj.physicsStackPiece && !obj.stackActive) continue;
-        const maxConsumeSize = h.radius * 0.95;
-        if (obj.size > maxConsumeSize) continue;
+        if (!canObjectFitHole(h, obj)) continue;
         const d = Math.hypot(obj.x - h.x, obj.z - h.z);
         const lorePullBonus = h.isPlayer && getLoreTimedBuffRemaining('pedestrian_pull') > 0
           ? h.radius * (getLoreComboState('block_party') ? 0.55 : 0.35)

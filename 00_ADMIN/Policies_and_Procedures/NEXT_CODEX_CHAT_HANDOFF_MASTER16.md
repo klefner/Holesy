@@ -14,7 +14,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.30`
+- current in-game label: `Master 16.31`
 
 Current basis note:
 
@@ -41,6 +41,7 @@ What `Master 16` specifically represents:
 - `Master 16.28` re-aligns active moving traffic to lane direction and removes hidden soldier-damage growth debt
 - `Master 16.29` implements the Priority 1A medium-office-building voxel collapse slice: office buildings are aligned cube stacks and columns fall independently when the hole passes underneath
 - `Master 16.30` refines that voxel pattern with 25% larger office cubes, procedural 5-to-10 cube dimensions on all three axes, and falling-object drift that preserves the visible-hole entry point instead of pulling pieces into a tiny center drain
+- `Master 16.31` adds support-gated upper-cube release, 3D cube separation, and oversized-object jam/eject behavior for future larger cube content
 
 Last approved candidate promoted into `Master 16`:
 
@@ -64,8 +65,8 @@ Last approved candidate promoted into `Master 16`:
 
 ## 4. Current Priority
 
-- immediate focus is regression testing `Master 16.30` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
-- newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are procedurally generated cube/floor stacks whose individual columns fall only when the hole moves underneath them; falling pieces now target the visible hole entry point rather than a tiny center drain; this is distinct from skyscraper large-piece collapse and from future house cube breakup
+- immediate focus is regression testing `Master 16.31` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
+- newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are procedurally generated cube/floor stacks whose individual columns fall only when the hole moves underneath them; upper cubes now wait for support failure before falling, active cubes separate in 3D, and oversized objects can jam in the visible hole until enough smaller-object impact knocks them loose
 - active monitor items carried from the latest QA evidence:
   - archive readability and music fit
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
@@ -86,11 +87,11 @@ Last approved candidate promoted into `Master 16`:
 
 ## 5. Immediate Next Move
 
-- treat `Master 16.30` as the current source basis within `10_SOURCE/Masters/Master 16/`
+- treat `Master 16.31` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
 - the latest audit state is branch-visible again as of commit `7fddcdb`; keep future audits checking Git publication before completion
-- start with regression testing `Master 16.30`, then continue `PERF-012` Phase 2
+- start with regression testing `Master 16.31`, then continue `PERF-012` Phase 2
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
@@ -102,7 +103,7 @@ Last approved candidate promoted into `Master 16`:
   - confirm on a real mobile device that Stats and How to Play respond to taps through the intended popup/action path
   - confirm rare document pacing, buff-effect clarity, combo readability, starter Field Pattern usefulness, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal in real gameplay
   - confirm in real gameplay that ordinary object devours visibly grow the hole after soldier damage in the same wave
-  - confirm medium office buildings use larger readable cubes, vary from 5 to 10 cubes per axis, drop only the touched/under-hole cube columns, avoid tiny-center-drain falling behavior, and keep skyscraper collapse behavior distinct
+  - confirm medium office buildings use larger readable cubes, vary from 5 to 10 cubes per axis, drop only the touched/under-hole cube columns, upper cubes wait for support failure, falling cubes collide/separate instead of overlapping, oversized cubes can jam and eject, and skyscraper collapse behavior remains distinct
 - only after those validations:
   - expand the lore data module with the remaining approved Rival / Response corpus
   - resume the remaining Priority 1 performance backlog

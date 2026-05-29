@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.31 - 2026-05-29
+
+Support-gated voxel falling and oversized object jams.
+
+- Medium-office upper cubes now wait for support to fail before falling and accelerate under gravity.
+- Active medium-office cubes now push apart in 3D so falling pieces collide instead of visually overlapping.
+- Oversized objects can jam in a hole, get dragged, and require enough smaller-object impacts to knock loose.
+
 ## Master 16.30 - 2026-05-28
 
 Procedural office voxels and visible-hole falling.
