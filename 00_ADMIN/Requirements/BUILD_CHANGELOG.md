@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.29 - 2026-05-28
+
+Medium office building voxel collapse.
+
+- Rebuilt medium office buildings from aligned cube floors instead of one giant consumable block.
+- Made only the columns above the hole drop first, so moving under the footprint peels the building apart column by column.
+- Saved and restored medium-building cube state for Endless saves instead of rebuilding offices as generic blocks.
+
 ## Master 16.28 - 2026-05-22
 
 Traffic orientation and soldier-damage growth repair.

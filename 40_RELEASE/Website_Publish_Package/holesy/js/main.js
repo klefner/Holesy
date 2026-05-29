@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 28;
+const BUILD_SUB = 29;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1050,6 +1050,15 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.29',
+    summary: 'Medium office buildings now fall as voxel columns.',
+    changes: [
+      'Rebuilt medium office buildings from aligned cube floors instead of one giant consumable block.',
+      'Made only the columns above the hole drop first, so moving under the footprint peels the building apart column by column.',
+      'Saved and restored medium-building cube state for Endless saves instead of rebuilding offices as generic blocks.'
+    ]
+  },
+  {
     label: 'Master 16.28',
     date: '2026-05-22',
     summary: 'Traffic orientation and soldier-damage growth repair.',
@@ -1569,6 +1578,8 @@ let nextPhysicsStackId = 1;
 const STACK_PHYSICS_CONFIG = Object.freeze({
   gravity: 25,
   triggerPadding: 5.2,
+  voxelTriggerPadding: 0.34,
+  voxelColumnSpread: 3.4,
   shoveStrength: 6.3,
   horizontalDamping: 0.942,
   maxHorizontalSpeed: 10.8,
@@ -1882,31 +1893,104 @@ function makeSmallBuilding(pos) {
 
 // --- Mid building (office) ---
 function makeMidBuilding(pos) {
-  const g = new THREE.Group();
-  const w = 6 + Math.random() * 2;
-  const d = 6 + Math.random() * 2;
-  const h = 7 + Math.random() * 3;
-  const colors = [0x95a5a6, 0xbdc3c7, 0x7f8c8d, 0xc8b99c];
-  const base = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
-    sharedBoxMat(colors[Math.floor(Math.random()*colors.length)]));
-  base.position.y = h / 2;
-  g.add(base);
-  // window grid (subtle, painted strips)
-  const stripMat = sharedBoxMat(0x2c3e50);
-  const rows = Math.floor(h / 1.2);
-  for (let r = 0; r < rows; r++) {
-    const strip = new THREE.Mesh(new THREE.BoxGeometry(w - 0.3, 0.4, 0.02), stripMat);
-    strip.position.set(0, 1 + r * 1.2, d/2 + 0.01);
-    g.add(strip);
-    const strip2 = strip.clone();
-    strip2.position.z = -d/2 - 0.01;
-    g.add(strip2);
+  const stackId = nextPhysicsStackId++;
+  const cubeSize = 0.88;
+  const gap = 0.035;
+  const colsX = 8;
+  const rowsZ = 3;
+  const floorsY = 6;
+  const totalValue = 300;
+  const wallColors = [0x9aa5a8, 0xaeb8ba, 0x879497, 0xb7aa8e];
+  const wallMat = sharedBoxMat(wallColors[Math.floor(Math.random() * wallColors.length)]);
+  const glassMat = sharedBoxMat(0x263848);
+  const roofMat = sharedBoxMat(0x59666c);
+  const totalW = colsX * cubeSize + (colsX - 1) * gap;
+  const totalD = rowsZ * cubeSize + (rowsZ - 1) * gap;
+  let firstPiece = null;
+
+  for (let floor = 0; floor < floorsY; floor++) {
+    for (let row = 0; row < rowsZ; row++) {
+      for (let col = 0; col < colsX; col++) {
+        const localX = -totalW / 2 + cubeSize / 2 + col * (cubeSize + gap);
+        const localZ = -totalD / 2 + cubeSize / 2 + row * (cubeSize + gap);
+        const y = cubeSize / 2 + floor * (cubeSize + gap);
+        const piece = new THREE.Group();
+        const isTop = floor === floorsY - 1;
+        const core = new THREE.Mesh(new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize), isTop ? roofMat : wallMat);
+        core.position.y = 0;
+        piece.add(core);
+
+        if (!isTop) {
+          const isFront = row === rowsZ - 1;
+          const isBack = row === 0;
+          const isLeft = col === 0;
+          const isRight = col === colsX - 1;
+          if (isFront) {
+            const pane = new THREE.Mesh(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), glassMat);
+            pane.position.set(0, 0.06, cubeSize / 2 + 0.014);
+            piece.add(pane);
+          }
+          if (isBack) {
+            const pane = new THREE.Mesh(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), glassMat);
+            pane.position.set(0, 0.06, -cubeSize / 2 - 0.014);
+            piece.add(pane);
+          }
+          if (isLeft) {
+            const pane = new THREE.Mesh(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), glassMat);
+            pane.position.set(-cubeSize / 2 - 0.014, 0.06, 0);
+            piece.add(pane);
+          }
+          if (isRight) {
+            const pane = new THREE.Mesh(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), glassMat);
+            pane.position.set(cubeSize / 2 + 0.014, 0.06, 0);
+            piece.add(pane);
+          }
+        }
+
+        piece.children.forEach(c => c.castShadow = true);
+        const x = pos.x + localX;
+        const z = pos.z + localZ;
+        const obj = makeObject(piece, cubeSize * 0.58, 1, Math.max(1, Math.round(totalValue / (colsX * rowsZ * floorsY))), { x, y, z });
+        obj.isBuilding = true;
+        obj.buildingSize = 'mid';
+        obj.isVoxelBuildingCube = true;
+        obj.physicsStackPiece = true;
+        obj.stackKind = 'midVoxel';
+        obj.stackId = stackId;
+        obj.stackActive = false;
+        obj.stackSettled = false;
+        obj.stackRestTimer = 0;
+        obj.stackIndex = floor;
+        obj.stackFloorCount = floorsY;
+        obj.stackPieceCount = colsX * rowsZ;
+        obj.stackCollapseSize = 0;
+        obj.stackCenterX = pos.x;
+        obj.stackCenterZ = pos.z;
+        obj.stackLocalX = localX;
+        obj.stackLocalZ = localZ;
+        obj.stackFloorY = cubeSize / 2;
+        obj.stackHeight = cubeSize;
+        obj.stackPieceW = cubeSize;
+        obj.stackPieceD = cubeSize;
+        obj.voxelColX = col;
+        obj.voxelColZ = row;
+        obj.voxelColsX = colsX;
+        obj.voxelRowsZ = rowsZ;
+        obj.vx = 0;
+        obj.vy = 0;
+        obj.vz = 0;
+        obj.avx = 0;
+        obj.avy = 0;
+        obj.avz = 0;
+        obj.x = x;
+        obj.z = z;
+        physicsStackPieces.push(obj);
+        if (!firstPiece) firstPiece = obj;
+      }
+    }
   }
-  g.children.forEach(c => c.castShadow = true);
-  const obj = makeObject(g, Math.max(w, d) / 2, 5, 300, pos);
-  obj.isBuilding = true;
-  obj.buildingSize = 'mid';
-  return obj;
+
+  return firstPiece;
 }
 
 // --- Skyscraper ---
@@ -5869,6 +5953,7 @@ function restoreHoleState(h, state, now = performance.now()) {
 
 function getSavedObjectType(obj) {
   if (obj.isPowerup) return 'powerup';
+  if (obj.isVoxelBuildingCube) return 'midVoxelCube';
   if (obj.isSkyscraperChunk) return 'skyscraperChunk';
   if (obj.isBuilding) return obj.buildingSize === 'mid' ? 'midBuilding' : obj.buildingSize === 'large' ? 'skyscraperChunk' : 'smallBuilding';
   if (obj.isCar) return 'car';
@@ -5928,6 +6013,7 @@ function serializeObjectState(obj) {
     crashDistance: obj.crashDistance || 0,
     drivingValue: obj.drivingValue || 70,
     crashedValue: obj.crashedValue || 40,
+    stackKind: obj.stackKind || '',
     stackId: obj.stackId || 0,
     stackActive: !!obj.stackActive,
     stackSettled: !!obj.stackSettled,
@@ -5944,6 +6030,10 @@ function serializeObjectState(obj) {
     stackHeight: obj.stackHeight || 0,
     stackPieceW: obj.stackPieceW || 0,
     stackPieceD: obj.stackPieceD || 0,
+    voxelColX: obj.voxelColX || 0,
+    voxelColZ: obj.voxelColZ || 0,
+    voxelColsX: obj.voxelColsX || 0,
+    voxelRowsZ: obj.voxelRowsZ || 0,
     vx: obj.vx || 0, vy: obj.vy || 0, vz: obj.vz || 0,
     avx: obj.avx || 0, avy: obj.avy || 0, avz: obj.avz || 0,
     stackCollapsedRemainingMs: getRemainingMs(obj.stackCollapsedAt),
@@ -6026,6 +6116,44 @@ function makeSavedSkyscraperChunk(state) {
   return obj;
 }
 
+function makeSavedMidVoxelCube(state) {
+  const g = new THREE.Group();
+  const cubeSize = Math.max(0.5, state.stackPieceW || state.stackHeight || 0.88);
+  const isTop = state.stackFloorCount > 0 && state.stackIndex >= state.stackFloorCount - 1;
+  const wallMat = sharedBoxMat(0x9aa5a8);
+  const glassMat = sharedBoxMat(0x263848);
+  const roofMat = sharedBoxMat(0x59666c);
+  const core = new THREE.Mesh(new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize), isTop ? roofMat : wallMat);
+  core.position.y = 0;
+  g.add(core);
+
+  if (!isTop) {
+    const col = state.voxelColX || 0;
+    const row = state.voxelColZ || 0;
+    const colsX = state.voxelColsX || 8;
+    const rowsZ = state.voxelRowsZ || 3;
+    const addPane = (geometry, position) => {
+      const pane = new THREE.Mesh(geometry, glassMat);
+      pane.position.copy(position);
+      g.add(pane);
+    };
+    if (row === rowsZ - 1) addPane(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), new THREE.Vector3(0, 0.06, cubeSize / 2 + 0.014));
+    if (row === 0) addPane(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), new THREE.Vector3(0, 0.06, -cubeSize / 2 - 0.014));
+    if (col === 0) addPane(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), new THREE.Vector3(-cubeSize / 2 - 0.014, 0.06, 0));
+    if (col === colsX - 1) addPane(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), new THREE.Vector3(cubeSize / 2 + 0.014, 0.06, 0));
+  }
+
+  g.children.forEach(c => c.castShadow = true);
+  const obj = makeObject(g, state.size || cubeSize * 0.58, state.tier || 1, state.value || 2, { x: state.x, y: state.y || cubeSize / 2, z: state.z });
+  obj.isBuilding = true;
+  obj.buildingSize = 'mid';
+  obj.isVoxelBuildingCube = true;
+  obj.physicsStackPiece = true;
+  obj.stackKind = 'midVoxel';
+  physicsStackPieces.push(obj);
+  return obj;
+}
+
 function makePowerupFromSavedState(state) {
   const powerup = POWERUP_BY_ID.get(state.powerupId) || POWERUP_CONFIGS[0];
   const obj = makeObject(makeAidPowerupMesh(powerup), state.size || 0.52, state.tier || 1, state.value || powerup.value, { x: state.x, y: state.y || 0.45, z: state.z });
@@ -6089,8 +6217,9 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
     obj.airDropTargetX = state.airDropTargetX || state.x;
     obj.airDropTargetZ = state.airDropTargetZ || state.z;
   }
-  if (obj.isSkyscraperChunk) {
+  if (obj.physicsStackPiece) {
     Object.assign(obj, {
+      stackKind: state.stackKind || obj.stackKind || '',
       stackId: state.stackId || 0,
       stackActive: !!state.stackActive,
       stackSettled: !!state.stackSettled,
@@ -6107,6 +6236,10 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
       stackHeight: state.stackHeight || 0,
       stackPieceW: state.stackPieceW || obj.stackPieceW || 0,
       stackPieceD: state.stackPieceD || obj.stackPieceD || 0,
+      voxelColX: state.voxelColX || 0,
+      voxelColZ: state.voxelColZ || 0,
+      voxelColsX: state.voxelColsX || obj.voxelColsX || 0,
+      voxelRowsZ: state.voxelRowsZ || obj.voxelRowsZ || 0,
       vx: state.vx || 0, vy: state.vy || 0, vz: state.vz || 0,
       avx: state.avx || 0, avy: state.avy || 0, avz: state.avz || 0,
       stackCollapsedAt: restoreFutureTimestamp(state.stackCollapsedRemainingMs, now),
@@ -6121,6 +6254,7 @@ function restoreSavedObject(state, now = performance.now()) {
   else if (state.type === 'tree') obj = makeTree({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'car') obj = makeCar({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'smallBuilding') obj = makeSmallBuilding({ x: state.x, z: state.z });
+  else if (state.type === 'midVoxelCube') obj = makeSavedMidVoxelCube(state);
   else if (state.type === 'midBuilding') obj = makeMidBuilding({ x: state.x, z: state.z });
   else if (state.type === 'powerup') obj = makePowerupFromSavedState(state);
   else if (state.type === 'lamp') obj = makeLamp({ x: state.x, y: state.y || 0, z: state.z });
@@ -7543,7 +7677,9 @@ refreshEndlessSaveControls();
 
 // Helper: a hole consumes an object (triggered when it starts falling)
 function beginConsume(h, obj) {
-  if (obj.physicsStackPiece) {
+  if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
+    if (!activateVoxelBuildingColumn(obj, h)) return;
+  } else if (obj.physicsStackPiece && !obj.isVoxelBuildingCube) {
     if (!activatePhysicsStack(obj.stackId, h, obj)) return;
   }
   obj.falling = true;
@@ -7865,6 +8001,47 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
   return true;
 }
 
+function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
+  if (!seedPiece || seedPiece.consumed || seedPiece.falling) return false;
+  const stackId = seedPiece.stackId;
+  const colX = seedPiece.voxelColX;
+  const colZ = seedPiece.voxelColZ;
+  if (stackId === undefined || colX === undefined || colZ === undefined) return false;
+
+  let activated = false;
+  const now = getGameplayNow();
+  const outward = normalize2(seedPiece.x - sourceHole.x, seedPiece.z - sourceHole.z, { x: 0, z: 1 });
+  for (const piece of physicsStackPieces) {
+    if (piece.stackId !== stackId || !piece.isVoxelBuildingCube) continue;
+    if (piece.voxelColX !== colX || piece.voxelColZ !== colZ) continue;
+    if (piece.consumed || piece.falling || piece.stackActive) continue;
+    const floorT = piece.stackFloorCount > 1 ? piece.stackIndex / (piece.stackFloorCount - 1) : 0;
+    piece.stackActive = true;
+    piece.stackSettled = false;
+    piece.stackRestTimer = 0;
+    piece.stackCollapsedAt = now;
+    piece.stackCollapsedBy = sourceHole;
+    piece.stackDelaySeconds = piece.stackIndex * randomBetween(0.035, 0.075) + Math.random() * 0.035;
+    piece.stackMaxSpread = STACK_PHYSICS_CONFIG.voxelColumnSpread;
+    piece.vx += outward.x * randomBetween(0.18, 0.82) + randomBetween(-0.72, 0.72);
+    piece.vz += outward.z * randomBetween(0.18, 0.82) + randomBetween(-0.72, 0.72);
+    piece.vy += randomBetween(0.04, 0.58) + floorT * 0.18;
+    piece.avx += randomBetween(-2.4, 2.4);
+    piece.avy += randomBetween(-2.1, 2.1);
+    piece.avz += randomBetween(-2.4, 2.4);
+    activated = true;
+  }
+  if (activated) {
+    activePhysicsStackIds.add(stackId);
+    if (!music.muted) {
+      const distToPlayer = Math.hypot(seedPiece.x - player.x, seedPiece.z - player.z);
+      const volScale = Math.max(0.18, 1 - Math.min(1, distToPlayer / 50));
+      playBuildingSound('mid', volScale * 0.45);
+    }
+  }
+  return activated;
+}
+
 function resolvePhysicsStackContacts(dt) {
   const activePieces = physicsStackPieces.filter(piece => piece.stackActive && !piece.stackSettled && !piece.consumed && !piece.falling);
   for (let i = 0; i < activePieces.length; i++) {
@@ -7902,7 +8079,12 @@ function updatePhysicsStackPieces(dt) {
       for (const h of holes) {
         if (!h.alive) continue;
         const d = Math.hypot(piece.x - h.x, piece.z - h.z);
-        if (d < h.radius + STACK_PHYSICS_CONFIG.triggerPadding) {
+        if (piece.isVoxelBuildingCube) {
+          if (d < h.radius + piece.size + STACK_PHYSICS_CONFIG.voxelTriggerPadding) {
+            activateVoxelBuildingColumn(piece, h);
+            break;
+          }
+        } else if (d < h.radius + STACK_PHYSICS_CONFIG.triggerPadding) {
           const collapsed = activatePhysicsStack(piece.stackId, h, piece);
           if (collapsed && h.isPlayer) showStagePop('SKYSCRAPER COLLAPSE!', 1250);
           break;

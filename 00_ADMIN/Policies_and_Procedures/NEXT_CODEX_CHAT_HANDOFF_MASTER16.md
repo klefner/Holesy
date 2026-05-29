@@ -14,7 +14,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.28`
+- current in-game label: `Master 16.29`
 
 Current basis note:
 
@@ -39,6 +39,7 @@ What `Master 16` specifically represents:
 - `Master 16.26` restores the full-height How to Play summary graphic and adds a hard panic-car crash-slide movement cap
 - `Master 16.27` makes menu action buttons touch-safe on mobile and changes soldier damage so normal object devours visibly grow the hole after being shot
 - `Master 16.28` re-aligns active moving traffic to lane direction and removes hidden soldier-damage growth debt
+- `Master 16.29` implements the Priority 1A medium-office-building voxel collapse slice: office buildings are aligned cube stacks and columns fall independently when the hole passes underneath
 
 Last approved candidate promoted into `Master 16`:
 
@@ -62,8 +63,8 @@ Last approved candidate promoted into `Master 16`:
 
 ## 4. Current Priority
 
-- immediate focus is regression testing `Master 16.28` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
-- newly promoted Priority 1 gameplay/physics item after the modular path is stable: medium office buildings must become aligned cube/floor stacks whose individual columns fall only when the hole moves underneath them; this is distinct from skyscraper large-piece collapse and from future house cube breakup
+- immediate focus is regression testing `Master 16.29` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
+- newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are aligned cube/floor stacks whose individual columns fall only when the hole moves underneath them; this is distinct from skyscraper large-piece collapse and from future house cube breakup
 - active monitor items carried from the latest QA evidence:
   - archive readability and music fit
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
@@ -84,11 +85,11 @@ Last approved candidate promoted into `Master 16`:
 
 ## 5. Immediate Next Move
 
-- treat `Master 16.28` as the current source basis within `10_SOURCE/Masters/Master 16/`
+- treat `Master 16.29` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
 - the latest audit state is branch-visible again as of commit `7fddcdb`; keep future audits checking Git publication before completion
-- start with regression testing `Master 16.28`, then continue `PERF-012` Phase 2
+- start with regression testing `Master 16.29`, then continue `PERF-012` Phase 2
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
@@ -100,6 +101,7 @@ Last approved candidate promoted into `Master 16`:
   - confirm on a real mobile device that Stats and How to Play respond to taps through the intended popup/action path
   - confirm rare document pacing, buff-effect clarity, combo readability, starter Field Pattern usefulness, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal in real gameplay
   - confirm in real gameplay that ordinary object devours visibly grow the hole after soldier damage in the same wave
+  - confirm medium office buildings drop only the touched/under-hole cube columns, that falling cubes can be missed, and that skyscraper collapse behavior remains distinct
 - only after those validations:
   - expand the lore data module with the remaining approved Rival / Response corpus
   - resume the remaining Priority 1 performance backlog
