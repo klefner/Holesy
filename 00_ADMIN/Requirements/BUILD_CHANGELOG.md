@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.32 - 2026-05-29
+
+Slower office-cube gravity and column teetering.
+
+- Added dedicated configurable voxel gravity so medium-office cubes fall slower than skyscraper chunks.
+- Medium-office cube columns can teeter/lean before releasing, and upper cubes inherit sideways motion from the lean.
+- Grounded voxel cubes keep full size and settle as debris when they miss the hole instead of visually vanishing.
+
 ## Master 16.31 - 2026-05-29
 
 Support-gated voxel falling and oversized object jams.

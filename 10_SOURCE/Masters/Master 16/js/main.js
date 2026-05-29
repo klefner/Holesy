@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 31;
+const BUILD_SUB = 32;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1050,6 +1050,15 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.32',
+    summary: 'Slower office-cube gravity and column teetering.',
+    changes: [
+      'Added dedicated configurable voxel gravity so medium-office cubes fall slower than skyscraper chunks.',
+      'Medium-office columns now teeter and lean before releasing, with upper cubes inheriting sideways motion from the failing column.',
+      'Grounded voxel cubes keep their full size and settle as debris when they miss the hole instead of visually vanishing.'
+    ]
+  },
+  {
     label: 'Master 16.31',
     summary: 'Support-gated voxel falling and oversized object jams.',
     changes: [
@@ -1595,12 +1604,26 @@ let nextPhysicsStackId = 1;
 
 const STACK_PHYSICS_CONFIG = Object.freeze({
   gravity: 25,
+  voxelGravity: 9.5,
+  voxelGravityJitter: 2.4,
+  voxelTerminalVelocity: 30,
   triggerPadding: 5.2,
   voxelTriggerPadding: 0.34,
   voxelColumnSpread: 3.4,
   voxelSupportDropFraction: 0.38,
-  voxelReleaseDelayMin: 0.055,
-  voxelReleaseDelayMax: 0.18,
+  voxelReleaseDelayMin: 0.12,
+  voxelReleaseDelayMax: 0.34,
+  voxelTeeterSecondsMin: 0.18,
+  voxelTeeterSecondsMax: 0.55,
+  voxelTeeterAngleMin: 0.08,
+  voxelTeeterAngleMax: 0.24,
+  voxelTeeterFailureChance: 0.28,
+  voxelLeanVelocityMin: 0.65,
+  voxelLeanVelocityMax: 2.4,
+  voxelGroundRollRetentionMin: 0.78,
+  voxelGroundRollRetentionMax: 0.94,
+  voxelObjectImpactRange: 0.42,
+  voxelObjectImpactImpulse: 0.42,
   shoveStrength: 6.3,
   horizontalDamping: 0.942,
   maxHorizontalSpeed: 10.8,
@@ -2016,6 +2039,18 @@ function makeMidBuilding(pos) {
         obj.stackReleased = false;
         obj.stackSupportLostAt = 0;
         obj.stackSupportDelaySeconds = randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax);
+        obj.voxelBaseX = x;
+        obj.voxelBaseY = y;
+        obj.voxelBaseZ = z;
+        obj.voxelGravity = randomBetween(
+          STACK_PHYSICS_CONFIG.voxelGravity - STACK_PHYSICS_CONFIG.voxelGravityJitter,
+          STACK_PHYSICS_CONFIG.voxelGravity + STACK_PHYSICS_CONFIG.voxelGravityJitter
+        );
+        obj.voxelLeanDirX = 0;
+        obj.voxelLeanDirZ = 0;
+        obj.voxelLeanAngle = 0;
+        obj.voxelTeeterSeconds = 0;
+        obj.voxelTeeterReleasedAt = 0;
         obj.x = x;
         obj.z = z;
         physicsStackPieces.push(obj);
@@ -6077,6 +6112,16 @@ function serializeObjectState(obj) {
     voxelColsX: obj.voxelColsX || 0,
     voxelRowsZ: obj.voxelRowsZ || 0,
     voxelFloorsY: obj.voxelFloorsY || obj.stackFloorCount || 0,
+    voxelBaseX: obj.voxelBaseX ?? obj.x,
+    voxelBaseY: obj.voxelBaseY ?? obj.mesh?.position?.y ?? 0,
+    voxelBaseZ: obj.voxelBaseZ ?? obj.z,
+    voxelGravity: obj.voxelGravity || 0,
+    voxelLeanDirX: obj.voxelLeanDirX || 0,
+    voxelLeanDirZ: obj.voxelLeanDirZ || 0,
+    voxelLeanAngle: obj.voxelLeanAngle || 0,
+    voxelTeeterSeconds: obj.voxelTeeterSeconds || 0,
+    voxelTeeterReleasedRemainingMs: getRemainingMs(obj.voxelTeeterReleasedAt),
+    stackWillFall: obj.stackWillFall !== false,
     vx: obj.vx || 0, vy: obj.vy || 0, vz: obj.vz || 0,
     avx: obj.avx || 0, avy: obj.avy || 0, avz: obj.avz || 0,
     stackReleased: !!obj.stackReleased,
@@ -6295,6 +6340,19 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
       voxelColsX: state.voxelColsX || obj.voxelColsX || 0,
       voxelRowsZ: state.voxelRowsZ || obj.voxelRowsZ || 0,
       voxelFloorsY: state.voxelFloorsY || state.stackFloorCount || obj.voxelFloorsY || 0,
+      voxelBaseX: state.voxelBaseX ?? state.x,
+      voxelBaseY: state.voxelBaseY ?? state.y ?? obj.mesh?.position?.y ?? 0,
+      voxelBaseZ: state.voxelBaseZ ?? state.z,
+      voxelGravity: state.voxelGravity || randomBetween(
+        STACK_PHYSICS_CONFIG.voxelGravity - STACK_PHYSICS_CONFIG.voxelGravityJitter,
+        STACK_PHYSICS_CONFIG.voxelGravity + STACK_PHYSICS_CONFIG.voxelGravityJitter
+      ),
+      voxelLeanDirX: state.voxelLeanDirX || 0,
+      voxelLeanDirZ: state.voxelLeanDirZ || 0,
+      voxelLeanAngle: state.voxelLeanAngle || 0,
+      voxelTeeterSeconds: state.voxelTeeterSeconds || 0,
+      voxelTeeterReleasedAt: restoreFutureTimestamp(state.voxelTeeterReleasedRemainingMs, now),
+      stackWillFall: state.stackWillFall !== false,
       vx: state.vx || 0, vy: state.vy || 0, vz: state.vz || 0,
       avx: state.avx || 0, avy: state.avy || 0, avz: state.avz || 0,
       stackReleased: !!state.stackReleased,
@@ -8054,24 +8112,56 @@ function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
   if (!piece.isVoxelBuildingCube) return true;
   if (piece.stackReleased) return true;
 
+  const teeterElapsed = Math.max(0, (now - (piece.stackCollapsedAt || now)) / 1000);
+  const teeterT = piece.voxelTeeterSeconds > 0
+    ? THREE.MathUtils.clamp(teeterElapsed / piece.voxelTeeterSeconds, 0, 1)
+    : 1;
+  const leanAngle = (piece.voxelLeanAngle || 0) * Math.sin(teeterT * Math.PI * 0.5);
+  const heightT = piece.stackFloorCount > 1 ? piece.stackIndex / Math.max(1, piece.stackFloorCount - 1) : 0;
+  if (piece.mesh && teeterT < 1) {
+    const sway = leanAngle * (piece.stackIndex || 0) * (piece.stackHeight || 1) * 0.62;
+    piece.mesh.position.x = (piece.voxelBaseX ?? piece.x) + (piece.voxelLeanDirX || 0) * sway;
+    piece.mesh.position.z = (piece.voxelBaseZ ?? piece.z) + (piece.voxelLeanDirZ || 0) * sway;
+    piece.x = piece.mesh.position.x;
+    piece.z = piece.mesh.position.z;
+    piece.mesh.rotation.z = -(piece.voxelLeanDirX || 0) * leanAngle * (0.5 + heightT);
+    piece.mesh.rotation.x = (piece.voxelLeanDirZ || 0) * leanAngle * (0.5 + heightT);
+  }
+
+  if (piece.stackIndex <= 0 && teeterT < 1) return false;
+  if (!piece.stackWillFall && teeterT >= 1) {
+    piece.stackActive = false;
+    piece.stackSettled = false;
+    piece.stackRestTimer = 0;
+    piece.stackSupportLostAt = 0;
+    piece.mesh.position.set(piece.voxelBaseX ?? piece.x, piece.voxelBaseY ?? piece.mesh.position.y, piece.voxelBaseZ ?? piece.z);
+    piece.mesh.rotation.set(0, piece.mesh.rotation.y, 0);
+    piece.x = piece.mesh.position.x;
+    piece.z = piece.mesh.position.z;
+    piece.vx = 0; piece.vy = 0; piece.vz = 0;
+    piece.avx = 0; piece.avy = 0; piece.avz = 0;
+    return false;
+  }
+
   const support = getVoxelSupportPiece(piece);
   const supportDrop = (piece.stackHeight || 1) * STACK_PHYSICS_CONFIG.voxelSupportDropFraction;
   const supportLost = !support || support.falling || support.consumed ||
     (support.stackActive && support.stackReleased && support.mesh.position.y < (piece.mesh.position.y - supportDrop));
 
-  if (!supportLost) return false;
+  if (piece.stackIndex > 0 && !supportLost) return false;
   if (!piece.stackSupportLostAt) piece.stackSupportLostAt = now;
   const elapsed = (now - piece.stackSupportLostAt) / 1000;
-  if (elapsed < (piece.stackSupportDelaySeconds || STACK_PHYSICS_CONFIG.voxelReleaseDelayMin)) return false;
+  if (piece.stackIndex > 0 && elapsed < (piece.stackSupportDelaySeconds || STACK_PHYSICS_CONFIG.voxelReleaseDelayMin)) return false;
 
   piece.stackReleased = true;
-  if (piece.stackIndex > 0) {
-    piece.vx += randomBetween(-0.35, 0.35);
-    piece.vz += randomBetween(-0.35, 0.35);
-    piece.avx += randomBetween(-1.1, 1.1);
-    piece.avy += randomBetween(-0.8, 0.8);
-    piece.avz += randomBetween(-1.1, 1.1);
-  }
+  piece.voxelTeeterReleasedAt = now;
+  const inheritedLean = randomBetween(STACK_PHYSICS_CONFIG.voxelLeanVelocityMin, STACK_PHYSICS_CONFIG.voxelLeanVelocityMax) * (0.35 + heightT);
+  piece.vx += (piece.voxelLeanDirX || 0) * inheritedLean + randomBetween(-0.28, 0.28);
+  piece.vz += (piece.voxelLeanDirZ || 0) * inheritedLean + randomBetween(-0.28, 0.28);
+  piece.vy += randomBetween(-0.18, 0.08);
+  piece.avx += randomBetween(-0.9, 0.9) + (piece.voxelLeanDirZ || 0) * inheritedLean * 0.34;
+  piece.avy += randomBetween(-0.7, 0.7);
+  piece.avz += randomBetween(-0.9, 0.9) - (piece.voxelLeanDirX || 0) * inheritedLean * 0.34;
   return true;
 }
 
@@ -8218,6 +8308,17 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
   let activated = false;
   const now = getGameplayNow();
   const outward = normalize2(seedPiece.x - sourceHole.x, seedPiece.z - sourceHole.z, { x: 0, z: 1 });
+  const lateralRoll = randomBetween(-0.42, 0.42);
+  const cos = Math.cos(lateralRoll);
+  const sin = Math.sin(lateralRoll);
+  const leanDir = normalize2(outward.x * cos - outward.z * sin, outward.x * sin + outward.z * cos, outward);
+  const teeterSeconds = randomBetween(STACK_PHYSICS_CONFIG.voxelTeeterSecondsMin, STACK_PHYSICS_CONFIG.voxelTeeterSecondsMax);
+  const centerD = Math.hypot(seedPiece.x - sourceHole.x, seedPiece.z - sourceHole.z);
+  const deeplyUndermined = centerD < Math.max(0.25, sourceHole.radius - seedPiece.size * 0.28);
+  const teeterFails = deeplyUndermined || Math.random() < STACK_PHYSICS_CONFIG.voxelTeeterFailureChance;
+  const leanAngle = teeterFails
+    ? randomBetween(STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 0.72, STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 1.35)
+    : randomBetween(STACK_PHYSICS_CONFIG.voxelTeeterAngleMin, STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 0.62);
   for (const piece of physicsStackPieces) {
     if (piece.stackId !== stackId || !piece.isVoxelBuildingCube) continue;
     if (piece.voxelColX !== colX || piece.voxelColZ !== colZ) continue;
@@ -8228,18 +8329,30 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.stackRestTimer = 0;
     piece.stackCollapsedAt = now;
     piece.stackCollapsedBy = sourceHole;
-    piece.stackReleased = piece.stackIndex === 0;
-    piece.stackSupportLostAt = piece.stackReleased ? now : 0;
+    piece.stackReleased = false;
+    piece.stackWillFall = teeterFails;
+    piece.stackSupportLostAt = 0;
     piece.stackSupportDelaySeconds = randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax);
-    piece.stackDelaySeconds = piece.stackReleased ? Math.random() * 0.025 : 0;
+    piece.stackDelaySeconds = 0;
     piece.stackMaxSpread = STACK_PHYSICS_CONFIG.voxelColumnSpread;
-    const releaseScale = piece.stackReleased ? 1 : 0.2;
-    piece.vx += (outward.x * randomBetween(0.18, 0.82) + randomBetween(-0.72, 0.72)) * releaseScale;
-    piece.vz += (outward.z * randomBetween(0.18, 0.82) + randomBetween(-0.72, 0.72)) * releaseScale;
-    piece.vy += piece.stackReleased ? randomBetween(0.02, 0.28) : 0;
-    piece.avx += randomBetween(-2.4, 2.4);
-    piece.avy += randomBetween(-2.1, 2.1);
-    piece.avz += randomBetween(-2.4, 2.4);
+    piece.voxelBaseX = piece.x;
+    piece.voxelBaseY = piece.mesh?.position?.y ?? piece.voxelBaseY ?? 0;
+    piece.voxelBaseZ = piece.z;
+    piece.voxelLeanDirX = leanDir.x;
+    piece.voxelLeanDirZ = leanDir.z;
+    piece.voxelLeanAngle = leanAngle * (0.72 + floorT * 0.48) * randomBetween(0.82, 1.18);
+    piece.voxelTeeterSeconds = teeterSeconds * randomBetween(0.82, 1.22);
+    piece.voxelTeeterReleasedAt = 0;
+    piece.voxelGravity = randomBetween(
+      STACK_PHYSICS_CONFIG.voxelGravity - STACK_PHYSICS_CONFIG.voxelGravityJitter,
+      STACK_PHYSICS_CONFIG.voxelGravity + STACK_PHYSICS_CONFIG.voxelGravityJitter
+    );
+    piece.vx += leanDir.x * randomBetween(0.02, 0.16);
+    piece.vz += leanDir.z * randomBetween(0.02, 0.16);
+    piece.vy = Math.min(piece.vy, 0);
+    piece.avx += randomBetween(-0.35, 0.35);
+    piece.avy += randomBetween(-0.25, 0.25);
+    piece.avz += randomBetween(-0.35, 0.35);
     activated = true;
   }
   if (activated) {
@@ -8340,6 +8453,65 @@ function resolvePhysicsStackContacts(dt) {
   }
 }
 
+function applyVoxelObjectImpacts(dt) {
+  const activeVoxels = physicsStackPieces.filter(piece =>
+    piece.isVoxelBuildingCube &&
+    piece.stackActive &&
+    piece.stackReleased &&
+    !piece.stackSettled &&
+    !piece.consumed &&
+    !piece.falling &&
+    !piece.jammedInHole
+  );
+  for (const cube of activeVoxels) {
+    const cubeSpeed = Math.hypot(cube.vx || 0, cube.vy || 0, cube.vz || 0);
+    if (cubeSpeed < 0.35) continue;
+    for (const other of objects) {
+      if (other === cube || other.consumed || other.falling || other.jammedInHole || other.airDropping) continue;
+      if (other.physicsStackPiece && other.stackId === cube.stackId) continue;
+      if (other.physicsStackPiece && !other.stackActive) continue;
+      const dx = other.x - cube.x;
+      const dz = other.z - cube.z;
+      const dist = Math.hypot(dx, dz) || 0.001;
+      const minDist = (cube.size || 0.5) + (other.size || 0.5) + STACK_PHYSICS_CONFIG.voxelObjectImpactRange;
+      if (dist > minDist) continue;
+      const nx = dx / dist;
+      const nz = dz / dist;
+      const relativeToward = Math.max(0, (cube.vx || 0) * nx + (cube.vz || 0) * nz);
+      const downwardHit = cube.mesh.position.y <= (cube.stackFloorY || 0) + (cube.stackHeight || 1) * 0.7
+        ? Math.max(0.2, Math.min(1.8, Math.abs(cube.vy || 0) * 0.12))
+        : 0.15;
+      const cubeMass = Math.max(0.3, getObjectLargestDimension(cube));
+      const otherMass = Math.max(0.3, getObjectLargestDimension(other));
+      const massTransfer = cubeMass / (cubeMass + otherMass);
+      const impulse = (relativeToward + cubeSpeed * 0.18) * downwardHit * massTransfer * STACK_PHYSICS_CONFIG.voxelObjectImpactImpulse;
+      if (impulse <= 0.02) continue;
+
+      const shove = Math.min(2.2, impulse * dt * 8);
+      other.x += nx * shove;
+      other.z += nz * shove;
+      if (other.mesh) {
+        other.mesh.position.x = other.x;
+        other.mesh.position.z = other.z;
+        other.mesh.rotation.x += nz * impulse * 0.015;
+        other.mesh.rotation.z -= nx * impulse * 0.015;
+      }
+      if (other.physicsStackPiece) {
+        other.vx = (other.vx || 0) + nx * impulse;
+        other.vz = (other.vz || 0) + nz * impulse;
+        other.avx = (other.avx || 0) + nz * impulse * 0.24;
+        other.avz = (other.avz || 0) - nx * impulse * 0.24;
+      } else if (other.isCar && other.moving) {
+        other.currentSpeed = Math.max(0, (other.currentSpeed || 0) - impulse * 0.08);
+      }
+      cube.vx -= nx * impulse * 0.16;
+      cube.vz -= nz * impulse * 0.16;
+      cube.avx += nz * impulse * 0.18;
+      cube.avz -= nx * impulse * 0.18;
+    }
+  }
+}
+
 function updatePhysicsStackPieces(dt) {
   for (const piece of physicsStackPieces) {
     if (piece.consumed || piece.falling || piece.jammedInHole) continue;
@@ -8367,7 +8539,11 @@ function updatePhysicsStackPieces(dt) {
     if (collapseElapsed < (piece.stackDelaySeconds || 0)) continue;
     if (piece.isVoxelBuildingCube && !ensureVoxelPieceReleased(piece)) continue;
 
-    piece.vy -= STACK_PHYSICS_CONFIG.gravity * dt;
+    const gravity = piece.isVoxelBuildingCube
+      ? Math.max(1, piece.voxelGravity || STACK_PHYSICS_CONFIG.voxelGravity)
+      : STACK_PHYSICS_CONFIG.gravity;
+    piece.vy -= gravity * dt;
+    if (piece.isVoxelBuildingCube) piece.vy = Math.max(-STACK_PHYSICS_CONFIG.voxelTerminalVelocity, piece.vy);
     piece.x += piece.vx * dt;
     piece.z += piece.vz * dt;
     const spreadX = piece.x - piece.stackCenterX;
@@ -8394,14 +8570,26 @@ function updatePhysicsStackPieces(dt) {
     piece.avz *= 0.986;
 
     if (piece.mesh.position.y <= piece.stackFloorY) {
+      const impactSpeed = Math.abs(piece.vy || 0);
       piece.mesh.position.y = piece.stackFloorY;
       if (Math.abs(piece.vy) > 2.2) {
         piece.vy = Math.abs(piece.vy) * STACK_PHYSICS_CONFIG.bounceDamping;
-        piece.vx *= 0.72;
-        piece.vz *= 0.72;
-        piece.avx *= 0.75;
-        piece.avy *= 0.75;
-        piece.avz *= 0.75;
+        if (piece.isVoxelBuildingCube) {
+          const retention = randomBetween(STACK_PHYSICS_CONFIG.voxelGroundRollRetentionMin, STACK_PHYSICS_CONFIG.voxelGroundRollRetentionMax);
+          piece.vx *= retention;
+          piece.vz *= retention;
+          piece.avx += piece.vz * impactSpeed * 0.015;
+          piece.avz -= piece.vx * impactSpeed * 0.015;
+          piece.avx *= 0.86;
+          piece.avy *= 0.88;
+          piece.avz *= 0.86;
+        } else {
+          piece.vx *= 0.72;
+          piece.vz *= 0.72;
+          piece.avx *= 0.75;
+          piece.avy *= 0.75;
+          piece.avz *= 0.75;
+        }
       } else {
         piece.vy = 0;
       }
@@ -8433,6 +8621,7 @@ function updatePhysicsStackPieces(dt) {
       piece.stackRestTimer = 0;
     }
   }
+  applyVoxelObjectImpacts(dt);
   resolvePhysicsStackContacts(dt);
 }
 

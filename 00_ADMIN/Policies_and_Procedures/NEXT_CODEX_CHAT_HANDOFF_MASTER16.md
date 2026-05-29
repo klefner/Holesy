@@ -12,13 +12,13 @@ This document is the takeover package for any new Codex chat that needs to conti
 
 Current promoted master:
 
-- `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
-- playable entry point: `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.31`
+- `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
+- playable entry point: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
+- current in-game label: `Master 16.32`
 
 Current basis note:
 
-- `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Current\CURRENT_BASIS.md`
+- `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Current\CURRENT_BASIS.md`
 
 What `Master 16` specifically represents:
 
@@ -42,6 +42,7 @@ What `Master 16` specifically represents:
 - `Master 16.29` implements the Priority 1A medium-office-building voxel collapse slice: office buildings are aligned cube stacks and columns fall independently when the hole passes underneath
 - `Master 16.30` refines that voxel pattern with 25% larger office cubes, procedural 5-to-10 cube dimensions on all three axes, and falling-object drift that preserves the visible-hole entry point instead of pulling pieces into a tiny center drain
 - `Master 16.31` adds support-gated upper-cube release, 3D cube separation, and oversized-object jam/eject behavior for future larger cube content
+- `Master 16.32` slows medium-office voxel gravity, adds column teeter/lean before release, and makes faster falling cubes transfer more momentum into rolls, spin, bounces, and nearby-object impacts
 
 Last approved candidate promoted into `Master 16`:
 
@@ -49,7 +50,8 @@ Last approved candidate promoted into `Master 16`:
 
 ## 3. Current Working Rules
 
-- Canonical repo root: `C:\Users\KentLefner\Desktop\game-repo\Holesy`
+- Canonical repo root: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy`
+- Always verify the repo root with `git rev-parse --show-toplevel`; in this session the non-OneDrive Desktop path resolved to a different folder and was not the governed source checkout.
 - Active branch: `codex/publish-master4-structure`
 - Preserve rollback safety
 - Do not work directly on `main`
@@ -65,8 +67,8 @@ Last approved candidate promoted into `Master 16`:
 
 ## 4. Current Priority
 
-- immediate focus is regression testing `Master 16.31` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
-- newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are procedurally generated cube/floor stacks whose individual columns fall only when the hole moves underneath them; upper cubes now wait for support failure before falling, active cubes separate in 3D, and oversized objects can jam in the visible hole until enough smaller-object impact knocks them loose
+- immediate focus is regression testing `Master 16.32` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
+- newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are procedurally generated cube/floor stacks whose individual columns can teeter/lean before dropping; upper cubes wait for support failure, active cubes separate in 3D, oversized objects can jam in the visible hole, and faster falling cubes carry more impact/roll/spin energy
 - active monitor items carried from the latest QA evidence:
   - archive readability and music fit
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
@@ -87,16 +89,16 @@ Last approved candidate promoted into `Master 16`:
 
 ## 5. Immediate Next Move
 
-- treat `Master 16.31` as the current source basis within `10_SOURCE/Masters/Master 16/`
+- treat `Master 16.32` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
 - the latest audit state is branch-visible again as of commit `7fddcdb`; keep future audits checking Git publication before completion
-- start with regression testing `Master 16.31`, then continue `PERF-012` Phase 2
+- start with regression testing `Master 16.32`, then continue `PERF-012` Phase 2
 - validate the promoted website package and local master against the current recommendation:
-  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
-  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\css\styles.css`
-  - `C:\Users\KentLefner\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\js\main.js`
+  - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
+  - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
+  - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\css\styles.css`
+  - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\js\main.js`
 - validation focus:
   - keep future daily audits checking for missing dated reports before completion
   - confirm Archive readability and that the Archive music still fits the intended funny, whimsical, conspiracy-undertone direction
