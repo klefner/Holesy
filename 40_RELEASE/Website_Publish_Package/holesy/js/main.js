@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 32;
+const BUILD_SUB = 33;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1050,6 +1050,15 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.33',
+    summary: 'Voxel cube audio and missed-hole cleanup.',
+    changes: [
+      'Replaced full building-demolition spam from medium-office cubes with short budgeted cube-impact sounds.',
+      'Limited simultaneous voxel cube impact sounds per building so collapsing offices stay crunchy instead of turning into static.',
+      'Voxel cubes that miss the hole after the player moves away now land as visible debris instead of disappearing into the ground.'
+    ]
+  },
+  {
     label: 'Master 16.32',
     summary: 'Slower office-cube gravity and column teetering.',
     changes: [
@@ -1601,6 +1610,7 @@ const physicsStackPieces = [];
 const activePhysicsStackIds = new Set();
 const stackCollapsePlans = new Map();
 let nextPhysicsStackId = 1;
+const voxelImpactAudioState = new Map();
 
 const STACK_PHYSICS_CONFIG = Object.freeze({
   gravity: 25,
@@ -1639,6 +1649,9 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   groundedSpinCutoff: 0.7,
   groundedSpeedCutoff: 0.16,
   groundedIdleSettleSeconds: 0.28,
+  voxelAudioMaxVoicesPerStack: 5,
+  voxelAudioMinIntervalMs: 55,
+  voxelAudioMaxDuration: 0.16,
 });
 
 const HOLE_JAM_CONFIG = Object.freeze({
@@ -5159,6 +5172,43 @@ function playSkyscraperChunkSound(volumeScale = 1.0) {
   playSample(buf, rate, gain, 0.12);
 }
 
+function playVoxelCubeImpactSound(obj, volumeScale = 1.0) {
+  initMusicContext();
+  if (!music.ctx) return;
+  if (!audioBanksLoaded) loadAudioBanks();
+  const loaded = audioBank.buildings.filter(b => b);
+  if (loaded.length === 0) return;
+  const stackId = obj?.stackId || 'single';
+  const now = performance.now();
+  const state = voxelImpactAudioState.get(stackId) || { active: 0, lastAt: 0 };
+  if (state.active >= STACK_PHYSICS_CONFIG.voxelAudioMaxVoicesPerStack) return;
+  if (now - state.lastAt < STACK_PHYSICS_CONFIG.voxelAudioMinIntervalMs) return;
+  state.active += 1;
+  state.lastAt = now;
+  voxelImpactAudioState.set(stackId, state);
+
+  const ctx = music.ctx;
+  const buf = loaded[Math.floor(Math.random() * loaded.length)];
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = 1.55 + Math.random() * 0.35;
+  const g = ctx.createGain();
+  const startAt = ctx.currentTime;
+  const stopAt = startAt + STACK_PHYSICS_CONFIG.voxelAudioMaxDuration;
+  g.gain.setValueAtTime((0.10 + Math.random() * 0.06) * volumeScale, startAt);
+  g.gain.exponentialRampToValueAtTime(0.001, stopAt);
+  src.connect(g);
+  g.connect(getSfxDestination());
+  activeNonMusicSources.add(src);
+  src.onended = () => {
+    activeNonMusicSources.delete(src);
+    const latest = voxelImpactAudioState.get(stackId);
+    if (latest) latest.active = Math.max(0, latest.active - 1);
+  };
+  src.start(startAt);
+  try { src.stop(stopAt + 0.02); } catch (e) {}
+}
+
 // Play a random metal/glass crash sound for small props (hydrants, cones, trash
 // cans, extinguishers, mailboxes, benches, lamps). Wider pitch wobble than other
 // categories gives each consume a bit of character — props are frequent targets
@@ -7890,19 +7940,7 @@ function updateJammedObjects(dt) {
   }
 }
 
-// Helper: a hole consumes an object (triggered when it starts falling)
-function beginConsume(h, obj) {
-  if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
-    if (!activateVoxelBuildingColumn(obj, h)) return;
-  } else if (obj.physicsStackPiece && !obj.isVoxelBuildingCube) {
-    if (!activatePhysicsStack(obj.stackId, h, obj)) return;
-  }
-  obj.falling = true;
-  obj.fallVel = 0;
-  obj.spin = (Math.random() - 0.5) * 4;
-  obj.fallTargetHole = h;
-  obj.fallTargetX = obj.mesh?.position?.x ?? obj.x;
-  obj.fallTargetZ = obj.mesh?.position?.z ?? obj.z;
+function awardObjectConsume(h, obj) {
   // Award score and recompute radius via log formula (no ceiling, diminishing returns).
   // LMS now keeps normal scoring/growth so devouring objects remains meaningful.
   handleLoreConsume(h, obj);
@@ -7938,6 +7976,26 @@ function beginConsume(h, obj) {
   if (h.isPlayer) {
     flashConsumed(loreScoreMultiplier > 1 ? `${scoreValue} x${loreScoreMultiplier.toFixed(2)}` : scoreValue, new THREE.Vector3(h.x, 0, h.z));
   }
+}
+
+// Helper: a hole consumes an object (triggered when it starts falling)
+function beginConsume(h, obj) {
+  if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
+    if (!activateVoxelBuildingColumn(obj, h)) return;
+  } else if (obj.physicsStackPiece && !obj.isVoxelBuildingCube) {
+    if (!activatePhysicsStack(obj.stackId, h, obj)) return;
+  }
+  obj.falling = true;
+  obj.fallVel = 0;
+  obj.spin = (Math.random() - 0.5) * 4;
+  obj.fallTargetHole = h;
+  obj.fallTargetX = obj.mesh?.position?.x ?? obj.x;
+  obj.fallTargetZ = obj.mesh?.position?.z ?? obj.z;
+  if (obj.isVoxelBuildingCube) {
+    obj.pendingVoxelConsume = true;
+    return;
+  }
+  awardObjectConsume(h, obj);
 }
 
 // Helper: absorb one hole into another
@@ -10658,6 +10716,33 @@ function animate(frameNow = performance.now()) {
       const s = Math.max(0.1, 1 - (Math.abs(obj.mesh.position.y) / 6));
       obj.mesh.scale.set(s, s, s);
       if (obj.mesh.position.y < -5) {
+        if (obj.isVoxelBuildingCube && obj.pendingVoxelConsume) {
+          const stillOverHole = h?.alive && Math.hypot((obj.fallTargetX ?? obj.mesh.position.x) - h.x, (obj.fallTargetZ ?? obj.mesh.position.z) - h.z) < Math.max(0.2, h.radius - 0.05);
+          if (!stillOverHole) {
+            obj.falling = false;
+            obj.pendingVoxelConsume = false;
+            obj.fallTargetHole = null;
+            obj.fallVel = 0;
+            obj.vx = 0;
+            obj.vy = 0;
+            obj.vz = 0;
+            obj.stackSettled = true;
+            obj.stackActive = true;
+            obj.stackReleased = true;
+            obj.stackRestTimer = 0;
+            obj.x = obj.mesh.position.x;
+            obj.z = obj.mesh.position.z;
+            obj.mesh.position.y = obj.stackFloorY || Math.max(0.2, (obj.stackHeight || 1) / 2);
+            obj.mesh.scale.set(1, 1, 1);
+            continue;
+          }
+          awardObjectConsume(h, obj);
+          if (!music.muted) {
+            const distToPlayer = Math.hypot((obj.fallTargetX ?? obj.x) - player.x, (obj.fallTargetZ ?? obj.z) - player.z);
+            const volScale = Math.max(0.08, 1 - Math.min(1, distToPlayer / 42));
+            playVoxelCubeImpactSound(obj, volScale);
+          }
+        }
         obj.consumed = true;
         scene.remove(obj.mesh);
         removeObjectFromActiveLists(obj);

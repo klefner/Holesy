@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.33 - 2026-05-29
+
+Voxel cube audio and missed-hole cleanup.
+
+- Replaced full building-demolition spam from medium-office cubes with short budgeted cube-impact sounds.
+- Limited simultaneous voxel cube impact sounds per building so collapsing offices stay crunchy instead of turning into static.
+- Voxel cubes that miss the hole after the player moves away now land as visible debris instead of disappearing into the ground.
+
 ## Master 16.32 - 2026-05-29
 
 Slower office-cube gravity and column teetering.
