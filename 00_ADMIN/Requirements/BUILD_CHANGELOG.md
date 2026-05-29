@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.30 - 2026-05-28
+
+Procedural office voxels and visible-hole falling.
+
+- Made medium-office voxel cubes 25% larger so individual pieces read better during collapse.
+- Procedurally varies medium office length, width, and height from 5 to 10 cubes per axis.
+- Changed falling-object drift to preserve the visible-hole entry point instead of snapping everything toward a tiny center drain.
+
 ## Master 16.29 - 2026-05-28
 
 Medium office building voxel collapse.

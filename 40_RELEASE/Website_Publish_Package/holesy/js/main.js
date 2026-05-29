@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 29;
+const BUILD_SUB = 30;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1050,6 +1050,15 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.30',
+    summary: 'Procedural office voxels and rim-based falling.',
+    changes: [
+      'Made medium-office voxel cubes 25% larger so each piece reads better during collapse.',
+      'Procedurally varies medium office length, width, and height from 5 to 10 cubes per axis.',
+      'Changed falling-object drift to preserve the entry point inside the visible hole instead of pulling everything into a tiny center drain.'
+    ]
+  },
+  {
     label: 'Master 16.29',
     summary: 'Medium office buildings now fall as voxel columns.',
     changes: [
@@ -1894,11 +1903,11 @@ function makeSmallBuilding(pos) {
 // --- Mid building (office) ---
 function makeMidBuilding(pos) {
   const stackId = nextPhysicsStackId++;
-  const cubeSize = 0.88;
-  const gap = 0.035;
-  const colsX = 8;
-  const rowsZ = 3;
-  const floorsY = 6;
+  const cubeSize = 1.1;
+  const gap = 0.044;
+  const colsX = randomInt(5, 10);
+  const rowsZ = randomInt(5, 10);
+  const floorsY = randomInt(5, 10);
   const totalValue = 300;
   const wallColors = [0x9aa5a8, 0xaeb8ba, 0x879497, 0xb7aa8e];
   const wallMat = sharedBoxMat(wallColors[Math.floor(Math.random() * wallColors.length)]);
@@ -1976,6 +1985,7 @@ function makeMidBuilding(pos) {
         obj.voxelColZ = row;
         obj.voxelColsX = colsX;
         obj.voxelRowsZ = rowsZ;
+        obj.voxelFloorsY = floorsY;
         obj.vx = 0;
         obj.vy = 0;
         obj.vz = 0;
@@ -5982,6 +5992,8 @@ function serializeObjectState(obj) {
     value: obj.value,
     falling: !!obj.falling,
     fallVel: obj.fallVel || 0,
+    fallTargetX: obj.fallTargetX ?? obj.x,
+    fallTargetZ: obj.fallTargetZ ?? obj.z,
     spin: obj.spin || 0,
     moving: !!obj.moving,
     bounds: obj.bounds || null,
@@ -6034,6 +6046,7 @@ function serializeObjectState(obj) {
     voxelColZ: obj.voxelColZ || 0,
     voxelColsX: obj.voxelColsX || 0,
     voxelRowsZ: obj.voxelRowsZ || 0,
+    voxelFloorsY: obj.voxelFloorsY || obj.stackFloorCount || 0,
     vx: obj.vx || 0, vy: obj.vy || 0, vz: obj.vz || 0,
     avx: obj.avx || 0, avy: obj.avy || 0, avz: obj.avz || 0,
     stackCollapsedRemainingMs: getRemainingMs(obj.stackCollapsedAt),
@@ -6118,7 +6131,7 @@ function makeSavedSkyscraperChunk(state) {
 
 function makeSavedMidVoxelCube(state) {
   const g = new THREE.Group();
-  const cubeSize = Math.max(0.5, state.stackPieceW || state.stackHeight || 0.88);
+  const cubeSize = Math.max(0.5, state.stackPieceW || state.stackHeight || 1.1);
   const isTop = state.stackFloorCount > 0 && state.stackIndex >= state.stackFloorCount - 1;
   const wallMat = sharedBoxMat(0x9aa5a8);
   const glassMat = sharedBoxMat(0x263848);
@@ -6131,7 +6144,7 @@ function makeSavedMidVoxelCube(state) {
     const col = state.voxelColX || 0;
     const row = state.voxelColZ || 0;
     const colsX = state.voxelColsX || 8;
-    const rowsZ = state.voxelRowsZ || 3;
+    const rowsZ = state.voxelRowsZ || 6;
     const addPane = (geometry, position) => {
       const pane = new THREE.Mesh(geometry, glassMat);
       pane.position.copy(position);
@@ -6171,6 +6184,8 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
   obj.value = state.value || obj.value;
   obj.falling = !!state.falling;
   obj.fallVel = state.fallVel || 0;
+  obj.fallTargetX = state.fallTargetX ?? state.x;
+  obj.fallTargetZ = state.fallTargetZ ?? state.z;
   obj.spin = state.spin || 0;
   if (obj.mesh) {
     obj.mesh.position.set(state.x, state.y || obj.mesh.position.y || 0, state.z);
@@ -6240,6 +6255,7 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
       voxelColZ: state.voxelColZ || 0,
       voxelColsX: state.voxelColsX || obj.voxelColsX || 0,
       voxelRowsZ: state.voxelRowsZ || obj.voxelRowsZ || 0,
+      voxelFloorsY: state.voxelFloorsY || state.stackFloorCount || obj.voxelFloorsY || 0,
       vx: state.vx || 0, vy: state.vy || 0, vz: state.vz || 0,
       avx: state.avx || 0, avy: state.avy || 0, avz: state.avz || 0,
       stackCollapsedAt: restoreFutureTimestamp(state.stackCollapsedRemainingMs, now),
@@ -6955,6 +6971,10 @@ const alienAidAudio = { loopId: null };
 
 function randomBetween(min, max) {
   return min + Math.random() * (max - min);
+}
+
+function randomInt(min, max) {
+  return Math.floor(randomBetween(min, max + 1));
 }
 
 function pickRandomPowerup() {
@@ -7686,6 +7706,8 @@ function beginConsume(h, obj) {
   obj.fallVel = 0;
   obj.spin = (Math.random() - 0.5) * 4;
   obj.fallTargetHole = h;
+  obj.fallTargetX = obj.mesh?.position?.x ?? obj.x;
+  obj.fallTargetZ = obj.mesh?.position?.z ?? obj.z;
   // Award score and recompute radius via log formula (no ceiling, diminishing returns).
   // LMS now keeps normal scoring/growth so devouring objects remains meaningful.
   handleLoreConsume(h, obj);
@@ -10187,10 +10209,10 @@ function animate(frameNow = performance.now()) {
       const h = obj.fallTargetHole || player;
       obj.fallVel += 25 * dt;
       obj.mesh.position.y -= obj.fallVel * dt;
-      const dxo = h.x - obj.mesh.position.x;
-      const dzo = h.z - obj.mesh.position.z;
-      obj.mesh.position.x += dxo * Math.min(1, dt * 8);
-      obj.mesh.position.z += dzo * Math.min(1, dt * 8);
+      const targetX = obj.fallTargetX ?? obj.x ?? h.x;
+      const targetZ = obj.fallTargetZ ?? obj.z ?? h.z;
+      obj.mesh.position.x += (targetX - obj.mesh.position.x) * Math.min(1, dt * 2.2);
+      obj.mesh.position.z += (targetZ - obj.mesh.position.z) * Math.min(1, dt * 2.2);
       obj.mesh.rotation.x += obj.spin * dt;
       obj.mesh.rotation.z += obj.spin * dt * 0.7;
       const s = Math.max(0.1, 1 - (Math.abs(obj.mesh.position.y) / 6));
