@@ -1138,6 +1138,185 @@ Acceptance criteria:
 - locked achievements show difficulty requirements clearly enough that players understand why they did not unlock
 - drop-rate tuning preserves the existing pacing rule: zero or one document per won round, with no drops on losses
 
+## Priority 2C — Settings, Haptics, Controller, And Help UX
+
+Goal: make learning, configuration, and device-capability feedback consistent across every non-gameplay surface while preserving the MVP menu flow.
+
+Status:
+
+- backlog delta accepted; not yet implemented
+
+### Locked Decisions
+
+#### LD-001 — Unsupported Haptics UX
+
+Status:
+
+- LOCKED
+
+Decision:
+
+- display the Haptics setting on all devices
+- if haptics are unsupported:
+  - show the toggle in a disabled state
+  - display explanatory text: `Haptics are not supported on this device/browser.`
+
+Rationale:
+
+- transparent to player
+- avoids confusion when players compare screenshots / videos
+- prevents appearance of missing functionality
+
+#### LD-002 — Game Over Screen Settings Access
+
+Status:
+
+- LOCKED
+
+Decision:
+
+- the Game Over screen shall contain both:
+  - Settings button
+  - How To Play button
+
+Rationale:
+
+- players frequently adjust audio immediately after a run
+- consistent access pattern across all non-gameplay screens
+
+#### LD-003 — About Section Content
+
+Status:
+
+- LOCKED
+
+Decision:
+
+- the About section shall contain:
+  - Downtown Devour
+  - current version number
+  - Created by Kent Lefner
+  - procedural music attribution
+  - Three.js credit
+  - browser technology credit(s)
+
+Future additions may include:
+
+- website link
+- contact link
+- credits page
+
+### PB-HAP-003 — Unsupported Device UX
+
+Priority:
+
+- Medium
+
+Dependencies:
+
+- Settings menu
+- haptics support detection
+
+Description:
+
+- keep haptics discoverable even when the current device or browser cannot support vibration feedback
+
+Acceptance criteria:
+
+- WHEN haptics are unsupported THEN the Haptics toggle remains visible
+- WHEN haptics are unsupported THEN the toggle is disabled
+- WHEN a player views the disabled toggle THEN explanatory text is displayed
+- WHEN haptics are unsupported THEN no vibration API calls execute
+
+### PB-HELP-003 — Add How To Play Access To All Screens
+
+Priority:
+
+- Medium
+
+Dependencies:
+
+- shared How To Play modal / popup
+
+Description:
+
+- provide consistent player-learning access from non-gameplay screens without interrupting active runs
+
+Acceptance criteria:
+
+- WHEN on Title Screen THEN passive tips remain visible
+- WHEN on Pause Screen THEN a How To Play button opens the shared modal
+- WHEN on Settings Screen THEN a How To Play button opens the shared modal
+- WHEN on Game Over Screen THEN a How To Play button opens the shared modal
+
+### PB-UI-004 — About Section
+
+Priority:
+
+- Medium
+
+Dependencies:
+
+- Settings menu or equivalent non-gameplay information surface
+
+Description:
+
+- display product information and technology credits
+
+Required content:
+
+- game title
+- version number
+- creator attribution
+- procedural music attribution
+- Three.js attribution
+- technology / platform attribution
+
+Acceptance criteria:
+
+- WHEN About is opened THEN all required content is visible
+- WHEN viewed on mobile THEN content remains readable
+- WHEN viewed on desktop THEN content remains readable
+- WHEN version number changes THEN About reflects the updated version
+
+### PB-UI-005 — Add Settings Access To Game Over Screen
+
+Priority:
+
+- Medium
+
+Dependencies:
+
+- PB-UI-001 Settings Menu
+
+Description:
+
+- provide access to Settings directly from the Game Over screen
+
+Acceptance criteria:
+
+- WHEN the Game Over screen appears THEN a Settings button is visible
+- WHEN Settings is selected THEN the Settings menu opens
+- WHEN Settings is closed THEN the player returns to the Game Over screen
+- WHEN settings are changed THEN changes apply immediately
+- WHEN the player restarts the game THEN settings persist
+
+Implementation note:
+
+- all non-gameplay screens now provide access to learning and configuration:
+  - Title Screen:
+    - Settings
+    - passive How To Play tips
+  - Pause Screen:
+    - Settings
+    - How To Play
+  - Settings Screen:
+    - How To Play
+  - Game Over Screen:
+    - Settings
+    - How To Play
+- this establishes a consistent player-help architecture for MVP
+
 ## Priority 3 — Physics Stack And Collapse System
 
 Goal: introduce `hole.io`-style stacked-object variety with convincing gravity-driven collapse while preserving the current battlefield systems.
