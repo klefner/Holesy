@@ -67,12 +67,13 @@ Last approved candidate promoted into `Master 16`:
 - active monitor items carried from the latest QA evidence:
   - archive readability and music fit
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
-- current governance blockers from the 2026-05-28 daily audit:
-  - `QA-017` open because this repo session still cannot create `.git/index.lock` and also cannot refresh `.git/FETCH_HEAD`, so the 2026-05-22 and 2026-05-28 audit artifacts remain local-only and fresh remote verification is limited
+- current governance blockers:
+  - none open as of the 2026-05-28 `QA-017` resolution; branch publication is working again for the governed repo session
 - recently closed by user validation and governance repair:
   - `QA-006` closed after user confirmed the long-idle tab-close defect no longer reproduces
   - `QA-007` closed for the current defect state; ongoing buff/lore wording clarity remains a product-backlog improvement item
   - `QA-016` and the `Master 16.28` traffic/soldier-growth regression set closed after user validation
+  - `QA-017` resolved after `git fetch --prune`, staging, commit, and push succeeded from the governed repo session
   - `QA-018` resolved by documenting the unrecoverable 2026-05-23 through 2026-05-27 missing-run gap and adding a missed-run backstop to the actual automation prompt plus governed QA procedures
 - current gameplay validation should also cover Endless Waves continuity, player-death exit behavior, rival respawn behavior, save/load expectations, and runaway growth tuning
 - current gameplay validation should specifically re-check saved skyscraper visuals after loading, growth after soldier damage, and panic-car skid distance
@@ -86,7 +87,7 @@ Last approved candidate promoted into `Master 16`:
 - treat `Master 16.28` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
-- before calling the latest audit state branch-visible, restore Git publishability for this checkout and commit the local 2026-05-22, 2026-05-28, and 2026-05-23-through-2026-05-27 missing-run audit artifacts
+- the latest audit state is branch-visible again as of commit `7fddcdb`; keep future audits checking Git publication before completion
 - start with regression testing `Master 16.28`, then continue `PERF-012` Phase 2
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
