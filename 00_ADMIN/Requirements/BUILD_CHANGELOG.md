@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.35 - 2026-05-30
+
+Voxel performance guardrails.
+
+- Made medium-office cubes larger and reduced generated cube counts per building to address collapse performance.
+- Replaced unbounded active voxel contact checks with a capped per-building contact budget.
+- Added voxel velocity/spin clamps and softer contact impulses so cubes settle more naturally instead of launching or jittering.
+
 ## Master 16.34 - 2026-05-30
 
 Slower voxel falls and stronger cube contact.

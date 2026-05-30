@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 34;
+const BUILD_SUB = 35;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1050,6 +1050,15 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.35',
+    summary: 'Voxel performance guardrails.',
+    changes: [
+      'Made medium-office voxels larger and reduced procedural cube counts so dense office collapses stay playable.',
+      'Replaced unbounded voxel collision checks with a capped local contact budget per building.',
+      'Clamped voxel impact velocity and spin so cubes settle more naturally instead of launching or jittering.'
+    ]
+  },
+  {
     label: 'Master 16.34',
     summary: 'Slower voxel descent and reliable hole entry.',
     changes: [
@@ -1643,6 +1652,11 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   voxelGroundRollRetentionMax: 0.94,
   voxelObjectImpactRange: 0.42,
   voxelObjectImpactImpulse: 0.42,
+  voxelContactMaxPairsPerFrame: 260,
+  voxelImpactMaxCubesPerFrame: 72,
+  voxelImpactMaxObjectsPerCube: 18,
+  voxelMaxHorizontalSpeed: 6.4,
+  voxelMaxAngularSpeed: 4.8,
   shoveStrength: 6.3,
   horizontalDamping: 0.942,
   maxHorizontalSpeed: 10.8,
@@ -1970,11 +1984,11 @@ function makeSmallBuilding(pos) {
 // --- Mid building (office) ---
 function makeMidBuilding(pos) {
   const stackId = nextPhysicsStackId++;
-  const cubeSize = 1.1;
-  const gap = 0.044;
-  const colsX = randomInt(5, 10);
-  const rowsZ = randomInt(5, 10);
-  const floorsY = randomInt(5, 10);
+  const cubeSize = 1.48;
+  const gap = 0.05;
+  const colsX = randomInt(4, 7);
+  const rowsZ = randomInt(4, 7);
+  const floorsY = randomInt(4, 8);
   const totalValue = 300;
   const wallColors = [0x9aa5a8, 0xaeb8ba, 0x879497, 0xb7aa8e];
   const wallMat = sharedBoxMat(wallColors[Math.floor(Math.random() * wallColors.length)]);
@@ -6270,7 +6284,7 @@ function makeSavedSkyscraperChunk(state) {
 
 function makeSavedMidVoxelCube(state) {
   const g = new THREE.Group();
-  const cubeSize = Math.max(0.5, state.stackPieceW || state.stackHeight || 1.1);
+  const cubeSize = Math.max(0.5, state.stackPieceW || state.stackHeight || 1.48);
   const isTop = state.stackFloorCount > 0 && state.stackIndex >= state.stackFloorCount - 1;
   const wallMat = sharedBoxMat(0x9aa5a8);
   const glassMat = sharedBoxMat(0x263848);
@@ -8188,6 +8202,20 @@ function getObjectLargestDimension(obj) {
   return dims.length ? Math.max(...dims) : (obj.size || 0) * 2;
 }
 
+function clampVoxelMotion(piece) {
+  if (!piece?.isVoxelBuildingCube) return;
+  const clamped = clampVectorLength2(piece.vx || 0, piece.vz || 0, STACK_PHYSICS_CONFIG.voxelMaxHorizontalSpeed);
+  piece.vx = clamped.x;
+  piece.vz = clamped.z;
+  const angular = Math.hypot(piece.avx || 0, piece.avy || 0, piece.avz || 0);
+  if (angular > STACK_PHYSICS_CONFIG.voxelMaxAngularSpeed) {
+    const scale = STACK_PHYSICS_CONFIG.voxelMaxAngularSpeed / angular;
+    piece.avx *= scale;
+    piece.avy *= scale;
+    piece.avz *= scale;
+  }
+}
+
 function getVoxelSupportPiece(piece) {
   if (!piece?.isVoxelBuildingCube || piece.stackIndex <= 0) return null;
   return physicsStackPieces.find(other =>
@@ -8447,10 +8475,11 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
 
 function resolvePhysicsStackContacts(dt) {
   const activePieces = physicsStackPieces.filter(piece => piece.stackActive && !piece.stackSettled && !piece.consumed && !piece.falling && !piece.jammedInHole);
-  for (let i = 0; i < activePieces.length; i++) {
-    const a = activePieces[i];
-    for (let j = i + 1; j < activePieces.length; j++) {
-      const b = activePieces[j];
+  const nonVoxelPieces = activePieces.filter(piece => !piece.isVoxelBuildingCube);
+  for (let i = 0; i < nonVoxelPieces.length; i++) {
+    const a = nonVoxelPieces[i];
+    for (let j = i + 1; j < nonVoxelPieces.length; j++) {
+      const b = nonVoxelPieces[j];
       if (a.stackId !== b.stackId) continue;
       if (Math.abs(a.mesh.position.y - b.mesh.position.y) > (a.stackHeight + b.stackHeight) * 0.72) continue;
       const dx = b.x - a.x;
@@ -8474,71 +8503,87 @@ function resolvePhysicsStackContacts(dt) {
   }
 
   const voxelPieces = activePieces.filter(piece => piece.isVoxelBuildingCube);
-  for (let i = 0; i < voxelPieces.length; i++) {
-    const a = voxelPieces[i];
-    for (let j = i + 1; j < voxelPieces.length; j++) {
-      const b = voxelPieces[j];
-      if (a.stackId !== b.stackId) continue;
-      const halfX = ((a.stackPieceW || a.size * 2 || 1) + (b.stackPieceW || b.size * 2 || 1)) * 0.5;
-      const halfY = ((a.stackHeight || a.size * 2 || 1) + (b.stackHeight || b.size * 2 || 1)) * 0.5;
-      const halfZ = ((a.stackPieceD || a.size * 2 || 1) + (b.stackPieceD || b.size * 2 || 1)) * 0.5;
-      const dx = b.x - a.x;
-      const dy = b.mesh.position.y - a.mesh.position.y;
-      const dz = b.z - a.z;
-      const overlapX = halfX - Math.abs(dx);
-      const overlapY = halfY - Math.abs(dy);
-      const overlapZ = halfZ - Math.abs(dz);
-      if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0) continue;
+  if (!voxelPieces.length) return;
+  const byStack = new Map();
+  for (const piece of voxelPieces) {
+    const list = byStack.get(piece.stackId) || [];
+    list.push(piece);
+    byStack.set(piece.stackId, list);
+  }
+  const maxPairs = STACK_PHYSICS_CONFIG.voxelContactMaxPairsPerFrame;
+  for (const pieces of byStack.values()) {
+    let checkedPairs = 0;
+    pieces.sort((a, b) => a.mesh.position.y - b.mesh.position.y);
+    for (let i = 0; i < pieces.length && checkedPairs < maxPairs; i++) {
+      const a = pieces[i];
+      const reachY = (a.stackHeight || a.size * 2 || 1) * 2.25;
+      for (let j = i + 1; j < pieces.length && checkedPairs < maxPairs; j++) {
+        const b = pieces[j];
+        const dy = b.mesh.position.y - a.mesh.position.y;
+        if (dy > reachY + (b.stackHeight || b.size * 2 || 1)) break;
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const xzReach = ((a.stackPieceW || a.size * 2 || 1) + (b.stackPieceW || b.size * 2 || 1)) * 0.72;
+        if (Math.abs(dx) > xzReach || Math.abs(dz) > xzReach) continue;
+        checkedPairs++;
 
-      const relVx = b.vx - a.vx;
-      const relVy = b.vy - a.vy;
-      const relVz = b.vz - a.vz;
-      const impact = Math.hypot(relVx, relVy, relVz);
-      const push = 0.62 + Math.min(1.75, impact * 0.07);
-      if (overlapY <= overlapX && overlapY <= overlapZ) {
-        const sy = dy >= 0 ? 1 : -1;
-        const correction = overlapY * push * 0.56;
-        a.mesh.position.y -= sy * correction;
-        b.mesh.position.y += sy * correction;
-        const closing = Math.max(0.12, Math.abs(relVy));
-        const impulse = Math.max(0.16, overlapY * (0.9 + closing * 0.34 + impact * 0.08));
-        a.vy -= sy * impulse;
-        b.vy += sy * impulse;
-        a.vx -= Math.sign(dx || randomBetween(-1, 1)) * impulse * 0.06;
-        b.vx += Math.sign(dx || randomBetween(-1, 1)) * impulse * 0.06;
-        a.vz -= Math.sign(dz || randomBetween(-1, 1)) * impulse * 0.06;
-        b.vz += Math.sign(dz || randomBetween(-1, 1)) * impulse * 0.06;
-      } else if (overlapX <= overlapZ) {
-        const sx = dx >= 0 ? 1 : -1;
-        const correction = overlapX * push * 0.56;
-        a.x -= sx * correction;
-        b.x += sx * correction;
-        const closing = Math.max(0.12, Math.abs(relVx));
-        const impulse = Math.max(0.16, overlapX * (0.95 + closing * 0.36 + impact * 0.09));
-        a.vx -= sx * impulse;
-        b.vx += sx * impulse;
-        a.vy += randomBetween(0.02, 0.08) * impulse;
-        b.vy += randomBetween(0.02, 0.08) * impulse;
-        a.avz -= sx * impulse * 0.18;
-        b.avz += sx * impulse * 0.18;
-      } else {
-        const sz = dz >= 0 ? 1 : -1;
-        const correction = overlapZ * push * 0.56;
-        a.z -= sz * correction;
-        b.z += sz * correction;
-        const closing = Math.max(0.12, Math.abs(relVz));
-        const impulse = Math.max(0.16, overlapZ * (0.95 + closing * 0.36 + impact * 0.09));
-        a.vz -= sz * impulse;
-        b.vz += sz * impulse;
-        a.vy += randomBetween(0.02, 0.08) * impulse;
-        b.vy += randomBetween(0.02, 0.08) * impulse;
-        a.avx += sz * impulse * 0.18;
-        b.avx -= sz * impulse * 0.18;
+        const halfX = ((a.stackPieceW || a.size * 2 || 1) + (b.stackPieceW || b.size * 2 || 1)) * 0.5;
+        const halfY = ((a.stackHeight || a.size * 2 || 1) + (b.stackHeight || b.size * 2 || 1)) * 0.5;
+        const halfZ = ((a.stackPieceD || a.size * 2 || 1) + (b.stackPieceD || b.size * 2 || 1)) * 0.5;
+        const overlapX = halfX - Math.abs(dx);
+        const overlapY = halfY - Math.abs(dy);
+        const overlapZ = halfZ - Math.abs(dz);
+        if (overlapX <= 0 || overlapY <= 0 || overlapZ <= 0) continue;
+
+        const relVx = b.vx - a.vx;
+        const relVy = b.vy - a.vy;
+        const relVz = b.vz - a.vz;
+        const impact = Math.min(8, Math.hypot(relVx, relVy, relVz));
+        const push = 0.42 + Math.min(0.75, impact * 0.04);
+        if (overlapY <= overlapX && overlapY <= overlapZ) {
+          const sy = dy >= 0 ? 1 : -1;
+          const correction = overlapY * push * 0.46;
+          a.mesh.position.y -= sy * correction;
+          b.mesh.position.y += sy * correction;
+          const impulse = Math.max(0.08, overlapY * (0.42 + Math.abs(relVy) * 0.12 + impact * 0.035));
+          a.vy -= sy * impulse;
+          b.vy += sy * impulse;
+          a.vx -= Math.sign(dx || randomBetween(-1, 1)) * impulse * 0.025;
+          b.vx += Math.sign(dx || randomBetween(-1, 1)) * impulse * 0.025;
+          a.vz -= Math.sign(dz || randomBetween(-1, 1)) * impulse * 0.025;
+          b.vz += Math.sign(dz || randomBetween(-1, 1)) * impulse * 0.025;
+        } else if (overlapX <= overlapZ) {
+          const sx = dx >= 0 ? 1 : -1;
+          const correction = overlapX * push * 0.46;
+          a.x -= sx * correction;
+          b.x += sx * correction;
+          const impulse = Math.max(0.08, overlapX * (0.48 + Math.abs(relVx) * 0.14 + impact * 0.035));
+          a.vx -= sx * impulse;
+          b.vx += sx * impulse;
+          a.vy += Math.min(0.08, impulse * 0.018);
+          b.vy += Math.min(0.08, impulse * 0.018);
+          a.avz -= sx * impulse * 0.08;
+          b.avz += sx * impulse * 0.08;
+        } else {
+          const sz = dz >= 0 ? 1 : -1;
+          const correction = overlapZ * push * 0.46;
+          a.z -= sz * correction;
+          b.z += sz * correction;
+          const impulse = Math.max(0.08, overlapZ * (0.48 + Math.abs(relVz) * 0.14 + impact * 0.035));
+          a.vz -= sz * impulse;
+          b.vz += sz * impulse;
+          a.vy += Math.min(0.08, impulse * 0.018);
+          b.vy += Math.min(0.08, impulse * 0.018);
+          a.avx += sz * impulse * 0.08;
+          b.avx -= sz * impulse * 0.08;
+        }
+        clampVoxelMotion(a);
+        clampVoxelMotion(b);
+        a.mesh.position.x = a.x;
+        a.mesh.position.z = a.z;
+        b.mesh.position.x = b.x;
+        b.mesh.position.z = b.z;
       }
-      a.mesh.position.x = a.x;
-      a.mesh.position.z = a.z;
-      b.mesh.position.x = b.x;
-      b.mesh.position.z = b.z;
     }
   }
 }
@@ -8553,15 +8598,22 @@ function applyVoxelObjectImpacts(dt) {
     !piece.falling &&
     !piece.jammedInHole
   );
+  let processedCubes = 0;
   for (const cube of activeVoxels) {
+    if (processedCubes >= STACK_PHYSICS_CONFIG.voxelImpactMaxCubesPerFrame) break;
     const cubeSpeed = Math.hypot(cube.vx || 0, cube.vy || 0, cube.vz || 0);
     if (cubeSpeed < 0.35) continue;
+    processedCubes++;
+    let checkedObjects = 0;
     for (const other of objects) {
+      if (checkedObjects >= STACK_PHYSICS_CONFIG.voxelImpactMaxObjectsPerCube) break;
       if (other === cube || other.consumed || other.falling || other.jammedInHole || other.airDropping) continue;
       if (other.physicsStackPiece && other.stackId === cube.stackId) continue;
       if (other.physicsStackPiece && !other.stackActive) continue;
       const dx = other.x - cube.x;
       const dz = other.z - cube.z;
+      if (Math.abs(dx) > 8 || Math.abs(dz) > 8) continue;
+      checkedObjects++;
       const dist = Math.hypot(dx, dz) || 0.001;
       const minDist = (cube.size || 0.5) + (other.size || 0.5) + STACK_PHYSICS_CONFIG.voxelObjectImpactRange;
       if (dist > minDist) continue;
@@ -8598,6 +8650,7 @@ function applyVoxelObjectImpacts(dt) {
       cube.vz -= nz * impulse * 0.16;
       cube.avx += nz * impulse * 0.18;
       cube.avz -= nx * impulse * 0.18;
+      clampVoxelMotion(cube);
     }
   }
 }
@@ -8658,6 +8711,7 @@ function updatePhysicsStackPieces(dt) {
     piece.avx *= 0.986;
     piece.avy *= 0.986;
     piece.avz *= 0.986;
+    clampVoxelMotion(piece);
 
     if (piece.mesh.position.y <= piece.stackFloorY) {
       const impactSpeed = Math.abs(piece.vy || 0);
