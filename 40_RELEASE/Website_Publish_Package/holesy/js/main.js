@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 33;
+const BUILD_SUB = 34;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1050,6 +1050,15 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.34',
+    summary: 'Slower voxel descent and reliable hole entry.',
+    changes: [
+      'Slowed medium-office voxel descent with lower gravity, lower terminal velocity, and longer teeter/release timing.',
+      'Columns now commit to a slow side-fall after teetering instead of sometimes holding a permanent lean.',
+      'Voxel cubes remember whether they crossed the floor inside the hole so eaten cubes cannot reappear after the hole moves away.'
+    ]
+  },
+  {
     label: 'Master 16.33',
     summary: 'Voxel cube audio and missed-hole cleanup.',
     changes: [
@@ -1614,22 +1623,22 @@ const voxelImpactAudioState = new Map();
 
 const STACK_PHYSICS_CONFIG = Object.freeze({
   gravity: 25,
-  voxelGravity: 9.5,
-  voxelGravityJitter: 2.4,
-  voxelTerminalVelocity: 30,
+  voxelGravity: 4.6,
+  voxelGravityJitter: 1.35,
+  voxelTerminalVelocity: 16,
   triggerPadding: 5.2,
   voxelTriggerPadding: 0.34,
   voxelColumnSpread: 3.4,
   voxelSupportDropFraction: 0.38,
-  voxelReleaseDelayMin: 0.12,
-  voxelReleaseDelayMax: 0.34,
-  voxelTeeterSecondsMin: 0.18,
-  voxelTeeterSecondsMax: 0.55,
-  voxelTeeterAngleMin: 0.08,
-  voxelTeeterAngleMax: 0.24,
-  voxelTeeterFailureChance: 0.28,
-  voxelLeanVelocityMin: 0.65,
-  voxelLeanVelocityMax: 2.4,
+  voxelReleaseDelayMin: 0.18,
+  voxelReleaseDelayMax: 0.62,
+  voxelTeeterSecondsMin: 0.55,
+  voxelTeeterSecondsMax: 1.35,
+  voxelTeeterAngleMin: 0.16,
+  voxelTeeterAngleMax: 0.48,
+  voxelTeeterFailureChance: 1,
+  voxelLeanVelocityMin: 0.35,
+  voxelLeanVelocityMax: 1.65,
   voxelGroundRollRetentionMin: 0.78,
   voxelGroundRollRetentionMax: 0.94,
   voxelObjectImpactRange: 0.42,
@@ -1640,7 +1649,7 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   maxCollapseSpread: 16.5,
   bounceDamping: 0.16,
   contactRadiusScale: 0.82,
-  contactImpulse: 8.5,
+  contactImpulse: 14,
   obstacleInfluenceRange: 7.5,
   restSpeed: 0.18,
   restAngularSpeed: 0.22,
@@ -1652,6 +1661,7 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   voxelAudioMaxVoicesPerStack: 5,
   voxelAudioMinIntervalMs: 55,
   voxelAudioMaxDuration: 0.16,
+  voxelConsumeGravity: 7.5,
 });
 
 const HOLE_JAM_CONFIG = Object.freeze({
@@ -6166,6 +6176,7 @@ function serializeObjectState(obj) {
     voxelBaseY: obj.voxelBaseY ?? obj.mesh?.position?.y ?? 0,
     voxelBaseZ: obj.voxelBaseZ ?? obj.z,
     voxelGravity: obj.voxelGravity || 0,
+    voxelTerminalVelocity: obj.voxelTerminalVelocity || 0,
     voxelLeanDirX: obj.voxelLeanDirX || 0,
     voxelLeanDirZ: obj.voxelLeanDirZ || 0,
     voxelLeanAngle: obj.voxelLeanAngle || 0,
@@ -6397,6 +6408,7 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
         STACK_PHYSICS_CONFIG.voxelGravity - STACK_PHYSICS_CONFIG.voxelGravityJitter,
         STACK_PHYSICS_CONFIG.voxelGravity + STACK_PHYSICS_CONFIG.voxelGravityJitter
       ),
+      voxelTerminalVelocity: state.voxelTerminalVelocity || STACK_PHYSICS_CONFIG.voxelTerminalVelocity,
       voxelLeanDirX: state.voxelLeanDirX || 0,
       voxelLeanDirZ: state.voxelLeanDirZ || 0,
       voxelLeanAngle: state.voxelLeanAngle || 0,
@@ -7993,9 +8005,31 @@ function beginConsume(h, obj) {
   obj.fallTargetZ = obj.mesh?.position?.z ?? obj.z;
   if (obj.isVoxelBuildingCube) {
     obj.pendingVoxelConsume = true;
+    obj.voxelEnteredHole = false;
+    obj.voxelTouchedFloorWhilePending = false;
     return;
   }
   awardObjectConsume(h, obj);
+}
+
+function settleMissedVoxelConsume(obj) {
+  obj.falling = false;
+  obj.pendingVoxelConsume = false;
+  obj.voxelTouchedFloorWhilePending = false;
+  obj.voxelEnteredHole = false;
+  obj.fallTargetHole = null;
+  obj.fallVel = 0;
+  obj.vx = 0;
+  obj.vy = 0;
+  obj.vz = 0;
+  obj.stackSettled = true;
+  obj.stackActive = true;
+  obj.stackReleased = true;
+  obj.stackRestTimer = 0;
+  obj.x = obj.mesh.position.x;
+  obj.z = obj.mesh.position.z;
+  obj.mesh.position.y = obj.stackFloorY || Math.max(0.2, (obj.stackHeight || 1) / 2);
+  obj.mesh.scale.set(1, 1, 1);
 }
 
 // Helper: absorb one hole into another
@@ -8187,19 +8221,6 @@ function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
   }
 
   if (piece.stackIndex <= 0 && teeterT < 1) return false;
-  if (!piece.stackWillFall && teeterT >= 1) {
-    piece.stackActive = false;
-    piece.stackSettled = false;
-    piece.stackRestTimer = 0;
-    piece.stackSupportLostAt = 0;
-    piece.mesh.position.set(piece.voxelBaseX ?? piece.x, piece.voxelBaseY ?? piece.mesh.position.y, piece.voxelBaseZ ?? piece.z);
-    piece.mesh.rotation.set(0, piece.mesh.rotation.y, 0);
-    piece.x = piece.mesh.position.x;
-    piece.z = piece.mesh.position.z;
-    piece.vx = 0; piece.vy = 0; piece.vz = 0;
-    piece.avx = 0; piece.avy = 0; piece.avz = 0;
-    return false;
-  }
 
   const support = getVoxelSupportPiece(piece);
   const supportDrop = (piece.stackHeight || 1) * STACK_PHYSICS_CONFIG.voxelSupportDropFraction;
@@ -8214,12 +8235,12 @@ function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
   piece.stackReleased = true;
   piece.voxelTeeterReleasedAt = now;
   const inheritedLean = randomBetween(STACK_PHYSICS_CONFIG.voxelLeanVelocityMin, STACK_PHYSICS_CONFIG.voxelLeanVelocityMax) * (0.35 + heightT);
-  piece.vx += (piece.voxelLeanDirX || 0) * inheritedLean + randomBetween(-0.28, 0.28);
-  piece.vz += (piece.voxelLeanDirZ || 0) * inheritedLean + randomBetween(-0.28, 0.28);
-  piece.vy += randomBetween(-0.18, 0.08);
-  piece.avx += randomBetween(-0.9, 0.9) + (piece.voxelLeanDirZ || 0) * inheritedLean * 0.34;
-  piece.avy += randomBetween(-0.7, 0.7);
-  piece.avz += randomBetween(-0.9, 0.9) - (piece.voxelLeanDirX || 0) * inheritedLean * 0.34;
+  piece.vx += (piece.voxelLeanDirX || 0) * inheritedLean + randomBetween(-0.16, 0.16);
+  piece.vz += (piece.voxelLeanDirZ || 0) * inheritedLean + randomBetween(-0.16, 0.16);
+  piece.vy += randomBetween(-0.08, 0.04);
+  piece.avx += randomBetween(-0.45, 0.45) + (piece.voxelLeanDirZ || 0) * inheritedLean * 0.42;
+  piece.avy += randomBetween(-0.35, 0.35);
+  piece.avz += randomBetween(-0.45, 0.45) - (piece.voxelLeanDirX || 0) * inheritedLean * 0.42;
   return true;
 }
 
@@ -8374,9 +8395,7 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
   const centerD = Math.hypot(seedPiece.x - sourceHole.x, seedPiece.z - sourceHole.z);
   const deeplyUndermined = centerD < Math.max(0.25, sourceHole.radius - seedPiece.size * 0.28);
   const teeterFails = deeplyUndermined || Math.random() < STACK_PHYSICS_CONFIG.voxelTeeterFailureChance;
-  const leanAngle = teeterFails
-    ? randomBetween(STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 0.72, STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 1.35)
-    : randomBetween(STACK_PHYSICS_CONFIG.voxelTeeterAngleMin, STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 0.62);
+  const leanAngle = randomBetween(STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 0.72, STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 1.35);
   for (const piece of physicsStackPieces) {
     if (piece.stackId !== stackId || !piece.isVoxelBuildingCube) continue;
     if (piece.voxelColX !== colX || piece.voxelColZ !== colZ) continue;
@@ -8388,7 +8407,7 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.stackCollapsedAt = now;
     piece.stackCollapsedBy = sourceHole;
     piece.stackReleased = false;
-    piece.stackWillFall = teeterFails;
+    piece.stackWillFall = true;
     piece.stackSupportLostAt = 0;
     piece.stackSupportDelaySeconds = randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax);
     piece.stackDelaySeconds = 0;
@@ -8401,12 +8420,14 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.voxelLeanAngle = leanAngle * (0.72 + floorT * 0.48) * randomBetween(0.82, 1.18);
     piece.voxelTeeterSeconds = teeterSeconds * randomBetween(0.82, 1.22);
     piece.voxelTeeterReleasedAt = 0;
-    piece.voxelGravity = randomBetween(
+    const heightGravityBoost = 1 + floorT * 0.38;
+    piece.voxelGravity = Math.max(1.8, randomBetween(
       STACK_PHYSICS_CONFIG.voxelGravity - STACK_PHYSICS_CONFIG.voxelGravityJitter,
       STACK_PHYSICS_CONFIG.voxelGravity + STACK_PHYSICS_CONFIG.voxelGravityJitter
-    );
-    piece.vx += leanDir.x * randomBetween(0.02, 0.16);
-    piece.vz += leanDir.z * randomBetween(0.02, 0.16);
+    ) * heightGravityBoost);
+    piece.voxelTerminalVelocity = STACK_PHYSICS_CONFIG.voxelTerminalVelocity * (0.62 + floorT * 0.68) * randomBetween(0.86, 1.14);
+    piece.vx += leanDir.x * randomBetween(0.01, 0.08);
+    piece.vz += leanDir.z * randomBetween(0.01, 0.08);
     piece.vy = Math.min(piece.vy, 0);
     piece.avx += randomBetween(-0.35, 0.35);
     piece.avy += randomBetween(-0.25, 0.25);
@@ -8473,35 +8494,46 @@ function resolvePhysicsStackContacts(dt) {
       const relVy = b.vy - a.vy;
       const relVz = b.vz - a.vz;
       const impact = Math.hypot(relVx, relVy, relVz);
-      const push = 0.5 + Math.min(1.4, impact * 0.045);
+      const push = 0.62 + Math.min(1.75, impact * 0.07);
       if (overlapY <= overlapX && overlapY <= overlapZ) {
         const sy = dy >= 0 ? 1 : -1;
-        const correction = overlapY * push * 0.52;
+        const correction = overlapY * push * 0.56;
         a.mesh.position.y -= sy * correction;
         b.mesh.position.y += sy * correction;
-        const impulse = Math.max(0.08, overlapY * (2.2 + impact * 0.24));
-        a.vy -= sy * impulse * dt;
-        b.vy += sy * impulse * dt;
+        const closing = Math.max(0.12, Math.abs(relVy));
+        const impulse = Math.max(0.16, overlapY * (0.9 + closing * 0.34 + impact * 0.08));
+        a.vy -= sy * impulse;
+        b.vy += sy * impulse;
+        a.vx -= Math.sign(dx || randomBetween(-1, 1)) * impulse * 0.06;
+        b.vx += Math.sign(dx || randomBetween(-1, 1)) * impulse * 0.06;
+        a.vz -= Math.sign(dz || randomBetween(-1, 1)) * impulse * 0.06;
+        b.vz += Math.sign(dz || randomBetween(-1, 1)) * impulse * 0.06;
       } else if (overlapX <= overlapZ) {
         const sx = dx >= 0 ? 1 : -1;
-        const correction = overlapX * push * 0.52;
+        const correction = overlapX * push * 0.56;
         a.x -= sx * correction;
         b.x += sx * correction;
-        const impulse = Math.max(0.08, overlapX * (2.4 + impact * 0.26));
-        a.vx -= sx * impulse * dt;
-        b.vx += sx * impulse * dt;
-        a.avz -= sx * impulse * 0.08;
-        b.avz += sx * impulse * 0.08;
+        const closing = Math.max(0.12, Math.abs(relVx));
+        const impulse = Math.max(0.16, overlapX * (0.95 + closing * 0.36 + impact * 0.09));
+        a.vx -= sx * impulse;
+        b.vx += sx * impulse;
+        a.vy += randomBetween(0.02, 0.08) * impulse;
+        b.vy += randomBetween(0.02, 0.08) * impulse;
+        a.avz -= sx * impulse * 0.18;
+        b.avz += sx * impulse * 0.18;
       } else {
         const sz = dz >= 0 ? 1 : -1;
-        const correction = overlapZ * push * 0.52;
+        const correction = overlapZ * push * 0.56;
         a.z -= sz * correction;
         b.z += sz * correction;
-        const impulse = Math.max(0.08, overlapZ * (2.4 + impact * 0.26));
-        a.vz -= sz * impulse * dt;
-        b.vz += sz * impulse * dt;
-        a.avx += sz * impulse * 0.08;
-        b.avx -= sz * impulse * 0.08;
+        const closing = Math.max(0.12, Math.abs(relVz));
+        const impulse = Math.max(0.16, overlapZ * (0.95 + closing * 0.36 + impact * 0.09));
+        a.vz -= sz * impulse;
+        b.vz += sz * impulse;
+        a.vy += randomBetween(0.02, 0.08) * impulse;
+        b.vy += randomBetween(0.02, 0.08) * impulse;
+        a.avx += sz * impulse * 0.18;
+        b.avx -= sz * impulse * 0.18;
       }
       a.mesh.position.x = a.x;
       a.mesh.position.z = a.z;
@@ -8601,7 +8633,7 @@ function updatePhysicsStackPieces(dt) {
       ? Math.max(1, piece.voxelGravity || STACK_PHYSICS_CONFIG.voxelGravity)
       : STACK_PHYSICS_CONFIG.gravity;
     piece.vy -= gravity * dt;
-    if (piece.isVoxelBuildingCube) piece.vy = Math.max(-STACK_PHYSICS_CONFIG.voxelTerminalVelocity, piece.vy);
+    if (piece.isVoxelBuildingCube) piece.vy = Math.max(-(piece.voxelTerminalVelocity || STACK_PHYSICS_CONFIG.voxelTerminalVelocity), piece.vy);
     piece.x += piece.vx * dt;
     piece.z += piece.vz * dt;
     const spreadX = piece.x - piece.stackCenterX;
@@ -10705,7 +10737,7 @@ function animate(frameNow = performance.now()) {
       if (obj.consumed) continue;
       if (!obj.falling) continue;
       const h = obj.fallTargetHole || player;
-      obj.fallVel += 25 * dt;
+      obj.fallVel += (obj.isVoxelBuildingCube ? STACK_PHYSICS_CONFIG.voxelConsumeGravity : 25) * dt;
       obj.mesh.position.y -= obj.fallVel * dt;
       const targetX = obj.fallTargetX ?? obj.x ?? h.x;
       const targetZ = obj.fallTargetZ ?? obj.z ?? h.z;
@@ -10715,27 +10747,22 @@ function animate(frameNow = performance.now()) {
       obj.mesh.rotation.z += obj.spin * dt * 0.7;
       const s = Math.max(0.1, 1 - (Math.abs(obj.mesh.position.y) / 6));
       obj.mesh.scale.set(s, s, s);
+      if (obj.isVoxelBuildingCube && obj.pendingVoxelConsume && !obj.voxelTouchedFloorWhilePending && obj.mesh.position.y <= (obj.stackFloorY || 0)) {
+        obj.voxelTouchedFloorWhilePending = true;
+        obj.voxelEnteredHole = h?.alive && Math.hypot(targetX - h.x, targetZ - h.z) < Math.max(0.2, h.radius - 0.05);
+        if (!obj.voxelEnteredHole) {
+          settleMissedVoxelConsume(obj);
+          continue;
+        }
+      }
       if (obj.mesh.position.y < -5) {
         if (obj.isVoxelBuildingCube && obj.pendingVoxelConsume) {
-          const stillOverHole = h?.alive && Math.hypot((obj.fallTargetX ?? obj.mesh.position.x) - h.x, (obj.fallTargetZ ?? obj.mesh.position.z) - h.z) < Math.max(0.2, h.radius - 0.05);
-          if (!stillOverHole) {
-            obj.falling = false;
-            obj.pendingVoxelConsume = false;
-            obj.fallTargetHole = null;
-            obj.fallVel = 0;
-            obj.vx = 0;
-            obj.vy = 0;
-            obj.vz = 0;
-            obj.stackSettled = true;
-            obj.stackActive = true;
-            obj.stackReleased = true;
-            obj.stackRestTimer = 0;
-            obj.x = obj.mesh.position.x;
-            obj.z = obj.mesh.position.z;
-            obj.mesh.position.y = obj.stackFloorY || Math.max(0.2, (obj.stackHeight || 1) / 2);
-            obj.mesh.scale.set(1, 1, 1);
+          if (!obj.voxelEnteredHole) {
+            settleMissedVoxelConsume(obj);
             continue;
           }
+          obj.pendingVoxelConsume = false;
+          obj.voxelTouchedFloorWhilePending = false;
           awardObjectConsume(h, obj);
           if (!music.muted) {
             const distToPlayer = Math.hypot((obj.fallTargetX ?? obj.x) - player.x, (obj.fallTargetZ ?? obj.z) - player.z);

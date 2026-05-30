@@ -2,6 +2,15 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.34 - 2026-05-30
+
+Slower voxel falls and stronger cube contact.
+
+- Slowed medium-office cube descent by lowering voxel gravity, lowering terminal velocity, and adding slower swallow gravity for voxel cubes.
+- Column teetering now commits into a slow side-fall instead of sometimes holding a permanent leaning pose.
+- Cubes remember whether they crossed the floor inside the hole, so mobile movement cannot make already-eaten cubes reappear.
+- Strengthened cube-to-cube contact impulses so falling cubes bounce and shove each other more visibly.
+
 ## Master 16.33 - 2026-05-29
 
 Voxel cube audio and missed-hole cleanup.
