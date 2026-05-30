@@ -220,6 +220,50 @@ Acceptance criteria:
 - mobile and desktop performance remains within the current Master 16 performance budget
 - save/load restores medium-building cube state without replacing cubes with generic placeholders
 
+### PB-VFX-001 — Medium Office Collapse Dust And Non-Scoring Debris
+
+Type:
+
+- Visual polish / performance-aware VFX
+
+Priority:
+
+- High, after the core medium-office voxel behavior is stable
+
+Status:
+
+- Backlog
+
+Description:
+
+Add collapse atmosphere around medium-office voxel buildings: short-lived dust, dirt, smoke, and tiny non-scoring debris that visually augments cube collapse without changing gameplay rewards.
+
+Design intent:
+
+- make collapsing office buildings feel weightier and more physical
+- communicate that a building is actively failing without adding collectible clutter
+- preserve the core rule that medium-office rewards come from actual cubes, not decorative particles
+- keep the effect subtle enough that the player can still see the hole, cubes, hazards, and rival holes
+
+Behavior:
+
+- when a medium-office column begins falling, spawn a localized dust/smoke puff around that column or building footprint
+- while cubes are actively falling, keep a low-density smoke/dirt flow around the collapse site
+- optionally spawn tiny visual-only debris flecks or chips, but they must not be collectible, score-bearing, targetable, or confused with voxel cubes
+- once all active cubes from that building are either consumed or settled on the ground, begin fading the dust/smoke
+- remove the effect completely after all cubes are collected or after all cubes have been settled on the ground for a few seconds
+- effects should pool/reuse objects and respect mobile performance constraints
+
+Acceptance criteria:
+
+- collapse dust/smoke appears only while a medium-office collapse is active or briefly settling
+- decorative debris never awards points, growth, buffs, achievements, or document progress
+- decorative debris cannot be targeted by holes and does not participate in gameplay collision
+- dust/smoke fades after all cubes are consumed or after all cubes are settled for a short grace period
+- no collapse VFX remains indefinitely on the board
+- the effect remains readable on desktop and mobile without obscuring the playfield
+- performance remains acceptable when multiple medium offices collapse near the same time
+
 Notes:
 
 - this item supersedes the vague "medium building cube breakup" phrasing in the current gameplay intake
