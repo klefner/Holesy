@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 35;
+const BUILD_SUB = 36;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1050,6 +1050,15 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.36',
+    summary: 'Cleaner office-cube falls.',
+    changes: [
+      'Medium-office cubes no longer shrink during hole-entry falls, so roof cubes keep their physical size.',
+      'Voxel cube scoring no longer triggers the full building-collapse sound for every cube.',
+      'Medium-office column and cube audio is now a single sparse thunk budget instead of layered building-crumble noise.'
+    ]
+  },
+  {
     label: 'Master 16.35',
     summary: 'Voxel performance guardrails.',
     changes: [
@@ -1672,9 +1681,9 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   groundedSpinCutoff: 0.7,
   groundedSpeedCutoff: 0.16,
   groundedIdleSettleSeconds: 0.28,
-  voxelAudioMaxVoicesPerStack: 5,
-  voxelAudioMinIntervalMs: 55,
-  voxelAudioMaxDuration: 0.16,
+  voxelAudioMaxVoicesPerStack: 1,
+  voxelAudioMinIntervalMs: 650,
+  voxelAudioMaxDuration: 0.18,
   voxelConsumeGravity: 7.5,
 });
 
@@ -5215,11 +5224,11 @@ function playVoxelCubeImpactSound(obj, volumeScale = 1.0) {
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   const src = ctx.createBufferSource();
   src.buffer = buf;
-  src.playbackRate.value = 1.55 + Math.random() * 0.35;
+  src.playbackRate.value = 2.9 + Math.random() * 0.65;
   const g = ctx.createGain();
   const startAt = ctx.currentTime;
   const stopAt = startAt + STACK_PHYSICS_CONFIG.voxelAudioMaxDuration;
-  g.gain.setValueAtTime((0.10 + Math.random() * 0.06) * volumeScale, startAt);
+  g.gain.setValueAtTime((0.022 + Math.random() * 0.012) * volumeScale, startAt);
   g.gain.exponentialRampToValueAtTime(0.001, stopAt);
   src.connect(g);
   g.connect(getSfxDestination());
@@ -7991,7 +8000,8 @@ function awardObjectConsume(h, obj) {
       } else if (obj.isCar) {
         playCarSound(volScale);
       } else if (obj.isBuilding) {
-        if (obj.isSkyscraperChunk) playSkyscraperChunkSound(volScale);
+        if (obj.isVoxelBuildingCube) playVoxelCubeImpactSound(obj, volScale * 0.55);
+        else if (obj.isSkyscraperChunk) playSkyscraperChunkSound(volScale);
         else playBuildingSound(obj.buildingSize, volScale);
       } else if (obj.isProp) {
         playMetalSound(volScale);
@@ -8467,7 +8477,7 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     if (!music.muted) {
       const distToPlayer = Math.hypot(seedPiece.x - player.x, seedPiece.z - player.z);
       const volScale = Math.max(0.18, 1 - Math.min(1, distToPlayer / 50));
-      playBuildingSound('mid', volScale * 0.45);
+      playVoxelCubeImpactSound(seedPiece, volScale * 0.7);
     }
   }
   return activated;
@@ -10799,8 +10809,12 @@ function animate(frameNow = performance.now()) {
       obj.mesh.position.z += (targetZ - obj.mesh.position.z) * Math.min(1, dt * 2.2);
       obj.mesh.rotation.x += obj.spin * dt;
       obj.mesh.rotation.z += obj.spin * dt * 0.7;
-      const s = Math.max(0.1, 1 - (Math.abs(obj.mesh.position.y) / 6));
-      obj.mesh.scale.set(s, s, s);
+      if (obj.isVoxelBuildingCube) {
+        obj.mesh.scale.set(1, 1, 1);
+      } else {
+        const s = Math.max(0.1, 1 - (Math.abs(obj.mesh.position.y) / 6));
+        obj.mesh.scale.set(s, s, s);
+      }
       if (obj.isVoxelBuildingCube && obj.pendingVoxelConsume && !obj.voxelTouchedFloorWhilePending && obj.mesh.position.y <= (obj.stackFloorY || 0)) {
         obj.voxelTouchedFloorWhilePending = true;
         obj.voxelEnteredHole = h?.alive && Math.hypot(targetX - h.x, targetZ - h.z) < Math.max(0.2, h.radius - 0.05);
@@ -10818,11 +10832,6 @@ function animate(frameNow = performance.now()) {
           obj.pendingVoxelConsume = false;
           obj.voxelTouchedFloorWhilePending = false;
           awardObjectConsume(h, obj);
-          if (!music.muted) {
-            const distToPlayer = Math.hypot((obj.fallTargetX ?? obj.x) - player.x, (obj.fallTargetZ ?? obj.z) - player.z);
-            const volScale = Math.max(0.08, 1 - Math.min(1, distToPlayer / 42));
-            playVoxelCubeImpactSound(obj, volScale);
-          }
         }
         obj.consumed = true;
         scene.remove(obj.mesh);

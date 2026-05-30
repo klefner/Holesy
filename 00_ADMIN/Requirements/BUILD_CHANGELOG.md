@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.36 - 2026-05-30
+
+Cleaner office-cube falls.
+
+- Medium-office voxel cubes no longer shrink during hole-entry falling, so roof blocks keep their full physical size.
+- Voxel cube scoring and column activation no longer trigger full building-collapse audio.
+- Medium-office cube audio now allows only one short impact voice per building stack every 650ms to avoid layered static.
+
 ## Master 16.35 - 2026-05-30
 
 Voxel performance guardrails.
