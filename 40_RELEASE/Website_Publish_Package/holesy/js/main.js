@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 const BUILD_MASTER = 16;
-const BUILD_SUB = 36;
+const BUILD_SUB = 37;
 const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 function markBootStep(step) {
@@ -1050,6 +1050,15 @@ const WAVE_TRANSITION_LORE = {
 };
 const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.37',
+    summary: 'Save repair and collapse tuning.',
+    changes: [
+      'Endless saves now use compact object records so voxel-heavy boards do not exceed browser storage as easily.',
+      'Skyscraper collapse and chunk audio now uses the same short sparse sound budget as medium-office voxels.',
+      'Medium-office cubes drop faster, release lower floors sooner, and pick up more sideways motion so debris piles spread beyond the original footprint.'
+    ]
+  },
+  {
     label: 'Master 16.36',
     summary: 'Cleaner office-cube falls.',
     changes: [
@@ -1638,25 +1647,26 @@ const activePhysicsStackIds = new Set();
 const stackCollapsePlans = new Map();
 let nextPhysicsStackId = 1;
 const voxelImpactAudioState = new Map();
+const skyscraperImpactAudioState = new Map();
 
 const STACK_PHYSICS_CONFIG = Object.freeze({
   gravity: 25,
-  voxelGravity: 4.6,
-  voxelGravityJitter: 1.35,
-  voxelTerminalVelocity: 16,
+  voxelGravity: 7.2,
+  voxelGravityJitter: 1.55,
+  voxelTerminalVelocity: 22,
   triggerPadding: 5.2,
   voxelTriggerPadding: 0.34,
-  voxelColumnSpread: 3.4,
+  voxelColumnSpread: 4.4,
   voxelSupportDropFraction: 0.38,
-  voxelReleaseDelayMin: 0.18,
-  voxelReleaseDelayMax: 0.62,
-  voxelTeeterSecondsMin: 0.55,
-  voxelTeeterSecondsMax: 1.35,
+  voxelReleaseDelayMin: 0.04,
+  voxelReleaseDelayMax: 0.26,
+  voxelTeeterSecondsMin: 0.18,
+  voxelTeeterSecondsMax: 0.68,
   voxelTeeterAngleMin: 0.16,
   voxelTeeterAngleMax: 0.48,
   voxelTeeterFailureChance: 1,
-  voxelLeanVelocityMin: 0.35,
-  voxelLeanVelocityMax: 1.65,
+  voxelLeanVelocityMin: 0.55,
+  voxelLeanVelocityMax: 2.1,
   voxelGroundRollRetentionMin: 0.78,
   voxelGroundRollRetentionMax: 0.94,
   voxelObjectImpactRange: 0.42,
@@ -1684,7 +1694,10 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   voxelAudioMaxVoicesPerStack: 1,
   voxelAudioMinIntervalMs: 650,
   voxelAudioMaxDuration: 0.18,
-  voxelConsumeGravity: 7.5,
+  skyscraperAudioMaxVoicesPerStack: 1,
+  skyscraperAudioMinIntervalMs: 520,
+  skyscraperAudioMaxDuration: 0.24,
+  voxelConsumeGravity: 15,
 });
 
 const HOLE_JAM_CONFIG = Object.freeze({
@@ -5164,45 +5177,83 @@ function playBuildingSound(buildingSize, volumeScale = 1.0) {
   playSample(buf, rate, gain, reverbMix);
 }
 
-function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0) {
+function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId = 'global') {
   initMusicContext();
   if (!music.ctx) return;
   if (!audioBanksLoaded) loadAudioBanks();
   const loaded = audioBank.buildings.filter(b => b);
   if (loaded.length === 0) return;
+  const now = performance.now();
+  const key = `skyscraper:${stackId}`;
+  const state = skyscraperImpactAudioState.get(key) || { active: 0, lastAt: 0 };
+  if (state.active >= STACK_PHYSICS_CONFIG.skyscraperAudioMaxVoicesPerStack) return;
+  if (now - state.lastAt < STACK_PHYSICS_CONFIG.skyscraperAudioMinIntervalMs) return;
+  state.active += 1;
+  state.lastAt = now;
+  skyscraperImpactAudioState.set(key, state);
+
   const ctx = music.ctx;
-  const layerCount = 2 + Math.floor(Math.random() * 3);
-  for (let i = 0; i < layerCount; i++) {
-    const buf = loaded[Math.floor(Math.random() * loaded.length)];
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.playbackRate.value = 0.66 + Math.random() * 0.22;
-    const g = ctx.createGain();
-    g.gain.value = (0.34 + Math.random() * 0.18) * volumeScale * intensity;
-    src.connect(g);
-    g.connect(getSfxDestination());
-    if (music.reverb) {
-      const rev = ctx.createGain();
-      rev.gain.value = 0.22 + Math.random() * 0.12;
-      g.connect(rev);
-      rev.connect(music.reverb);
-    }
-    activeNonMusicSources.add(src);
-    src.onended = () => activeNonMusicSources.delete(src);
-    src.start(ctx.currentTime + i * (0.045 + Math.random() * 0.075));
+  const buf = loaded[Math.floor(Math.random() * loaded.length)];
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = 1.85 + Math.random() * 0.38;
+  const g = ctx.createGain();
+  const startAt = ctx.currentTime;
+  const stopAt = startAt + STACK_PHYSICS_CONFIG.skyscraperAudioMaxDuration;
+  g.gain.setValueAtTime((0.13 + Math.random() * 0.04) * volumeScale * intensity, startAt);
+  g.gain.exponentialRampToValueAtTime(0.001, stopAt);
+  src.connect(g);
+  g.connect(getSfxDestination());
+  if (music.reverb) {
+    const rev = ctx.createGain();
+    rev.gain.value = 0.08 + Math.random() * 0.04;
+    g.connect(rev);
+    rev.connect(music.reverb);
   }
+  activeNonMusicSources.add(src);
+  src.onended = () => {
+    activeNonMusicSources.delete(src);
+    const latest = skyscraperImpactAudioState.get(key);
+    if (latest) latest.active = Math.max(0, latest.active - 1);
+  };
+  src.start(startAt);
+  try { src.stop(stopAt + 0.02); } catch (e) {}
 }
 
-function playSkyscraperChunkSound(volumeScale = 1.0) {
+function playSkyscraperChunkSound(volumeScale = 1.0, obj = null) {
   initMusicContext();
   if (!music.ctx) return;
   if (!audioBanksLoaded) loadAudioBanks();
   const loaded = audioBank.buildings.filter(b => b);
   if (loaded.length === 0) return;
+  const now = performance.now();
+  const key = `chunk:${obj?.stackId || 'global'}`;
+  const state = skyscraperImpactAudioState.get(key) || { active: 0, lastAt: 0 };
+  if (state.active >= STACK_PHYSICS_CONFIG.skyscraperAudioMaxVoicesPerStack) return;
+  if (now - state.lastAt < STACK_PHYSICS_CONFIG.skyscraperAudioMinIntervalMs) return;
+  state.active += 1;
+  state.lastAt = now;
+  skyscraperImpactAudioState.set(key, state);
+  const ctx = music.ctx;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
-  const rate = 0.92 + Math.random() * 0.18;
-  const gain = (0.30 + Math.random() * 0.12) * volumeScale;
-  playSample(buf, rate, gain, 0.12);
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = 2.2 + Math.random() * 0.48;
+  const g = ctx.createGain();
+  const startAt = ctx.currentTime;
+  const stopAt = startAt + 0.18;
+  g.gain.setValueAtTime((0.045 + Math.random() * 0.018) * volumeScale, startAt);
+  g.gain.exponentialRampToValueAtTime(0.001, stopAt);
+  src.connect(g);
+  g.connect(getSfxDestination());
+  activeNonMusicSources.add(src);
+  src.onended = () => {
+    activeNonMusicSources.delete(src);
+    const latest = skyscraperImpactAudioState.get(key);
+    if (latest) latest.active = Math.max(0, latest.active - 1);
+  };
+  src.start(startAt);
+  try { src.stop(stopAt + 0.02); } catch (e) {}
 }
 
 function playVoxelCubeImpactSound(obj, volumeScale = 1.0) {
@@ -6121,7 +6172,7 @@ function getSavedObjectType(obj) {
 
 function serializeObjectState(obj) {
   if (!obj || obj.consumed) return null;
-  return {
+  const state = {
     type: getSavedObjectType(obj),
     x: obj.x,
     z: obj.z,
@@ -6132,87 +6183,118 @@ function serializeObjectState(obj) {
     size: obj.size,
     tier: obj.tier,
     value: obj.value,
-    falling: !!obj.falling,
-    fallVel: obj.fallVel || 0,
-    fallTargetX: obj.fallTargetX ?? obj.x,
-    fallTargetZ: obj.fallTargetZ ?? obj.z,
-    jammedInHole: !!obj.jammedInHole,
-    jammedHoleIndex: obj.jammedHole ? holes.indexOf(obj.jammedHole) : -1,
-    jamOffsetX: obj.jamOffsetX || 0,
-    jamOffsetZ: obj.jamOffsetZ || 0,
-    jamImpactMass: obj.jamImpactMass || 0,
-    jamEjectMass: obj.jamEjectMass || 0,
-    spin: obj.spin || 0,
-    moving: !!obj.moving,
-    bounds: obj.bounds || null,
-    walkDir: obj.walkDir || 0,
-    walkSpeed: obj.walkSpeed || 0,
-    panicSpeed: obj.panicSpeed || 0,
-    walkTimer: obj.walkTimer || 0,
-    panicking: !!obj.panicking,
-    powerupId: obj.powerupId || '',
-    hoverPhase: obj.hoverPhase || 0,
-    airDropping: !!obj.airDropping,
-    airDropVel: obj.airDropVel || 0,
-    airDropTargetX: obj.airDropTargetX || obj.x,
-    airDropTargetZ: obj.airDropTargetZ || obj.z,
-    axis: obj.axis || '',
-    direction: obj.direction || '',
-    roadIdx: obj.roadIdx || 0,
-    lane: obj.lane || 0,
-    baseTargetSpeed: obj.baseTargetSpeed || 0,
-    targetSpeed: obj.targetSpeed || 0,
-    currentSpeed: obj.currentSpeed || 0,
-    panicTimer: obj.panicTimer || 0,
-    crashed: !!obj.crashed,
-    crashing: !!obj.crashing,
-    crashTimer: obj.crashTimer || 0,
-    crashSmokeTimer: obj.crashSmokeTimer || 0,
-    crashVx: obj.crashVx || 0,
-    crashVz: obj.crashVz || 0,
-    crashDistance: obj.crashDistance || 0,
-    drivingValue: obj.drivingValue || 70,
-    crashedValue: obj.crashedValue || 40,
-    stackKind: obj.stackKind || '',
-    stackId: obj.stackId || 0,
-    stackActive: !!obj.stackActive,
-    stackSettled: !!obj.stackSettled,
-    stackRestTimer: obj.stackRestTimer || 0,
-    stackIndex: obj.stackIndex || 0,
-    stackFloorCount: obj.stackFloorCount || 0,
-    stackPieceCount: obj.stackPieceCount || 0,
-    stackCollapseSize: obj.stackCollapseSize || 0,
-    stackCenterX: obj.stackCenterX || obj.x,
-    stackCenterZ: obj.stackCenterZ || obj.z,
-    stackLocalX: obj.stackLocalX || 0,
-    stackLocalZ: obj.stackLocalZ || 0,
-    stackFloorY: obj.stackFloorY || 0,
-    stackHeight: obj.stackHeight || 0,
-    stackPieceW: obj.stackPieceW || 0,
-    stackPieceD: obj.stackPieceD || 0,
-    voxelColX: obj.voxelColX || 0,
-    voxelColZ: obj.voxelColZ || 0,
-    voxelColsX: obj.voxelColsX || 0,
-    voxelRowsZ: obj.voxelRowsZ || 0,
-    voxelFloorsY: obj.voxelFloorsY || obj.stackFloorCount || 0,
-    voxelBaseX: obj.voxelBaseX ?? obj.x,
-    voxelBaseY: obj.voxelBaseY ?? obj.mesh?.position?.y ?? 0,
-    voxelBaseZ: obj.voxelBaseZ ?? obj.z,
-    voxelGravity: obj.voxelGravity || 0,
-    voxelTerminalVelocity: obj.voxelTerminalVelocity || 0,
-    voxelLeanDirX: obj.voxelLeanDirX || 0,
-    voxelLeanDirZ: obj.voxelLeanDirZ || 0,
-    voxelLeanAngle: obj.voxelLeanAngle || 0,
-    voxelTeeterSeconds: obj.voxelTeeterSeconds || 0,
-    voxelTeeterReleasedRemainingMs: getRemainingMs(obj.voxelTeeterReleasedAt),
-    stackWillFall: obj.stackWillFall !== false,
-    vx: obj.vx || 0, vy: obj.vy || 0, vz: obj.vz || 0,
-    avx: obj.avx || 0, avy: obj.avy || 0, avz: obj.avz || 0,
-    stackReleased: !!obj.stackReleased,
-    stackSupportLostRemainingMs: getRemainingMs(obj.stackSupportLostAt),
-    stackSupportDelaySeconds: obj.stackSupportDelaySeconds || 0,
-    stackCollapsedRemainingMs: getRemainingMs(obj.stackCollapsedAt),
   };
+  const addNumber = (key, value, fallback = 0) => {
+    if (Number.isFinite(value) && value !== fallback) state[key] = value;
+  };
+  const addBool = (key, value) => {
+    if (value) state[key] = true;
+  };
+
+  addBool('falling', obj.falling);
+  if (obj.falling) {
+    addNumber('fallVel', obj.fallVel || 0);
+    state.fallTargetX = obj.fallTargetX ?? obj.x;
+    state.fallTargetZ = obj.fallTargetZ ?? obj.z;
+  }
+  addBool('jammedInHole', obj.jammedInHole);
+  if (obj.jammedInHole) {
+    state.jammedHoleIndex = obj.jammedHole ? holes.indexOf(obj.jammedHole) : -1;
+    addNumber('jamOffsetX', obj.jamOffsetX || 0);
+    addNumber('jamOffsetZ', obj.jamOffsetZ || 0);
+    addNumber('jamImpactMass', obj.jamImpactMass || 0);
+    addNumber('jamEjectMass', obj.jamEjectMass || 0);
+  }
+  addNumber('spin', obj.spin || 0);
+
+  if (obj.isPerson) {
+    addBool('moving', obj.moving);
+    if (obj.bounds) state.bounds = obj.bounds;
+    addNumber('walkDir', obj.walkDir || 0);
+    addNumber('walkSpeed', obj.walkSpeed || 0);
+    addNumber('panicSpeed', obj.panicSpeed || 0);
+    addNumber('walkTimer', obj.walkTimer || 0);
+    addBool('panicking', obj.panicking);
+  }
+
+  if (obj.isPowerup) {
+    state.powerupId = obj.powerupId || '';
+    addNumber('hoverPhase', obj.hoverPhase || 0);
+    addBool('airDropping', obj.airDropping);
+    if (obj.airDropping) {
+      addNumber('airDropVel', obj.airDropVel || 0);
+      state.airDropTargetX = obj.airDropTargetX || obj.x;
+      state.airDropTargetZ = obj.airDropTargetZ || obj.z;
+    }
+  }
+
+  if (obj.isCar) {
+    addBool('moving', obj.moving);
+    if (obj.axis) state.axis = obj.axis;
+    if (obj.direction) state.direction = obj.direction;
+    addNumber('roadIdx', obj.roadIdx || 0);
+    addNumber('lane', obj.lane || 0);
+    addNumber('baseTargetSpeed', obj.baseTargetSpeed || 0);
+    addNumber('targetSpeed', obj.targetSpeed || 0);
+    addNumber('currentSpeed', obj.currentSpeed || 0);
+    addBool('panicking', obj.panicking);
+    addNumber('panicTimer', obj.panicTimer || 0);
+    addBool('crashed', obj.crashed);
+    addBool('crashing', obj.crashing);
+    addNumber('crashTimer', obj.crashTimer || 0);
+    addNumber('crashSmokeTimer', obj.crashSmokeTimer || 0);
+    addNumber('crashVx', obj.crashVx || 0);
+    addNumber('crashVz', obj.crashVz || 0);
+    addNumber('crashDistance', obj.crashDistance || 0);
+    addNumber('drivingValue', obj.drivingValue || 70, 70);
+    addNumber('crashedValue', obj.crashedValue || 40, 40);
+  }
+
+  if (obj.physicsStackPiece) {
+    state.stackKind = obj.stackKind || '';
+    state.stackId = obj.stackId || 0;
+    addBool('stackActive', obj.stackActive);
+    addBool('stackSettled', obj.stackSettled);
+    addNumber('stackRestTimer', obj.stackRestTimer || 0);
+    addNumber('stackIndex', obj.stackIndex || 0);
+    addNumber('stackFloorCount', obj.stackFloorCount || 0);
+    addNumber('stackPieceCount', obj.stackPieceCount || 0);
+    addNumber('stackCollapseSize', obj.stackCollapseSize || 0);
+    state.stackCenterX = obj.stackCenterX || obj.x;
+    state.stackCenterZ = obj.stackCenterZ || obj.z;
+    addNumber('stackLocalX', obj.stackLocalX || 0);
+    addNumber('stackLocalZ', obj.stackLocalZ || 0);
+    addNumber('stackFloorY', obj.stackFloorY || 0);
+    addNumber('stackHeight', obj.stackHeight || 0);
+    addNumber('stackPieceW', obj.stackPieceW || 0);
+    addNumber('stackPieceD', obj.stackPieceD || 0);
+    if (obj.isVoxelBuildingCube) {
+      addNumber('voxelColX', obj.voxelColX || 0);
+      addNumber('voxelColZ', obj.voxelColZ || 0);
+      addNumber('voxelColsX', obj.voxelColsX || 0);
+      addNumber('voxelRowsZ', obj.voxelRowsZ || 0);
+      addNumber('voxelFloorsY', obj.voxelFloorsY || obj.stackFloorCount || 0);
+      state.voxelBaseX = obj.voxelBaseX ?? obj.x;
+      state.voxelBaseY = obj.voxelBaseY ?? obj.mesh?.position?.y ?? 0;
+      state.voxelBaseZ = obj.voxelBaseZ ?? obj.z;
+      addNumber('voxelGravity', obj.voxelGravity || 0);
+      addNumber('voxelTerminalVelocity', obj.voxelTerminalVelocity || 0);
+      addNumber('voxelLeanDirX', obj.voxelLeanDirX || 0);
+      addNumber('voxelLeanDirZ', obj.voxelLeanDirZ || 0);
+      addNumber('voxelLeanAngle', obj.voxelLeanAngle || 0);
+      addNumber('voxelTeeterSeconds', obj.voxelTeeterSeconds || 0);
+      addNumber('voxelTeeterReleasedRemainingMs', getRemainingMs(obj.voxelTeeterReleasedAt));
+    }
+    if (obj.stackWillFall === false) state.stackWillFall = false;
+    addNumber('vx', obj.vx || 0); addNumber('vy', obj.vy || 0); addNumber('vz', obj.vz || 0);
+    addNumber('avx', obj.avx || 0); addNumber('avy', obj.avy || 0); addNumber('avz', obj.avz || 0);
+    addBool('stackReleased', obj.stackReleased);
+    addNumber('stackSupportLostRemainingMs', getRemainingMs(obj.stackSupportLostAt));
+    addNumber('stackSupportDelaySeconds', obj.stackSupportDelaySeconds || 0);
+    addNumber('stackCollapsedRemainingMs', getRemainingMs(obj.stackCollapsedAt));
+  }
+
+  return state;
 }
 
 function makeSavedGenericObject(state) {
@@ -8001,7 +8083,7 @@ function awardObjectConsume(h, obj) {
         playCarSound(volScale);
       } else if (obj.isBuilding) {
         if (obj.isVoxelBuildingCube) playVoxelCubeImpactSound(obj, volScale * 0.55);
-        else if (obj.isSkyscraperChunk) playSkyscraperChunkSound(volScale);
+        else if (obj.isSkyscraperChunk) playSkyscraperChunkSound(volScale, obj);
         else playBuildingSound(obj.buildingSize, volScale);
       } else if (obj.isProp) {
         playMetalSound(volScale);
@@ -8273,12 +8355,12 @@ function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
   piece.stackReleased = true;
   piece.voxelTeeterReleasedAt = now;
   const inheritedLean = randomBetween(STACK_PHYSICS_CONFIG.voxelLeanVelocityMin, STACK_PHYSICS_CONFIG.voxelLeanVelocityMax) * (0.35 + heightT);
-  piece.vx += (piece.voxelLeanDirX || 0) * inheritedLean + randomBetween(-0.16, 0.16);
-  piece.vz += (piece.voxelLeanDirZ || 0) * inheritedLean + randomBetween(-0.16, 0.16);
-  piece.vy += randomBetween(-0.08, 0.04);
-  piece.avx += randomBetween(-0.45, 0.45) + (piece.voxelLeanDirZ || 0) * inheritedLean * 0.42;
-  piece.avy += randomBetween(-0.35, 0.35);
-  piece.avz += randomBetween(-0.45, 0.45) - (piece.voxelLeanDirX || 0) * inheritedLean * 0.42;
+  piece.vx += (piece.voxelLeanDirX || 0) * inheritedLean + randomBetween(-0.28, 0.28);
+  piece.vz += (piece.voxelLeanDirZ || 0) * inheritedLean + randomBetween(-0.28, 0.28);
+  piece.vy += randomBetween(-0.16, 0.02);
+  piece.avx += randomBetween(-0.62, 0.62) + (piece.voxelLeanDirZ || 0) * inheritedLean * 0.5;
+  piece.avy += randomBetween(-0.48, 0.48);
+  piece.avz += randomBetween(-0.62, 0.62) - (piece.voxelLeanDirX || 0) * inheritedLean * 0.5;
   return true;
 }
 
@@ -8355,7 +8437,7 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
       const sourceZ = sourceHole?.z ?? player.z;
       const distToPlayer = Math.hypot(sourceX - player.x, sourceZ - player.z);
       const volScale = Math.max(0.25, 1 - Math.min(1, distToPlayer / 70));
-      playSkyscraperCollapseSound(volScale, 1.05);
+      playSkyscraperCollapseSound(volScale, 1.05, stackId);
     }
   }
 
@@ -8429,9 +8511,11 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
   const cos = Math.cos(lateralRoll);
   const sin = Math.sin(lateralRoll);
   const leanDir = normalize2(outward.x * cos - outward.z * sin, outward.x * sin + outward.z * cos, outward);
-  const teeterSeconds = randomBetween(STACK_PHYSICS_CONFIG.voxelTeeterSecondsMin, STACK_PHYSICS_CONFIG.voxelTeeterSecondsMax);
   const centerD = Math.hypot(seedPiece.x - sourceHole.x, seedPiece.z - sourceHole.z);
   const deeplyUndermined = centerD < Math.max(0.25, sourceHole.radius - seedPiece.size * 0.28);
+  const teeterSeconds = deeplyUndermined
+    ? randomBetween(0.04, 0.18)
+    : randomBetween(STACK_PHYSICS_CONFIG.voxelTeeterSecondsMin, STACK_PHYSICS_CONFIG.voxelTeeterSecondsMax);
   const teeterFails = deeplyUndermined || Math.random() < STACK_PHYSICS_CONFIG.voxelTeeterFailureChance;
   const leanAngle = randomBetween(STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 0.72, STACK_PHYSICS_CONFIG.voxelTeeterAngleMax * 1.35);
   for (const piece of physicsStackPieces) {
@@ -8447,7 +8531,9 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.stackReleased = false;
     piece.stackWillFall = true;
     piece.stackSupportLostAt = 0;
-    piece.stackSupportDelaySeconds = randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax);
+    piece.stackSupportDelaySeconds = piece.stackIndex <= 0
+      ? 0
+      : randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax) * (0.62 + floorT * 0.48);
     piece.stackDelaySeconds = 0;
     piece.stackMaxSpread = STACK_PHYSICS_CONFIG.voxelColumnSpread;
     piece.voxelBaseX = piece.x;
@@ -8456,16 +8542,17 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.voxelLeanDirX = leanDir.x;
     piece.voxelLeanDirZ = leanDir.z;
     piece.voxelLeanAngle = leanAngle * (0.72 + floorT * 0.48) * randomBetween(0.82, 1.18);
-    piece.voxelTeeterSeconds = teeterSeconds * randomBetween(0.82, 1.22);
+    piece.voxelTeeterSeconds = piece.stackIndex <= 0 ? Math.min(0.08, teeterSeconds) : teeterSeconds * randomBetween(0.75, 1.12);
     piece.voxelTeeterReleasedAt = 0;
     const heightGravityBoost = 1 + floorT * 0.38;
     piece.voxelGravity = Math.max(1.8, randomBetween(
       STACK_PHYSICS_CONFIG.voxelGravity - STACK_PHYSICS_CONFIG.voxelGravityJitter,
       STACK_PHYSICS_CONFIG.voxelGravity + STACK_PHYSICS_CONFIG.voxelGravityJitter
     ) * heightGravityBoost);
-    piece.voxelTerminalVelocity = STACK_PHYSICS_CONFIG.voxelTerminalVelocity * (0.62 + floorT * 0.68) * randomBetween(0.86, 1.14);
-    piece.vx += leanDir.x * randomBetween(0.01, 0.08);
-    piece.vz += leanDir.z * randomBetween(0.01, 0.08);
+    piece.voxelTerminalVelocity = STACK_PHYSICS_CONFIG.voxelTerminalVelocity * (0.7 + floorT * 0.72) * randomBetween(0.9, 1.18);
+    const lateralKick = randomBetween(0.1, 0.38) * (0.45 + floorT * 1.15);
+    piece.vx += leanDir.x * lateralKick + randomBetween(-0.08, 0.08);
+    piece.vz += leanDir.z * lateralKick + randomBetween(-0.08, 0.08);
     piece.vy = Math.min(piece.vy, 0);
     piece.avx += randomBetween(-0.35, 0.35);
     piece.avy += randomBetween(-0.25, 0.25);

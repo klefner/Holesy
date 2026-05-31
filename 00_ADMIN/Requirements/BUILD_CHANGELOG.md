@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.37 - 2026-05-30
+
+Save repair and collapse tuning.
+
+- Endless saves now use compact object records so voxel-heavy boards do not exceed browser storage as easily.
+- Skyscraper collapse and chunk audio now uses the same short sparse sound budget as medium-office voxels.
+- Medium-office cubes drop faster, release lower floors sooner, and pick up more sideways motion so debris piles spread beyond the original footprint.
+
 ## Master 16.36 - 2026-05-30
 
 Cleaner office-cube falls.
