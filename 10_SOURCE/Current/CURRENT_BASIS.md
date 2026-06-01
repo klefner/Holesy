@@ -6,8 +6,8 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current in-game label is `Master 16.37`
-- `Master 16.37` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current in-game label is `Master 16.38`
+- `Master 16.38` is the current governed source basis and includes:
   - the full approved `Master 15` gameplay baseline
   - the idle lifecycle cleanup candidate lineage from `Master 15.39`
   - the playable Archive / found-document / lore-achievement-buff system from `Master 15.40`
@@ -35,6 +35,7 @@ Current status:
   - the `Master 16.35` performance repair that uses larger/fewer medium-office voxels, caps active voxel contact checks, and clamps unnatural cube velocity/spin
   - the `Master 16.36` visual/audio repair that keeps voxel cube scale fixed during hole-entry falls and prevents each cube from triggering full building-collapse audio
   - the `Master 16.37` save/audio/tuning repair that compacts Endless save object records, rate-limits skyscraper collapse audio, and makes medium-office cubes drop faster with more sideways debris spread
+  - the `Master 16.38` `PERF-012` Phase 2 extraction that moves build metadata, patch notes, difficulty profiles, and Archive lore data into separate ES modules
 - New candidate work should branch from `Master 16` unless a newer file is explicitly promoted
 - The last approved candidate lineage that became this master was `20_TESTS/Candidate_Builds/Master 15.45 - in-game-build-notes.html`
 

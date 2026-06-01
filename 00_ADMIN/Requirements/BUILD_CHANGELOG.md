@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.38 - 2026-06-01
+
+Modular data extraction.
+
+- Moved build metadata and player-facing patch notes into `js/build-info.js`.
+- Moved difficulty profiles into `js/difficulty-profiles.js`.
+- Moved Archive lore documents and starter Field Pattern unlocks into `data/lore-documents.js`.
+
 ## Master 16.37 - 2026-05-30
 
 Save repair and collapse tuning.

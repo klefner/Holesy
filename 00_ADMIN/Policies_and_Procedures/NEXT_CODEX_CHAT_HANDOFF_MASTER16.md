@@ -14,7 +14,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.37`
+- current in-game label: `Master 16.38`
 
 Current basis note:
 
@@ -48,6 +48,7 @@ What `Master 16` specifically represents:
 - `Master 16.35` reduces the first major medium-office voxel performance regression by using larger/fewer cubes, capped per-building voxel contact checks, and velocity/spin clamps for more natural cube motion
 - `Master 16.36` keeps medium-office cubes full-sized during hole-entry falls and replaces per-cube building-collapse audio with short sparse voxel impact sounds
 - `Master 16.37` compacts Endless save object records, applies sparse short audio budgeting to skyscraper collapse/chunk sounds, and speeds medium-office cube descent while adding more sideways debris spread
+- `Master 16.38` completes the next `PERF-012` Phase 2 extraction by moving build metadata/patch notes, difficulty profiles, and Archive lore documents into separate ES modules
 
 Last approved candidate promoted into `Master 16`:
 
@@ -72,7 +73,7 @@ Last approved candidate promoted into `Master 16`:
 
 ## 4. Current Priority
 
-- immediate focus is regression testing `Master 16.37` through the modular package, then continuing `PERF-012` Phase 2 data/config extraction
+- immediate focus is regression testing `Master 16.38` through the modular package, then continuing the next `PERF-012` extraction slice
 - newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are procedurally generated cube/floor stacks whose individual columns can teeter/lean before dropping; upper cubes wait for support failure, active cubes separate in 3D, oversized objects can jam in the visible hole, and faster falling cubes carry more impact/roll/spin energy
 - active monitor items carried from the latest QA evidence:
   - archive readability and music fit
@@ -94,11 +95,11 @@ Last approved candidate promoted into `Master 16`:
 
 ## 5. Immediate Next Move
 
-- treat `Master 16.37` as the current source basis within `10_SOURCE/Masters/Master 16/`
+- treat `Master 16.38` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
 - the latest audit state is branch-visible again as of commit `7fddcdb`; keep future audits checking Git publication before completion
-- start with regression testing `Master 16.37`, then continue `PERF-012` Phase 2
+- start with regression testing `Master 16.38`, then continue the next `PERF-012` Phase 2 extraction slice
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`

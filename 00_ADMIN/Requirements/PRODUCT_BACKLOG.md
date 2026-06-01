@@ -165,7 +165,7 @@ Goal: replace medium office buildings with aligned cube/floor stacks that collap
 
 Status:
 
-- first slice implemented in `Master 16.29`; procedural-size and visible-hole falling refinement implemented in `Master 16.30`; support-gated cube release, cube separation, and oversized-object jam/eject behavior implemented in `Master 16.31`; slower configurable voxel gravity, column teeter/lean, and velocity-based impact/roll behavior implemented in `Master 16.32`; voxel audio budgeting and missed-hole landing cleanup implemented in `Master 16.33`; slower voxel descent/swallowing, stronger cube contact, forced side-fall after teeter, and mobile reappearance prevention implemented in `Master 16.34`; performance repair with larger/fewer cubes and capped contact budgets implemented in `Master 16.35`; full-size hole-entry falling and shorter sparse voxel audio implemented in `Master 16.36`; compact save repair, skyscraper audio budgeting, and faster/spreadier voxel descent implemented in `Master 16.37`; pending user regression validation
+- first slice implemented in `Master 16.29`; procedural-size and visible-hole falling refinement implemented in `Master 16.30`; support-gated cube release, cube separation, and oversized-object jam/eject behavior implemented in `Master 16.31`; slower configurable voxel gravity, column teeter/lean, and velocity-based impact/roll behavior implemented in `Master 16.32`; voxel audio budgeting and missed-hole landing cleanup implemented in `Master 16.33`; slower voxel descent/swallowing, stronger cube contact, forced side-fall after teeter, and mobile reappearance prevention implemented in `Master 16.34`; performance repair with larger/fewer cubes and capped contact budgets implemented in `Master 16.35`; full-size hole-entry falling and shorter sparse voxel audio implemented in `Master 16.36`; compact save repair, skyscraper audio budgeting, and faster/spreadier voxel descent implemented in `Master 16.37`; user-validated on 2026-06-01 for Save Game, Load Game, medium-building sound, skyscraper sound treatment, and medium cube fall tuning
 
 Priority:
 
@@ -1860,15 +1860,16 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.37` as the current governed production-test baseline.
+1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.38` as the current governed production-test baseline.
 2. Treat `index.html` as the entry point for the modular package, not the whole game package; the full `/holesy/` folder remains the governed release baseline, while routine GoDaddy uploads should use a changed-files-only delta package when live is already on the previous master.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Treat `QA-006`, `QA-007`, `QA-016`, and the `Master 16.28` traffic/soldier-growth regression set as user-validated closed as of 2026-05-28; continue the new lore-clarity backlog item as product improvement, not as an open QA defect.
 5. Treat product-intent recovery controls as the immediate governance baseline; Team Sync v2 should be run at new-chat startup and before material release/package/architecture decisions.
-6. The next technical architecture priority is `PERF-012` Phase 2: extract build metadata, difficulty profiles, lore documents, and similarly stable data/configuration out of `js/main.js` without changing gameplay behavior.
-7. The `Priority 1A - Medium Office Building Voxel Collapse` pattern is implemented through `Master 16.37`; validate that medium office buildings use larger/fewer performance-safe cubes, vary from 4 to 7 cubes per footprint axis and 4 to 8 floors, columns teeter then fall instead of holding a permanent lean, upper cubes wait for support failure, active cubes collide/separate without tanking frame rate, cube motion does not launch/jitter unnaturally, cube audio stays short/readable instead of static, floor-entered cubes stay full-sized while falling into the visible hole, floor-entered cubes do not reappear on mobile, missed-hole cubes settle visibly, compact Endless saves work on voxel-heavy boards, skyscraper audio no longer layers into long static, oversized cubes can jam/eject, and skyscrapers/houses keep their distinct behaviors.
-8. After that stack pattern is user-validated, return to `PERF-012` Phase 2 and the remaining gameplay intake: lore/buff wording clarity, improved skyscraper collapse variation, house cube breakup, and daily/weekly quest/reward architecture.
+6. `PERF-012` Phase 2 has started: `Master 16.38` extracts build metadata, patch notes, difficulty profiles, Archive lore documents, and starter Field Pattern unlocks out of `js/main.js` without intended gameplay behavior change.
+7. Continue the next `PERF-012` Phase 2 slice by extracting similarly stable data/configuration from `js/main.js`, preserving behavior and the modular package structure.
+8. The `Priority 1A - Medium Office Building Voxel Collapse` pattern is user-validated through `Master 16.37` for Save Game, Load Game, medium-building sound, skyscraper sound treatment, and medium cube fall tuning. Future voxel work should proceed as product tuning or new VFX backlog, not as an open defect unless new evidence appears.
+9. After the next architecture slice, return to the remaining gameplay intake: lore/buff wording clarity, improved skyscraper collapse variation, house cube breakup, and daily/weekly quest/reward architecture.
 
 The next active engineering task is:
 
-- regression test `Master 16.37` through the modular package URL, then continue `PERF-012` Phase 2 as the next architecture slice.
+- regression test `Master 16.38` through the modular package URL, then continue the next `PERF-012` Phase 2 architecture slice.

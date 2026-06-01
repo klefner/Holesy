@@ -30,3 +30,15 @@ Build label: Master 16.37
 - Confirm skyscraper collapse sound no longer turns into long layered static.
 - Confirm medium-office cubes feel faster than Master 16.36 without returning to the unplayable performance state.
 - Confirm medium-office debris spreads beyond a perfect original footprint while still reading as falling cubes, not noisy particles.
+
+## User Validation
+
+2026-06-01: User reported "TEST PASSED" and separately confirmed game loading passed.
+
+Closed validation points:
+
+- Save Game: passed.
+- Load Game: passed.
+- Medium building sound: passed.
+- Skyscraper sound treatment: accepted unless future play reveals otherwise.
+- Medium cube fall tuning: accepted for this slice.
