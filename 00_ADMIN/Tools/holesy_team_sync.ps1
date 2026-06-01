@@ -13,9 +13,9 @@ Set-Location $repoRoot
 
 $sourceMasterPath = '10_SOURCE/Masters/Master 16/index.html'
 $releasePackagePath = '40_RELEASE/Website_Publish_Package/holesy/index.html'
-$godaddyUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.38\holesy'
+$godaddyUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.39\holesy'
 $godaddyUploadPath = Join-Path $godaddyUploadRoot 'index.html'
-$godaddyDeltaUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.38-from-16.37\holesy'
+$godaddyDeltaUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.39-from-16.38\holesy'
 $automationPath = 'C:\Users\KentLefner\.codex\automations\daily-qa-audit\automation.toml'
 $auditorPromptPath = '00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md'
 $issueLogPath = '00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md'

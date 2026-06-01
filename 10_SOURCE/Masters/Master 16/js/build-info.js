@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 38;
+export const BUILD_SUB = 39;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.39',
+    summary: 'Restore menu startup after modular extraction.',
+    changes: [
+      'Corrected the PERF-012 extraction boundary so renderer setup remains in js/main.js.',
+      'Restored game-mode selection and Begin button behavior after the 16.38 blocker.',
+      'Kept build metadata, patch notes, difficulty profiles, and Archive lore data in separate modules.'
+    ]
+  },
   {
     label: 'Master 16.38',
     summary: 'Low-risk modular data extraction.',
@@ -432,44 +441,3 @@ const buildVersionBtn = document.getElementById('build-version');
 const pauseVersionLabel = document.getElementById('pause-version-label');
 buildVersionBtn.textContent = BUILD_LABEL;
 if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;
-
-const canvas = document.getElementById('game');
-markBootStep('before-renderer');
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.antialias,
-  powerPreference: HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.powerPreference,
-});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.maxPixelRatio));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowsEnabled;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.setClearColor(0x87ceeb);
-markBootStep('after-renderer');
-
-const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x9ec7e8, 80, HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.fogFar);
-
-// Top-down-ish angled camera (follows hole)
-const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 500);
-camera.position.set(0, 40, 30);
-camera.lookAt(0, 0, 0);
-
-// Lights
-const ambient = new THREE.AmbientLight(0xffffff, 0.55);
-scene.add(ambient);
-const sun = new THREE.DirectionalLight(0xfff1d0, 1.1);
-sun.position.set(50, 80, 30);
-sun.castShadow = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowsEnabled;
-sun.shadow.mapSize.set(
-  HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowMapSize,
-  HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowMapSize
-);
-sun.shadow.camera.left = -120;
-sun.shadow.camera.right = 120;
-sun.shadow.camera.top = 120;
-sun.shadow.camera.bottom = -120;
-sun.shadow.camera.near = 10;
-sun.shadow.camera.far = 250;
-sun.shadow.bias = -0.0005;
-scene.add(sun);

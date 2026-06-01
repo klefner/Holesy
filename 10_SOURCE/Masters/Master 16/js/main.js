@@ -670,6 +670,52 @@ const WAVE_TRANSITION_LORE = {
   3: 'That town is gone. The Parallax is stitching a new battlefield together as civilians are pushed out and hard containment takes over.',
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
+const buildVersionBtn = document.getElementById('build-version');
+const pauseVersionLabel = document.getElementById('pause-version-label');
+if (buildVersionBtn) buildVersionBtn.textContent = BUILD_LABEL;
+if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;
+
+const canvas = document.getElementById('game');
+markBootStep('before-renderer');
+const renderer = new THREE.WebGLRenderer({
+  canvas,
+  antialias: HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.antialias,
+  powerPreference: HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.powerPreference,
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.maxPixelRatio));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowsEnabled;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setClearColor(0x87ceeb);
+markBootStep('after-renderer');
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x9ec7e8, 80, HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.fogFar);
+
+// Top-down-ish angled camera (follows hole)
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 500);
+camera.position.set(0, 40, 30);
+camera.lookAt(0, 0, 0);
+
+// Lights
+const ambient = new THREE.AmbientLight(0xffffff, 0.55);
+scene.add(ambient);
+const sun = new THREE.DirectionalLight(0xfff1d0, 1.1);
+sun.position.set(50, 80, 30);
+sun.castShadow = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowsEnabled;
+sun.shadow.mapSize.set(
+  HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowMapSize,
+  HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowMapSize
+);
+sun.shadow.camera.left = -120;
+sun.shadow.camera.right = 120;
+sun.shadow.camera.top = 120;
+sun.shadow.camera.bottom = -120;
+sun.shadow.camera.near = 10;
+sun.shadow.camera.far = 250;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
 // =========================================================================
 // WORLD / CITY
 // =========================================================================
@@ -2181,7 +2227,6 @@ function updatePlayerInputTarget() {
     applyTouchControl();
   }
 }
-
 
 // =========================================================================
 // GAME STATE
@@ -4840,7 +4885,6 @@ function applyUnitClearSpeedBoost(h, roster) {
   return { boostDurationMs, boostMultiplier };
 }
 
-
 let stagePopTimer = null;
 function showStagePop(text, durationMs = 1400) {
   if (stagePopTimer) clearTimeout(stagePopTimer);
@@ -6798,7 +6842,6 @@ function getHoleBulletDamageMultiplier(h) {
   if (getGameplayNow() < h.effects.bulletShieldUntil) return h.effects.bulletDamageMultiplier || 1;
   return 1;
 }
-
 
 function endGame() {
     if (isGameState(GAME_STATES.TITLE, GAME_STATES.MODE_SELECT, GAME_STATES.GAME_OVER)) return;

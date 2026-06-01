@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.39 - 2026-06-01
+
+Startup blocker repair.
+
+- Corrected the `PERF-012` extraction boundary so renderer setup remains in `js/main.js`.
+- Restored game-mode selection and Begin button behavior after the `Master 16.38` module-startup blocker.
+- Kept build metadata, patch notes, difficulty profiles, and Archive lore data in separate modules.
+
 ## Master 16.38 - 2026-06-01
 
 Modular data extraction.
