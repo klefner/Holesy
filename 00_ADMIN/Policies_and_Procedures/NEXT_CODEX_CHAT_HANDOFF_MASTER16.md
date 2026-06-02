@@ -14,7 +14,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.41`
+- current in-game label: `Master 16.42`
 
 Current basis note:
 
@@ -50,7 +50,7 @@ What `Master 16` specifically represents:
 - `Master 16.37` compacts Endless save object records, applies sparse short audio budgeting to skyscraper collapse/chunk sounds, and speeds medium-office cube descent while adding more sideways debris spread
 - `Master 16.38` completes the next `PERF-012` Phase 2 extraction by moving build metadata/patch notes, difficulty profiles, and Archive lore documents into separate ES modules
 - `Master 16.39` repairs the `Master 16.38` startup blocker by correcting the extraction boundary so game setup remains in `js/main.js` and menu controls work again
-- `Master 16.40` adds same-side hole descent paths, and `Master 16.41` refines them into fixed-point vertical descent so objects keep falling at the world-space mouth contact point until they vanish deeper below the hole mouth
+- `Master 16.40` adds same-side hole descent paths, `Master 16.41` refines them into fixed-point vertical descent, and `Master 16.42` keeps swallowed objects visibly rendered inside the well with a subtle screen-down descent drift until they fall deeper out of sight
 
 Last approved candidate promoted into `Master 16`:
 
@@ -75,13 +75,14 @@ Last approved candidate promoted into `Master 16`:
 
 ## 4. Current Priority
 
-- immediate focus is regression testing `Master 16.41` through the modular package, then continuing the next `PERF-012` extraction slice after user validation
+- immediate focus is regression testing `Master 16.42` through the modular package, then continuing the next `PERF-012` extraction slice after user validation
 - newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are procedurally generated cube/floor stacks whose individual columns can teeter/lean before dropping; upper cubes wait for support failure, active cubes separate in 3D, oversized objects can jam in the visible hole, and faster falling cubes carry more impact/roll/spin energy
 - active monitor items carried from the latest QA evidence:
   - archive readability and music fit
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
 - current governance blockers:
-  - none open as of the 2026-05-28 `QA-017` resolution; branch publication is working again for the governed repo session
+  - `QA-017` reopened on 2026-06-02 because the daily audit can read governed state but still cannot refresh `.git/FETCH_HEAD`, so the current governance package is local-only until a Git-writable governed session republishes it
+  - `QA-020` opened on 2026-06-02 because governed daily-audit evidence was missing for `2026-05-30` through `2026-06-01`; the new missing-run note exists locally but is not yet branch-visible
 - recently closed by user validation and governance repair:
   - `QA-006` closed after user confirmed the long-idle tab-close defect no longer reproduces
   - `QA-007` closed for the current defect state; ongoing buff/lore wording clarity remains a product-backlog improvement item
@@ -97,11 +98,16 @@ Last approved candidate promoted into `Master 16`:
 
 ## 5. Immediate Next Move
 
-- treat `Master 16.41` as the current source basis within `10_SOURCE/Masters/Master 16/`
+- treat `Master 16.42` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
-- the latest audit state is branch-visible again as of commit `7fddcdb`; keep future audits checking Git publication before completion
-- start with regression testing `Master 16.41`, then continue the next `PERF-012` Phase 2 extraction slice
+- first publish the local 2026-06-02 governance package from a governed session that can write Git metadata:
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_DAILY_AUDIT_2026-05-30_TO_2026-06-01_MISSING_RUN_NOTE.md`
+  - `00_ADMIN/Reviews_and_Reports/QA_REVIEW_DAILY_AUDIT_2026-06-02.md`
+  - `00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md`
+  - `00_ADMIN/Policies_and_Procedures/NEXT_CODEX_CHAT_HANDOFF_MASTER16.md`
+  - `00_ADMIN/Tools/holesy_team_sync.ps1`
+- after publication proof, return to regression testing `Master 16.42`, then continue the next `PERF-012` Phase 2 extraction slice
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`

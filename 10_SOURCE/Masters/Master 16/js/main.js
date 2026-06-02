@@ -681,10 +681,12 @@ const HOLE_DESCENT_CONFIG = Object.freeze({
   edgeInset: 0.08,
   tangentDriftFactor: 0,
   horizontalLerp: 8.5,
-  shrinkStartDepth: 5.5,
-  fullShrinkDepth: 15,
-  removeDepth: 16,
-  minScale: 0.28,
+  screenDownDriftPerDepth: 0.16,
+  maxScreenDownDrift: 5.8,
+  shrinkStartDepth: 13,
+  fullShrinkDepth: 27,
+  removeDepth: 30,
+  minScale: 0.16,
 });
 
 const canvas = document.getElementById('game');
@@ -5413,6 +5415,8 @@ function serializeObjectState(obj) {
     state.fallTargetZ = obj.fallTargetZ ?? obj.z;
     addNumber('fallEntryX', obj.fallEntryX, state.fallTargetX);
     addNumber('fallEntryZ', obj.fallEntryZ, state.fallTargetZ);
+    addNumber('fallScreenDownX', obj.fallScreenDownX, 0);
+    addNumber('fallScreenDownZ', obj.fallScreenDownZ, 1);
     addNumber('fallStartY', obj.fallStartY || 0);
   }
   addBool('jammedInHole', obj.jammedInHole);
@@ -5650,7 +5654,10 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
   obj.fallTargetZ = state.fallTargetZ ?? state.z;
   obj.fallEntryX = state.fallEntryX ?? obj.fallTargetX;
   obj.fallEntryZ = state.fallEntryZ ?? obj.fallTargetZ;
+  obj.fallScreenDownX = state.fallScreenDownX ?? 0;
+  obj.fallScreenDownZ = state.fallScreenDownZ ?? 1;
   obj.fallStartY = state.fallStartY || 0;
+  if (obj.falling) setHoleDescentRenderMode(obj, true);
   obj.jammedInHole = !!state.jammedInHole;
   obj.jammedHole = state.jammedHoleIndex >= 0 ? holes[state.jammedHoleIndex] : null;
   obj.jamOffsetX = state.jamOffsetX || 0;
@@ -7316,6 +7323,42 @@ function awardObjectConsume(h, obj) {
   }
 }
 
+function setHoleDescentRenderMode(obj, enabled) {
+  if (!obj?.mesh) return;
+  obj.mesh.traverse(child => {
+    if (!child.isMesh) return;
+    if (enabled) {
+      if (!child.userData.holeDescentRender) {
+        const original = child.material;
+        const cloneMaterial = mat => {
+          const cloned = mat.clone();
+          cloned.depthTest = false;
+          cloned.depthWrite = false;
+          return cloned;
+        };
+        child.userData.holeDescentRender = {
+          renderOrder: child.renderOrder || 0,
+          material: original,
+        };
+        child.material = Array.isArray(original) ? original.map(cloneMaterial) : cloneMaterial(original);
+      }
+      child.renderOrder = 40;
+    } else if (child.userData.holeDescentRender) {
+      child.renderOrder = child.userData.holeDescentRender.renderOrder;
+      child.material = child.userData.holeDescentRender.material;
+      delete child.userData.holeDescentRender;
+    }
+  });
+}
+
+function getScreenDownGroundVector(anchorX, anchorZ) {
+  const sx = camera.position.x - anchorX;
+  const sz = camera.position.z - anchorZ;
+  const len = Math.hypot(sx, sz);
+  if (len < 0.001) return { x: 0, z: 1 };
+  return { x: sx / len, z: sz / len };
+}
+
 // Helper: a hole consumes an object (triggered when it starts falling)
 function beginConsume(h, obj) {
   if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
@@ -7328,6 +7371,7 @@ function beginConsume(h, obj) {
   obj.spin = (Math.random() - 0.5) * 4;
   obj.fallTargetHole = h;
   configureHoleDescentPath(h, obj);
+  setHoleDescentRenderMode(obj, true);
   if (obj.isVoxelBuildingCube) {
     obj.pendingVoxelConsume = true;
     obj.voxelEnteredHole = false;
@@ -7351,6 +7395,7 @@ function settleMissedVoxelConsume(obj) {
   obj.stackActive = true;
   obj.stackReleased = true;
   obj.stackRestTimer = 0;
+  setHoleDescentRenderMode(obj, false);
   obj.x = obj.mesh.position.x;
   obj.z = obj.mesh.position.z;
   obj.mesh.position.y = obj.stackFloorY || Math.max(0.2, (obj.stackHeight || 1) / 2);
@@ -7379,6 +7424,9 @@ function configureHoleDescentPath(h, obj) {
   obj.fallBottomZ = h.z + nz * bottomRadius + tz * tangent;
   obj.fallTargetX = obj.fallEntryX;
   obj.fallTargetZ = obj.fallEntryZ;
+  const screenDown = getScreenDownGroundVector(obj.fallEntryX, obj.fallEntryZ);
+  obj.fallScreenDownX = screenDown.x;
+  obj.fallScreenDownZ = screenDown.z;
   obj.fallStartY = obj.mesh?.position?.y ?? 0;
 }
 
@@ -10136,8 +10184,12 @@ function animate(frameNow = performance.now()) {
       obj.mesh.position.y -= obj.fallVel * dt;
       const entryX = obj.fallEntryX ?? obj.fallTargetX ?? obj.x ?? h.x;
       const entryZ = obj.fallEntryZ ?? obj.fallTargetZ ?? obj.z ?? h.z;
-      const targetX = entryX;
-      const targetZ = entryZ;
+      const depth = Math.max(0, -obj.mesh.position.y);
+      const driftDepth = Math.min(HOLE_DESCENT_CONFIG.maxScreenDownDrift, depth * HOLE_DESCENT_CONFIG.screenDownDriftPerDepth);
+      const screenDownX = obj.fallScreenDownX ?? 0;
+      const screenDownZ = obj.fallScreenDownZ ?? 1;
+      const targetX = entryX + screenDownX * driftDepth;
+      const targetZ = entryZ + screenDownZ * driftDepth;
       const horizontalLerp = Math.min(1, dt * HOLE_DESCENT_CONFIG.horizontalLerp);
       obj.mesh.position.x += (targetX - obj.mesh.position.x) * horizontalLerp;
       obj.mesh.position.z += (targetZ - obj.mesh.position.z) * horizontalLerp;
@@ -10146,7 +10198,6 @@ function animate(frameNow = performance.now()) {
       if (obj.isVoxelBuildingCube) {
         obj.mesh.scale.set(1, 1, 1);
       } else {
-        const depth = Math.abs(obj.mesh.position.y);
         const shrinkT = THREE.MathUtils.clamp((depth - HOLE_DESCENT_CONFIG.shrinkStartDepth) / Math.max(1, HOLE_DESCENT_CONFIG.fullShrinkDepth - HOLE_DESCENT_CONFIG.shrinkStartDepth), 0, 1);
         const s = THREE.MathUtils.lerp(1, HOLE_DESCENT_CONFIG.minScale, shrinkT);
         obj.mesh.scale.set(s, s, s);

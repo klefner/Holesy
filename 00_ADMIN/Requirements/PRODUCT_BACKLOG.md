@@ -1872,4 +1872,4 @@ Backlog items:
 
 The next active engineering task is:
 
-- regression test `Master 16.41` through the modular package URL, then continue the next `PERF-012` Phase 2 architecture slice.
+- regression test `Master 16.42` through the modular package URL, then continue the next `PERF-012` Phase 2 architecture slice after user validation.

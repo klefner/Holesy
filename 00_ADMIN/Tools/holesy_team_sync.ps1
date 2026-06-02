@@ -13,9 +13,9 @@ Set-Location $repoRoot
 
 $sourceMasterPath = '10_SOURCE/Masters/Master 16/index.html'
 $releasePackagePath = '40_RELEASE/Website_Publish_Package/holesy/index.html'
-$godaddyUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.41\holesy'
+$godaddyUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.42\holesy'
 $godaddyUploadPath = Join-Path $godaddyUploadRoot 'index.html'
-$godaddyDeltaUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.41-from-16.40\holesy'
+$godaddyDeltaUploadRoot = 'C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.42-from-16.41\holesy'
 $automationPath = 'C:\Users\KentLefner\.codex\automations\daily-qa-audit\automation.toml'
 $auditorPromptPath = '00_ADMIN/Policies_and_Procedures/AUDITOR_AUTOMATION_PROMPT.md'
 $issueLogPath = '00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md'
@@ -42,6 +42,15 @@ function Add-Collection($target, $items) {
   foreach ($item in @($items)) {
     $target.Add([string]$item)
   }
+}
+
+function Invoke-Git {
+  param(
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$Args
+  )
+
+  & git -c "safe.directory=$($repoRoot.Path)" @Args
 }
 
 function Read-IfExists($path, $maxLines = 80) {
@@ -159,7 +168,7 @@ function Get-GitFactLines {
 
   if (-not $SkipFetch) {
     try {
-      $fetchOutput = git fetch --prune 2>&1
+      $fetchOutput = Invoke-Git fetch --prune 2>&1
       if ($LASTEXITCODE -ne 0) {
         Add-Warning "git fetch --prune returned exit code $LASTEXITCODE."
         $lines.Add("Fetch: WARNING exit=$LASTEXITCODE")
@@ -176,11 +185,11 @@ function Get-GitFactLines {
     $lines.Add('Fetch: skipped by -SkipFetch')
   }
 
-  $status = git status --short --branch
-  $branch = (git branch --show-current).Trim()
-  $upstream = (git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>$null)
-  $head = (git rev-parse HEAD).Trim()
-  $main = (git rev-parse main).Trim()
+  $status = Invoke-Git status --short --branch
+  $branch = (Invoke-Git branch --show-current).Trim()
+  $upstream = (Invoke-Git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>$null)
+  $head = (Invoke-Git rev-parse HEAD).Trim()
+  $main = (Invoke-Git rev-parse main).Trim()
 
   $lines.Add('')
   $lines.Add('Status:')
@@ -190,8 +199,8 @@ function Get-GitFactLines {
   $lines.Add("HEAD: $head")
 
   if ($upstream) {
-    $upstreamSha = (git rev-parse $upstream).Trim()
-    $aheadBehind = (git rev-list --left-right --count "$upstream...HEAD").Trim()
+    $upstreamSha = (Invoke-Git rev-parse $upstream).Trim()
+    $aheadBehind = (Invoke-Git rev-list --left-right --count "$upstream...HEAD").Trim()
     $parts = $aheadBehind -split '\s+'
     $behind = [int]$parts[0]
     $ahead = [int]$parts[1]
@@ -205,7 +214,7 @@ function Get-GitFactLines {
     $lines.Add('Upstream: none')
   }
 
-  $mainCompare = (git rev-list --left-right --count "main...HEAD").Trim()
+  $mainCompare = (Invoke-Git rev-list --left-right --count "main...HEAD").Trim()
   $mainParts = $mainCompare -split '\s+'
   $headBehindMain = [int]$mainParts[0]
   $headAheadMain = [int]$mainParts[1]
@@ -219,10 +228,10 @@ function Get-GitFactLines {
 
   $lines.Add('')
   $lines.Add('Latest commits:')
-  Add-Collection $lines (git log --oneline --decorate -8)
+  Add-Collection $lines (Invoke-Git log --oneline --decorate -8)
   $lines.Add('')
   $lines.Add('Branches:')
-  Add-Collection $lines (git branch -vv)
+  Add-Collection $lines (Invoke-Git branch -vv)
 
   return $lines
 }

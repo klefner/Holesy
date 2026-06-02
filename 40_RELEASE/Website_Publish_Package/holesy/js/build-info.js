@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 41;
+export const BUILD_SUB = 42;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.42',
+    summary: 'Visible well-depth hole descent.',
+    changes: [
+      'Swallowed objects now render above the black hole surface while descending so they do not vanish at an invisible mouth barrier.',
+      'Objects continue falling from their fixed entry point with a subtle screen-down drift that reads as depth inside the well.',
+      'Save/load preserves the fixed descent direction for objects already falling into a hole.'
+    ],
+  },
   {
     label: 'Master 16.41',
     summary: 'Fixed-point vertical hole descent.',

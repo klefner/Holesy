@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.42 - 2026-06-02
+
+Visible well-depth hole descent.
+
+- Swallowed objects now render above the black hole surface while descending so they do not vanish at an invisible mouth barrier.
+- Objects continue falling from their fixed entry point with a subtle screen-down drift that reads as depth inside the well.
+- Save/load preserves the fixed descent direction for objects already falling into a hole.
+
 ## Master 16.41 - 2026-06-02
 
 Fixed-point vertical hole descent.
