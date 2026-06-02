@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 43;
+export const BUILD_SUB = 44;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.44',
+    summary: 'Voxel hole-miss cleanup.',
+    changes: [
+      'Medium-office cubes that start falling but miss the live hole now settle as normal ground debris instead of continuing an orphaned descent.',
+      'The active voxel physics path now uses the same visible-mouth rule as formal swallowed-object descent.',
+      'Preserves the 16.42-16.43 hole-depth effect for objects that are actually inside the live mouth.'
+    ],
+  },
   {
     label: 'Master 16.43',
     summary: 'Hole-mouth visibility mask.',

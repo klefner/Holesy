@@ -7357,10 +7357,52 @@ function setHoleDescentVisible(obj, visible) {
   obj.mesh.visible = !!visible;
 }
 
+function isPointInsideVisibleHoleMouth(x, z, h, inset = HOLE_DESCENT_CONFIG.visibilityInset) {
+  if (!h?.alive) return false;
+  const mouthRadius = Math.max(0.18, h.radius - inset);
+  return Math.hypot(x - h.x, z - h.z) <= mouthRadius;
+}
+
 function isHoleDescentVisibleInMouth(obj, h) {
-  if (!obj?.mesh || !h?.alive) return false;
-  const mouthRadius = Math.max(0.18, h.radius - HOLE_DESCENT_CONFIG.visibilityInset);
-  return Math.hypot(obj.mesh.position.x - h.x, obj.mesh.position.z - h.z) <= mouthRadius;
+  if (!obj?.mesh) return false;
+  return isPointInsideVisibleHoleMouth(obj.mesh.position.x, obj.mesh.position.z, h);
+}
+
+function settleActiveVoxelAfterHoleMiss(piece) {
+  if (!piece?.mesh) return;
+  piece.stackSettled = true;
+  piece.stackReleased = true;
+  piece.stackWillFall = false;
+  piece.stackRestTimer = 0;
+  piece.falling = false;
+  piece.pendingVoxelConsume = false;
+  piece.voxelEnteredHole = false;
+  piece.voxelTouchedFloorWhilePending = false;
+  piece.fallTargetHole = null;
+  piece.fallVel = 0;
+  piece.vx = 0;
+  piece.vy = 0;
+  piece.vz = 0;
+  piece.avx = 0;
+  piece.avy = 0;
+  piece.avz = 0;
+  piece.mesh.visible = true;
+  piece.mesh.position.y = piece.stackFloorY || Math.max(0.2, (piece.stackHeight || 1) / 2);
+  piece.mesh.scale.set(1, 1, 1);
+  piece.x = piece.mesh.position.x;
+  piece.z = piece.mesh.position.z;
+}
+
+function shouldSettleActiveVoxelAfterHoleMiss(piece) {
+  if (!piece?.isVoxelBuildingCube || !piece.stackActive || piece.stackSettled || piece.falling || piece.consumed) return false;
+  const sourceHole = piece.stackCollapsedBy;
+  if (!sourceHole?.alive) return false;
+  const x = piece.mesh?.position?.x ?? piece.x;
+  const z = piece.mesh?.position?.z ?? piece.z;
+  if (isPointInsideVisibleHoleMouth(x, z, sourceHole)) return false;
+  const baseY = piece.voxelBaseY ?? piece.mesh?.position?.y ?? 0;
+  const hasStartedFalling = piece.stackReleased || (piece.mesh?.position?.y ?? baseY) < baseY - 0.05;
+  return hasStartedFalling;
 }
 
 function getScreenDownGroundVector(anchorX, anchorZ) {
@@ -8084,6 +8126,10 @@ function updatePhysicsStackPieces(dt) {
     const collapseElapsed = Math.max(0, (getGameplayNow() - (piece.stackCollapsedAt || 0)) / 1000);
     if (collapseElapsed < (piece.stackDelaySeconds || 0)) continue;
     if (piece.isVoxelBuildingCube && !ensureVoxelPieceReleased(piece)) continue;
+    if (shouldSettleActiveVoxelAfterHoleMiss(piece)) {
+      settleActiveVoxelAfterHoleMiss(piece);
+      continue;
+    }
 
     const gravity = piece.isVoxelBuildingCube
       ? Math.max(1, piece.voxelGravity || STACK_PHYSICS_CONFIG.voxelGravity)

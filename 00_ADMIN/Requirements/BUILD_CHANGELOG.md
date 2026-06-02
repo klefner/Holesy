@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.44 - 2026-06-02
+
+Voxel hole-miss cleanup.
+
+- Medium-office cubes that begin falling but miss the live hole now settle as ordinary ground debris.
+- Active voxel physics now checks the same visible-mouth boundary as formal swallowed-object descent.
+- Preserves the visible well-depth effect for objects actually inside the hole while preventing orphaned cube falls outside it.
+
 ## Master 16.43 - 2026-06-02
 
 Hole-mouth visibility mask.
