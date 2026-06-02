@@ -1724,6 +1724,7 @@ function tierLabel(radius) {
 
 const holes = []; // all holes (player at index 0)
 let windStreakTexture = null;
+let holeAbyssTexture = null;
 let holesyMusicState = null;
 
 function getWindStreakTexture() {
@@ -1750,33 +1751,98 @@ function getWindStreakTexture() {
   return windStreakTexture;
 }
 
+function getHoleAbyssTexture() {
+  if (holeAbyssTexture) return holeAbyssTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const cx = 256;
+  const cy = 256;
+
+  ctx.clearRect(0, 0, 512, 512);
+
+  const abyss = ctx.createRadialGradient(cx, cy + 36, 8, cx, cy, 256);
+  abyss.addColorStop(0.0, 'rgba(0, 0, 0, 1)');
+  abyss.addColorStop(0.28, 'rgba(0, 1, 8, 1)');
+  abyss.addColorStop(0.58, 'rgba(3, 6, 18, 1)');
+  abyss.addColorStop(0.83, 'rgba(14, 15, 22, 1)');
+  abyss.addColorStop(1.0, 'rgba(0, 0, 0, 1)');
+  ctx.fillStyle = abyss;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 252, 0, Math.PI * 2);
+  ctx.fill();
+
+  const upperWall = ctx.createLinearGradient(0, 42, 0, 255);
+  upperWall.addColorStop(0.0, 'rgba(255, 255, 255, 0.22)');
+  upperWall.addColorStop(0.22, 'rgba(80, 88, 101, 0.12)');
+  upperWall.addColorStop(0.62, 'rgba(0, 0, 0, 0.0)');
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = upperWall;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - 76, 188, 60, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  const lowerShadow = ctx.createRadialGradient(cx, cy + 58, 24, cx, cy + 74, 236);
+  lowerShadow.addColorStop(0.0, 'rgba(0, 0, 0, 0.0)');
+  lowerShadow.addColorStop(0.52, 'rgba(0, 0, 0, 0.16)');
+  lowerShadow.addColorStop(0.86, 'rgba(0, 0, 0, 0.72)');
+  lowerShadow.addColorStop(1.0, 'rgba(0, 0, 0, 0.96)');
+  ctx.fillStyle = lowerShadow;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 252, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(155, 180, 210, 0.08)';
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.ellipse(cx - 4, cy + 8, 164, 68, -0.08, Math.PI * 0.06, Math.PI * 1.72);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(35, 72, 142, 0.10)';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.ellipse(cx + 14, cy + 22, 94, 38, 0.12, Math.PI * 0.16, Math.PI * 1.84);
+  ctx.stroke();
+
+  holeAbyssTexture = new THREE.CanvasTexture(canvas);
+  holeAbyssTexture.needsUpdate = true;
+  return holeAbyssTexture;
+}
+
 function createHole(isPlayer, name, rimColor, startPos) {
   const group = new THREE.Group();
   scene.add(group);
 
   const disc = new THREE.Mesh(
     new THREE.CircleGeometry(1, 64),
-    new THREE.MeshBasicMaterial({ color: 0x000005, transparent: true, opacity: 0.96 })
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      map: getHoleAbyssTexture(),
+      transparent: false
+    })
   );
   disc.rotation.x = -Math.PI / 2;
-  disc.position.y = -1.55;
-  disc.renderOrder = 2;
+  disc.position.y = 0.041;
+  disc.renderOrder = 1;
   group.add(disc);
 
-  const mouthShadow = new THREE.Mesh(
-    new THREE.RingGeometry(0.62, 1.02, 64),
+  const innerShadow = new THREE.Mesh(
+    new THREE.RingGeometry(0.76, 1.01, 64),
     new THREE.MeshBasicMaterial({
-      color: 0x02040a,
+      color: 0x000000,
       transparent: true,
-      opacity: 0.64,
+      opacity: 0.44,
       depthWrite: false,
       side: THREE.DoubleSide
     })
   );
-  mouthShadow.rotation.x = -Math.PI / 2;
-  mouthShadow.position.y = 0.047;
-  mouthShadow.renderOrder = 4;
-  group.add(mouthShadow);
+  innerShadow.rotation.x = -Math.PI / 2;
+  innerShadow.position.y = 0.052;
+  innerShadow.renderOrder = 3;
+  group.add(innerShadow);
 
   // Colored rim — geometry rebuilt each frame in updateHoleVisual with constant thickness
   const rim = new THREE.Mesh(
@@ -1787,33 +1853,21 @@ function createHole(isPlayer, name, rimColor, startPos) {
   rim.position.y = 0.06;
   group.add(rim);
 
-  const well = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.02, 0.54, 3.2, 64, 6, true),
-    new THREE.MeshBasicMaterial({
-      color: 0x050812,
-      transparent: true,
-      opacity: 0.94,
-      side: THREE.DoubleSide
-    })
-  );
-  well.position.y = -1.52;
-  well.renderOrder = 1;
-  group.add(well);
-
-  const depthBandGroup = new THREE.Group();
-  group.add(depthBandGroup);
-  const depthBands = [];
-  const depthBandSpecs = [
-    { inner: 0.18, outer: 0.25, y: -0.38, opacity: 0.11, speed: 0.00055 },
-    { inner: 0.32, outer: 0.40, y: -0.80, opacity: 0.08, speed: -0.00042 },
-    { inner: 0.46, outer: 0.55, y: -1.22, opacity: 0.065, speed: 0.00035 },
-    { inner: 0.58, outer: 0.67, y: -1.64, opacity: 0.045, speed: -0.00028 }
+  const abyssBandGroup = new THREE.Group();
+  abyssBandGroup.rotation.x = -Math.PI / 2;
+  abyssBandGroup.position.y = 0.054;
+  group.add(abyssBandGroup);
+  const abyssBands = [];
+  const abyssBandSpecs = [
+    { inner: 0.18, outer: 0.22, opacity: 0.052, speed: 0.00042, start: 0.08, length: 1.15 },
+    { inner: 0.34, outer: 0.39, opacity: 0.040, speed: -0.00034, start: 1.45, length: 1.35 },
+    { inner: 0.55, outer: 0.62, opacity: 0.035, speed: 0.00025, start: 3.25, length: 1.05 }
   ];
-  depthBandSpecs.forEach((spec, idx) => {
+  abyssBandSpecs.forEach((spec, idx) => {
     const band = new THREE.Mesh(
-      new THREE.RingGeometry(spec.inner, spec.outer, 64),
+      new THREE.RingGeometry(spec.inner, spec.outer, 48, 1, spec.start, spec.length),
       new THREE.MeshBasicMaterial({
-        color: idx === 0 ? 0x10224a : 0x091126,
+        color: idx === 0 ? 0x1b3a80 : 0x10224a,
         transparent: true,
         opacity: spec.opacity,
         depthWrite: false,
@@ -1821,13 +1875,10 @@ function createHole(isPlayer, name, rimColor, startPos) {
         side: THREE.DoubleSide
       })
     );
-    band.rotation.x = -Math.PI / 2;
-    band.position.y = spec.y;
-    band.renderOrder = 3;
-    depthBandGroup.add(band);
-    depthBands.push({
+    band.renderOrder = 2;
+    abyssBandGroup.add(band);
+    abyssBands.push({
       mesh: band,
-      baseY: spec.y,
       baseOpacity: spec.opacity,
       speed: spec.speed,
       phase: Math.random() * Math.PI * 2
@@ -1906,7 +1957,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
     loreBuffs: {},
     loreBuffCooldowns: {},
     loreFirstBiteActive: false,
-    group, disc, mouthShadow, rim, well, depthBandGroup, depthBands, vortexArcGroup, vortexArcs, labelSprite,
+    group, disc, innerShadow, rim, abyssBandGroup, abyssBands, vortexArcGroup, vortexArcs, labelSprite,
     // AI state
     aiState: 'wander', aiTargetObj: null, aiTimer: 0,
     wanderX: startPos.x, wanderZ: startPos.z
@@ -1918,7 +1969,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
 function updateHoleVisual(h) {
   if (!h.alive) return;
   const now = performance.now();
-  h.disc.scale.set(h.radius * 0.66, h.radius * 0.66, 1);
+  h.disc.scale.set(h.radius, h.radius, 1);
   // Rim: rebuild geometry with fixed thickness only when radius changed noticeably.
   // Scaling the mesh would stretch the thickness; rebuilding preserves constant rim width.
   const shieldActive = h.effects && now < (h.effects.bulletShieldUntil || 0);
@@ -1966,15 +2017,13 @@ function updateHoleVisual(h) {
     h.rim.material.opacity = 0.85;
     h.rim.scale.set(1, 1, 1);
   }
-  h.well.scale.set(h.radius, 1, h.radius);
-  if (h.mouthShadow) h.mouthShadow.scale.set(h.radius, h.radius, 1);
-  if (h.depthBandGroup && h.depthBands) {
-    h.depthBandGroup.scale.set(h.radius, 1, h.radius);
-    h.depthBands.forEach((bandData, idx) => {
-      const drift = Math.sin(now * 0.0017 + bandData.phase + idx * 0.6);
-      bandData.mesh.position.y = bandData.baseY + drift * 0.035;
+  if (h.innerShadow) h.innerShadow.scale.set(h.radius, h.radius, 1);
+  if (h.abyssBandGroup && h.abyssBands) {
+    h.abyssBandGroup.scale.set(h.radius, h.radius, 1);
+    h.abyssBands.forEach((bandData, idx) => {
+      const pulse = 0.5 + 0.5 * Math.sin(now * 0.0014 + bandData.phase + idx * 0.7);
       bandData.mesh.rotation.z = now * bandData.speed + bandData.phase;
-      bandData.mesh.material.opacity = bandData.baseOpacity * (0.72 + Math.max(0, drift) * 0.34);
+      bandData.mesh.material.opacity = bandData.baseOpacity * (0.65 + pulse * 0.35);
     });
   }
   h.group.position.set(h.x, 0, h.z);

@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.47 - 2026-06-02
+
+Abyss-style hole depth illusion.
+
+- Removed the gray recessed-well geometry from `Master 16.46` because it did not read as real depth during play.
+- Changed the hole center to a dark abyss texture with asymmetric inner shading and a black center.
+- Added very subtle animated interior bands to suggest depth inside the mouth without changing gameplay.
+
 ## Master 16.46 - 2026-06-02
 
 3D hole well visual.

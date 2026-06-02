@@ -270,7 +270,7 @@ Notes:
 - this is the first reusable procedural stack pattern for future content, not just a visual polish pass
 - future houses may use smaller cube breakup, but houses should be scoped separately because their shape, scale, and consumption feel are different
 
-### PB-VFX-002 — Recessed 3D Hole Well Visual
+### PB-VFX-002 — Hole Depth Visual
 
 Type:
 
@@ -278,15 +278,15 @@ Type:
 
 Priority:
 
-- High; implemented as `Master 16.46`
+- High; current attempt implemented as `Master 16.47`
 
 Status:
 
-- Implemented; pending user regression validation
+- In validation; `Master 16.46` rejected, `Master 16.47` pending user regression validation
 
 Description:
 
-Make each hole read as an actual recessed 3D opening rather than a flat black disc, while preserving the existing devour, scoring, growth, save/load, and mouth-clipping rules.
+Make each hole read as a deep opening rather than a flat black disc or a gray saucer, while preserving the existing devour, scoring, growth, save/load, and mouth-clipping rules.
 
 Acceptance criteria:
 
@@ -298,8 +298,9 @@ Acceptance criteria:
 
 Implementation notes:
 
-- `Master 16.46` uses layered normalized Three.js geometry: a sloped dark inner wall, lower darkness plane, top mouth shadow, and subtle animated interior depth bands
-- this item intentionally avoids a heavy shader or physics change for the first slice
+- `Master 16.46` used visible recessed Three.js geometry, but user rejected it because it did not create the visual sensation of 3D depth
+- `Master 16.47` removes that gray recessed geometry and uses a darker abyss texture, asymmetric inner shading, and subtle animated interior bands instead
+- this item still intentionally avoids a heavy shader or physics change for this slice
 
 ### PERF-001 Establish Performance Profile System
 

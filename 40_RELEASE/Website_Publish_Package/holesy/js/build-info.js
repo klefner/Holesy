@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 46;
+export const BUILD_SUB = 47;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.47',
+    summary: 'Abyss-style hole depth illusion.',
+    changes: [
+      'Removed the gray recessed-well geometry from Master 16.46 because it did not read as real depth during play.',
+      'Changed the hole center to a dark abyss texture with asymmetric inner shading and a black center.',
+      'Added very subtle animated interior bands to suggest depth inside the mouth without changing gameplay.'
+    ],
+  },
   {
     label: 'Master 16.46',
     summary: '3D hole well visual.',
