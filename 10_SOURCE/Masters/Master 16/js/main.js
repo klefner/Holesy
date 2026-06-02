@@ -1755,12 +1755,28 @@ function createHole(isPlayer, name, rimColor, startPos) {
   scene.add(group);
 
   const disc = new THREE.Mesh(
-    new THREE.CircleGeometry(1, 48),
-    new THREE.MeshBasicMaterial({ color: 0x000000 })
+    new THREE.CircleGeometry(1, 64),
+    new THREE.MeshBasicMaterial({ color: 0x000005, transparent: true, opacity: 0.96 })
   );
   disc.rotation.x = -Math.PI / 2;
-  disc.position.y = 0.04;
+  disc.position.y = -1.55;
+  disc.renderOrder = 2;
   group.add(disc);
+
+  const mouthShadow = new THREE.Mesh(
+    new THREE.RingGeometry(0.62, 1.02, 64),
+    new THREE.MeshBasicMaterial({
+      color: 0x02040a,
+      transparent: true,
+      opacity: 0.64,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    })
+  );
+  mouthShadow.rotation.x = -Math.PI / 2;
+  mouthShadow.position.y = 0.047;
+  mouthShadow.renderOrder = 4;
+  group.add(mouthShadow);
 
   // Colored rim — geometry rebuilt each frame in updateHoleVisual with constant thickness
   const rim = new THREE.Mesh(
@@ -1772,11 +1788,51 @@ function createHole(isPlayer, name, rimColor, startPos) {
   group.add(rim);
 
   const well = new THREE.Mesh(
-    new THREE.CylinderGeometry(1, 1, 6, 32, 1, true),
-    new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide })
+    new THREE.CylinderGeometry(1.02, 0.54, 3.2, 64, 6, true),
+    new THREE.MeshBasicMaterial({
+      color: 0x050812,
+      transparent: true,
+      opacity: 0.94,
+      side: THREE.DoubleSide
+    })
   );
-  well.position.y = -3;
+  well.position.y = -1.52;
+  well.renderOrder = 1;
   group.add(well);
+
+  const depthBandGroup = new THREE.Group();
+  group.add(depthBandGroup);
+  const depthBands = [];
+  const depthBandSpecs = [
+    { inner: 0.18, outer: 0.25, y: -0.38, opacity: 0.11, speed: 0.00055 },
+    { inner: 0.32, outer: 0.40, y: -0.80, opacity: 0.08, speed: -0.00042 },
+    { inner: 0.46, outer: 0.55, y: -1.22, opacity: 0.065, speed: 0.00035 },
+    { inner: 0.58, outer: 0.67, y: -1.64, opacity: 0.045, speed: -0.00028 }
+  ];
+  depthBandSpecs.forEach((spec, idx) => {
+    const band = new THREE.Mesh(
+      new THREE.RingGeometry(spec.inner, spec.outer, 64),
+      new THREE.MeshBasicMaterial({
+        color: idx === 0 ? 0x10224a : 0x091126,
+        transparent: true,
+        opacity: spec.opacity,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide
+      })
+    );
+    band.rotation.x = -Math.PI / 2;
+    band.position.y = spec.y;
+    band.renderOrder = 3;
+    depthBandGroup.add(band);
+    depthBands.push({
+      mesh: band,
+      baseY: spec.y,
+      baseOpacity: spec.opacity,
+      speed: spec.speed,
+      phase: Math.random() * Math.PI * 2
+    });
+  });
 
   const vortexArcGroup = new THREE.Group();
   vortexArcGroup.rotation.x = -Math.PI / 2;
@@ -1850,7 +1906,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
     loreBuffs: {},
     loreBuffCooldowns: {},
     loreFirstBiteActive: false,
-    group, disc, rim, well, vortexArcGroup, vortexArcs, labelSprite,
+    group, disc, mouthShadow, rim, well, depthBandGroup, depthBands, vortexArcGroup, vortexArcs, labelSprite,
     // AI state
     aiState: 'wander', aiTargetObj: null, aiTimer: 0,
     wanderX: startPos.x, wanderZ: startPos.z
@@ -1862,7 +1918,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
 function updateHoleVisual(h) {
   if (!h.alive) return;
   const now = performance.now();
-  h.disc.scale.set(h.radius, h.radius, 1);
+  h.disc.scale.set(h.radius * 0.66, h.radius * 0.66, 1);
   // Rim: rebuild geometry with fixed thickness only when radius changed noticeably.
   // Scaling the mesh would stretch the thickness; rebuilding preserves constant rim width.
   const shieldActive = h.effects && now < (h.effects.bulletShieldUntil || 0);
@@ -1911,6 +1967,16 @@ function updateHoleVisual(h) {
     h.rim.scale.set(1, 1, 1);
   }
   h.well.scale.set(h.radius, 1, h.radius);
+  if (h.mouthShadow) h.mouthShadow.scale.set(h.radius, h.radius, 1);
+  if (h.depthBandGroup && h.depthBands) {
+    h.depthBandGroup.scale.set(h.radius, 1, h.radius);
+    h.depthBands.forEach((bandData, idx) => {
+      const drift = Math.sin(now * 0.0017 + bandData.phase + idx * 0.6);
+      bandData.mesh.position.y = bandData.baseY + drift * 0.035;
+      bandData.mesh.rotation.z = now * bandData.speed + bandData.phase;
+      bandData.mesh.material.opacity = bandData.baseOpacity * (0.72 + Math.max(0, drift) * 0.34);
+    });
+  }
   h.group.position.set(h.x, 0, h.z);
   // Label size and height scale with hole
   const s = Math.max(3, h.radius * 2.2);

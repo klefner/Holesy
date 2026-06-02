@@ -270,6 +270,37 @@ Notes:
 - this is the first reusable procedural stack pattern for future content, not just a visual polish pass
 - future houses may use smaller cube breakup, but houses should be scoped separately because their shape, scale, and consumption feel are different
 
+### PB-VFX-002 — Recessed 3D Hole Well Visual
+
+Type:
+
+- Visual polish / core readability
+
+Priority:
+
+- High; implemented as `Master 16.46`
+
+Status:
+
+- Implemented; pending user regression validation
+
+Description:
+
+Make each hole read as an actual recessed 3D opening rather than a flat black disc, while preserving the existing devour, scoring, growth, save/load, and mouth-clipping rules.
+
+Acceptance criteria:
+
+- the hole center has visible depth below the street plane
+- the colored rim remains readable for player, rival, speed, hit, shield, and celebration states
+- the visual treatment scales cleanly as hole radius changes
+- the effect remains subtle enough that falling objects and hazards stay readable
+- no gameplay collision, scoring, growth, AI, or save/load behavior changes as part of this visual slice
+
+Implementation notes:
+
+- `Master 16.46` uses layered normalized Three.js geometry: a sloped dark inner wall, lower darkness plane, top mouth shadow, and subtle animated interior depth bands
+- this item intentionally avoids a heavy shader or physics change for the first slice
+
 ### PERF-001 Establish Performance Profile System
 
 Type:

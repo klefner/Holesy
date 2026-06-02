@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.46 - 2026-06-02
+
+3D hole well visual.
+
+- The hole center now renders as a recessed well instead of a flat black disc.
+- Added a sloped dark inner wall, lower depth surface, and subtle animated interior bands.
+- This is a visual-only upgrade; scoring, devouring, growth, and hole-mouth clipping behavior are unchanged.
+
 ## Master 16.45 - 2026-06-02
 
 Screen-space hole-mouth clipping.

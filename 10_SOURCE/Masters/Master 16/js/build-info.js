@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 45;
+export const BUILD_SUB = 46;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.46',
+    summary: '3D hole well visual.',
+    changes: [
+      'The hole center now renders as a recessed well instead of a flat black disc.',
+      'Added a sloped dark inner wall, lower depth surface, and subtle animated interior bands.',
+      'This is a visual-only upgrade; scoring, devouring, growth, and hole-mouth clipping behavior are unchanged.'
+    ],
+  },
   {
     label: 'Master 16.45',
     summary: 'Screen-space hole-mouth clipping.',
