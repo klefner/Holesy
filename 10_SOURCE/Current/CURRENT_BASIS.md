@@ -6,8 +6,8 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current in-game label is `Master 16.47`
-- `Master 16.47` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current in-game label is `Master 16.48`
+- `Master 16.48` is the current governed source basis and includes:
   - the full approved `Master 15` gameplay baseline
   - the idle lifecycle cleanup candidate lineage from `Master 15.39`
   - the playable Archive / found-document / lore-achievement-buff system from `Master 15.40`
@@ -37,7 +37,7 @@ Current status:
   - the `Master 16.37` save/audio/tuning repair that compacts Endless save object records, rate-limits skyscraper collapse audio, and makes medium-office cubes drop faster with more sideways debris spread
   - the `Master 16.38` `PERF-012` Phase 2 extraction that moves build metadata, patch notes, difficulty profiles, and Archive lore data into separate ES modules
   - the `Master 16.39` startup blocker repair that restores game-mode selection and Begin after correcting the `PERF-012` extraction boundary
-  - the `Master 16.40` same-side hole descent-path refinement, the `Master 16.41` fixed-point vertical descent refinement, the `Master 16.42` visible well-depth refinement, the `Master 16.43` hole-mouth visibility mask, the `Master 16.44` active-voxel hole-miss cleanup, the `Master 16.45` projected screen-space mouth clipping that stops visible falling artifacts outside the black disk, the rejected `Master 16.46` recessed-well visual attempt, and the `Master 16.47` abyss-style depth illusion replacement
+  - the `Master 16.40` same-side hole descent-path refinement, the `Master 16.41` fixed-point vertical descent refinement, the `Master 16.42` visible well-depth refinement, the `Master 16.43` hole-mouth visibility mask, the `Master 16.44` active-voxel hole-miss cleanup, the `Master 16.45` projected screen-space mouth clipping that stops visible falling artifacts outside the black disk, the rejected `Master 16.46` recessed-well visual attempt, the rejected `Master 16.47` abyss-texture attempt, and the `Master 16.48` deeper tapering shaft attempt
 - New candidate work should branch from `Master 16` unless a newer file is explicitly promoted
 - The last approved candidate lineage that became this master was `20_TESTS/Candidate_Builds/Master 15.45 - in-game-build-notes.html`
 

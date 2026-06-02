@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.48 - 2026-06-02
+
+Deep shaft hole visual.
+
+- Replaced the still-flat abyss texture attempt with a tapering dark shaft whose bottom is physically lower and smaller than the mouth.
+- Added a stronger vertical wall texture and deeper nested rings to make the hole read more like a descending shaft.
+- Visual-only: devour, scoring, growth, and hole-mouth clipping behavior are unchanged.
+
 ## Master 16.47 - 2026-06-02
 
 Abyss-style hole depth illusion.

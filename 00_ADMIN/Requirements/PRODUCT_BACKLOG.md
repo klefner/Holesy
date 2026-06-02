@@ -278,11 +278,11 @@ Type:
 
 Priority:
 
-- High; current attempt implemented as `Master 16.47`
+- High; current attempt implemented as `Master 16.48`
 
 Status:
 
-- In validation; `Master 16.46` rejected, `Master 16.47` pending user regression validation
+- In validation; `Master 16.46` and `Master 16.47` rejected, `Master 16.48` pending user regression validation
 
 Description:
 
@@ -299,7 +299,8 @@ Acceptance criteria:
 Implementation notes:
 
 - `Master 16.46` used visible recessed Three.js geometry, but user rejected it because it did not create the visual sensation of 3D depth
-- `Master 16.47` removes that gray recessed geometry and uses a darker abyss texture, asymmetric inner shading, and subtle animated interior bands instead
+- `Master 16.47` removed that gray recessed geometry and used a darker abyss texture, asymmetric inner shading, and subtle animated interior bands, but user still rejected it as too 2D
+- `Master 16.48` uses a deeper tapering shaft with a physically lower/smaller bottom, a stronger dark vertical wall texture, and nested lower rings
 - this item still intentionally avoids a heavy shader or physics change for this slice
 
 ### PERF-001 Establish Performance Profile System

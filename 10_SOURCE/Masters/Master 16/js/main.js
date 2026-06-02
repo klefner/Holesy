@@ -1725,6 +1725,7 @@ function tierLabel(radius) {
 const holes = []; // all holes (player at index 0)
 let windStreakTexture = null;
 let holeAbyssTexture = null;
+let holeShaftWallTexture = null;
 let holesyMusicState = null;
 
 function getWindStreakTexture() {
@@ -1812,9 +1813,59 @@ function getHoleAbyssTexture() {
   return holeAbyssTexture;
 }
 
+function getHoleShaftWallTexture() {
+  if (holeShaftWallTexture) return holeShaftWallTexture;
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, 0, 512);
+  grad.addColorStop(0.0, 'rgba(20, 23, 31, 1)');
+  grad.addColorStop(0.18, 'rgba(5, 7, 13, 1)');
+  grad.addColorStop(0.58, 'rgba(0, 1, 5, 1)');
+  grad.addColorStop(1.0, 'rgba(0, 0, 0, 1)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 128, 512);
+
+  for (let i = 0; i < 14; i++) {
+    const x = (i * 37) % 128;
+    const lineGrad = ctx.createLinearGradient(x, 0, x + 8, 0);
+    lineGrad.addColorStop(0.0, 'rgba(255,255,255,0)');
+    lineGrad.addColorStop(0.45, 'rgba(120,145,190,0.035)');
+    lineGrad.addColorStop(1.0, 'rgba(255,255,255,0)');
+    ctx.fillStyle = lineGrad;
+    ctx.fillRect(x - 4, 0, 10, 512);
+  }
+
+  ctx.fillStyle = 'rgba(0,0,0,0.34)';
+  ctx.fillRect(0, 250, 128, 262);
+
+  holeShaftWallTexture = new THREE.CanvasTexture(canvas);
+  holeShaftWallTexture.wrapS = THREE.RepeatWrapping;
+  holeShaftWallTexture.wrapT = THREE.ClampToEdgeWrapping;
+  holeShaftWallTexture.needsUpdate = true;
+  return holeShaftWallTexture;
+}
+
 function createHole(isPlayer, name, rimColor, startPos) {
   const group = new THREE.Group();
   scene.add(group);
+
+  const shaftWall = new THREE.Mesh(
+    new THREE.CylinderGeometry(1, 0.2, 9.2, 96, 12, true),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      map: getHoleShaftWallTexture(),
+      transparent: true,
+      opacity: 0.98,
+      side: THREE.BackSide,
+      depthWrite: false,
+      depthTest: false
+    })
+  );
+  shaftWall.position.y = -4.55;
+  shaftWall.renderOrder = 1;
+  group.add(shaftWall);
 
   const disc = new THREE.Mesh(
     new THREE.CircleGeometry(1, 64),
@@ -1825,17 +1876,18 @@ function createHole(isPlayer, name, rimColor, startPos) {
     })
   );
   disc.rotation.x = -Math.PI / 2;
-  disc.position.y = 0.041;
+  disc.position.y = -9.08;
   disc.renderOrder = 1;
   group.add(disc);
 
   const innerShadow = new THREE.Mesh(
-    new THREE.RingGeometry(0.76, 1.01, 64),
+    new THREE.RingGeometry(0.24, 1.02, 96),
     new THREE.MeshBasicMaterial({
       color: 0x000000,
       transparent: true,
-      opacity: 0.44,
+      opacity: 0.84,
       depthWrite: false,
+      depthTest: false,
       side: THREE.DoubleSide
     })
   );
@@ -1853,32 +1905,33 @@ function createHole(isPlayer, name, rimColor, startPos) {
   rim.position.y = 0.06;
   group.add(rim);
 
-  const abyssBandGroup = new THREE.Group();
-  abyssBandGroup.rotation.x = -Math.PI / 2;
-  abyssBandGroup.position.y = 0.054;
-  group.add(abyssBandGroup);
-  const abyssBands = [];
-  const abyssBandSpecs = [
-    { inner: 0.18, outer: 0.22, opacity: 0.052, speed: 0.00042, start: 0.08, length: 1.15 },
-    { inner: 0.34, outer: 0.39, opacity: 0.040, speed: -0.00034, start: 1.45, length: 1.35 },
-    { inner: 0.55, outer: 0.62, opacity: 0.035, speed: 0.00025, start: 3.25, length: 1.05 }
+  const shaftDepthGroup = new THREE.Group();
+  group.add(shaftDepthGroup);
+  const shaftDepthRings = [];
+  const shaftRingSpecs = [
+    { radius: 0.82, y: -1.25, opacity: 0.18, speed: 0.00018 },
+    { radius: 0.6, y: -3.05, opacity: 0.13, speed: -0.00014 },
+    { radius: 0.39, y: -5.55, opacity: 0.10, speed: 0.00011 },
+    { radius: 0.22, y: -7.65, opacity: 0.08, speed: -0.00009 }
   ];
-  abyssBandSpecs.forEach((spec, idx) => {
-    const band = new THREE.Mesh(
-      new THREE.RingGeometry(spec.inner, spec.outer, 48, 1, spec.start, spec.length),
+  shaftRingSpecs.forEach((spec, idx) => {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(spec.radius * 0.86, spec.radius, 72, 1),
       new THREE.MeshBasicMaterial({
-        color: idx === 0 ? 0x1b3a80 : 0x10224a,
+        color: idx === 0 ? 0x172039 : 0x0b1021,
         transparent: true,
         opacity: spec.opacity,
         depthWrite: false,
-        blending: THREE.AdditiveBlending,
+        depthTest: false,
         side: THREE.DoubleSide
       })
     );
-    band.renderOrder = 2;
-    abyssBandGroup.add(band);
-    abyssBands.push({
-      mesh: band,
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = spec.y;
+    ring.renderOrder = 2;
+    shaftDepthGroup.add(ring);
+    shaftDepthRings.push({
+      mesh: ring,
       baseOpacity: spec.opacity,
       speed: spec.speed,
       phase: Math.random() * Math.PI * 2
@@ -1957,7 +2010,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
     loreBuffs: {},
     loreBuffCooldowns: {},
     loreFirstBiteActive: false,
-    group, disc, innerShadow, rim, abyssBandGroup, abyssBands, vortexArcGroup, vortexArcs, labelSprite,
+    group, disc, shaftWall, innerShadow, rim, shaftDepthGroup, shaftDepthRings, vortexArcGroup, vortexArcs, labelSprite,
     // AI state
     aiState: 'wander', aiTargetObj: null, aiTimer: 0,
     wanderX: startPos.x, wanderZ: startPos.z
@@ -1969,7 +2022,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
 function updateHoleVisual(h) {
   if (!h.alive) return;
   const now = performance.now();
-  h.disc.scale.set(h.radius, h.radius, 1);
+  h.disc.scale.set(h.radius * 0.36, h.radius * 0.36, 1);
   // Rim: rebuild geometry with fixed thickness only when radius changed noticeably.
   // Scaling the mesh would stretch the thickness; rebuilding preserves constant rim width.
   const shieldActive = h.effects && now < (h.effects.bulletShieldUntil || 0);
@@ -2017,13 +2070,14 @@ function updateHoleVisual(h) {
     h.rim.material.opacity = 0.85;
     h.rim.scale.set(1, 1, 1);
   }
+  if (h.shaftWall) h.shaftWall.scale.set(h.radius, 1, h.radius);
   if (h.innerShadow) h.innerShadow.scale.set(h.radius, h.radius, 1);
-  if (h.abyssBandGroup && h.abyssBands) {
-    h.abyssBandGroup.scale.set(h.radius, h.radius, 1);
-    h.abyssBands.forEach((bandData, idx) => {
-      const pulse = 0.5 + 0.5 * Math.sin(now * 0.0014 + bandData.phase + idx * 0.7);
-      bandData.mesh.rotation.z = now * bandData.speed + bandData.phase;
-      bandData.mesh.material.opacity = bandData.baseOpacity * (0.65 + pulse * 0.35);
+  if (h.shaftDepthGroup && h.shaftDepthRings) {
+    h.shaftDepthGroup.scale.set(h.radius, 1, h.radius);
+    h.shaftDepthRings.forEach((ringData, idx) => {
+      const pulse = 0.5 + 0.5 * Math.sin(now * 0.0012 + ringData.phase + idx * 0.75);
+      ringData.mesh.rotation.z = now * ringData.speed + ringData.phase;
+      ringData.mesh.material.opacity = ringData.baseOpacity * (0.55 + pulse * 0.45);
     });
   }
   h.group.position.set(h.x, 0, h.z);

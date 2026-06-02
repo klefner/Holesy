@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 47;
+export const BUILD_SUB = 48;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.48',
+    summary: 'Deep shaft hole visual.',
+    changes: [
+      'Replaced the still-flat abyss texture attempt with a tapering dark shaft whose bottom is physically lower and smaller than the mouth.',
+      'Added a stronger vertical wall texture and deeper nested rings to make the hole read more like a descending shaft.',
+      'Visual-only: devour, scoring, growth, and hole-mouth clipping behavior are unchanged.'
+    ],
+  },
   {
     label: 'Master 16.47',
     summary: 'Abyss-style hole depth illusion.',
