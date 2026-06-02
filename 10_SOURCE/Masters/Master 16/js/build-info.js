@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 39;
+export const BUILD_SUB = 40;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.40',
+    summary: 'Same-side hole descent paths.',
+    changes: [
+      'Objects now keep the mouth contact point where they enter the hole instead of snapping toward a center drain.',
+      'Falling objects drift toward a same-side lower-mouth point as they descend, making them read as dropping down into the hole.',
+      'Save/load now preserves active falling-object entry and lower-mouth targets.'
+    ]
+  },
   {
     label: 'Master 16.39',
     summary: 'Restore menu startup after modular extraction.',
@@ -437,7 +446,3 @@ export const BUILD_CHANGELOG = Object.freeze([
     ],
   },
 ]);
-const buildVersionBtn = document.getElementById('build-version');
-const pauseVersionLabel = document.getElementById('pause-version-label');
-buildVersionBtn.textContent = BUILD_LABEL;
-if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;

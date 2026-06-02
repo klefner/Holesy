@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.40 - 2026-06-02
+
+Same-side hole descent paths.
+
+- Objects now keep the mouth contact point where they enter the hole instead of snapping toward a center drain.
+- Falling objects drift toward a same-side lower-mouth point as they descend, making them read as dropping down into the hole.
+- Save/load now preserves active falling-object entry and lower-mouth targets.
+
 ## Master 16.39 - 2026-06-01
 
 Startup blocker repair.

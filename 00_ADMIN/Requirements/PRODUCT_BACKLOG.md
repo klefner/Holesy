@@ -1860,16 +1860,16 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.39` as the current governed production-test baseline.
+1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.40` as the current governed production-test baseline.
 2. Treat `index.html` as the entry point for the modular package, not the whole game package; the full `/holesy/` folder remains the governed release baseline, while routine GoDaddy uploads should use a changed-files-only delta package when live is already on the previous master.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Treat `QA-006`, `QA-007`, `QA-016`, and the `Master 16.28` traffic/soldier-growth regression set as user-validated closed as of 2026-05-28; continue the new lore-clarity backlog item as product improvement, not as an open QA defect.
 5. Treat product-intent recovery controls as the immediate governance baseline; Team Sync v2 should be run at new-chat startup and before material release/package/architecture decisions.
-6. `PERF-012` Phase 2 has started: `Master 16.38` extracted build metadata, patch notes, difficulty profiles, Archive lore documents, and starter Field Pattern unlocks out of `js/main.js`; `Master 16.39` repaired the startup blocker caused by the initial extraction boundary.
+6. `PERF-012` Phase 2 has started: `Master 16.38` extracted build metadata, patch notes, difficulty profiles, Archive lore documents, and starter Field Pattern unlocks out of `js/main.js`; `Master 16.39` repaired the startup blocker caused by the initial extraction boundary; `Master 16.40` adds same-side hole descent paths for objects falling into the hole.
 7. Continue the next `PERF-012` Phase 2 slice by extracting similarly stable data/configuration from `js/main.js`, preserving behavior and the modular package structure.
 8. The `Priority 1A - Medium Office Building Voxel Collapse` pattern is user-validated through `Master 16.37` for Save Game, Load Game, medium-building sound, skyscraper sound treatment, and medium cube fall tuning. Future voxel work should proceed as product tuning or new VFX backlog, not as an open defect unless new evidence appears.
 9. After the next architecture slice, return to the remaining gameplay intake: lore/buff wording clarity, improved skyscraper collapse variation, house cube breakup, and daily/weekly quest/reward architecture.
 
 The next active engineering task is:
 
-- regression test `Master 16.39` through the modular package URL, then continue the next `PERF-012` Phase 2 architecture slice.
+- regression test `Master 16.40` through the modular package URL, then continue the next `PERF-012` Phase 2 architecture slice.

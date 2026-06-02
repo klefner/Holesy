@@ -675,6 +675,16 @@ const pauseVersionLabel = document.getElementById('pause-version-label');
 if (buildVersionBtn) buildVersionBtn.textContent = BUILD_LABEL;
 if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;
 
+const HOLE_DESCENT_CONFIG = Object.freeze({
+  bottomRadiusFactor: 0.78,
+  centerFallbackRadiusFactor: 0.34,
+  edgeInset: 0.08,
+  tangentDriftFactor: 0.10,
+  horizontalLerp: 5.8,
+  depthForFullDrift: 5.2,
+  minScale: 0.16,
+});
+
 const canvas = document.getElementById('game');
 markBootStep('before-renderer');
 const renderer = new THREE.WebGLRenderer({
@@ -5399,6 +5409,11 @@ function serializeObjectState(obj) {
     addNumber('fallVel', obj.fallVel || 0);
     state.fallTargetX = obj.fallTargetX ?? obj.x;
     state.fallTargetZ = obj.fallTargetZ ?? obj.z;
+    addNumber('fallEntryX', obj.fallEntryX, state.fallTargetX);
+    addNumber('fallEntryZ', obj.fallEntryZ, state.fallTargetZ);
+    addNumber('fallBottomX', obj.fallBottomX, state.fallTargetX);
+    addNumber('fallBottomZ', obj.fallBottomZ, state.fallTargetZ);
+    addNumber('fallStartY', obj.fallStartY || 0);
   }
   addBool('jammedInHole', obj.jammedInHole);
   if (obj.jammedInHole) {
@@ -5633,6 +5648,11 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
   obj.fallVel = state.fallVel || 0;
   obj.fallTargetX = state.fallTargetX ?? state.x;
   obj.fallTargetZ = state.fallTargetZ ?? state.z;
+  obj.fallEntryX = state.fallEntryX ?? obj.fallTargetX;
+  obj.fallEntryZ = state.fallEntryZ ?? obj.fallTargetZ;
+  obj.fallBottomX = state.fallBottomX ?? obj.fallTargetX;
+  obj.fallBottomZ = state.fallBottomZ ?? obj.fallTargetZ;
+  obj.fallStartY = state.fallStartY || 0;
   obj.jammedInHole = !!state.jammedInHole;
   obj.jammedHole = state.jammedHoleIndex >= 0 ? holes[state.jammedHoleIndex] : null;
   obj.jamOffsetX = state.jamOffsetX || 0;
@@ -7309,8 +7329,7 @@ function beginConsume(h, obj) {
   obj.fallVel = 0;
   obj.spin = (Math.random() - 0.5) * 4;
   obj.fallTargetHole = h;
-  obj.fallTargetX = obj.mesh?.position?.x ?? obj.x;
-  obj.fallTargetZ = obj.mesh?.position?.z ?? obj.z;
+  configureHoleDescentPath(h, obj);
   if (obj.isVoxelBuildingCube) {
     obj.pendingVoxelConsume = true;
     obj.voxelEnteredHole = false;
@@ -7338,6 +7357,31 @@ function settleMissedVoxelConsume(obj) {
   obj.z = obj.mesh.position.z;
   obj.mesh.position.y = obj.stackFloorY || Math.max(0.2, (obj.stackHeight || 1) / 2);
   obj.mesh.scale.set(1, 1, 1);
+}
+
+function configureHoleDescentPath(h, obj) {
+  const px = obj.mesh?.position?.x ?? obj.x ?? h.x;
+  const pz = obj.mesh?.position?.z ?? obj.z ?? h.z;
+  const dx = px - h.x;
+  const dz = pz - h.z;
+  const d = Math.hypot(dx, dz);
+  const fallbackAngle = Math.random() * Math.PI * 2;
+  const nx = d > 0.001 ? dx / d : Math.cos(fallbackAngle);
+  const nz = d > 0.001 ? dz / d : Math.sin(fallbackAngle);
+  const mouthRadius = Math.max(0.2, h.radius - Math.max(HOLE_DESCENT_CONFIG.edgeInset, (obj.size || 0.2) * 0.14));
+  const entryRadius = Math.min(mouthRadius, Math.max(mouthRadius * HOLE_DESCENT_CONFIG.centerFallbackRadiusFactor, d));
+  const bottomRadius = Math.max(0.16, mouthRadius * HOLE_DESCENT_CONFIG.bottomRadiusFactor);
+  const tangent = (Math.random() - 0.5) * Math.min(h.radius * HOLE_DESCENT_CONFIG.tangentDriftFactor, 0.72);
+  const tx = -nz;
+  const tz = nx;
+
+  obj.fallEntryX = h.x + nx * entryRadius;
+  obj.fallEntryZ = h.z + nz * entryRadius;
+  obj.fallBottomX = h.x + nx * bottomRadius + tx * tangent;
+  obj.fallBottomZ = h.z + nz * bottomRadius + tz * tangent;
+  obj.fallTargetX = obj.fallEntryX;
+  obj.fallTargetZ = obj.fallEntryZ;
+  obj.fallStartY = obj.mesh?.position?.y ?? 0;
 }
 
 // Helper: absorb one hole into another
@@ -10092,21 +10136,28 @@ function animate(frameNow = performance.now()) {
       const h = obj.fallTargetHole || player;
       obj.fallVel += (obj.isVoxelBuildingCube ? STACK_PHYSICS_CONFIG.voxelConsumeGravity : 25) * dt;
       obj.mesh.position.y -= obj.fallVel * dt;
-      const targetX = obj.fallTargetX ?? obj.x ?? h.x;
-      const targetZ = obj.fallTargetZ ?? obj.z ?? h.z;
-      obj.mesh.position.x += (targetX - obj.mesh.position.x) * Math.min(1, dt * 2.2);
-      obj.mesh.position.z += (targetZ - obj.mesh.position.z) * Math.min(1, dt * 2.2);
+      const entryX = obj.fallEntryX ?? obj.fallTargetX ?? obj.x ?? h.x;
+      const entryZ = obj.fallEntryZ ?? obj.fallTargetZ ?? obj.z ?? h.z;
+      const bottomX = obj.fallBottomX ?? entryX;
+      const bottomZ = obj.fallBottomZ ?? entryZ;
+      const depthT = THREE.MathUtils.clamp(Math.abs(obj.mesh.position.y) / HOLE_DESCENT_CONFIG.depthForFullDrift, 0, 1);
+      const easedDepth = depthT * depthT * (3 - 2 * depthT);
+      const targetX = THREE.MathUtils.lerp(entryX, bottomX, easedDepth);
+      const targetZ = THREE.MathUtils.lerp(entryZ, bottomZ, easedDepth);
+      const horizontalLerp = Math.min(1, dt * HOLE_DESCENT_CONFIG.horizontalLerp);
+      obj.mesh.position.x += (targetX - obj.mesh.position.x) * horizontalLerp;
+      obj.mesh.position.z += (targetZ - obj.mesh.position.z) * horizontalLerp;
       obj.mesh.rotation.x += obj.spin * dt;
       obj.mesh.rotation.z += obj.spin * dt * 0.7;
       if (obj.isVoxelBuildingCube) {
         obj.mesh.scale.set(1, 1, 1);
       } else {
-        const s = Math.max(0.1, 1 - (Math.abs(obj.mesh.position.y) / 6));
+        const s = Math.max(HOLE_DESCENT_CONFIG.minScale, 1 - (Math.abs(obj.mesh.position.y) / 7.5));
         obj.mesh.scale.set(s, s, s);
       }
       if (obj.isVoxelBuildingCube && obj.pendingVoxelConsume && !obj.voxelTouchedFloorWhilePending && obj.mesh.position.y <= (obj.stackFloorY || 0)) {
         obj.voxelTouchedFloorWhilePending = true;
-        obj.voxelEnteredHole = h?.alive && Math.hypot(targetX - h.x, targetZ - h.z) < Math.max(0.2, h.radius - 0.05);
+        obj.voxelEnteredHole = h?.alive && Math.hypot(entryX - h.x, entryZ - h.z) < Math.max(0.2, h.radius - 0.05);
         if (!obj.voxelEnteredHole) {
           settleMissedVoxelConsume(obj);
           continue;
