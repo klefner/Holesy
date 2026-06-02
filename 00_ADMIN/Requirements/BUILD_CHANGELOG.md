@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.43 - 2026-06-02
+
+Hole-mouth visibility mask.
+
+- Swallowed objects still fall from the fixed mouth-entry point, but only render while that descent column is inside the visible hole.
+- Already-swallowed objects continue their descent invisibly when the hole moves away instead of falling through normal street.
+- The visible well-depth behavior from `Master 16.42` remains intact while preventing outside-hole falling artifacts.
+
 ## Master 16.42 - 2026-06-02
 
 Visible well-depth hole descent.

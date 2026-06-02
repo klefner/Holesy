@@ -679,6 +679,7 @@ const HOLE_DESCENT_CONFIG = Object.freeze({
   bottomRadiusFactor: 1.0,
   centerFallbackRadiusFactor: 0.34,
   edgeInset: 0.08,
+  visibilityInset: 0.12,
   tangentDriftFactor: 0,
   horizontalLerp: 8.5,
   screenDownDriftPerDepth: 0.16,
@@ -7351,6 +7352,17 @@ function setHoleDescentRenderMode(obj, enabled) {
   });
 }
 
+function setHoleDescentVisible(obj, visible) {
+  if (!obj?.mesh) return;
+  obj.mesh.visible = !!visible;
+}
+
+function isHoleDescentVisibleInMouth(obj, h) {
+  if (!obj?.mesh || !h?.alive) return false;
+  const mouthRadius = Math.max(0.18, h.radius - HOLE_DESCENT_CONFIG.visibilityInset);
+  return Math.hypot(obj.mesh.position.x - h.x, obj.mesh.position.z - h.z) <= mouthRadius;
+}
+
 function getScreenDownGroundVector(anchorX, anchorZ) {
   const sx = camera.position.x - anchorX;
   const sz = camera.position.z - anchorZ;
@@ -7372,6 +7384,7 @@ function beginConsume(h, obj) {
   obj.fallTargetHole = h;
   configureHoleDescentPath(h, obj);
   setHoleDescentRenderMode(obj, true);
+  setHoleDescentVisible(obj, true);
   if (obj.isVoxelBuildingCube) {
     obj.pendingVoxelConsume = true;
     obj.voxelEnteredHole = false;
@@ -7396,6 +7409,7 @@ function settleMissedVoxelConsume(obj) {
   obj.stackReleased = true;
   obj.stackRestTimer = 0;
   setHoleDescentRenderMode(obj, false);
+  setHoleDescentVisible(obj, true);
   obj.x = obj.mesh.position.x;
   obj.z = obj.mesh.position.z;
   obj.mesh.position.y = obj.stackFloorY || Math.max(0.2, (obj.stackHeight || 1) / 2);
@@ -10193,6 +10207,7 @@ function animate(frameNow = performance.now()) {
       const horizontalLerp = Math.min(1, dt * HOLE_DESCENT_CONFIG.horizontalLerp);
       obj.mesh.position.x += (targetX - obj.mesh.position.x) * horizontalLerp;
       obj.mesh.position.z += (targetZ - obj.mesh.position.z) * horizontalLerp;
+      setHoleDescentVisible(obj, isHoleDescentVisibleInMouth(obj, h));
       obj.mesh.rotation.x += obj.spin * dt;
       obj.mesh.rotation.z += obj.spin * dt * 0.7;
       if (obj.isVoxelBuildingCube) {

@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 42;
+export const BUILD_SUB = 43;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.43',
+    summary: 'Hole-mouth visibility mask.',
+    changes: [
+      'Objects still fall from the fixed mouth-entry point, but only render while that descent column is inside the visible hole.',
+      'When the hole moves away, already-swallowed objects continue their descent invisibly instead of falling through normal street.',
+      'The visible well-depth behavior from Master 16.42 remains intact while preventing outside-hole falling artifacts.'
+    ],
+  },
   {
     label: 'Master 16.42',
     summary: 'Visible well-depth hole descent.',
