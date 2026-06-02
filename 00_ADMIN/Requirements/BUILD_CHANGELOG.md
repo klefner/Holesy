@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.41 - 2026-06-02
+
+Fixed-point vertical hole descent.
+
+- Objects now keep falling at the exact world-space mouth contact point instead of drifting inward after entry.
+- Objects remain visible longer and are removed much deeper below the hole mouth.
+- Falling-object save/load now preserves the fixed entry point without carrying an obsolete lower-mouth target.
+
 ## Master 16.40 - 2026-06-02
 
 Same-side hole descent paths.

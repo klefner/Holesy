@@ -1,15 +1,24 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 40;
+export const BUILD_SUB = 41;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
   {
+    label: 'Master 16.41',
+    summary: 'Fixed-point vertical hole descent.',
+    changes: [
+      'Objects now keep falling at the exact world-space mouth contact point instead of drifting inward after entry.',
+      'Objects remain visible longer and are removed much deeper below the hole mouth.',
+      'Falling-object save/load now preserves the fixed entry point without carrying an obsolete lower-mouth target.'
+    ]
+  },
+  {
     label: 'Master 16.40',
     summary: 'Same-side hole descent paths.',
     changes: [
-      'Objects now keep the mouth contact point where they enter the hole instead of snapping toward a center drain.',
-      'Falling objects drift toward a same-side lower-mouth point as they descend, making them read as dropping down into the hole.',
-      'Save/load now preserves active falling-object entry and lower-mouth targets.'
+      'Objects keep the mouth contact point where they enter the hole instead of snapping toward a center drain.',
+      'Falling objects drift toward a same-side lower-mouth point as they descend.',
+      'Save/load preserves active falling-object entry and lower-mouth targets.'
     ]
   },
   {
