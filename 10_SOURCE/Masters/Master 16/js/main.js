@@ -7363,9 +7363,31 @@ function isPointInsideVisibleHoleMouth(x, z, h, inset = HOLE_DESCENT_CONFIG.visi
   return Math.hypot(x - h.x, z - h.z) <= mouthRadius;
 }
 
+const holeMouthProjectionScratch = {
+  center: new THREE.Vector3(),
+  xEdge: new THREE.Vector3(),
+  zEdge: new THREE.Vector3(),
+  object: new THREE.Vector3(),
+};
+
+function isMeshProjectedInsideHoleMouth(mesh, h, inset = HOLE_DESCENT_CONFIG.visibilityInset) {
+  if (!mesh || !h?.alive) return false;
+  const mouthRadius = Math.max(0.18, h.radius - inset);
+  const s = holeMouthProjectionScratch;
+  s.center.set(h.x, 0, h.z).project(camera);
+  s.xEdge.set(h.x + mouthRadius, 0, h.z).project(camera);
+  s.zEdge.set(h.x, 0, h.z + mouthRadius).project(camera);
+  s.object.copy(mesh.position).project(camera);
+  const rx = Math.max(0.0001, Math.abs(s.xEdge.x - s.center.x));
+  const ry = Math.max(0.0001, Math.abs(s.zEdge.y - s.center.y));
+  const dx = (s.object.x - s.center.x) / rx;
+  const dy = (s.object.y - s.center.y) / ry;
+  return (dx * dx + dy * dy) <= 1;
+}
+
 function isHoleDescentVisibleInMouth(obj, h) {
   if (!obj?.mesh) return false;
-  return isPointInsideVisibleHoleMouth(obj.mesh.position.x, obj.mesh.position.z, h);
+  return isMeshProjectedInsideHoleMouth(obj.mesh, h);
 }
 
 function settleActiveVoxelAfterHoleMiss(piece) {
@@ -7397,9 +7419,7 @@ function shouldSettleActiveVoxelAfterHoleMiss(piece) {
   if (!piece?.isVoxelBuildingCube || !piece.stackActive || piece.stackSettled || piece.falling || piece.consumed) return false;
   const sourceHole = piece.stackCollapsedBy;
   if (!sourceHole?.alive) return false;
-  const x = piece.mesh?.position?.x ?? piece.x;
-  const z = piece.mesh?.position?.z ?? piece.z;
-  if (isPointInsideVisibleHoleMouth(x, z, sourceHole)) return false;
+  if (isMeshProjectedInsideHoleMouth(piece.mesh, sourceHole)) return false;
   const baseY = piece.voxelBaseY ?? piece.mesh?.position?.y ?? 0;
   const hasStartedFalling = piece.stackReleased || (piece.mesh?.position?.y ?? baseY) < baseY - 0.05;
   return hasStartedFalling;

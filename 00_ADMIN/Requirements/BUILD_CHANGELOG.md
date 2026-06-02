@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.45 - 2026-06-02
+
+Screen-space hole-mouth clipping.
+
+- Falling objects now use the projected visible mouth of the hole, not only a ground-space radius check, to decide whether they can render as descending.
+- Medium-office cubes that visually leave the black hole mouth now stop their hole-descent behavior and settle instead of continuing to fall on the street.
+- This directly targets the outside-hole falling artifact still visible after `Master 16.44`.
+
 ## Master 16.44 - 2026-06-02
 
 Voxel hole-miss cleanup.

@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 44;
+export const BUILD_SUB = 45;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.45',
+    summary: 'Screen-space hole-mouth clipping.',
+    changes: [
+      'Falling objects now use the projected visible mouth of the hole, not only a ground-space radius check, to decide whether they can render as descending.',
+      'Medium-office cubes that visually leave the black hole mouth now stop their hole-descent behavior and settle instead of continuing to fall on the street.',
+      'This directly targets the outside-hole falling artifact still visible after Master 16.44.'
+    ],
+  },
   {
     label: 'Master 16.44',
     summary: 'Voxel hole-miss cleanup.',
