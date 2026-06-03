@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 48;
+export const BUILD_SUB = 49;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.49',
+    summary: 'Restore readable classic hole.',
+    changes: [
+      'Removed the failed 3D/depth hole center experiments because they blocked visibility of objects falling into the mouth.',
+      'Restored the original readable hole treatment: a flat black circular mouth with the existing colored border.',
+      'Keeps the 16.40-16.45 falling-object behavior intact while deferring hole-depth visuals for a cleaner future approach.'
+    ],
+  },
   {
     label: 'Master 16.48',
     summary: 'Deep shaft hole visual.',

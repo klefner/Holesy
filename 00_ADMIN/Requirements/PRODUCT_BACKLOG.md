@@ -278,11 +278,11 @@ Type:
 
 Priority:
 
-- High; current attempt implemented as `Master 16.48`
+- High; deferred after `Master 16.49` readability rollback
 
 Status:
 
-- In validation; `Master 16.46` and `Master 16.47` rejected, `Master 16.48` pending user regression validation
+- Deferred; `Master 16.46`, `Master 16.47`, and `Master 16.48` rejected, while `Master 16.49` restores the original readable flat hole
 
 Description:
 
@@ -300,8 +300,9 @@ Implementation notes:
 
 - `Master 16.46` used visible recessed Three.js geometry, but user rejected it because it did not create the visual sensation of 3D depth
 - `Master 16.47` removed that gray recessed geometry and used a darker abyss texture, asymmetric inner shading, and subtle animated interior bands, but user still rejected it as too 2D
-- `Master 16.48` uses a deeper tapering shaft with a physically lower/smaller bottom, a stronger dark vertical wall texture, and nested lower rings
-- this item still intentionally avoids a heavy shader or physics change for this slice
+- `Master 16.48` used a deeper tapering shaft with a physically lower/smaller bottom, a stronger dark vertical wall texture, and nested lower rings, but user rejected it because the center geometry blocked visibility of objects falling into the mouth
+- `Master 16.49` restores the original flat black mouth and colored rim so gameplay readability comes first
+- future depth work should use a new approach that cannot cover or obscure swallowed objects inside the visible mouth
 
 ### PERF-001 Establish Performance Profile System
 
@@ -1906,3 +1907,4 @@ Backlog items:
 The next active engineering task is:
 
 - regression test `Master 16.45` through the modular package URL, then continue the next `PERF-012` Phase 2 architecture slice after user validation.
+

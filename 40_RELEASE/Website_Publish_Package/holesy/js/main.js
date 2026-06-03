@@ -1724,8 +1724,6 @@ function tierLabel(radius) {
 
 const holes = []; // all holes (player at index 0)
 let windStreakTexture = null;
-let holeAbyssTexture = null;
-let holeShaftWallTexture = null;
 let holesyMusicState = null;
 
 function getWindStreakTexture() {
@@ -1752,149 +1750,17 @@ function getWindStreakTexture() {
   return windStreakTexture;
 }
 
-function getHoleAbyssTexture() {
-  if (holeAbyssTexture) return holeAbyssTexture;
-  const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  const cx = 256;
-  const cy = 256;
-
-  ctx.clearRect(0, 0, 512, 512);
-
-  const abyss = ctx.createRadialGradient(cx, cy + 36, 8, cx, cy, 256);
-  abyss.addColorStop(0.0, 'rgba(0, 0, 0, 1)');
-  abyss.addColorStop(0.28, 'rgba(0, 1, 8, 1)');
-  abyss.addColorStop(0.58, 'rgba(3, 6, 18, 1)');
-  abyss.addColorStop(0.83, 'rgba(14, 15, 22, 1)');
-  abyss.addColorStop(1.0, 'rgba(0, 0, 0, 1)');
-  ctx.fillStyle = abyss;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 252, 0, Math.PI * 2);
-  ctx.fill();
-
-  const upperWall = ctx.createLinearGradient(0, 42, 0, 255);
-  upperWall.addColorStop(0.0, 'rgba(255, 255, 255, 0.22)');
-  upperWall.addColorStop(0.22, 'rgba(80, 88, 101, 0.12)');
-  upperWall.addColorStop(0.62, 'rgba(0, 0, 0, 0.0)');
-  ctx.save();
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.fillStyle = upperWall;
-  ctx.beginPath();
-  ctx.ellipse(cx, cy - 76, 188, 60, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
-  const lowerShadow = ctx.createRadialGradient(cx, cy + 58, 24, cx, cy + 74, 236);
-  lowerShadow.addColorStop(0.0, 'rgba(0, 0, 0, 0.0)');
-  lowerShadow.addColorStop(0.52, 'rgba(0, 0, 0, 0.16)');
-  lowerShadow.addColorStop(0.86, 'rgba(0, 0, 0, 0.72)');
-  lowerShadow.addColorStop(1.0, 'rgba(0, 0, 0, 0.96)');
-  ctx.fillStyle = lowerShadow;
-  ctx.beginPath();
-  ctx.arc(cx, cy, 252, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.strokeStyle = 'rgba(155, 180, 210, 0.08)';
-  ctx.lineWidth = 9;
-  ctx.beginPath();
-  ctx.ellipse(cx - 4, cy + 8, 164, 68, -0.08, Math.PI * 0.06, Math.PI * 1.72);
-  ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(35, 72, 142, 0.10)';
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.ellipse(cx + 14, cy + 22, 94, 38, 0.12, Math.PI * 0.16, Math.PI * 1.84);
-  ctx.stroke();
-
-  holeAbyssTexture = new THREE.CanvasTexture(canvas);
-  holeAbyssTexture.needsUpdate = true;
-  return holeAbyssTexture;
-}
-
-function getHoleShaftWallTexture() {
-  if (holeShaftWallTexture) return holeShaftWallTexture;
-  const canvas = document.createElement('canvas');
-  canvas.width = 128;
-  canvas.height = 512;
-  const ctx = canvas.getContext('2d');
-  const grad = ctx.createLinearGradient(0, 0, 0, 512);
-  grad.addColorStop(0.0, 'rgba(20, 23, 31, 1)');
-  grad.addColorStop(0.18, 'rgba(5, 7, 13, 1)');
-  grad.addColorStop(0.58, 'rgba(0, 1, 5, 1)');
-  grad.addColorStop(1.0, 'rgba(0, 0, 0, 1)');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 128, 512);
-
-  for (let i = 0; i < 14; i++) {
-    const x = (i * 37) % 128;
-    const lineGrad = ctx.createLinearGradient(x, 0, x + 8, 0);
-    lineGrad.addColorStop(0.0, 'rgba(255,255,255,0)');
-    lineGrad.addColorStop(0.45, 'rgba(120,145,190,0.035)');
-    lineGrad.addColorStop(1.0, 'rgba(255,255,255,0)');
-    ctx.fillStyle = lineGrad;
-    ctx.fillRect(x - 4, 0, 10, 512);
-  }
-
-  ctx.fillStyle = 'rgba(0,0,0,0.34)';
-  ctx.fillRect(0, 250, 128, 262);
-
-  holeShaftWallTexture = new THREE.CanvasTexture(canvas);
-  holeShaftWallTexture.wrapS = THREE.RepeatWrapping;
-  holeShaftWallTexture.wrapT = THREE.ClampToEdgeWrapping;
-  holeShaftWallTexture.needsUpdate = true;
-  return holeShaftWallTexture;
-}
-
 function createHole(isPlayer, name, rimColor, startPos) {
   const group = new THREE.Group();
   scene.add(group);
 
-  const shaftWall = new THREE.Mesh(
-    new THREE.CylinderGeometry(1, 0.2, 9.2, 96, 12, true),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      map: getHoleShaftWallTexture(),
-      transparent: true,
-      opacity: 0.98,
-      side: THREE.BackSide,
-      depthWrite: false,
-      depthTest: false
-    })
-  );
-  shaftWall.position.y = -4.55;
-  shaftWall.renderOrder = 1;
-  group.add(shaftWall);
-
   const disc = new THREE.Mesh(
-    new THREE.CircleGeometry(1, 64),
-    new THREE.MeshBasicMaterial({
-      color: 0xffffff,
-      map: getHoleAbyssTexture(),
-      transparent: false
-    })
+    new THREE.CircleGeometry(1, 48),
+    new THREE.MeshBasicMaterial({ color: 0x000000 })
   );
   disc.rotation.x = -Math.PI / 2;
-  disc.position.y = -9.08;
-  disc.renderOrder = 1;
+  disc.position.y = 0.04;
   group.add(disc);
-
-  const innerShadow = new THREE.Mesh(
-    new THREE.RingGeometry(0.24, 1.02, 96),
-    new THREE.MeshBasicMaterial({
-      color: 0x000000,
-      transparent: true,
-      opacity: 0.84,
-      depthWrite: false,
-      depthTest: false,
-      side: THREE.DoubleSide
-    })
-  );
-  innerShadow.rotation.x = -Math.PI / 2;
-  innerShadow.position.y = 0.052;
-  innerShadow.renderOrder = 3;
-  group.add(innerShadow);
 
   // Colored rim — geometry rebuilt each frame in updateHoleVisual with constant thickness
   const rim = new THREE.Mesh(
@@ -1904,39 +1770,6 @@ function createHole(isPlayer, name, rimColor, startPos) {
   rim.rotation.x = -Math.PI / 2;
   rim.position.y = 0.06;
   group.add(rim);
-
-  const shaftDepthGroup = new THREE.Group();
-  group.add(shaftDepthGroup);
-  const shaftDepthRings = [];
-  const shaftRingSpecs = [
-    { radius: 0.82, y: -1.25, opacity: 0.18, speed: 0.00018 },
-    { radius: 0.6, y: -3.05, opacity: 0.13, speed: -0.00014 },
-    { radius: 0.39, y: -5.55, opacity: 0.10, speed: 0.00011 },
-    { radius: 0.22, y: -7.65, opacity: 0.08, speed: -0.00009 }
-  ];
-  shaftRingSpecs.forEach((spec, idx) => {
-    const ring = new THREE.Mesh(
-      new THREE.RingGeometry(spec.radius * 0.86, spec.radius, 72, 1),
-      new THREE.MeshBasicMaterial({
-        color: idx === 0 ? 0x172039 : 0x0b1021,
-        transparent: true,
-        opacity: spec.opacity,
-        depthWrite: false,
-        depthTest: false,
-        side: THREE.DoubleSide
-      })
-    );
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = spec.y;
-    ring.renderOrder = 2;
-    shaftDepthGroup.add(ring);
-    shaftDepthRings.push({
-      mesh: ring,
-      baseOpacity: spec.opacity,
-      speed: spec.speed,
-      phase: Math.random() * Math.PI * 2
-    });
-  });
 
   const vortexArcGroup = new THREE.Group();
   vortexArcGroup.rotation.x = -Math.PI / 2;
@@ -2010,7 +1843,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
     loreBuffs: {},
     loreBuffCooldowns: {},
     loreFirstBiteActive: false,
-    group, disc, shaftWall, innerShadow, rim, shaftDepthGroup, shaftDepthRings, vortexArcGroup, vortexArcs, labelSprite,
+    group, disc, rim, vortexArcGroup, vortexArcs, labelSprite,
     // AI state
     aiState: 'wander', aiTargetObj: null, aiTimer: 0,
     wanderX: startPos.x, wanderZ: startPos.z
@@ -2022,7 +1855,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
 function updateHoleVisual(h) {
   if (!h.alive) return;
   const now = performance.now();
-  h.disc.scale.set(h.radius * 0.36, h.radius * 0.36, 1);
+  h.disc.scale.set(h.radius, h.radius, 1);
   // Rim: rebuild geometry with fixed thickness only when radius changed noticeably.
   // Scaling the mesh would stretch the thickness; rebuilding preserves constant rim width.
   const shieldActive = h.effects && now < (h.effects.bulletShieldUntil || 0);
@@ -2069,16 +1902,6 @@ function updateHoleVisual(h) {
     h.rim.material.color.setHex(h.rimColor);
     h.rim.material.opacity = 0.85;
     h.rim.scale.set(1, 1, 1);
-  }
-  if (h.shaftWall) h.shaftWall.scale.set(h.radius, 1, h.radius);
-  if (h.innerShadow) h.innerShadow.scale.set(h.radius, h.radius, 1);
-  if (h.shaftDepthGroup && h.shaftDepthRings) {
-    h.shaftDepthGroup.scale.set(h.radius, 1, h.radius);
-    h.shaftDepthRings.forEach((ringData, idx) => {
-      const pulse = 0.5 + 0.5 * Math.sin(now * 0.0012 + ringData.phase + idx * 0.75);
-      ringData.mesh.rotation.z = now * ringData.speed + ringData.phase;
-      ringData.mesh.material.opacity = ringData.baseOpacity * (0.55 + pulse * 0.45);
-    });
   }
   h.group.position.set(h.x, 0, h.z);
   // Label size and height scale with hole

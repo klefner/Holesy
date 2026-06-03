@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.49 - 2026-06-02
+
+Restore readable classic hole.
+
+- Removed the failed 3D/depth hole center experiments because they blocked visibility of objects falling into the mouth.
+- Restored the original readable hole treatment: a flat black circular mouth with the existing colored border.
+- Keeps the `Master 16.40` through `Master 16.45` falling-object behavior intact while deferring hole-depth visuals for a cleaner future approach.
+
 ## Master 16.48 - 2026-06-02
 
 Deep shaft hole visual.
