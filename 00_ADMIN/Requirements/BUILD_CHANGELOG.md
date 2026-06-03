@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.50 - 2026-06-02
+
+Medium office impact kick.
+
+- Medium-office cube columns now get a brief upward hop and outward shove when first impacted.
+- Released cubes inherit a small upward/outward velocity so collapse motion reads more chaotic and reactive.
+- The effect is intentionally smaller than skyscraper collapse and does not change scoring, growth, or save/load rules.
+
 ## Master 16.49 - 2026-06-02
 
 Restore readable classic hole.

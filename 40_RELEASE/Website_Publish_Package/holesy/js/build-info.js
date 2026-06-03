@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 49;
+export const BUILD_SUB = 50;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.50',
+    summary: 'Medium office impact kick.',
+    changes: [
+      'Medium-office cube columns now get a brief upward hop and outward shove when first impacted.',
+      'Released cubes inherit a small upward/outward velocity so collapse motion reads more chaotic and reactive.',
+      'The effect is intentionally smaller than skyscraper collapse and does not change scoring, growth, or save/load rules.'
+    ],
+  },
   {
     label: 'Master 16.49',
     summary: 'Restore readable classic hole.',

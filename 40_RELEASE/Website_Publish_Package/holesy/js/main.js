@@ -877,6 +877,12 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   triggerPadding: 5.2,
   voxelTriggerPadding: 0.34,
   voxelColumnSpread: 4.4,
+  voxelImpactHopMin: 0.12,
+  voxelImpactHopMax: 0.34,
+  voxelImpactOutMin: 0.42,
+  voxelImpactOutMax: 1.05,
+  voxelImpactUpMin: 0.48,
+  voxelImpactUpMax: 1.22,
   voxelSupportDropFraction: 0.38,
   voxelReleaseDelayMin: 0.04,
   voxelReleaseDelayMax: 0.26,
@@ -7692,9 +7698,12 @@ function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
   const heightT = piece.stackFloorCount > 1 ? piece.stackIndex / Math.max(1, piece.stackFloorCount - 1) : 0;
   if (piece.mesh && teeterT < 1) {
     const sway = leanAngle * (piece.stackIndex || 0) * (piece.stackHeight || 1) * 0.62;
+    const impactHop = (piece.voxelImpactHop || 0) * Math.sin(teeterT * Math.PI);
     piece.mesh.position.x = (piece.voxelBaseX ?? piece.x) + (piece.voxelLeanDirX || 0) * sway;
+    piece.mesh.position.y = (piece.voxelBaseY ?? piece.mesh.position.y) + impactHop;
     piece.mesh.position.z = (piece.voxelBaseZ ?? piece.z) + (piece.voxelLeanDirZ || 0) * sway;
     piece.x = piece.mesh.position.x;
+    piece.y = piece.mesh.position.y;
     piece.z = piece.mesh.position.z;
     piece.mesh.rotation.z = -(piece.voxelLeanDirX || 0) * leanAngle * (0.5 + heightT);
     piece.mesh.rotation.x = (piece.voxelLeanDirZ || 0) * leanAngle * (0.5 + heightT);
@@ -7715,12 +7724,14 @@ function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
   piece.stackReleased = true;
   piece.voxelTeeterReleasedAt = now;
   const inheritedLean = randomBetween(STACK_PHYSICS_CONFIG.voxelLeanVelocityMin, STACK_PHYSICS_CONFIG.voxelLeanVelocityMax) * (0.35 + heightT);
-  piece.vx += (piece.voxelLeanDirX || 0) * inheritedLean + randomBetween(-0.28, 0.28);
-  piece.vz += (piece.voxelLeanDirZ || 0) * inheritedLean + randomBetween(-0.28, 0.28);
-  piece.vy += randomBetween(-0.16, 0.02);
-  piece.avx += randomBetween(-0.62, 0.62) + (piece.voxelLeanDirZ || 0) * inheritedLean * 0.5;
-  piece.avy += randomBetween(-0.48, 0.48);
-  piece.avz += randomBetween(-0.62, 0.62) - (piece.voxelLeanDirX || 0) * inheritedLean * 0.5;
+  const impactOut = (piece.voxelImpactOut || 0) * (0.68 + heightT * 0.52);
+  const impactUp = (piece.voxelImpactUp || 0) * (0.78 + heightT * 0.42);
+  piece.vx += (piece.voxelLeanDirX || 0) * (inheritedLean + impactOut) + randomBetween(-0.34, 0.34);
+  piece.vz += (piece.voxelLeanDirZ || 0) * (inheritedLean + impactOut) + randomBetween(-0.34, 0.34);
+  piece.vy += impactUp + randomBetween(-0.04, 0.12);
+  piece.avx += randomBetween(-0.82, 0.82) + (piece.voxelLeanDirZ || 0) * (inheritedLean + impactOut) * 0.55;
+  piece.avy += randomBetween(-0.68, 0.68) + impactOut * randomBetween(-0.24, 0.24);
+  piece.avz += randomBetween(-0.82, 0.82) - (piece.voxelLeanDirX || 0) * (inheritedLean + impactOut) * 0.55;
   return true;
 }
 
@@ -7904,16 +7915,19 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.voxelLeanAngle = leanAngle * (0.72 + floorT * 0.48) * randomBetween(0.82, 1.18);
     piece.voxelTeeterSeconds = piece.stackIndex <= 0 ? Math.min(0.08, teeterSeconds) : teeterSeconds * randomBetween(0.75, 1.12);
     piece.voxelTeeterReleasedAt = 0;
+    piece.voxelImpactHop = randomBetween(STACK_PHYSICS_CONFIG.voxelImpactHopMin, STACK_PHYSICS_CONFIG.voxelImpactHopMax) * (0.65 + floorT * 1.05);
     const heightGravityBoost = 1 + floorT * 0.38;
     piece.voxelGravity = Math.max(1.8, randomBetween(
       STACK_PHYSICS_CONFIG.voxelGravity - STACK_PHYSICS_CONFIG.voxelGravityJitter,
       STACK_PHYSICS_CONFIG.voxelGravity + STACK_PHYSICS_CONFIG.voxelGravityJitter
     ) * heightGravityBoost);
     piece.voxelTerminalVelocity = STACK_PHYSICS_CONFIG.voxelTerminalVelocity * (0.7 + floorT * 0.72) * randomBetween(0.9, 1.18);
-    const lateralKick = randomBetween(0.1, 0.38) * (0.45 + floorT * 1.15);
+    piece.voxelImpactOut = randomBetween(STACK_PHYSICS_CONFIG.voxelImpactOutMin, STACK_PHYSICS_CONFIG.voxelImpactOutMax);
+    piece.voxelImpactUp = randomBetween(STACK_PHYSICS_CONFIG.voxelImpactUpMin, STACK_PHYSICS_CONFIG.voxelImpactUpMax);
+    const lateralKick = randomBetween(0.16, 0.46) * (0.55 + floorT * 1.1);
     piece.vx += leanDir.x * lateralKick + randomBetween(-0.08, 0.08);
     piece.vz += leanDir.z * lateralKick + randomBetween(-0.08, 0.08);
-    piece.vy = Math.min(piece.vy, 0);
+    piece.vy = Math.max(piece.vy, randomBetween(0.08, 0.22) * (0.5 + floorT));
     piece.avx += randomBetween(-0.35, 0.35);
     piece.avy += randomBetween(-0.25, 0.25);
     piece.avz += randomBetween(-0.35, 0.35);
