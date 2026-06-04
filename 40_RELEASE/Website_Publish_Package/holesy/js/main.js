@@ -876,13 +876,20 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   voxelTerminalVelocity: 22,
   triggerPadding: 5.2,
   voxelTriggerPadding: 0.34,
-  voxelColumnSpread: 4.4,
+  voxelColumnSpread: 7.2,
   voxelImpactHopMin: 0.12,
   voxelImpactHopMax: 0.34,
-  voxelImpactOutMin: 0.42,
-  voxelImpactOutMax: 1.05,
-  voxelImpactUpMin: 0.48,
-  voxelImpactUpMax: 1.22,
+  voxelImpactOutMin: 0.9,
+  voxelImpactOutMax: 2.2,
+  voxelImpactUpMin: 0.65,
+  voxelImpactUpMax: 1.55,
+  voxelBreakFanRadians: 1.28,
+  voxelBreakImpulseMin: 0.68,
+  voxelBreakImpulseMax: 1.55,
+  voxelCollisionElasticity: 0.72,
+  voxelCollisionSpinScale: 0.24,
+  voxelGroundBounceDampingMin: 0.18,
+  voxelGroundBounceDampingMax: 0.28,
   voxelSupportDropFraction: 0.38,
   voxelReleaseDelayMin: 0.04,
   voxelReleaseDelayMax: 0.26,
@@ -897,23 +904,23 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   voxelGroundRollRetentionMax: 0.94,
   voxelObjectImpactRange: 0.42,
   voxelObjectImpactImpulse: 0.42,
-  voxelContactMaxPairsPerFrame: 260,
+  voxelContactMaxPairsPerFrame: 340,
   voxelImpactMaxCubesPerFrame: 72,
   voxelImpactMaxObjectsPerCube: 18,
-  voxelMaxHorizontalSpeed: 6.4,
-  voxelMaxAngularSpeed: 4.8,
+  voxelMaxHorizontalSpeed: 8.4,
+  voxelMaxAngularSpeed: 5.8,
   shoveStrength: 6.3,
-  horizontalDamping: 0.942,
+  horizontalDamping: 0.956,
   maxHorizontalSpeed: 10.8,
   maxCollapseSpread: 16.5,
-  bounceDamping: 0.16,
-  contactRadiusScale: 0.82,
-  contactImpulse: 14,
+  bounceDamping: 0.2,
+  contactRadiusScale: 0.94,
+  contactImpulse: 26,
   obstacleInfluenceRange: 7.5,
   restSpeed: 0.18,
   restAngularSpeed: 0.22,
   settleAfterSeconds: 0.45,
-  groundedAngularDamping: 0.72,
+  groundedAngularDamping: 0.78,
   groundedSpinCutoff: 0.7,
   groundedSpeedCutoff: 0.16,
   groundedIdleSettleSeconds: 0.28,
@@ -7910,8 +7917,17 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.voxelBaseX = piece.x;
     piece.voxelBaseY = piece.mesh?.position?.y ?? piece.voxelBaseY ?? 0;
     piece.voxelBaseZ = piece.z;
-    piece.voxelLeanDirX = leanDir.x;
-    piece.voxelLeanDirZ = leanDir.z;
+    const floorWave = (piece.stackIndex % 2 ? 1 : -1) * randomBetween(0.12, 0.34);
+    const breakRoll = randomBetween(-STACK_PHYSICS_CONFIG.voxelBreakFanRadians, STACK_PHYSICS_CONFIG.voxelBreakFanRadians) + floorWave;
+    const breakCos = Math.cos(breakRoll);
+    const breakSin = Math.sin(breakRoll);
+    const breakDir = normalize2(
+      leanDir.x * breakCos - leanDir.z * breakSin,
+      leanDir.x * breakSin + leanDir.z * breakCos,
+      leanDir
+    );
+    piece.voxelLeanDirX = breakDir.x;
+    piece.voxelLeanDirZ = breakDir.z;
     piece.voxelLeanAngle = leanAngle * (0.72 + floorT * 0.48) * randomBetween(0.82, 1.18);
     piece.voxelTeeterSeconds = piece.stackIndex <= 0 ? Math.min(0.08, teeterSeconds) : teeterSeconds * randomBetween(0.75, 1.12);
     piece.voxelTeeterReleasedAt = 0;
@@ -7924,13 +7940,14 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.voxelTerminalVelocity = STACK_PHYSICS_CONFIG.voxelTerminalVelocity * (0.7 + floorT * 0.72) * randomBetween(0.9, 1.18);
     piece.voxelImpactOut = randomBetween(STACK_PHYSICS_CONFIG.voxelImpactOutMin, STACK_PHYSICS_CONFIG.voxelImpactOutMax);
     piece.voxelImpactUp = randomBetween(STACK_PHYSICS_CONFIG.voxelImpactUpMin, STACK_PHYSICS_CONFIG.voxelImpactUpMax);
-    const lateralKick = randomBetween(0.16, 0.46) * (0.55 + floorT * 1.1);
-    piece.vx += leanDir.x * lateralKick + randomBetween(-0.08, 0.08);
-    piece.vz += leanDir.z * lateralKick + randomBetween(-0.08, 0.08);
-    piece.vy = Math.max(piece.vy, randomBetween(0.08, 0.22) * (0.5 + floorT));
-    piece.avx += randomBetween(-0.35, 0.35);
-    piece.avy += randomBetween(-0.25, 0.25);
-    piece.avz += randomBetween(-0.35, 0.35);
+    const breakImpulse = randomBetween(STACK_PHYSICS_CONFIG.voxelBreakImpulseMin, STACK_PHYSICS_CONFIG.voxelBreakImpulseMax) * (0.82 + floorT * 0.55);
+    const lateralKick = (randomBetween(0.22, 0.62) + breakImpulse) * (0.62 + floorT * 0.8);
+    piece.vx += breakDir.x * lateralKick + randomBetween(-0.32, 0.32);
+    piece.vz += breakDir.z * lateralKick + randomBetween(-0.32, 0.32);
+    piece.vy = Math.max(piece.vy, randomBetween(0.14, 0.36) * (0.55 + floorT));
+    piece.avx += randomBetween(-0.75, 0.75) + breakDir.z * lateralKick * 0.22;
+    piece.avy += randomBetween(-0.55, 0.55) + randomBetween(-0.18, 0.18) * lateralKick;
+    piece.avz += randomBetween(-0.75, 0.75) - breakDir.x * lateralKick * 0.22;
     activated = true;
   }
   if (activated) {
@@ -8009,44 +8026,60 @@ function resolvePhysicsStackContacts(dt) {
         const relVx = b.vx - a.vx;
         const relVy = b.vy - a.vy;
         const relVz = b.vz - a.vz;
-        const impact = Math.min(8, Math.hypot(relVx, relVy, relVz));
-        const push = 0.42 + Math.min(0.75, impact * 0.04);
+        const impact = Math.min(10, Math.hypot(relVx, relVy, relVz));
+        const push = 0.54 + Math.min(0.92, impact * 0.055);
         if (overlapY <= overlapX && overlapY <= overlapZ) {
           const sy = dy >= 0 ? 1 : -1;
           const correction = overlapY * push * 0.46;
           a.mesh.position.y -= sy * correction;
           b.mesh.position.y += sy * correction;
-          const impulse = Math.max(0.08, overlapY * (0.42 + Math.abs(relVy) * 0.12 + impact * 0.035));
+          const impulse = Math.max(0.12, overlapY * (0.58 + Math.abs(relVy) * 0.2 + impact * 0.06) * STACK_PHYSICS_CONFIG.voxelCollisionElasticity);
           a.vy -= sy * impulse;
           b.vy += sy * impulse;
-          a.vx -= Math.sign(dx || randomBetween(-1, 1)) * impulse * 0.025;
-          b.vx += Math.sign(dx || randomBetween(-1, 1)) * impulse * 0.025;
-          a.vz -= Math.sign(dz || randomBetween(-1, 1)) * impulse * 0.025;
-          b.vz += Math.sign(dz || randomBetween(-1, 1)) * impulse * 0.025;
+          const scatter = normalize2(dx || randomBetween(-1, 1), dz || randomBetween(-1, 1), { x: randomBetween(-1, 1), z: randomBetween(-1, 1) });
+          const scatterImpulse = impulse * randomBetween(0.08, 0.18);
+          a.vx -= scatter.x * scatterImpulse;
+          b.vx += scatter.x * scatterImpulse;
+          a.vz -= scatter.z * scatterImpulse;
+          b.vz += scatter.z * scatterImpulse;
+          a.avx += scatter.z * impulse * STACK_PHYSICS_CONFIG.voxelCollisionSpinScale;
+          b.avx -= scatter.z * impulse * STACK_PHYSICS_CONFIG.voxelCollisionSpinScale;
+          a.avz -= scatter.x * impulse * STACK_PHYSICS_CONFIG.voxelCollisionSpinScale;
+          b.avz += scatter.x * impulse * STACK_PHYSICS_CONFIG.voxelCollisionSpinScale;
         } else if (overlapX <= overlapZ) {
           const sx = dx >= 0 ? 1 : -1;
           const correction = overlapX * push * 0.46;
           a.x -= sx * correction;
           b.x += sx * correction;
-          const impulse = Math.max(0.08, overlapX * (0.48 + Math.abs(relVx) * 0.14 + impact * 0.035));
+          const impulse = Math.max(0.12, overlapX * (0.68 + Math.abs(relVx) * 0.32 + impact * 0.08) * STACK_PHYSICS_CONFIG.voxelCollisionElasticity);
           a.vx -= sx * impulse;
           b.vx += sx * impulse;
-          a.vy += Math.min(0.08, impulse * 0.018);
-          b.vy += Math.min(0.08, impulse * 0.018);
-          a.avz -= sx * impulse * 0.08;
-          b.avz += sx * impulse * 0.08;
+          const sideScatter = randomBetween(-0.18, 0.18) * impulse;
+          a.vz -= sideScatter;
+          b.vz += sideScatter;
+          a.vy += Math.min(0.16, impulse * 0.035);
+          b.vy += Math.min(0.16, impulse * 0.035);
+          a.avz -= sx * impulse * STACK_PHYSICS_CONFIG.voxelCollisionSpinScale;
+          b.avz += sx * impulse * STACK_PHYSICS_CONFIG.voxelCollisionSpinScale;
+          a.avy += randomBetween(-0.1, 0.1) * impulse;
+          b.avy += randomBetween(-0.1, 0.1) * impulse;
         } else {
           const sz = dz >= 0 ? 1 : -1;
           const correction = overlapZ * push * 0.46;
           a.z -= sz * correction;
           b.z += sz * correction;
-          const impulse = Math.max(0.08, overlapZ * (0.48 + Math.abs(relVz) * 0.14 + impact * 0.035));
+          const impulse = Math.max(0.12, overlapZ * (0.68 + Math.abs(relVz) * 0.32 + impact * 0.08) * STACK_PHYSICS_CONFIG.voxelCollisionElasticity);
           a.vz -= sz * impulse;
           b.vz += sz * impulse;
-          a.vy += Math.min(0.08, impulse * 0.018);
-          b.vy += Math.min(0.08, impulse * 0.018);
-          a.avx += sz * impulse * 0.08;
-          b.avx -= sz * impulse * 0.08;
+          const sideScatter = randomBetween(-0.18, 0.18) * impulse;
+          a.vx -= sideScatter;
+          b.vx += sideScatter;
+          a.vy += Math.min(0.16, impulse * 0.035);
+          b.vy += Math.min(0.16, impulse * 0.035);
+          a.avx += sz * impulse * STACK_PHYSICS_CONFIG.voxelCollisionSpinScale;
+          b.avx -= sz * impulse * STACK_PHYSICS_CONFIG.voxelCollisionSpinScale;
+          a.avy += randomBetween(-0.1, 0.1) * impulse;
+          b.avy += randomBetween(-0.1, 0.1) * impulse;
         }
         clampVoxelMotion(a);
         clampVoxelMotion(b);
@@ -8192,17 +8225,22 @@ function updatePhysicsStackPieces(dt) {
       const impactSpeed = Math.abs(piece.vy || 0);
       piece.mesh.position.y = piece.stackFloorY;
       if (Math.abs(piece.vy) > 2.2) {
-        piece.vy = Math.abs(piece.vy) * STACK_PHYSICS_CONFIG.bounceDamping;
         if (piece.isVoxelBuildingCube) {
+          piece.vy = Math.abs(piece.vy) * randomBetween(STACK_PHYSICS_CONFIG.voxelGroundBounceDampingMin, STACK_PHYSICS_CONFIG.voxelGroundBounceDampingMax);
           const retention = randomBetween(STACK_PHYSICS_CONFIG.voxelGroundRollRetentionMin, STACK_PHYSICS_CONFIG.voxelGroundRollRetentionMax);
           piece.vx *= retention;
           piece.vz *= retention;
-          piece.avx += piece.vz * impactSpeed * 0.015;
-          piece.avz -= piece.vx * impactSpeed * 0.015;
-          piece.avx *= 0.86;
-          piece.avy *= 0.88;
-          piece.avz *= 0.86;
+          const bounceScatter = Math.min(0.42, impactSpeed * 0.018);
+          piece.vx += randomBetween(-bounceScatter, bounceScatter);
+          piece.vz += randomBetween(-bounceScatter, bounceScatter);
+          piece.avx += piece.vz * impactSpeed * 0.022;
+          piece.avy += randomBetween(-0.08, 0.08) * impactSpeed;
+          piece.avz -= piece.vx * impactSpeed * 0.022;
+          piece.avx *= 0.9;
+          piece.avy *= 0.9;
+          piece.avz *= 0.9;
         } else {
+          piece.vy = Math.abs(piece.vy) * STACK_PHYSICS_CONFIG.bounceDamping;
           piece.vx *= 0.72;
           piece.vz *= 0.72;
           piece.avx *= 0.75;

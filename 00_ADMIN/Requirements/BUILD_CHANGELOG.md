@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.51 - 2026-06-02
+
+Medium office pool-break physics.
+
+- Medium-office cubes now fan outward with more varied first-impact vectors instead of falling in one tidy column.
+- Cube-to-cube contact transfers more force, sideways scatter, and spin so collapses read more like a pool break.
+- Ground bounces and local spread are stronger but still capped so office debris stays near the building and performance remains bounded.
+
 ## Master 16.50 - 2026-06-02
 
 Medium office impact kick.

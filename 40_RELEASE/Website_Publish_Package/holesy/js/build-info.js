@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 50;
+export const BUILD_SUB = 51;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.51',
+    summary: 'Medium office pool-break physics.',
+    changes: [
+      'Medium-office cubes now fan outward with more varied first-impact vectors instead of falling in one tidy column.',
+      'Cube-to-cube contact transfers more force, sideways scatter, and spin so collapses read more like a pool break.',
+      'Ground bounces and local spread are stronger but still capped so office debris stays near the building and performance remains bounded.'
+    ],
+  },
   {
     label: 'Master 16.50',
     summary: 'Medium office impact kick.',

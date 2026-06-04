@@ -14,7 +14,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.50`
+- current in-game label: `Master 16.51`
 
 Current basis note:
 
@@ -50,7 +50,7 @@ What `Master 16` specifically represents:
 - `Master 16.37` compacts Endless save object records, applies sparse short audio budgeting to skyscraper collapse/chunk sounds, and speeds medium-office cube descent while adding more sideways debris spread
 - `Master 16.38` completes the next `PERF-012` Phase 2 extraction by moving build metadata/patch notes, difficulty profiles, and Archive lore documents into separate ES modules
 - `Master 16.39` repairs the `Master 16.38` startup blocker by correcting the extraction boundary so game setup remains in `js/main.js` and menu controls work again
-- `Master 16.40` adds same-side hole descent paths, `Master 16.41` refines them into fixed-point vertical descent, `Master 16.42` keeps swallowed objects visibly rendered inside the well with a subtle screen-down descent drift until they fall deeper out of sight, `Master 16.43` hides those fixed-column descents whenever the live hole no longer covers the descent column, `Master 16.44` settles active medium-office cubes that miss the live mouth before they become formally swallowed, `Master 16.45` switches the active/falling visibility test to the projected screen-space mouth so pieces cannot visibly descend outside the black disk, `Master 16.46` attempted recessed-well geometry but was rejected as not reading 3D, `Master 16.47` attempted a darker abyss texture but was still rejected as too 2D, `Master 16.48` attempted deeper shaft geometry but blocked visibility into the mouth, `Master 16.49` restores the original flat black circular mouth with the existing colored rim, and `Master 16.50` adds a smaller skyscraper-like upward/outward impact kick to medium-office cube releases
+- `Master 16.40` adds same-side hole descent paths, `Master 16.41` refines them into fixed-point vertical descent, `Master 16.42` keeps swallowed objects visibly rendered inside the well with a subtle screen-down descent drift until they fall deeper out of sight, `Master 16.43` hides those fixed-column descents whenever the live hole no longer covers the descent column, `Master 16.44` settles active medium-office cubes that miss the live mouth before they become formally swallowed, `Master 16.45` switches the active/falling visibility test to the projected screen-space mouth so pieces cannot visibly descend outside the black disk, `Master 16.46` attempted recessed-well geometry but was rejected as not reading 3D, `Master 16.47` attempted a darker abyss texture but was still rejected as too 2D, `Master 16.48` attempted deeper shaft geometry but blocked visibility into the mouth, `Master 16.49` restores the original flat black circular mouth with the existing colored rim, `Master 16.50` adds a smaller skyscraper-like upward/outward impact kick to medium-office cube releases, and `Master 16.51` strengthens medium-office first-impact and cube-to-cube pool-break reactions
 
 Last approved candidate promoted into `Master 16`:
 
@@ -75,8 +75,8 @@ Last approved candidate promoted into `Master 16`:
 
 ## 4. Current Priority
 
-- immediate focus is regression testing `Master 16.50` through the modular package, then continuing the next `PERF-012` extraction slice after user validation
-- newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are procedurally generated cube/floor stacks whose individual columns can teeter/lean before dropping; upper cubes wait for support failure, active cubes separate in 3D, impacted columns get a brief upward/outward hit reaction, oversized objects can jam in the visible hole, and faster falling cubes carry more impact/roll/spin energy
+- immediate focus is regression testing `Master 16.51` through the modular package, then continuing the next `PERF-012` extraction slice after user validation
+- newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are procedurally generated cube/floor stacks whose individual columns can teeter/lean before dropping; upper cubes wait for support failure, active cubes separate in 3D, impacted columns get varied first-impact vectors, stronger pool-break collision transfer, capped local scatter, oversized objects can jam in the visible hole, and faster falling cubes carry more impact/roll/spin energy
 - active monitor items carried from the latest QA evidence:
   - archive readability and music fit
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
@@ -98,7 +98,7 @@ Last approved candidate promoted into `Master 16`:
 
 ## 5. Immediate Next Move
 
-- treat `Master 16.50` as the current source basis within `10_SOURCE/Masters/Master 16/`
+- treat `Master 16.51` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
 - first publish the local 2026-06-02 governance package from a governed session that can write Git metadata:
@@ -107,7 +107,7 @@ Last approved candidate promoted into `Master 16`:
   - `00_ADMIN/Reviews_and_Reports/ISSUE_LOG.md`
   - `00_ADMIN/Policies_and_Procedures/NEXT_CODEX_CHAT_HANDOFF_MASTER16.md`
   - `00_ADMIN/Tools/holesy_team_sync.ps1`
-- after publication proof, return to regression testing `Master 16.50`, then continue the next `PERF-012` extraction slice
+- after publication proof, return to regression testing `Master 16.51`, then continue the next `PERF-012` extraction slice
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
