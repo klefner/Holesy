@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 54;
+export const BUILD_SUB = 55;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.55',
+    summary: 'Endless score continuity and flat cube settle.',
+    changes: [
+      'Endless world shifts now reset hole growth size without wiping the cumulative live-score ledger.',
+      'AI rival holes shot down by soldiers now respawn in Endless so the board does not run out of scoring rivals.',
+      'Settled medium-office cubes snap to a flat ground face after coming to rest so debris no longer stays half-buried on diagonals.'
+    ],
+  },
   {
     label: 'Master 16.54',
     summary: 'Continuous medium office cube flow.',

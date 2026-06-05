@@ -897,6 +897,7 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   voxelPreReleaseGravityScale: 0.34,
   voxelPreReleaseDamping: 0.982,
   voxelPreReleaseAngularDamping: 0.988,
+  voxelSettleFaceSnapRadians: Math.PI / 2,
   voxelCollisionElasticity: 0.72,
   voxelCollisionSpinScale: 0.24,
   voxelGroundBounceDampingMin: 0.18,
@@ -5719,7 +5720,7 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
     if (obj.moving && !movingPeople.includes(obj)) movingPeople.push(obj);
   }
   if (obj.isCar) {
-    Object.assign(obj, {
+  Object.assign(obj, {
       moving: !!state.moving,
       axis: state.axis || obj.axis,
       direction: state.direction || obj.direction,
@@ -5792,10 +5793,11 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
       stackReleased: !!state.stackReleased,
       stackSupportLostAt: restoreFutureTimestamp(state.stackSupportLostRemainingMs, now),
       stackSupportDelaySeconds: state.stackSupportDelaySeconds || randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax),
-      stackCollapsedAt: restoreFutureTimestamp(state.stackCollapsedRemainingMs, now),
-    });
-    if (obj.stackActive) activePhysicsStackIds.add(obj.stackId);
-  }
+    stackCollapsedAt: restoreFutureTimestamp(state.stackCollapsedRemainingMs, now),
+  });
+  if (obj.stackSettled) snapVoxelCubeToGroundFace(obj);
+  if (obj.stackActive) activePhysicsStackIds.add(obj.stackId);
+}
 }
 
 function restoreSavedObject(state, now = performance.now()) {
@@ -6412,8 +6414,7 @@ function isEndlessWorldShiftWave(waveNum) {
 
 function resetHoleSizesForEndlessWorldShift() {
   holes.forEach(h => {
-    h.score = 0;
-    h.sizeResetScoreFloor = 0;
+    h.sizeResetScoreFloor = h.score || 0;
     h.bonusRadius = 0;
     h.recentSoldierDamageRadius = 0;
     h.radius = MIN_RADIUS;
@@ -7717,6 +7718,23 @@ function clampVoxelMotion(piece) {
   }
 }
 
+function snapVoxelCubeToGroundFace(piece) {
+  if (!piece?.isVoxelBuildingCube || !piece.mesh) return;
+  const snap = STACK_PHYSICS_CONFIG.voxelSettleFaceSnapRadians;
+  const snapped = (value) => Math.round(value / snap) * snap;
+  piece.mesh.position.y = piece.stackFloorY || Math.max(0.2, (piece.stackHeight || 1) / 2);
+  piece.y = piece.mesh.position.y;
+  piece.mesh.rotation.x = snapped(piece.mesh.rotation.x || 0);
+  piece.mesh.rotation.y = snapped(piece.mesh.rotation.y || 0);
+  piece.mesh.rotation.z = snapped(piece.mesh.rotation.z || 0);
+  piece.vx = 0;
+  piece.vy = 0;
+  piece.vz = 0;
+  piece.avx = 0;
+  piece.avy = 0;
+  piece.avz = 0;
+}
+
 function updateUnreleasedVoxelMotion(piece, dt) {
   if (!piece?.isVoxelBuildingCube || piece.stackReleased || !piece.mesh) return;
   const driftScale = STACK_PHYSICS_CONFIG.voxelPreReleaseDriftScale;
@@ -8415,15 +8433,23 @@ function updatePhysicsStackPieces(dt) {
       piece.stackRestTimer += dt;
       if (piece.stackRestTimer >= STACK_PHYSICS_CONFIG.settleAfterSeconds) {
         piece.stackSettled = true;
-        piece.vx = 0; piece.vy = 0; piece.vz = 0;
-        piece.avx = 0; piece.avy = 0; piece.avz = 0;
+        if (piece.isVoxelBuildingCube) {
+          snapVoxelCubeToGroundFace(piece);
+        } else {
+          piece.vx = 0; piece.vy = 0; piece.vz = 0;
+          piece.avx = 0; piece.avy = 0; piece.avz = 0;
+        }
       }
     } else if (groundedIdle) {
       piece.stackRestTimer += dt;
       if (piece.stackRestTimer >= STACK_PHYSICS_CONFIG.groundedIdleSettleSeconds) {
         piece.stackSettled = true;
-        piece.vx = 0; piece.vy = 0; piece.vz = 0;
-        piece.avx = 0; piece.avy = 0; piece.avz = 0;
+        if (piece.isVoxelBuildingCube) {
+          snapVoxelCubeToGroundFace(piece);
+        } else {
+          piece.vx = 0; piece.vy = 0; piece.vz = 0;
+          piece.avx = 0; piece.avy = 0; piece.avz = 0;
+        }
       }
     } else {
       piece.stackRestTimer = 0;
@@ -9907,6 +9933,8 @@ function applyShotDamage(h) {
       updateWaveHudBanner();
       showStagePop('SHOT DOWN!');
       endGame();
+    } else if (endlessMode) {
+      respawnEndlessRivalHole(h, player);
     }
   }
 }
