@@ -883,6 +883,13 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   voxelImpactOutMax: 2.2,
   voxelImpactUpMin: 0.65,
   voxelImpactUpMax: 1.55,
+  voxelJarRadiusColumns: 2.35,
+  voxelJarOffsetMin: 0.06,
+  voxelJarOffsetMax: 0.38,
+  voxelJarLiftMax: 0.18,
+  voxelJarRotationMax: 0.24,
+  voxelJarImpulseMin: 0.18,
+  voxelJarImpulseMax: 0.72,
   voxelBreakFanRadians: 1.28,
   voxelBreakImpulseMin: 0.68,
   voxelBreakImpulseMax: 1.55,
@@ -7742,6 +7749,65 @@ function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
   return true;
 }
 
+function jarVoxelBuildingPieces(seedPiece, sourceHole = player, baseLeanDir = null) {
+  if (!seedPiece?.isVoxelBuildingCube) return;
+  const stackId = seedPiece.stackId;
+  if (stackId === undefined) return;
+
+  const hitColX = seedPiece.voxelColX ?? 0;
+  const hitColZ = seedPiece.voxelColZ ?? 0;
+  const hitDir = baseLeanDir || normalize2(seedPiece.x - sourceHole.x, seedPiece.z - sourceHole.z, { x: 0, z: 1 });
+  const radius = STACK_PHYSICS_CONFIG.voxelJarRadiusColumns;
+
+  for (const piece of physicsStackPieces) {
+    if (piece.stackId !== stackId || !piece.isVoxelBuildingCube) continue;
+    if (piece.consumed || piece.falling || piece.jammedInHole) continue;
+    const colDx = (piece.voxelColX ?? hitColX) - hitColX;
+    const colDz = (piece.voxelColZ ?? hitColZ) - hitColZ;
+    const colDist = Math.hypot(colDx, colDz);
+    if (colDist > radius) continue;
+
+    const falloff = Math.max(0, 1 - colDist / radius);
+    const floorT = piece.stackFloorCount > 1 ? piece.stackIndex / Math.max(1, piece.stackFloorCount - 1) : 0;
+    const localAway = colDist > 0.001 ? normalize2(colDx, colDz, hitDir) : hitDir;
+    const roll = randomBetween(-1.18, 1.18);
+    const cos = Math.cos(roll);
+    const sin = Math.sin(roll);
+    const jarDir = normalize2(
+      localAway.x * cos - localAway.z * sin,
+      localAway.x * sin + localAway.z * cos,
+      hitDir
+    );
+    const offset = randomBetween(STACK_PHYSICS_CONFIG.voxelJarOffsetMin, STACK_PHYSICS_CONFIG.voxelJarOffsetMax) * falloff * (0.72 + floorT * 0.56);
+    const lift = randomBetween(0, STACK_PHYSICS_CONFIG.voxelJarLiftMax) * falloff * (0.65 + floorT * 0.55);
+    const impulse = randomBetween(STACK_PHYSICS_CONFIG.voxelJarImpulseMin, STACK_PHYSICS_CONFIG.voxelJarImpulseMax) * falloff * (0.68 + floorT * 0.5);
+
+    piece.x += jarDir.x * offset + randomBetween(-0.045, 0.045) * falloff;
+    piece.z += jarDir.z * offset + randomBetween(-0.045, 0.045) * falloff;
+    if (piece.mesh) {
+      piece.mesh.position.x = piece.x;
+      piece.mesh.position.y += lift;
+      piece.mesh.position.z = piece.z;
+      piece.mesh.rotation.x += randomBetween(-STACK_PHYSICS_CONFIG.voxelJarRotationMax, STACK_PHYSICS_CONFIG.voxelJarRotationMax) * falloff;
+      piece.mesh.rotation.y += randomBetween(-STACK_PHYSICS_CONFIG.voxelJarRotationMax, STACK_PHYSICS_CONFIG.voxelJarRotationMax) * falloff * 0.75;
+      piece.mesh.rotation.z += randomBetween(-STACK_PHYSICS_CONFIG.voxelJarRotationMax, STACK_PHYSICS_CONFIG.voxelJarRotationMax) * falloff;
+    }
+
+    if (piece.stackActive) {
+      piece.voxelBaseX = piece.x;
+      piece.voxelBaseY = piece.mesh?.position?.y ?? piece.voxelBaseY ?? 0;
+      piece.voxelBaseZ = piece.z;
+      piece.vx += jarDir.x * impulse + randomBetween(-0.12, 0.12) * falloff;
+      piece.vz += jarDir.z * impulse + randomBetween(-0.12, 0.12) * falloff;
+      piece.vy += randomBetween(0.02, 0.12) * falloff;
+      piece.avx += randomBetween(-0.42, 0.42) * falloff;
+      piece.avy += randomBetween(-0.3, 0.3) * falloff;
+      piece.avz += randomBetween(-0.42, 0.42) * falloff;
+      clampVoxelMotion(piece);
+    }
+  }
+}
+
 function createCollapsePlan(stackId, sourceHole, consumedPiece) {
   const pieces = physicsStackPieces.filter(piece => piece.stackId === stackId);
   const anchor = consumedPiece || pieces[0];
@@ -7951,6 +8017,7 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     activated = true;
   }
   if (activated) {
+    jarVoxelBuildingPieces(seedPiece, sourceHole, leanDir);
     activePhysicsStackIds.add(stackId);
     if (!music.muted) {
       const distToPlayer = Math.hypot(seedPiece.x - player.x, seedPiece.z - player.z);
@@ -7963,6 +8030,13 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
 
 function resolvePhysicsStackContacts(dt) {
   const activePieces = physicsStackPieces.filter(piece => piece.stackActive && !piece.stackSettled && !piece.consumed && !piece.falling && !piece.jammedInHole);
+  const solidVoxelPieces = physicsStackPieces.filter(piece =>
+    piece.stackActive &&
+    piece.isVoxelBuildingCube &&
+    !piece.consumed &&
+    !piece.falling &&
+    !piece.jammedInHole
+  );
   const nonVoxelPieces = activePieces.filter(piece => !piece.isVoxelBuildingCube);
   for (let i = 0; i < nonVoxelPieces.length; i++) {
     const a = nonVoxelPieces[i];
@@ -7990,7 +8064,7 @@ function resolvePhysicsStackContacts(dt) {
     }
   }
 
-  const voxelPieces = activePieces.filter(piece => piece.isVoxelBuildingCube);
+  const voxelPieces = solidVoxelPieces;
   if (!voxelPieces.length) return;
   const byStack = new Map();
   for (const piece of voxelPieces) {
@@ -8030,7 +8104,7 @@ function resolvePhysicsStackContacts(dt) {
         const push = 0.54 + Math.min(0.92, impact * 0.055);
         if (overlapY <= overlapX && overlapY <= overlapZ) {
           const sy = dy >= 0 ? 1 : -1;
-          const correction = overlapY * push * 0.46;
+          const correction = overlapY * push * 0.58;
           a.mesh.position.y -= sy * correction;
           b.mesh.position.y += sy * correction;
           const impulse = Math.max(0.12, overlapY * (0.58 + Math.abs(relVy) * 0.2 + impact * 0.06) * STACK_PHYSICS_CONFIG.voxelCollisionElasticity);
@@ -8048,7 +8122,7 @@ function resolvePhysicsStackContacts(dt) {
           b.avz += scatter.x * impulse * STACK_PHYSICS_CONFIG.voxelCollisionSpinScale;
         } else if (overlapX <= overlapZ) {
           const sx = dx >= 0 ? 1 : -1;
-          const correction = overlapX * push * 0.46;
+          const correction = overlapX * push * 0.58;
           a.x -= sx * correction;
           b.x += sx * correction;
           const impulse = Math.max(0.12, overlapX * (0.68 + Math.abs(relVx) * 0.32 + impact * 0.08) * STACK_PHYSICS_CONFIG.voxelCollisionElasticity);
@@ -8065,7 +8139,7 @@ function resolvePhysicsStackContacts(dt) {
           b.avy += randomBetween(-0.1, 0.1) * impulse;
         } else {
           const sz = dz >= 0 ? 1 : -1;
-          const correction = overlapZ * push * 0.46;
+          const correction = overlapZ * push * 0.58;
           a.z -= sz * correction;
           b.z += sz * correction;
           const impulse = Math.max(0.12, overlapZ * (0.68 + Math.abs(relVz) * 0.32 + impact * 0.08) * STACK_PHYSICS_CONFIG.voxelCollisionElasticity);
@@ -8081,6 +8155,10 @@ function resolvePhysicsStackContacts(dt) {
           a.avy += randomBetween(-0.1, 0.1) * impulse;
           b.avy += randomBetween(-0.1, 0.1) * impulse;
         }
+        a.stackSettled = false;
+        b.stackSettled = false;
+        a.stackRestTimer = 0;
+        b.stackRestTimer = 0;
         clampVoxelMotion(a);
         clampVoxelMotion(b);
         a.mesh.position.x = a.x;

@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.52 - 2026-06-05
+
+Medium office impact jarring.
+
+- Medium-office impacts now jolt nearby cubes out of their perfect grid before the falling column releases.
+- Jarred active cubes inherit small offset, lift, spin, and lateral impulse so each strike starts from a less uniform state.
+- Settled medium-office cubes remain solid collision participants, reducing graphical overlap and making debris piles push apart more naturally.
+
 ## Master 16.51 - 2026-06-02
 
 Medium office pool-break physics.

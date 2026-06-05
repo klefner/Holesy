@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 51;
+export const BUILD_SUB = 52;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.52',
+    summary: 'Medium office impact jarring.',
+    changes: [
+      'Medium-office impacts now jolt nearby cubes out of their perfect grid before the falling column releases.',
+      'Jarred active cubes inherit small offset, lift, spin, and lateral impulse so each strike starts from a less uniform state.',
+      'Settled medium-office cubes remain solid collision participants, reducing graphical overlap and making debris piles push apart more naturally.'
+    ],
+  },
   {
     label: 'Master 16.51',
     summary: 'Medium office pool-break physics.',
