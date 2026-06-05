@@ -6,13 +6,13 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }
 
-    // ── World constants ─────────────────────────────────────────────────────
-    public const float WORLD_SIZE  = 220f;
-    public const float HALF        = WORLD_SIZE / 2f;
-    public const float BLOCK       = 32f;
-    public const float ROAD_W      = 8f;
+    // ── World constants ───────────────────────────────────────────────────────
+    public const float WORLD_SIZE = 220f;
+    public const float HALF       = WORLD_SIZE / 2f;
+    public const float BLOCK      = 32f;
+    public const float ROAD_W     = 8f;
 
-    // ── Growth constants (from original) ────────────────────────────────────
+    // ── Growth constants ──────────────────────────────────────────────────────
     public const float MIN_RADIUS          = 0.9f;
     public const float GROWTH_K            = 0.95f;
     public const float GROWTH_SCALE        = 40f;
@@ -20,18 +20,18 @@ public class GameManager : MonoBehaviour
     public const float MIN_HOLE_RADIUS     = 0.5f;
     public const float GAME_DURATION       = 120f;
 
-    // ── Speed constants ──────────────────────────────────────────────────────
-    public const float PLAYER_SPEED   = 14f;
-    public const float AI_SPEED       = 12f;
-    public const float AI_FLEE_SPEED  = 13.5f;
+    // ── Speed constants ───────────────────────────────────────────────────────
+    public const float PLAYER_SPEED  = 14f;
+    public const float AI_SPEED      = 12f;
+    public const float AI_FLEE_SPEED = 13.5f;
 
     public enum GameState { Playing, GameOver }
 
-    public GameState        State         { get; private set; }
-    public float            TimeRemaining { get; private set; }
-    public PlayerHole       Player        { get; private set; }
-    public List<HoleBase>   AllHoles      { get; } = new List<HoleBase>();
-    public List<ConsumableObject> AllObjects { get; } = new List<ConsumableObject>();
+    public GameState              State         { get; private set; }
+    public float                  TimeRemaining { get; private set; }
+    public PlayerHole             Player        { get; private set; }
+    public List<HoleBase>         AllHoles      { get; } = new List<HoleBase>();
+    public List<ConsumableObject> AllObjects    { get; } = new List<ConsumableObject>();
 
     public UIManager    UI    { get; private set; }
     public AudioManager Audio { get; private set; }
@@ -42,7 +42,7 @@ public class GameManager : MonoBehaviour
     private readonly List<(HoleBase hole, ConsumableObject obj)> _consumeQueue
         = new List<(HoleBase, ConsumableObject)>();
 
-    // ── Lifecycle ────────────────────────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     void Awake()
     {
@@ -72,13 +72,13 @@ public class GameManager : MonoBehaviour
 
     void SetupLighting()
     {
-        RenderSettings.ambientLight = new Color(0.38f, 0.40f, 0.48f);
+        RenderSettings.ambientLight = new Color(0.55f, 0.58f, 0.68f);
 
         var sunGO = new GameObject("Sun");
         var sun   = sunGO.AddComponent<Light>();
         sun.type      = LightType.Directional;
-        sun.intensity = 1.15f;
-        sun.color     = new Color(1f, 0.94f, 0.80f);
+        sun.intensity = 1.2f;
+        sun.color     = new Color(1f, 0.95f, 0.85f);
         sun.shadows   = LightShadows.Soft;
         sunGO.transform.rotation = Quaternion.Euler(50f, -28f, 0f);
     }
@@ -90,26 +90,25 @@ public class GameManager : MonoBehaviour
             var camGO = new GameObject("Main Camera");
             camGO.tag = "MainCamera";
             camGO.AddComponent<Camera>();
+            camGO.AddComponent<AudioListener>();
         }
 
         var cam = Camera.main;
-        cam.clearFlags       = CameraClearFlags.SolidColor;
-        cam.backgroundColor  = new Color(0.55f, 0.75f, 0.95f);
-        cam.farClipPlane     = 600f;
+        cam.clearFlags      = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(0.05f, 0.05f, 0.08f); // dark void — shows through the stencil hole
+        cam.farClipPlane    = 600f;
         cam.gameObject.AddComponent<GameCamera>();
     }
 
-    // ── Hole spawning ────────────────────────────────────────────────────────
+    // ── Hole spawning ─────────────────────────────────────────────────────────
 
     void SpawnHoles()
     {
         AllHoles.Clear();
 
-        // Player
         Player = HoleFactory.CreatePlayer(new Color(0.30f, 0.60f, 1.00f), Vector3.zero);
         AllHoles.Add(Player);
 
-        // AIs
         var cfgs = AIConfig.Defaults();
         Vector3[] aiPos = { new Vector3(-40, 0, -40), new Vector3(40, 0, 40), new Vector3(-40, 0, 40) };
         for (int i = 0; i < cfgs.Length; i++)
@@ -121,7 +120,7 @@ public class GameManager : MonoBehaviour
         Camera.main.GetComponent<GameCamera>().Target = Player.Hole.transform;
     }
 
-    // ── Main loop ────────────────────────────────────────────────────────────
+    // ── Main loop ─────────────────────────────────────────────────────────────
 
     void Update()
     {
@@ -190,7 +189,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // ── Public game actions ──────────────────────────────────────────────────
+    // ── Public game actions ───────────────────────────────────────────────────
 
     public void ConsumeObject(HoleBase hole, ConsumableObject obj)
     {
@@ -206,8 +205,8 @@ public class GameManager : MonoBehaviour
         eaten.Die();
 
         float reward = 250f
-            + Mathf.Floor(eaten.Score * 0.3f)
-            + Mathf.Floor(eaten.Radius * 100f);
+            + Mathf.Floor(eaten.Score   * 0.3f)
+            + Mathf.Floor(eaten.Radius  * 100f);
 
         eater.Score       += reward;
         eater.BonusRadius += eaten.Radius * HOLE_EAT_RADIUS_BONUS;
@@ -218,7 +217,7 @@ public class GameManager : MonoBehaviour
         Audio.PlayHoleEat(eater.transform.position);
     }
 
-    // ── Static helpers ───────────────────────────────────────────────────────
+    // ── Static helpers ────────────────────────────────────────────────────────
 
     public static float RadiusFromScore(HoleBase h)
         => MIN_RADIUS + GROWTH_K * Mathf.Log(1f + h.Score / GROWTH_SCALE) + h.BonusRadius;

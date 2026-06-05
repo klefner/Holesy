@@ -1,16 +1,17 @@
 # ============================================================
 #  Downtown Devour - Project Updater
 #  Double-click this file any time Claude pushes new code.
-#  It downloads the latest version and overwrites your files.
+#  Injects Scripts, Scenes, and Shaders into your URP project.
+#  Does NOT touch ProjectSettings or Packages (preserves URP).
 # ============================================================
 
 $REPO_OWNER  = "klefner"
 $REPO_NAME   = "holesy"
 $BRANCH      = "claude/happy-clarke-ORWAI"
-$PROJECT_SUB = "DowntownDevour"   # subfolder inside the repo
+$PROJECT_SUB = "DowntownDevour"
 
-# ── Where is your DowntownDevour project on this machine? ────────────────────
-# The script searches common locations first; if it can't find it, it asks you.
+# ── Locate the Unity project ──────────────────────────────────────────────────
+# Searches common locations for a folder named DowntownDevour with an Assets subfolder.
 
 $SEARCH_ROOTS = @(
     "$env:USERPROFILE",
@@ -35,10 +36,8 @@ Write-Host "  Downtown Devour - Project Updater" -ForegroundColor Cyan
 Write-Host "  ===================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Force TLS 1.2 (required on older Windows for HTTPS downloads)
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# Find the project
 $INSTALL_DIR = Find-Project
 
 if (-not $INSTALL_DIR) {
@@ -49,15 +48,16 @@ if (-not $INSTALL_DIR) {
     $INSTALL_DIR = Read-Host "  Path"
     if (-not (Test-Path $INSTALL_DIR)) {
         Write-Host ""
-        Write-Host "  Creating new folder at: $INSTALL_DIR" -ForegroundColor Green
-        New-Item -ItemType Directory -Path $INSTALL_DIR -Force | Out-Null
+        Write-Host "  Folder not found at: $INSTALL_DIR" -ForegroundColor Red
+        Read-Host "  Press Enter to close"
+        exit 1
     }
 }
 
 Write-Host "  Project location: $INSTALL_DIR" -ForegroundColor Green
 Write-Host ""
 
-# ── Download the latest ZIP from GitHub ──────────────────────────────────────
+# ── Download latest ZIP ───────────────────────────────────────────────────────
 
 $ZIP_URL  = "https://github.com/$REPO_OWNER/$REPO_NAME/archive/refs/heads/$BRANCH.zip"
 $TEMP_ZIP = "$env:TEMP\downtown-devour-update.zip"
@@ -79,14 +79,8 @@ try {
 Write-Host "  Download complete." -ForegroundColor Green
 Write-Host "  Extracting..." -ForegroundColor Yellow
 
-# Clean up old temp extract if present
 if (Test-Path $TEMP_DIR) { Remove-Item $TEMP_DIR -Recurse -Force }
-
 Expand-Archive -Path $TEMP_ZIP -DestinationPath $TEMP_DIR -Force
-
-# ── Find the DowntownDevour subfolder inside the extracted archive ─────────────
-# GitHub names the top folder like: holesy-claude-happy-clarke-ORWAI
-# We just grab whatever folder is there and look inside it.
 
 $TOP = Get-ChildItem $TEMP_DIR -Directory | Select-Object -First 1
 if (-not $TOP) {
@@ -99,40 +93,47 @@ $SOURCE = Join-Path $TOP.FullName $PROJECT_SUB
 
 if (-not (Test-Path $SOURCE)) {
     Write-Host "  ERROR: Could not find '$PROJECT_SUB' inside the downloaded archive." -ForegroundColor Red
-    Write-Host "  Top-level folder found: $($TOP.FullName)" -ForegroundColor Gray
     Read-Host "  Press Enter to close"
     exit 1
 }
 
-# ── Copy files into the project folder ───────────────────────────────────────
+# ── Inject code and shaders only (never touch ProjectSettings or Packages) ───
+# This preserves the URP pipeline assets Unity created when you made the project.
 
-Write-Host "  Copying updated files to project..." -ForegroundColor Yellow
+Write-Host "  Copying scripts and shaders into project..." -ForegroundColor Yellow
 
-# Copy Assets and ProjectSettings (skip Library - Unity regenerates it)
-$FOLDERS_TO_UPDATE = @("Assets", "ProjectSettings", "Packages")
-foreach ($folder in $FOLDERS_TO_UPDATE) {
-    $srcFolder = Join-Path $SOURCE $folder
-    $dstFolder = Join-Path $INSTALL_DIR $folder
+$INJECT_SUBFOLDERS = @(
+    "Assets\Scripts",
+    "Assets\Scenes",
+    "Assets\Shaders"
+)
+
+foreach ($sub in $INJECT_SUBFOLDERS) {
+    $srcFolder = Join-Path $SOURCE $sub
+    $dstFolder = Join-Path $INSTALL_DIR $sub
+
     if (Test-Path $srcFolder) {
+        if (-not (Test-Path $dstFolder)) {
+            New-Item -ItemType Directory -Path $dstFolder -Force | Out-Null
+        }
         Copy-Item -Path "$srcFolder\*" -Destination $dstFolder -Recurse -Force
-        Write-Host "    Updated: $folder" -ForegroundColor Gray
+        Write-Host "    Updated: $sub" -ForegroundColor Gray
     }
 }
 
-# ── Clean up temp files ───────────────────────────────────────────────────────
+# ── Clean up ──────────────────────────────────────────────────────────────────
 
-Remove-Item $TEMP_ZIP  -Force -ErrorAction SilentlyContinue
-Remove-Item $TEMP_DIR  -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item $TEMP_ZIP -Force -ErrorAction SilentlyContinue
+Remove-Item $TEMP_DIR -Recurse -Force -ErrorAction SilentlyContinue
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 
 Write-Host ""
 Write-Host "  All done!" -ForegroundColor Green
 Write-Host ""
-Write-Host "  If Unity is already open, it will recompile automatically." -ForegroundColor Cyan
-Write-Host "  Just look at the bottom of the Unity window for the progress bar." -ForegroundColor Cyan
-Write-Host ""
-Write-Host "  If Unity is not open:" -ForegroundColor Cyan
-Write-Host "  Open Unity Hub -> click DowntownDevour -> press Play" -ForegroundColor Cyan
+Write-Host "  Open Unity Hub -> click DowntownDevour." -ForegroundColor Cyan
+Write-Host "  Unity will recompile (watch the progress bar at the bottom)." -ForegroundColor Cyan
+Write-Host "  When the bar clears: File -> Open Scene -> Assets/Scenes/Game" -ForegroundColor Cyan
+Write-Host "  Then press the Play button." -ForegroundColor Cyan
 Write-Host ""
 Read-Host "  Press Enter to close"

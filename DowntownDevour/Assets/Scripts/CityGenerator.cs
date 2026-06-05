@@ -1,27 +1,31 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Procedurally builds the city grid and registers all consumable objects.
 public class CityGenerator : MonoBehaviour
 {
-    // Shared materials to reduce draw calls
-    private static readonly Dictionary<Color, Material> _matCache = new Dictionary<Color, Material>();
+    // Ground-plane surfaces use GroundMasked (stencil hole cut-out).
+    // All above-ground objects use URP Lit.
+    private static readonly Dictionary<Color, Material> _matCache    = new Dictionary<Color, Material>();
+    private static readonly Dictionary<Color, Material> _groundCache = new Dictionary<Color, Material>();
 
-    // Colors
-    static readonly Color COL_GROUND    = new Color(0.35f, 0.35f, 0.35f);
-    static readonly Color COL_ROAD      = new Color(0.22f, 0.22f, 0.22f);
-    static readonly Color COL_SIDEWALK  = new Color(0.55f, 0.54f, 0.52f);
-    static readonly Color COL_GRASS     = new Color(0.30f, 0.52f, 0.28f);
-    static readonly Color COL_BUILDING1 = new Color(0.75f, 0.70f, 0.62f);
-    static readonly Color COL_BUILDING2 = new Color(0.55f, 0.62f, 0.70f);
-    static readonly Color COL_BUILDING3 = new Color(0.65f, 0.55f, 0.50f);
-    static readonly Color COL_GLASS     = new Color(0.50f, 0.65f, 0.80f);
+    // ── Colors ────────────────────────────────────────────────────────────────
+    static readonly Color COL_GROUND   = new Color(0.28f, 0.28f, 0.28f);
+    static readonly Color COL_ROAD     = new Color(0.18f, 0.18f, 0.18f);
+    static readonly Color COL_SIDEWALK = new Color(0.52f, 0.51f, 0.49f);
+    static readonly Color COL_GRASS    = new Color(0.25f, 0.50f, 0.22f);
+    static readonly Color COL_GLASS    = new Color(0.50f, 0.65f, 0.80f);
+    static readonly Color COL_BLDG1    = new Color(0.75f, 0.70f, 0.62f);
+    static readonly Color COL_BLDG2    = new Color(0.55f, 0.62f, 0.70f);
+    static readonly Color COL_BLDG3    = new Color(0.65f, 0.55f, 0.50f);
 
-    // Cars
     static readonly Color[] CAR_COLORS =
     {
-        Color.red, Color.blue, Color.white, Color.yellow,
-        new Color(0.4f, 0.4f, 0.4f), new Color(0.6f, 0.3f, 0.1f)
+        new Color(0.85f, 0.15f, 0.15f),
+        new Color(0.20f, 0.40f, 0.85f),
+        new Color(0.92f, 0.92f, 0.92f),
+        new Color(0.90f, 0.80f, 0.10f),
+        new Color(0.38f, 0.38f, 0.38f),
+        new Color(0.55f, 0.28f, 0.08f),
     };
 
     private Transform _cityRoot;
@@ -29,6 +33,7 @@ public class CityGenerator : MonoBehaviour
     public void Build()
     {
         _matCache.Clear();
+        _groundCache.Clear();
         _cityRoot = new GameObject("City").transform;
 
         BuildGround();
@@ -37,17 +42,16 @@ public class CityGenerator : MonoBehaviour
         SpawnCars(35);
     }
 
-    // ── Ground + roads ─────────────────────────────────────────────────────────
+    // ── Ground + roads ────────────────────────────────────────────────────────
 
     void BuildGround()
     {
-        // Base ground plane
         var go = GameObject.CreatePrimitive(PrimitiveType.Plane);
         go.name = "Ground";
         go.transform.SetParent(_cityRoot, false);
         go.transform.localScale = new Vector3(GameManager.WORLD_SIZE / 10f, 1f,
                                                GameManager.WORLD_SIZE / 10f);
-        ApplySharedMat(go.GetComponent<Renderer>(), COL_GROUND);
+        ApplyGroundMat(go.GetComponent<Renderer>(), COL_GROUND);
         Destroy(go.GetComponent<Collider>());
     }
 
@@ -58,19 +62,16 @@ public class CityGenerator : MonoBehaviour
         float rw    = GameManager.ROAD_W;
         float thick = 0.04f;
 
-        // Horizontal and vertical road strips across the city
         for (int i = -3; i <= 3; i++)
         {
             float centre = i * block;
 
-            // Road along Z axis (vertical strip)
-            PlaceBox("RoadV", _cityRoot,
+            PlaceGroundBox("RoadV", _cityRoot,
                 new Vector3(centre, thick / 2f, 0f),
                 new Vector3(rw, thick, GameManager.WORLD_SIZE),
                 COL_ROAD);
 
-            // Road along X axis (horizontal strip)
-            PlaceBox("RoadH", _cityRoot,
+            PlaceGroundBox("RoadH", _cityRoot,
                 new Vector3(0f, thick / 2f, centre),
                 new Vector3(GameManager.WORLD_SIZE, thick, rw),
                 COL_ROAD);
@@ -81,27 +82,22 @@ public class CityGenerator : MonoBehaviour
 
     void BuildBlocks()
     {
-        float block   = GameManager.BLOCK;
-        float rw      = GameManager.ROAD_W;
-        float interior = block - rw;  // usable area inside a block
+        float block    = GameManager.BLOCK;
+        float rw       = GameManager.ROAD_W;
+        float interior = block - rw;
 
         for (int bx = -3; bx <= 3; bx++)
-        {
             for (int bz = -3; bz <= 3; bz++)
-            {
-                Vector3 centre = new Vector3(bx * block, 0f, bz * block);
-                BuildBlock(centre, interior);
-            }
-        }
+                BuildBlock(new Vector3(bx * block, 0f, bz * block), interior);
     }
 
     void BuildBlock(Vector3 centre, float size)
     {
-        float half  = size / 2f - 1f;  // slight inset so buildings don't overlap roads
+        float half  = size / 2f - 1f;
         float thick = 0.03f;
 
-        // Sidewalk slab
-        PlaceBox("Sidewalk", _cityRoot,
+        // Sidewalk slab (uses ground-masked shader)
+        PlaceGroundBox("Sidewalk", _cityRoot,
             centre + Vector3.up * thick / 2f,
             new Vector3(size - 0.5f, thick, size - 0.5f),
             COL_SIDEWALK);
@@ -109,24 +105,20 @@ public class CityGenerator : MonoBehaviour
         float roll = Random.value;
         if (roll < 0.35f)
         {
-            // Skyscraper
             float h = Random.Range(14f, 24f);
             PlaceBuilding(centre + Vector3.up * h / 2f,
                 new Vector3(Random.Range(6f, 9f), h, Random.Range(6f, 9f)),
-                COL_GLASS, ObjectCategory.Building, h);
+                COL_GLASS, h);
         }
         else if (roll < 0.65f)
         {
-            // Mid-rise
             float h = Random.Range(7f, 13f);
             PlaceBuilding(centre + Vector3.up * h / 2f,
                 new Vector3(Random.Range(7f, 11f), h, Random.Range(7f, 11f)),
-                Random.value < 0.5f ? COL_BUILDING1 : COL_BUILDING2,
-                ObjectCategory.Building, h);
+                Random.value < 0.5f ? COL_BLDG1 : COL_BLDG2, h);
         }
         else
         {
-            // Cluster of small buildings
             int count = Random.Range(2, 5);
             for (int k = 0; k < count; k++)
             {
@@ -137,15 +129,13 @@ public class CityGenerator : MonoBehaviour
                     float h = Random.Range(3f, 7f);
                     PlaceBuilding(centre + offset + Vector3.up * h / 2f,
                         new Vector3(Random.Range(3f, 6f), h, Random.Range(3f, 6f)),
-                        COL_BUILDING3, ObjectCategory.Building, h);
+                        COL_BLDG3, h);
                 }
             }
         }
 
-        // Sidewalk props around the perimeter
         PlaceSidewalkProps(centre, size);
 
-        // Street lamps at corners (70 % chance each)
         float[] corners = { -half, half };
         foreach (float cx in corners)
             foreach (float cz in corners)
@@ -153,27 +143,25 @@ public class CityGenerator : MonoBehaviour
                     PlaceLamp(centre + new Vector3(cx, 0f, cz));
     }
 
-    // ── Prop placement ─────────────────────────────────────────────────────────
+    // ── Props ─────────────────────────────────────────────────────────────────
 
     void PlaceSidewalkProps(Vector3 blockCentre, float blockSize)
     {
-        int count = Random.Range(3, 7);
-        float edge = blockSize / 2f - 0.5f;
+        int   count = Random.Range(3, 7);
+        float edge  = blockSize / 2f - 0.5f;
 
         for (int i = 0; i < count; i++)
         {
-            // Pick a random edge
-            int side = Random.Range(0, 4);
+            int   side = Random.Range(0, 4);
             float pos1 = Random.Range(-edge, edge);
-            Vector3 p = blockCentre;
+            Vector3 p  = blockCentre;
             switch (side)
             {
-                case 0: p += new Vector3(pos1, 0f, edge);  break;
+                case 0: p += new Vector3(pos1, 0f,  edge); break;
                 case 1: p += new Vector3(pos1, 0f, -edge); break;
-                case 2: p += new Vector3(edge, 0f, pos1);  break;
+                case 2: p += new Vector3( edge, 0f, pos1); break;
                 case 3: p += new Vector3(-edge, 0f, pos1); break;
             }
-
             PlaceRandomProp(p);
         }
     }
@@ -196,9 +184,9 @@ public class CityGenerator : MonoBehaviour
         var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         go.name = "Person";
         go.transform.SetParent(_cityRoot, false);
-        go.transform.position = pos + Vector3.up * 0.5f;
+        go.transform.position   = pos + Vector3.up * 0.5f;
         go.transform.localScale = Vector3.one * 0.5f;
-        ApplySharedMat(go.GetComponent<Renderer>(), new Color(0.85f, 0.70f, 0.58f));
+        ApplyLitMat(go.GetComponent<Renderer>(), new Color(0.85f, 0.70f, 0.58f));
         Destroy(go.GetComponent<Collider>());
         RegisterConsumable(go, 0.5f, 1, 10f, ObjectCategory.Person);
     }
@@ -206,48 +194,47 @@ public class CityGenerator : MonoBehaviour
     void PlaceCone(Vector3 pos)
     {
         pos.y = 0f;
-        var go = CreateProp("Cone", pos + Vector3.up * 0.3f, new Vector3(0.35f, 0.6f, 0.35f),
-                            new Color(0.95f, 0.45f, 0.05f));
+        var go = CreateProp("Cone", pos + Vector3.up * 0.3f,
+                            new Vector3(0.35f, 0.6f, 0.35f), new Color(0.95f, 0.45f, 0.05f));
         RegisterConsumable(go, 0.4f, 1, 8f, ObjectCategory.Prop);
     }
 
     void PlaceHydrant(Vector3 pos)
     {
         pos.y = 0f;
-        var go = CreateProp("Hydrant", pos + Vector3.up * 0.35f, new Vector3(0.45f, 0.7f, 0.45f),
-                            new Color(0.8f, 0.1f, 0.1f));
+        var go = CreateProp("Hydrant", pos + Vector3.up * 0.35f,
+                            new Vector3(0.45f, 0.7f, 0.45f), new Color(0.8f, 0.1f, 0.1f));
         RegisterConsumable(go, 0.5f, 1, 15f, ObjectCategory.Prop);
     }
 
     void PlaceTrashCan(Vector3 pos)
     {
         pos.y = 0f;
-        var go = CreateProp("Trash", pos + Vector3.up * 0.35f, new Vector3(0.5f, 0.7f, 0.5f),
-                            new Color(0.3f, 0.3f, 0.3f));
+        var go = CreateProp("Trash", pos + Vector3.up * 0.35f,
+                            new Vector3(0.5f, 0.7f, 0.5f), new Color(0.3f, 0.3f, 0.3f));
         RegisterConsumable(go, 0.55f, 1, 12f, ObjectCategory.Prop);
     }
 
     void PlaceMailbox(Vector3 pos)
     {
         pos.y = 0f;
-        var go = CreateProp("Mailbox", pos + Vector3.up * 0.4f, new Vector3(0.45f, 0.8f, 0.45f),
-                            new Color(0.1f, 0.3f, 0.8f));
+        var go = CreateProp("Mailbox", pos + Vector3.up * 0.4f,
+                            new Vector3(0.45f, 0.8f, 0.45f), new Color(0.1f, 0.3f, 0.8f));
         RegisterConsumable(go, 0.45f, 1, 10f, ObjectCategory.Prop);
     }
 
     void PlaceTree(Vector3 pos)
     {
         pos.y = 0f;
-        // Trunk
-        var trunk = CreateProp("Trunk", pos + Vector3.up * 0.6f, new Vector3(0.3f, 1.2f, 0.3f),
-                               new Color(0.35f, 0.22f, 0.12f));
-        // Canopy
+        var trunk = CreateProp("Trunk", pos + Vector3.up * 0.6f,
+                               new Vector3(0.3f, 1.2f, 0.3f), new Color(0.35f, 0.22f, 0.12f));
+
         var canopy = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         canopy.name = "Canopy";
         canopy.transform.SetParent(_cityRoot, false);
-        canopy.transform.position = pos + Vector3.up * 1.8f;
+        canopy.transform.position   = pos + Vector3.up * 1.8f;
         canopy.transform.localScale = new Vector3(1.4f, 1.4f, 1.4f);
-        ApplySharedMat(canopy.GetComponent<Renderer>(), new Color(0.20f, 0.60f, 0.20f));
+        ApplyLitMat(canopy.GetComponent<Renderer>(), new Color(0.20f, 0.60f, 0.20f));
         Destroy(canopy.GetComponent<Collider>());
 
         RegisterConsumable(trunk, 1.1f, 2, 25f, ObjectCategory.Tree);
@@ -256,38 +243,35 @@ public class CityGenerator : MonoBehaviour
     void PlaceBench(Vector3 pos)
     {
         pos.y = 0f;
-        var go = CreateProp("Bench", pos + Vector3.up * 0.3f, new Vector3(1.0f, 0.4f, 0.4f),
-                            new Color(0.50f, 0.35f, 0.18f));
+        var go = CreateProp("Bench", pos + Vector3.up * 0.3f,
+                            new Vector3(1.0f, 0.4f, 0.4f), new Color(0.50f, 0.35f, 0.18f));
         RegisterConsumable(go, 1.0f, 2, 20f, ObjectCategory.Prop);
     }
 
     void PlaceLamp(Vector3 pos)
     {
         pos.y = 0f;
-        // Pole
-        CreateProp("LampPole", pos + Vector3.up * 2.0f, new Vector3(0.12f, 4.0f, 0.12f),
-                   new Color(0.6f, 0.6f, 0.6f));
+        CreateProp("LampPole", pos + Vector3.up * 2.0f,
+                   new Vector3(0.12f, 4.0f, 0.12f), new Color(0.6f, 0.6f, 0.6f));
 
-        // Register the whole lamp as one consumable
-        var go = CreateProp("Lamp", pos + Vector3.up * 0.5f, new Vector3(0.4f, 1.0f, 0.4f),
-                            new Color(0.7f, 0.7f, 0.7f));
+        var go = CreateProp("Lamp", pos + Vector3.up * 0.5f,
+                            new Vector3(0.4f, 1.0f, 0.4f), new Color(0.7f, 0.7f, 0.7f));
         RegisterConsumable(go, 0.9f, 2, 22f, ObjectCategory.Prop);
     }
 
-    void PlaceBuilding(Vector3 pos, Vector3 size, Color color, ObjectCategory cat, float height)
+    void PlaceBuilding(Vector3 pos, Vector3 size, Color color, float height)
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
         go.name = "Building";
         go.transform.SetParent(_cityRoot, false);
-        go.transform.position  = pos;
+        go.transform.position   = pos;
         go.transform.localScale = size;
-        ApplySharedMat(go.GetComponent<Renderer>(), color);
+        ApplyLitMat(go.GetComponent<Renderer>(), color);
         Destroy(go.GetComponent<Collider>());
 
-        // Value and consumable size based on height
         float buildSize  = Mathf.Max(size.x, size.z);
         float buildValue = height < 8f ? 120f : height < 15f ? 300f : 600f;
-        RegisterConsumable(go, buildSize, height < 8f ? 4 : 5, buildValue, cat);
+        RegisterConsumable(go, buildSize, height < 8f ? 4 : 5, buildValue, ObjectCategory.Building);
     }
 
     // ── Cars ──────────────────────────────────────────────────────────────────
@@ -296,10 +280,8 @@ public class CityGenerator : MonoBehaviour
     {
         for (int i = 0; i < count; i++)
         {
-            // Pick a random road axis and position
-            bool horizontal = Random.value < 0.5f;
-            float block     = GameManager.BLOCK;
-
+            bool  horizontal = Random.value < 0.5f;
+            float block      = GameManager.BLOCK;
             float roadCentre = Mathf.Round(Random.Range(-3, 4)) * block;
             float along      = Random.Range(-GameManager.HALF + 5f, GameManager.HALF - 5f);
 
@@ -314,11 +296,9 @@ public class CityGenerator : MonoBehaviour
     void SpawnCar(Vector3 pos, bool horizontal)
     {
         Color col = CAR_COLORS[Random.Range(0, CAR_COLORS.Length)];
-        var go    = CreateProp("Car", pos + Vector3.up * 0.55f, new Vector3(1.6f, 1.1f, 3.2f), col);
-
-        // Align car to road direction
+        var go    = CreateProp("Car", pos + Vector3.up * 0.55f,
+                               new Vector3(1.6f, 1.1f, 3.2f), col);
         if (!horizontal) go.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
-
         RegisterConsumable(go, 1.8f, 3, 50f, ObjectCategory.Car);
     }
 
@@ -331,19 +311,20 @@ public class CityGenerator : MonoBehaviour
         go.transform.SetParent(_cityRoot, false);
         go.transform.position   = pos;
         go.transform.localScale = size;
-        ApplySharedMat(go.GetComponent<Renderer>(), color);
+        ApplyLitMat(go.GetComponent<Renderer>(), color);
         Destroy(go.GetComponent<Collider>());
         return go;
     }
 
-    void PlaceBox(string name, Transform parent, Vector3 pos, Vector3 size, Color color)
+    // Ground-level boxes use GroundMasked so the hole cuts through them.
+    void PlaceGroundBox(string name, Transform parent, Vector3 pos, Vector3 size, Color color)
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
         go.name = name;
         go.transform.SetParent(parent, false);
         go.transform.position   = pos;
         go.transform.localScale = size;
-        ApplySharedMat(go.GetComponent<Renderer>(), color);
+        ApplyGroundMat(go.GetComponent<Renderer>(), color);
         Destroy(go.GetComponent<Collider>());
     }
 
@@ -354,17 +335,29 @@ public class CityGenerator : MonoBehaviour
         GameManager.Instance.AllObjects.Add(co);
     }
 
-    static void ApplySharedMat(Renderer r, Color c)
+    // URP Lit material for above-ground objects (buildings, cars, props).
+    static void ApplyLitMat(Renderer r, Color c)
     {
         if (!_matCache.TryGetValue(c, out var mat))
         {
-            mat = new Material(Shader.Find("Standard"))
-            {
-                color = c
-            };
-            mat.SetFloat("_Glossiness", 0.15f);
+            mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat.SetColor("_BaseColor", c);
+            mat.SetFloat("_Smoothness", 0.15f);
             mat.SetFloat("_Metallic",   0.0f);
             _matCache[c] = mat;
+        }
+        r.sharedMaterial = mat;
+    }
+
+    // GroundMasked material for roads, sidewalks, ground plane.
+    // These disappear inside the hole (stencil NotEqual 1).
+    static void ApplyGroundMat(Renderer r, Color c)
+    {
+        if (!_groundCache.TryGetValue(c, out var mat))
+        {
+            mat = new Material(Shader.Find("DowntownDevour/GroundMasked"));
+            mat.SetColor("_BaseColor", c);
+            _groundCache[c] = mat;
         }
         r.sharedMaterial = mat;
     }
