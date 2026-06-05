@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 52;
+export const BUILD_SUB = 53;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.53',
+    summary: 'Mouse exit steering carry.',
+    changes: [
+      'Desktop mouse steering now preserves the last intended direction when the cursor leaves the game canvas.',
+      'The player hole keeps moving through brief browser-window exits during chases, escapes, and soldier pressure.',
+      'Mouse carry clears on focus loss, reset, keyboard takeover, touch input, or normal mouse re-entry so other input modes stay predictable.'
+    ],
+  },
   {
     label: 'Master 16.52',
     summary: 'Medium office impact jarring.',

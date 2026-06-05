@@ -2058,6 +2058,7 @@ const input = {
   // Desktop: mouse position in NDC
   mouseNormX: 0, mouseNormY: 0, hasMouse: false,
   mouseControlArmed: false,
+  mouseCarryActive: false, mouseCarryDx: 0, mouseCarryDz: 0,
   // Mobile: relative drag direction
   dragActive: false, dragDx: 0, dragDy: 0,
   isTouch: false
@@ -2085,6 +2086,9 @@ function stopPlayerMotion() {
 function releaseMouseControl() {
   input.hasMouse = false;
   input.mouseControlArmed = false;
+  input.mouseCarryActive = false;
+  input.mouseCarryDx = 0;
+  input.mouseCarryDz = 0;
   stopPlayerMotion();
 }
 
@@ -2119,15 +2123,27 @@ if (!isTouchDevice) {
     input.mouseNormY = ((e.clientY - rect.top) / rect.height) * 2 - 1;
     input.hasMouse = true;
     input.mouseControlArmed = true;
+    input.mouseCarryActive = false;
   });
 }
 canvas.addEventListener('contextmenu', (e) => {
   e.preventDefault();
   resetTransientPointerInput();
 });
-// When mouse leaves canvas, stop the hole
+// When the desktop mouse leaves the canvas, keep the last intended steering
+// vector alive. This prevents a brief accidental stop when the player sweeps
+// outside the browser window during a chase or escape.
 canvas.addEventListener('mouseleave', () => {
-  releaseMouseControl();
+  if (input.isTouch || !input.hasMouse || !input.mouseControlArmed || !player || !player.alive) return;
+  const target = getMouseGround();
+  const dx = target.x - player.x;
+  const dz = target.z - player.z;
+  const mag = Math.hypot(dx, dz);
+  if (mag > 0.001) {
+    input.mouseCarryDx = dx / mag;
+    input.mouseCarryDz = dz / mag;
+    input.mouseCarryActive = true;
+  }
 });
 
 // Mobile touch: drag anywhere, move in the direction of the drag relative to touch start
@@ -2221,6 +2237,12 @@ function releaseKeyboardControl() {
 }
 
 function applyMouseControl() {
+  if (input.mouseCarryActive) {
+    const reach = HOLESY_CONFIG.input.touchReach;
+    player.targetX = clampToArena(player.x + input.mouseCarryDx * reach, 2);
+    player.targetZ = clampToArena(player.z + input.mouseCarryDz * reach, 2);
+    return;
+  }
   const target = getMouseGround();
   player.targetX = clampToArena(target.x, 2);
   player.targetZ = clampToArena(target.z, 2);
@@ -6129,6 +6151,9 @@ function resetHoleState() {
 function resetInputState() {
   input.hasMouse = false;
   input.mouseControlArmed = false;
+  input.mouseCarryActive = false;
+  input.mouseCarryDx = 0;
+  input.mouseCarryDz = 0;
   input.mouseNormX = 0;
   input.mouseNormY = 0;
   input.dragActive = false;
