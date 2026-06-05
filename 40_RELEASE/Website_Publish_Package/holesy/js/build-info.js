@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 53;
+export const BUILD_SUB = 54;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.54',
+    summary: 'Continuous medium office cube flow.',
+    changes: [
+      'Medium-office cubes now keep drifting and rotating during the support-delay window after impact.',
+      'The first jarring impulse now flows into the falling phase instead of pausing and restarting as a separate drop.',
+      'Released cubes inherit their current outward/upward motion while preserving the support-gated column collapse behavior.'
+    ],
+  },
   {
     label: 'Master 16.53',
     summary: 'Mouse exit steering carry.',

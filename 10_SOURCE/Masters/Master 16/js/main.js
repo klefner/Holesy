@@ -893,6 +893,10 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   voxelBreakFanRadians: 1.28,
   voxelBreakImpulseMin: 0.68,
   voxelBreakImpulseMax: 1.55,
+  voxelPreReleaseDriftScale: 0.58,
+  voxelPreReleaseGravityScale: 0.34,
+  voxelPreReleaseDamping: 0.982,
+  voxelPreReleaseAngularDamping: 0.988,
   voxelCollisionElasticity: 0.72,
   voxelCollisionSpinScale: 0.24,
   voxelGroundBounceDampingMin: 0.18,
@@ -7713,6 +7717,34 @@ function clampVoxelMotion(piece) {
   }
 }
 
+function updateUnreleasedVoxelMotion(piece, dt) {
+  if (!piece?.isVoxelBuildingCube || piece.stackReleased || !piece.mesh) return;
+  const driftScale = STACK_PHYSICS_CONFIG.voxelPreReleaseDriftScale;
+  const baseY = piece.voxelBaseY ?? piece.mesh.position.y;
+  const gravity = Math.max(1, piece.voxelGravity || STACK_PHYSICS_CONFIG.voxelGravity) * STACK_PHYSICS_CONFIG.voxelPreReleaseGravityScale;
+
+  piece.vy -= gravity * dt;
+  piece.x += (piece.vx || 0) * dt * driftScale;
+  piece.z += (piece.vz || 0) * dt * driftScale;
+  const nextY = Math.max(baseY, piece.mesh.position.y + (piece.vy || 0) * dt * 0.62);
+
+  piece.mesh.position.x = piece.x;
+  piece.mesh.position.y = nextY;
+  piece.mesh.position.z = piece.z;
+  piece.y = nextY;
+  piece.mesh.rotation.x += (piece.avx || 0) * dt * 0.72;
+  piece.mesh.rotation.y += (piece.avy || 0) * dt * 0.72;
+  piece.mesh.rotation.z += (piece.avz || 0) * dt * 0.72;
+
+  piece.vx *= STACK_PHYSICS_CONFIG.voxelPreReleaseDamping;
+  piece.vz *= STACK_PHYSICS_CONFIG.voxelPreReleaseDamping;
+  if (piece.mesh.position.y <= baseY + 0.001 && piece.vy < 0) piece.vy *= 0.22;
+  piece.avx *= STACK_PHYSICS_CONFIG.voxelPreReleaseAngularDamping;
+  piece.avy *= STACK_PHYSICS_CONFIG.voxelPreReleaseAngularDamping;
+  piece.avz *= STACK_PHYSICS_CONFIG.voxelPreReleaseAngularDamping;
+  clampVoxelMotion(piece);
+}
+
 function getVoxelSupportPiece(piece) {
   if (!piece?.isVoxelBuildingCube || piece.stackIndex <= 0) return null;
   return physicsStackPieces.find(other =>
@@ -7738,14 +7770,24 @@ function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
   if (piece.mesh && teeterT < 1) {
     const sway = leanAngle * (piece.stackIndex || 0) * (piece.stackHeight || 1) * 0.62;
     const impactHop = (piece.voxelImpactHop || 0) * Math.sin(teeterT * Math.PI);
-    piece.mesh.position.x = (piece.voxelBaseX ?? piece.x) + (piece.voxelLeanDirX || 0) * sway;
-    piece.mesh.position.y = (piece.voxelBaseY ?? piece.mesh.position.y) + impactHop;
-    piece.mesh.position.z = (piece.voxelBaseZ ?? piece.z) + (piece.voxelLeanDirZ || 0) * sway;
+    const swayX = (piece.voxelLeanDirX || 0) * sway;
+    const swayZ = (piece.voxelLeanDirZ || 0) * sway;
+    const lastSwayX = piece.voxelLastSwayX || 0;
+    const lastSwayY = piece.voxelLastSwayY || 0;
+    const lastSwayZ = piece.voxelLastSwayZ || 0;
+    piece.mesh.position.x += swayX - lastSwayX;
+    piece.mesh.position.y += impactHop - lastSwayY;
+    piece.mesh.position.z += swayZ - lastSwayZ;
+    piece.voxelLastSwayX = swayX;
+    piece.voxelLastSwayY = impactHop;
+    piece.voxelLastSwayZ = swayZ;
     piece.x = piece.mesh.position.x;
     piece.y = piece.mesh.position.y;
     piece.z = piece.mesh.position.z;
-    piece.mesh.rotation.z = -(piece.voxelLeanDirX || 0) * leanAngle * (0.5 + heightT);
-    piece.mesh.rotation.x = (piece.voxelLeanDirZ || 0) * leanAngle * (0.5 + heightT);
+    piece.mesh.rotation.z += (-(piece.voxelLeanDirX || 0) * leanAngle * (0.5 + heightT) - (piece.voxelLastLeanRotZ || 0));
+    piece.mesh.rotation.x += ((piece.voxelLeanDirZ || 0) * leanAngle * (0.5 + heightT) - (piece.voxelLastLeanRotX || 0));
+    piece.voxelLastLeanRotZ = -(piece.voxelLeanDirX || 0) * leanAngle * (0.5 + heightT);
+    piece.voxelLastLeanRotX = (piece.voxelLeanDirZ || 0) * leanAngle * (0.5 + heightT);
   }
 
   if (piece.stackIndex <= 0 && teeterT < 1) return false;
@@ -7762,6 +7804,11 @@ function ensureVoxelPieceReleased(piece, now = getGameplayNow()) {
 
   piece.stackReleased = true;
   piece.voxelTeeterReleasedAt = now;
+  piece.voxelLastSwayX = 0;
+  piece.voxelLastSwayY = 0;
+  piece.voxelLastSwayZ = 0;
+  piece.voxelLastLeanRotX = 0;
+  piece.voxelLastLeanRotZ = 0;
   const inheritedLean = randomBetween(STACK_PHYSICS_CONFIG.voxelLeanVelocityMin, STACK_PHYSICS_CONFIG.voxelLeanVelocityMax) * (0.35 + heightT);
   const impactOut = (piece.voxelImpactOut || 0) * (0.68 + heightT * 0.52);
   const impactUp = (piece.voxelImpactUp || 0) * (0.78 + heightT * 0.42);
@@ -8287,6 +8334,7 @@ function updatePhysicsStackPieces(dt) {
     if (piece.stackSettled) continue;
     const collapseElapsed = Math.max(0, (getGameplayNow() - (piece.stackCollapsedAt || 0)) / 1000);
     if (collapseElapsed < (piece.stackDelaySeconds || 0)) continue;
+    if (piece.isVoxelBuildingCube && !piece.stackReleased) updateUnreleasedVoxelMotion(piece, dt);
     if (piece.isVoxelBuildingCube && !ensureVoxelPieceReleased(piece)) continue;
     if (shouldSettleActiveVoxelAfterHoleMiss(piece)) {
       settleActiveVoxelAfterHoleMiss(piece);
