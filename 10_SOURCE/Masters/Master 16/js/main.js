@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
+import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
 function markBootStep(step) {
   try {
@@ -868,6 +869,8 @@ const stackCollapsePlans = new Map();
 let nextPhysicsStackId = 1;
 const voxelImpactAudioState = new Map();
 const skyscraperImpactAudioState = new Map();
+const governmentPhysics = new GovernmentPhysicsWorld();
+let nextGovernmentBuildingId = 1;
 
 const STACK_PHYSICS_CONFIG = Object.freeze({
   gravity: 25,
@@ -969,6 +972,7 @@ function makeObject(mesh, size, tier, value, pos) {
 }
 
 function removeObjectFromActiveLists(obj) {
+  if (obj.isGovernmentBuildingPiece) governmentPhysics.removeObject(obj);
   const objectIndex = objects.indexOf(obj);
   if (objectIndex >= 0) objects.splice(objectIndex, 1);
   const stackIndex = physicsStackPieces.indexOf(obj);
@@ -1366,6 +1370,98 @@ function makeMidBuilding(pos) {
   return firstPiece;
 }
 
+// --- Government building physics prototype ---
+// This building intentionally does not use the existing stack-physics system.
+// It is registered with GovernmentPhysicsWorld, which owns its body/collider
+// simulation and only syncs positions back to these render groups.
+function makeGovernmentBuilding(pos) {
+  const buildingId = nextGovernmentBuildingId++;
+  const pieceW = 1.85;
+  const pieceH = 1.1;
+  const pieceD = 1.85;
+  const gap = 0.045;
+  const colsX = 5;
+  const rowsZ = 4;
+  const floorsY = 5;
+  const totalValue = 420;
+  const totalW = colsX * pieceW + (colsX - 1) * gap;
+  const totalD = rowsZ * pieceD + (rowsZ - 1) * gap;
+  const limestoneMat = sharedBoxMat(0x8d948c);
+  const darkerMat = sharedBoxMat(0x6f7770);
+  const roofMat = sharedBoxMat(0x3f4744);
+  const windowMat = sharedBoxMat(0x111c22);
+  const sealMat = sharedBoxMat(0xd6b04d);
+  let firstPiece = null;
+
+  for (let floor = 0; floor < floorsY; floor++) {
+    for (let row = 0; row < rowsZ; row++) {
+      for (let col = 0; col < colsX; col++) {
+        const localX = -totalW / 2 + pieceW / 2 + col * (pieceW + gap);
+        const localZ = -totalD / 2 + pieceD / 2 + row * (pieceD + gap);
+        const y = pieceH / 2 + floor * (pieceH + gap);
+        const isTop = floor === floorsY - 1;
+        const isFront = row === rowsZ - 1;
+        const isBack = row === 0;
+        const isLeft = col === 0;
+        const isRight = col === colsX - 1;
+        const g = new THREE.Group();
+        const core = new THREE.Mesh(
+          new THREE.BoxGeometry(pieceW, pieceH, pieceD),
+          isTop ? roofMat : (floor % 2 === 0 ? limestoneMat : darkerMat)
+        );
+        core.position.y = 0;
+        g.add(core);
+
+        const addWindow = (geometry, x, y, z) => {
+          const pane = new THREE.Mesh(geometry, windowMat);
+          pane.position.set(x, y, z);
+          g.add(pane);
+        };
+        if (!isTop) {
+          if (isFront) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, pieceD / 2 + 0.023);
+          if (isBack) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, -pieceD / 2 - 0.023);
+          if (isRight) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), pieceW / 2 + 0.023, 0.06, 0);
+          if (isLeft) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), -pieceW / 2 - 0.023, 0.06, 0);
+        }
+        if (floor === 1 && isFront && col === Math.floor(colsX / 2)) {
+          const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), sealMat);
+          seal.rotation.x = Math.PI / 2;
+          seal.position.set(0, 0.1, pieceD / 2 + 0.05);
+          g.add(seal);
+        }
+
+        g.children.forEach(c => c.castShadow = true);
+        const x = pos.x + localX;
+        const z = pos.z + localZ;
+        const obj = makeObject(g, Math.max(pieceW, pieceD) * 0.48, 1, Math.max(2, Math.round(totalValue / (colsX * rowsZ * floorsY))), { x, y, z });
+        obj.isBuilding = true;
+        obj.buildingSize = 'government';
+        obj.isGovernmentBuildingPiece = true;
+        obj.govBuildingId = buildingId;
+        obj.govPhysicsActive = false;
+        obj.govPieceW = pieceW;
+        obj.govPieceH = pieceH;
+        obj.govPieceD = pieceD;
+        obj.govFloor = floor;
+        obj.govColX = col;
+        obj.govRowZ = row;
+        obj.govFloorsY = floorsY;
+        obj.govColsX = colsX;
+        obj.govRowsZ = rowsZ;
+        governmentPhysics.registerPiece(obj, {
+          buildingId,
+          half: { x: pieceW / 2, y: pieceH / 2, z: pieceD / 2 },
+          mass: 1 + floor * 0.04,
+          active: false,
+        });
+        if (!firstPiece) firstPiece = obj;
+      }
+    }
+  }
+
+  return firstPiece;
+}
+
 // --- Skyscraper ---
 function makeSkyscraper(pos) {
   const w = 7.4 + Math.random() * 1.2;
@@ -1528,11 +1624,15 @@ function populateCity() {
   const carCount = Math.max(8, Math.round(35 * (economy.carDensityMult || 1)));
   const parkAssetCount = Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
   const personChance = economy.personChanceMult || 1;
+  const governmentBlock = blockPositions[Math.floor(Math.random() * blockPositions.length)];
   // Place buildings on block corners/edges, small stuff around perimeter
   for (const bp of blockPositions) {
     // Decide block type
     const t = Math.random();
-    if (Math.random() > buildingBlockDensity) {
+    if (bp === governmentBlock) {
+      // Government building prototype: separate render and physics rules.
+      makeGovernmentBuilding({ x: bp.x, z: bp.z });
+    } else if (Math.random() > buildingBlockDensity) {
       // Scarcer difficulties leave more blocks lightly populated.
     } else if (t < skyscraperChance) {
       // Skyscraper block
@@ -1662,6 +1762,7 @@ function pruneObjectsToArena() {
     const obj = objects[i];
     if (Math.abs(obj.x) <= objectLimit && Math.abs(obj.z) <= objectLimit) continue;
     if (obj.mesh && obj.mesh.parent) scene.remove(obj.mesh);
+    if (obj.isGovernmentBuildingPiece) governmentPhysics.removeObject(obj);
     objects.splice(i, 1);
     const carIdx = movingCars.indexOf(obj);
     if (carIdx !== -1) movingCars.splice(carIdx, 1);
@@ -5413,6 +5514,7 @@ function restoreHoleState(h, state, now = performance.now()) {
 
 function getSavedObjectType(obj) {
   if (obj.isPowerup) return 'powerup';
+  if (obj.isGovernmentBuildingPiece) return 'governmentBuildingPiece';
   if (obj.isVoxelBuildingCube) return 'midVoxelCube';
   if (obj.isSkyscraperChunk) return 'skyscraperChunk';
   if (obj.isBuilding) return obj.buildingSize === 'mid' ? 'midBuilding' : obj.buildingSize === 'large' ? 'skyscraperChunk' : 'smallBuilding';
@@ -5556,6 +5658,27 @@ function serializeObjectState(obj) {
     addNumber('stackCollapsedRemainingMs', getRemainingMs(obj.stackCollapsedAt));
   }
 
+  if (obj.isGovernmentBuildingPiece) {
+    state.govBuildingId = obj.govBuildingId || 0;
+    addBool('govPhysicsActive', obj.govPhysicsActive);
+    addBool('govPhysicsSleeping', obj.govPhysicsSleeping);
+    addNumber('govPieceW', obj.govPieceW || 0);
+    addNumber('govPieceH', obj.govPieceH || 0);
+    addNumber('govPieceD', obj.govPieceD || 0);
+    addNumber('govFloor', obj.govFloor || 0);
+    addNumber('govColX', obj.govColX || 0);
+    addNumber('govRowZ', obj.govRowZ || 0);
+    addNumber('govFloorsY', obj.govFloorsY || 0);
+    addNumber('govColsX', obj.govColsX || 0);
+    addNumber('govRowsZ', obj.govRowsZ || 0);
+    addNumber('govVx', obj.govVx || 0);
+    addNumber('govVy', obj.govVy || 0);
+    addNumber('govVz', obj.govVz || 0);
+    addNumber('govAvx', obj.govAvx || 0);
+    addNumber('govAvy', obj.govAvy || 0);
+    addNumber('govAvz', obj.govAvz || 0);
+  }
+
   return state;
 }
 
@@ -5673,6 +5796,75 @@ function makeSavedMidVoxelCube(state) {
   return obj;
 }
 
+function makeSavedGovernmentBuildingPiece(state) {
+  const pieceW = Math.max(0.7, state.govPieceW || 1.85);
+  const pieceH = Math.max(0.5, state.govPieceH || 1.1);
+  const pieceD = Math.max(0.7, state.govPieceD || 1.85);
+  const isTop = state.govFloorsY > 0 && state.govFloor >= state.govFloorsY - 1;
+  const limestoneMat = sharedBoxMat((state.govFloor || 0) % 2 === 0 ? 0x8d948c : 0x6f7770);
+  const roofMat = sharedBoxMat(0x3f4744);
+  const windowMat = sharedBoxMat(0x111c22);
+  const sealMat = sharedBoxMat(0xd6b04d);
+  const g = new THREE.Group();
+  const core = new THREE.Mesh(new THREE.BoxGeometry(pieceW, pieceH, pieceD), isTop ? roofMat : limestoneMat);
+  core.position.y = 0;
+  g.add(core);
+
+  const colsX = state.govColsX || 5;
+  const rowsZ = state.govRowsZ || 4;
+  const col = state.govColX || 0;
+  const row = state.govRowZ || 0;
+  const addWindow = (geometry, x, y, z) => {
+    const pane = new THREE.Mesh(geometry, windowMat);
+    pane.position.set(x, y, z);
+    g.add(pane);
+  };
+  if (!isTop) {
+    if (row === rowsZ - 1) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, pieceD / 2 + 0.023);
+    if (row === 0) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, -pieceD / 2 - 0.023);
+    if (col === colsX - 1) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), pieceW / 2 + 0.023, 0.06, 0);
+    if (col === 0) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), -pieceW / 2 - 0.023, 0.06, 0);
+  }
+  if ((state.govFloor || 0) === 1 && row === rowsZ - 1 && col === Math.floor(colsX / 2)) {
+    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), sealMat);
+    seal.rotation.x = Math.PI / 2;
+    seal.position.set(0, 0.1, pieceD / 2 + 0.05);
+    g.add(seal);
+  }
+
+  g.children.forEach(c => c.castShadow = true);
+  const obj = makeObject(g, state.size || Math.max(pieceW, pieceD) * 0.48, state.tier || 1, state.value || 4, { x: state.x, y: state.y || pieceH / 2, z: state.z });
+  obj.isBuilding = true;
+  obj.buildingSize = 'government';
+  obj.isGovernmentBuildingPiece = true;
+  obj.govBuildingId = state.govBuildingId || nextGovernmentBuildingId++;
+  obj.govPhysicsActive = !!state.govPhysicsActive;
+  obj.govPhysicsSleeping = !!state.govPhysicsSleeping;
+  obj.govPieceW = pieceW;
+  obj.govPieceH = pieceH;
+  obj.govPieceD = pieceD;
+  obj.govFloor = state.govFloor || 0;
+  obj.govColX = col;
+  obj.govRowZ = row;
+  obj.govFloorsY = state.govFloorsY || 5;
+  obj.govColsX = colsX;
+  obj.govRowsZ = rowsZ;
+  nextGovernmentBuildingId = Math.max(nextGovernmentBuildingId, obj.govBuildingId + 1);
+  governmentPhysics.registerPiece(obj, {
+    buildingId: obj.govBuildingId,
+    half: { x: pieceW / 2, y: pieceH / 2, z: pieceD / 2 },
+    mass: 1 + obj.govFloor * 0.04,
+    active: obj.govPhysicsActive,
+    vx: state.govVx || 0,
+    vy: state.govVy || 0,
+    vz: state.govVz || 0,
+    avx: state.govAvx || 0,
+    avy: state.govAvy || 0,
+    avz: state.govAvz || 0,
+  });
+  return obj;
+}
+
 function makePowerupFromSavedState(state) {
   const powerup = POWERUP_BY_ID.get(state.powerupId) || POWERUP_CONFIGS[0];
   const obj = makeObject(makeAidPowerupMesh(powerup), state.size || 0.52, state.tier || 1, state.value || powerup.value, { x: state.x, y: state.y || 0.45, z: state.z });
@@ -5750,6 +5942,22 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
     obj.airDropTargetX = state.airDropTargetX || state.x;
     obj.airDropTargetZ = state.airDropTargetZ || state.z;
   }
+  if (obj.isGovernmentBuildingPiece) {
+    const body = governmentPhysics.getBody(obj);
+    if (body) {
+      body.position.x = state.x;
+      body.position.y = state.y || body.position.y;
+      body.position.z = state.z;
+      body.velocity.x = state.govVx || 0;
+      body.velocity.y = state.govVy || 0;
+      body.velocity.z = state.govVz || 0;
+      body.angular.x = state.govAvx || 0;
+      body.angular.y = state.govAvy || 0;
+      body.angular.z = state.govAvz || 0;
+      body.active = !!state.govPhysicsActive;
+      body.sleeping = !!state.govPhysicsSleeping;
+    }
+  }
   if (obj.physicsStackPiece) {
     Object.assign(obj, {
       stackKind: state.stackKind || obj.stackKind || '',
@@ -5807,6 +6015,7 @@ function restoreSavedObject(state, now = performance.now()) {
   else if (state.type === 'car') obj = makeCar({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'smallBuilding') obj = makeSmallBuilding({ x: state.x, z: state.z });
   else if (state.type === 'midVoxelCube') obj = makeSavedMidVoxelCube(state);
+  else if (state.type === 'governmentBuildingPiece') obj = makeSavedGovernmentBuildingPiece(state);
   else if (state.type === 'midBuilding') obj = makeMidBuilding({ x: state.x, z: state.z });
   else if (state.type === 'powerup') obj = makePowerupFromSavedState(state);
   else if (state.type === 'lamp') obj = makeLamp({ x: state.x, y: state.y || 0, z: state.z });
@@ -6269,6 +6478,7 @@ function tearDownWorld() {
   physicsStackPieces.length = 0;
   activePhysicsStackIds.clear();
   stackCollapsePlans.clear();
+  governmentPhysics.clear();
   movingCars.length = 0;
   movingPeople.length = 0;
   for (const fx of carCrashEffects) {
@@ -7475,8 +7685,30 @@ function getScreenDownGroundVector(anchorX, anchorZ) {
   return { x: sx / len, z: sz / len };
 }
 
+function activateGovernmentBuildingFromPiece(obj, h) {
+  if (!obj?.isGovernmentBuildingPiece || obj.govPhysicsActive) return false;
+  const activated = governmentPhysics.activateBuilding(obj.govBuildingId, {
+    x: h?.x ?? obj.x,
+    z: h?.z ?? obj.z,
+    radius: h?.radius ?? 0,
+  });
+  if (activated > 0) {
+    flashConsumed('Containment annex breached!', new THREE.Vector3(obj.x, 2.2, obj.z));
+    playVoxelCubeImpact(obj, 0.85);
+    return true;
+  }
+  return false;
+}
+
 // Helper: a hole consumes an object (triggered when it starts falling)
 function beginConsume(h, obj) {
+  if (obj.isGovernmentBuildingPiece && !obj.govPhysicsActive) {
+    activateGovernmentBuildingFromPiece(obj, h);
+    return;
+  }
+  if (obj.isGovernmentBuildingPiece && obj.govPhysicsActive) {
+    governmentPhysics.removeObject(obj);
+  }
   if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
     if (!activateVoxelBuildingColumn(obj, h)) return;
   } else if (obj.physicsStackPiece && !obj.isVoxelBuildingCube) {
@@ -10390,6 +10622,7 @@ function animate(frameNow = performance.now()) {
     consumeSoldiersByHoles();
     updateAidDrops(dt);
     updatePhysicsStackPieces(dt);
+    governmentPhysics.step(dt);
     updateJammedObjects(dt);
     updateWaveHudBanner();
 
@@ -10421,6 +10654,8 @@ function animate(frameNow = performance.now()) {
         beginConsume(eater, obj);
         continue;
       }
+
+      if (obj.isGovernmentBuildingPiece) continue;
 
       // Otherwise apply pull from closest hole that could eat it
       let puller = null;

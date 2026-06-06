@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 55;
+export const BUILD_SUB = 56;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.56',
+    summary: 'Government building physics prototype.',
+    changes: [
+      'Added a distinct government building that uses a separate fixed-step physics world instead of the existing building-collapse rules.',
+      'Government building pieces use collider separation, impulse response, gravity, friction, bounce, and sleep behavior for more natural object reactions.',
+      'The prototype appears once per rebuilt city and preserves its state through Endless save/load.'
+    ],
+  },
   {
     label: 'Master 16.55',
     summary: 'Endless score continuity and flat cube settle.',

@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.56 - 2026-06-06
+
+Government building physics prototype.
+
+- Added a distinct government building that uses a separate fixed-step physics world instead of the existing building-collapse rules.
+- Government building pieces use collider separation, impulse response, gravity, friction, bounce, and sleep behavior for more natural object reactions.
+- The prototype appears once per rebuilt city and preserves its state through Endless save/load.
+
 ## Master 16.52 - 2026-06-05
 
 Medium office impact jarring.
