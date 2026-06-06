@@ -1,6 +1,7 @@
 # ============================================================
 #  Downtown Devour - Project Updater
-#  Double-click this file any time Claude pushes new code.
+#  Right-click this file and choose "Run with PowerShell"
+#  any time Claude pushes new code.
 #  Injects Scripts, Scenes, and Shaders into your URP project.
 #  Does NOT touch ProjectSettings or Packages (preserves URP).
 # ============================================================
@@ -10,8 +11,9 @@ $REPO_NAME   = "holesy"
 $BRANCH      = "claude/happy-clarke-ORWAI"
 $PROJECT_SUB = "DowntownDevour"
 
-# ── Locate the Unity project ──────────────────────────────────────────────────
-# Searches common locations for a folder named DowntownDevour with an Assets subfolder.
+# -- Locate the Unity project -------------------------------------------------
+# Searches common locations for a folder named DowntownDevour with an Assets
+# subfolder.
 
 $SEARCH_ROOTS = @(
     "$env:USERPROFILE",
@@ -28,7 +30,7 @@ function Find-Project {
     return $null
 }
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 Clear-Host
 Write-Host ""
@@ -37,6 +39,9 @@ Write-Host "  ===================================" -ForegroundColor Cyan
 Write-Host ""
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+# Suppress the PS 5.1 progress bar that makes downloads 10x slower
+$ProgressPreference = "SilentlyContinue"
 
 $INSTALL_DIR = Find-Project
 
@@ -57,13 +62,14 @@ if (-not $INSTALL_DIR) {
 Write-Host "  Project location: $INSTALL_DIR" -ForegroundColor Green
 Write-Host ""
 
-# ── Download latest ZIP ───────────────────────────────────────────────────────
+# -- Download latest ZIP ------------------------------------------------------
 
 $ZIP_URL  = "https://github.com/$REPO_OWNER/$REPO_NAME/archive/refs/heads/$BRANCH.zip"
 $TEMP_ZIP = "$env:TEMP\downtown-devour-update.zip"
 $TEMP_DIR = "$env:TEMP\downtown-devour-extract"
 
 Write-Host "  Downloading latest code from GitHub..." -ForegroundColor Yellow
+Write-Host "  (This may take a minute depending on your connection...)" -ForegroundColor Gray
 
 try {
     Invoke-WebRequest -Uri $ZIP_URL -OutFile $TEMP_ZIP -UseBasicParsing
@@ -97,8 +103,9 @@ if (-not (Test-Path $SOURCE)) {
     exit 1
 }
 
-# ── Inject code and shaders only (never touch ProjectSettings or Packages) ───
-# This preserves the URP pipeline assets Unity created when you made the project.
+# -- Inject code and shaders only ---------------------------------------------
+# Never touch ProjectSettings or Packages - preserve the URP pipeline assets
+# Unity created when the project was first opened.
 
 Write-Host "  Copying scripts and shaders into project..." -ForegroundColor Yellow
 
@@ -121,12 +128,12 @@ foreach ($sub in $INJECT_SUBFOLDERS) {
     }
 }
 
-# ── Clean up ──────────────────────────────────────────────────────────────────
+# -- Clean up -----------------------------------------------------------------
 
 Remove-Item $TEMP_ZIP -Force -ErrorAction SilentlyContinue
 Remove-Item $TEMP_DIR -Recurse -Force -ErrorAction SilentlyContinue
 
-# ── Done ──────────────────────────────────────────────────────────────────────
+# -- Done ---------------------------------------------------------------------
 
 Write-Host ""
 Write-Host "  All done!" -ForegroundColor Green
