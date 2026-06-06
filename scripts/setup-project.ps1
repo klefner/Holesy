@@ -15,7 +15,7 @@ $INSTALL_ROOT = "C:\Users\KentLefner"
 $UNITY_VER    = "6000.1.14f1"
 $TEMPLATE     = "com.unity.template.universal-3d"
 
-# ─────────────────────────────────────────────────────────────────────────────
+# -----------------------------------------------------------------------------
 
 Clear-Host
 Write-Host ""
@@ -26,7 +26,7 @@ Write-Host ""
 # Force TLS 1.2 for HTTPS downloads
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# ── Step 1: Find Unity Hub ────────────────────────────────────────────────────
+# -- Step 1: Find Unity Hub ---------------------------------------------------
 
 Write-Host "  [1/5] Locating Unity Hub..." -ForegroundColor Yellow
 
@@ -55,7 +55,7 @@ if (-not $HUB_EXE) {
 
 Write-Host "  Unity Hub found: $HUB_EXE" -ForegroundColor Green
 
-# ── Step 2: Find Unity 6 editor ──────────────────────────────────────────────
+# -- Step 2: Find Unity 6 editor ----------------------------------------------
 
 Write-Host ""
 Write-Host "  [2/5] Locating Unity $UNITY_VER editor..." -ForegroundColor Yellow
@@ -74,11 +74,11 @@ foreach ($root in $EDITOR_ROOTS) {
 if (-not $UNITY_EXE) {
     Write-Host ""
     Write-Host "  Unity $UNITY_VER was not found." -ForegroundColor Yellow
-    Write-Host "  Please make sure Unity $UNITY_VER (LTS) is installed via Unity Hub." -ForegroundColor Yellow
-    Write-Host "  Open Unity Hub -> Installs -> Install Editor -> Official Releases -> $UNITY_VER" -ForegroundColor Gray
+    Write-Host "  Make sure Unity $UNITY_VER (LTS) is installed via Unity Hub." -ForegroundColor Yellow
+    Write-Host "  Open Unity Hub -> Installs -> Install Editor -> $UNITY_VER" -ForegroundColor Gray
     Write-Host ""
-    Write-Host "  If Unity IS installed but in a different folder, enter the path to Unity.exe:" -ForegroundColor Yellow
-    Write-Host "  (Or press Enter to skip — you can still open the project manually)" -ForegroundColor Gray
+    Write-Host "  If Unity IS installed elsewhere, enter the path to Unity.exe:" -ForegroundColor Yellow
+    Write-Host "  (Or just press Enter to skip - you can open the project manually)" -ForegroundColor Gray
     $manual = Read-Host "  Path to Unity.exe"
     if ($manual -and (Test-Path $manual)) { $UNITY_EXE = $manual }
 }
@@ -89,7 +89,7 @@ if ($UNITY_EXE) {
     Write-Host "  Continuing without Unity path (you will open the project manually)." -ForegroundColor Yellow
 }
 
-# ── Step 3: Create the Unity project ─────────────────────────────────────────
+# -- Step 3: Create the Unity project -----------------------------------------
 
 Write-Host ""
 Write-Host "  [3/5] Creating Unity project '$PROJECT_NAME'..." -ForegroundColor Yellow
@@ -99,13 +99,9 @@ $PROJECT_DIR = Join-Path $INSTALL_ROOT $PROJECT_NAME
 if (Test-Path (Join-Path $PROJECT_DIR "Assets")) {
     Write-Host "  Project already exists at: $PROJECT_DIR" -ForegroundColor Green
     Write-Host "  Skipping project creation, will only update game files." -ForegroundColor Gray
-    $SKIP_CREATE = $true
 } else {
-    $SKIP_CREATE = $false
-
-    # Try Unity Hub headless project creation
     Write-Host "  Attempting Unity Hub headless create (this can take 2-5 minutes)..." -ForegroundColor Gray
-    Write-Host "  A Unity splash screen may briefly appear — that is normal." -ForegroundColor Gray
+    Write-Host "  A Unity splash screen may briefly appear - that is normal." -ForegroundColor Gray
     Write-Host ""
 
     $hubArgs = @(
@@ -118,20 +114,16 @@ if (Test-Path (Join-Path $PROJECT_DIR "Assets")) {
     )
 
     try {
-        $proc = Start-Process -FilePath $HUB_EXE -ArgumentList $hubArgs `
-                              -Wait -PassThru -WindowStyle Normal
-        $exitCode = $proc.ExitCode
+        Start-Process -FilePath $HUB_EXE -ArgumentList $hubArgs -Wait -PassThru -WindowStyle Normal | Out-Null
     } catch {
-        $exitCode = -1
+        Write-Host "  Hub CLI call failed, continuing to fallback..." -ForegroundColor Yellow
     }
 
-    # Verify the project was actually created
     if (-not (Test-Path (Join-Path $PROJECT_DIR "Assets"))) {
         Write-Host ""
         Write-Host "  Unity Hub headless create did not produce a project folder." -ForegroundColor Yellow
-        Write-Host "  Falling back: creating minimal project structure manually..." -ForegroundColor Yellow
+        Write-Host "  Creating minimal project structure manually..." -ForegroundColor Yellow
 
-        # Minimal URP project scaffold
         New-Item -ItemType Directory -Path "$PROJECT_DIR\Assets"           -Force | Out-Null
         New-Item -ItemType Directory -Path "$PROJECT_DIR\Assets\Scenes"    -Force | Out-Null
         New-Item -ItemType Directory -Path "$PROJECT_DIR\Assets\Scripts"   -Force | Out-Null
@@ -139,36 +131,30 @@ if (Test-Path (Join-Path $PROJECT_DIR "Assets")) {
         New-Item -ItemType Directory -Path "$PROJECT_DIR\Packages"         -Force | Out-Null
         New-Item -ItemType Directory -Path "$PROJECT_DIR\ProjectSettings"  -Force | Out-Null
 
-        # Packages/manifest.json — requests URP and TextMeshPro
-        $manifest = @"
-{
+        $manifest = '{
   "dependencies": {
     "com.unity.render-pipelines.universal": "17.0.3",
     "com.unity.textmeshpro": "3.0.9",
     "com.unity.modules.physics": "1.0.0",
     "com.unity.modules.ui": "1.0.0",
-    "com.unity.modules.audio": "1.0.0",
-    "com.unity.modules.imageconversion": "1.0.0"
+    "com.unity.modules.audio": "1.0.0"
   }
-}
-"@
+}'
         Set-Content -Path "$PROJECT_DIR\Packages\manifest.json" -Value $manifest -Encoding UTF8
 
-        # ProjectSettings/ProjectVersion.txt
-        $version = "m_EditorVersion: $UNITY_VER`nm_EditorVersionWithRevision: $UNITY_VER (default)`n"
+        $version = "m_EditorVersion: $UNITY_VER`r`nm_EditorVersionWithRevision: $UNITY_VER (default)`r`n"
         Set-Content -Path "$PROJECT_DIR\ProjectSettings\ProjectVersion.txt" -Value $version -Encoding UTF8
 
         Write-Host "  Minimal project structure created." -ForegroundColor Green
         Write-Host ""
-        Write-Host "  IMPORTANT: When you open this project in Unity Hub for the first time," -ForegroundColor Cyan
-        Write-Host "  Unity will download URP packages automatically (requires internet)." -ForegroundColor Cyan
-        Write-Host "  This takes 3-10 minutes and only happens once." -ForegroundColor Cyan
+        Write-Host "  NOTE: When you open this project in Unity Hub for the first time," -ForegroundColor Cyan
+        Write-Host "  Unity will download URP packages automatically (3-10 minutes, one time only)." -ForegroundColor Cyan
     } else {
         Write-Host "  Project created via Unity Hub." -ForegroundColor Green
     }
 }
 
-# ── Step 4: Inject game files from GitHub ─────────────────────────────────────
+# -- Step 4: Inject game files from GitHub ------------------------------------
 
 Write-Host ""
 Write-Host "  [4/5] Downloading latest game files from GitHub..." -ForegroundColor Yellow
@@ -183,7 +169,6 @@ try {
     Write-Host ""
     Write-Host "  ERROR: Download failed. Check your internet connection." -ForegroundColor Red
     Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host ""
     Read-Host "  Press Enter to close"
     exit 1
 }
@@ -209,7 +194,6 @@ if (-not (Test-Path $SOURCE)) {
     exit 1
 }
 
-# Only inject Scripts, Scenes, Shaders — never overwrite URP pipeline assets
 $INJECT_SUBFOLDERS = @("Assets\Scripts", "Assets\Scenes", "Assets\Shaders")
 
 foreach ($sub in $INJECT_SUBFOLDERS) {
@@ -224,30 +208,25 @@ foreach ($sub in $INJECT_SUBFOLDERS) {
     }
 }
 
-# Clean up temp files
 Remove-Item $TEMP_ZIP -Force -ErrorAction SilentlyContinue
 Remove-Item $TEMP_DIR -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host "  Game files installed." -ForegroundColor Green
 
-# ── Step 5: Add project to Unity Hub and open it ─────────────────────────────
+# -- Step 5: Open Unity Hub ---------------------------------------------------
 
 Write-Host ""
 Write-Host "  [5/5] Opening Unity Hub..." -ForegroundColor Yellow
 
-# Register the project with Unity Hub (Hub automatically detects projects added this way)
 $addArgs = @("--", "--headless", "add-project", "--path", $PROJECT_DIR)
 try {
     Start-Process -FilePath $HUB_EXE -ArgumentList $addArgs -Wait -WindowStyle Hidden
-} catch {
-    # Non-fatal — user can add manually
-}
+} catch { }
 
-# Open Unity Hub so the user can click the project
 Start-Process -FilePath $HUB_EXE
 Write-Host "  Unity Hub launched." -ForegroundColor Green
 
-# ── Done ──────────────────────────────────────────────────────────────────────
+# -- Done ---------------------------------------------------------------------
 
 Write-Host ""
 Write-Host "  ============================================================" -ForegroundColor Cyan
@@ -257,11 +236,11 @@ Write-Host "  ============================================================" -For
 Write-Host ""
 Write-Host "  Next steps:" -ForegroundColor Cyan
 Write-Host "  1. In Unity Hub, click 'DowntownDevour' to open it." -ForegroundColor White
-Write-Host "     (If it's not listed, click Add -> browse to the folder above)" -ForegroundColor Gray
+Write-Host "     (If not listed: click Add -> browse to the folder above)" -ForegroundColor Gray
 Write-Host "  2. Wait for Unity to import everything (progress bar at bottom)." -ForegroundColor White
 Write-Host "     First open takes 3-10 minutes. Subsequent opens are fast." -ForegroundColor Gray
 Write-Host "  3. In Unity: File -> Open Scene -> Assets/Scenes/Game" -ForegroundColor White
-Write-Host "  4. Press the Play button (triangle at the top)." -ForegroundColor White
+Write-Host "  4. Press the Play button (triangle at top)." -ForegroundColor White
 Write-Host "  5. Move your hole with the mouse or WASD." -ForegroundColor White
 Write-Host ""
 Write-Host "  For future code updates, run update-project.ps1 instead." -ForegroundColor Gray
