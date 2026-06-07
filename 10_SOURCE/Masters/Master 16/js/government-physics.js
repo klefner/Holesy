@@ -22,6 +22,10 @@ export const GOVERNMENT_PHYSICS_CONFIG = Object.freeze({
   activationLiftMin: 1.0,
   activationLiftMax: 3.8,
   activationJitter: 1.4,
+  activationColumnBoost: 1.55,
+  activationNeighborBoost: 0.9,
+  activationHeightLift: 0.42,
+  activationShockJitter: 0.85,
   impactSpin: 2.8,
 });
 
@@ -114,6 +118,23 @@ export class GovernmentPhysicsWorld {
   activateBuilding(buildingId, source = null) {
     const sourceX = source?.x ?? 0;
     const sourceZ = source?.z ?? 0;
+    let touched = null;
+    let touchedDist = Infinity;
+    for (const body of this.bodies) {
+      if (body.buildingId !== buildingId || body.object?.consumed) continue;
+      const dx = body.position.x - sourceX;
+      const dz = body.position.z - sourceZ;
+      const dist = dx * dx + dz * dz;
+      if (dist < touchedDist) {
+        touched = body;
+        touchedDist = dist;
+      }
+    }
+    const touchedObj = touched?.object || null;
+    const touchedColX = touchedObj?.govColX ?? null;
+    const touchedRowZ = touchedObj?.govRowZ ?? null;
+    const touchedX = touched?.position.x ?? sourceX;
+    const touchedZ = touched?.position.z ?? sourceZ;
     let activated = 0;
     for (const body of this.bodies) {
       if (body.buildingId !== buildingId || body.object?.consumed) continue;
@@ -121,14 +142,29 @@ export class GovernmentPhysicsWorld {
       body.sleeping = false;
       body.sleepTimer = 0;
       body.object.govPhysicsActive = true;
-      const away = normalize2(body.position.x - sourceX, body.position.z - sourceZ);
-      const impulse = randomBetween(this.config.activationImpulseMin, this.config.activationImpulseMax);
-      body.velocity.x += away.x * impulse + randomBetween(-this.config.activationJitter, this.config.activationJitter);
-      body.velocity.z += away.z * impulse + randomBetween(-this.config.activationJitter, this.config.activationJitter);
-      body.velocity.y += randomBetween(this.config.activationLiftMin, this.config.activationLiftMax);
-      body.angular.x += randomBetween(-this.config.impactSpin, this.config.impactSpin);
-      body.angular.y += randomBetween(-this.config.impactSpin, this.config.impactSpin);
-      body.angular.z += randomBetween(-this.config.impactSpin, this.config.impactSpin);
+      const obj = body.object || {};
+      const gridDx = touchedColX == null ? 0 : Math.abs((obj.govColX ?? touchedColX) - touchedColX);
+      const gridDz = touchedRowZ == null ? 0 : Math.abs((obj.govRowZ ?? touchedRowZ) - touchedRowZ);
+      const gridDist = gridDx + gridDz;
+      const directColumn = gridDist === 0;
+      const neighbor = gridDist <= 2;
+      const awayFromHole = normalize2(body.position.x - sourceX, body.position.z - sourceZ);
+      const awayFromColumn = normalize2(body.position.x - touchedX, body.position.z - touchedZ);
+      const shockDir = directColumn
+        ? awayFromHole
+        : normalize2(awayFromHole.x * 0.58 + awayFromColumn.x * 0.42, awayFromHole.z * 0.58 + awayFromColumn.z * 0.42);
+      const floorRatio = Math.max(0, (obj.govFloor || 0) / Math.max(1, (obj.govFloorsY || 1) - 1));
+      const distanceFalloff = directColumn ? this.config.activationColumnBoost : Math.max(0.34, 1 - gridDist * 0.18);
+      const neighborBoost = neighbor ? this.config.activationNeighborBoost : 0.56;
+      const impulse = randomBetween(this.config.activationImpulseMin, this.config.activationImpulseMax) * distanceFalloff * neighborBoost;
+      const jitter = this.config.activationJitter + this.config.activationShockJitter * (directColumn ? 1.25 : 0.85);
+      body.velocity.x += shockDir.x * impulse + randomBetween(-jitter, jitter);
+      body.velocity.z += shockDir.z * impulse + randomBetween(-jitter, jitter);
+      body.velocity.y += randomBetween(this.config.activationLiftMin, this.config.activationLiftMax) * (directColumn ? 1.2 : 0.85) + floorRatio * this.config.activationHeightLift;
+      const spinScale = directColumn ? 1.18 : (neighbor ? 0.95 : 0.7);
+      body.angular.x += randomBetween(-this.config.impactSpin, this.config.impactSpin) * spinScale;
+      body.angular.y += randomBetween(-this.config.impactSpin, this.config.impactSpin) * spinScale;
+      body.angular.z += randomBetween(-this.config.impactSpin, this.config.impactSpin) * spinScale;
       activated++;
     }
     return activated;

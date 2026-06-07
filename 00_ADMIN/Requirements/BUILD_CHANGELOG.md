@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.59 - 2026-06-07
+
+Government building column-shock collapse.
+
+- Government building breaches now identify the touched column and give it the strongest upward/outward shock.
+- Neighboring government-building cubes receive softer randomized impulses so collisions create different collapse patterns each time.
+- Preserves the separate government-building physics path while making its collapse effect the preferred reference for future building work.
+
 ## Master 16.58 - 2026-06-07
 
 Government building touch-crash fix.

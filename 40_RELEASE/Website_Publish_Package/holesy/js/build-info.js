@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 58;
+export const BUILD_SUB = 59;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.59',
+    summary: 'Government building column-shock collapse.',
+    changes: [
+      'Government building breaches now identify the touched column and give it the strongest upward/outward shock.',
+      'Neighboring government-building cubes receive softer randomized impulses so collisions create different collapse patterns each time.',
+      'Preserves the separate government-building physics path while making its collapse effect the preferred reference for future building work.'
+    ],
+  },
   {
     label: 'Master 16.58',
     summary: 'Government building touch-crash fix.',
