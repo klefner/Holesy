@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.57 - 2026-06-07
+
+Government building visibility pass.
+
+- Changed government buildings from civic gray to a high-contrast spy/tuxedo palette so they are immediately distinguishable from offices and skyscrapers.
+- Added black, white, charcoal, and silver facade details, including shirt-and-bowtie-style front pieces and bright roof striping.
+- Saved government building pieces now restore with the same distinct visual identity.
+
 ## Master 16.56 - 2026-06-06
 
 Government building physics prototype.

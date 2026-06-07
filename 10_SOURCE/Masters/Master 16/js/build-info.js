@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 56;
+export const BUILD_SUB = 57;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.57',
+    summary: 'Government building visibility pass.',
+    changes: [
+      'Changed government buildings from civic gray to a high-contrast spy/tuxedo palette so they are immediately distinguishable from offices and skyscrapers.',
+      'Added black, white, charcoal, and silver facade details, including shirt-and-bowtie-style front pieces and bright roof striping.',
+      'Saved government building pieces now restore with the same distinct visual identity.'
+    ],
+  },
   {
     label: 'Master 16.56',
     summary: 'Government building physics prototype.',

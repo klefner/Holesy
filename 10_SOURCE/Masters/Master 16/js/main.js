@@ -1386,11 +1386,11 @@ function makeGovernmentBuilding(pos) {
   const totalValue = 420;
   const totalW = colsX * pieceW + (colsX - 1) * gap;
   const totalD = rowsZ * pieceD + (rowsZ - 1) * gap;
-  const limestoneMat = sharedBoxMat(0x8d948c);
-  const darkerMat = sharedBoxMat(0x6f7770);
-  const roofMat = sharedBoxMat(0x3f4744);
-  const windowMat = sharedBoxMat(0x111c22);
-  const sealMat = sharedBoxMat(0xd6b04d);
+  const tuxBlackMat = sharedBoxMat(0x050609);
+  const tuxCharcoalMat = sharedBoxMat(0x17191f);
+  const tuxWhiteMat = sharedBoxMat(0xf5f0e6);
+  const tuxSilverMat = sharedBoxMat(0xbec3c7);
+  const windowMat = sharedBoxMat(0x050609);
   let firstPiece = null;
 
   for (let floor = 0; floor < floorsY; floor++) {
@@ -1405,9 +1405,10 @@ function makeGovernmentBuilding(pos) {
         const isLeft = col === 0;
         const isRight = col === colsX - 1;
         const g = new THREE.Group();
+        const bodyMat = isTop ? tuxBlackMat : (floor % 2 === 0 ? tuxWhiteMat : tuxCharcoalMat);
         const core = new THREE.Mesh(
           new THREE.BoxGeometry(pieceW, pieceH, pieceD),
-          isTop ? roofMat : (floor % 2 === 0 ? limestoneMat : darkerMat)
+          bodyMat
         );
         core.position.y = 0;
         g.add(core);
@@ -1422,12 +1423,29 @@ function makeGovernmentBuilding(pos) {
           if (isBack) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, -pieceD / 2 - 0.023);
           if (isRight) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), pieceW / 2 + 0.023, 0.06, 0);
           if (isLeft) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), -pieceW / 2 - 0.023, 0.06, 0);
+          if (floor % 2 === 1 && isFront) {
+            const shirt = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.18, pieceH * 0.82, 0.04), tuxWhiteMat);
+            shirt.position.set(0, 0, pieceD / 2 + 0.052);
+            g.add(shirt);
+            const bowLeft = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.16, pieceH * 0.12, 0.05), tuxBlackMat);
+            const bowRight = bowLeft.clone();
+            bowLeft.position.set(-pieceW * 0.11, pieceH * 0.22, pieceD / 2 + 0.082);
+            bowRight.position.set(pieceW * 0.11, pieceH * 0.22, pieceD / 2 + 0.082);
+            bowLeft.rotation.z = 0.45;
+            bowRight.rotation.z = -0.45;
+            g.add(bowLeft, bowRight);
+          }
         }
         if (floor === 1 && isFront && col === Math.floor(colsX / 2)) {
-          const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), sealMat);
+          const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), tuxSilverMat);
           seal.rotation.x = Math.PI / 2;
           seal.position.set(0, 0.1, pieceD / 2 + 0.05);
           g.add(seal);
+        }
+        if (isTop) {
+          const roofStripe = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.84, 0.055, pieceD * 0.18), tuxSilverMat);
+          roofStripe.position.y = pieceH / 2 + 0.031;
+          g.add(roofStripe);
         }
 
         g.children.forEach(c => c.castShadow = true);
@@ -5801,12 +5819,14 @@ function makeSavedGovernmentBuildingPiece(state) {
   const pieceH = Math.max(0.5, state.govPieceH || 1.1);
   const pieceD = Math.max(0.7, state.govPieceD || 1.85);
   const isTop = state.govFloorsY > 0 && state.govFloor >= state.govFloorsY - 1;
-  const limestoneMat = sharedBoxMat((state.govFloor || 0) % 2 === 0 ? 0x8d948c : 0x6f7770);
-  const roofMat = sharedBoxMat(0x3f4744);
+  const tuxBlackMat = sharedBoxMat(0x050609);
+  const tuxCharcoalMat = sharedBoxMat(0x17191f);
+  const tuxWhiteMat = sharedBoxMat(0xf5f0e6);
+  const tuxSilverMat = sharedBoxMat(0xbec3c7);
   const windowMat = sharedBoxMat(0x111c22);
-  const sealMat = sharedBoxMat(0xd6b04d);
   const g = new THREE.Group();
-  const core = new THREE.Mesh(new THREE.BoxGeometry(pieceW, pieceH, pieceD), isTop ? roofMat : limestoneMat);
+  const bodyMat = isTop ? tuxBlackMat : ((state.govFloor || 0) % 2 === 0 ? tuxWhiteMat : tuxCharcoalMat);
+  const core = new THREE.Mesh(new THREE.BoxGeometry(pieceW, pieceH, pieceD), bodyMat);
   core.position.y = 0;
   g.add(core);
 
@@ -5824,12 +5844,29 @@ function makeSavedGovernmentBuildingPiece(state) {
     if (row === 0) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, -pieceD / 2 - 0.023);
     if (col === colsX - 1) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), pieceW / 2 + 0.023, 0.06, 0);
     if (col === 0) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), -pieceW / 2 - 0.023, 0.06, 0);
+    if ((state.govFloor || 0) % 2 === 1 && row === rowsZ - 1) {
+      const shirt = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.18, pieceH * 0.82, 0.04), tuxWhiteMat);
+      shirt.position.set(0, 0, pieceD / 2 + 0.052);
+      g.add(shirt);
+      const bowLeft = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.16, pieceH * 0.12, 0.05), tuxBlackMat);
+      const bowRight = bowLeft.clone();
+      bowLeft.position.set(-pieceW * 0.11, pieceH * 0.22, pieceD / 2 + 0.082);
+      bowRight.position.set(pieceW * 0.11, pieceH * 0.22, pieceD / 2 + 0.082);
+      bowLeft.rotation.z = 0.45;
+      bowRight.rotation.z = -0.45;
+      g.add(bowLeft, bowRight);
+    }
   }
   if ((state.govFloor || 0) === 1 && row === rowsZ - 1 && col === Math.floor(colsX / 2)) {
-    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), sealMat);
+    const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.04, 16), tuxSilverMat);
     seal.rotation.x = Math.PI / 2;
     seal.position.set(0, 0.1, pieceD / 2 + 0.05);
     g.add(seal);
+  }
+  if (isTop) {
+    const roofStripe = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.84, 0.055, pieceD * 0.18), tuxSilverMat);
+    roofStripe.position.y = pieceH / 2 + 0.031;
+    g.add(roofStripe);
   }
 
   g.children.forEach(c => c.castShadow = true);
