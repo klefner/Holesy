@@ -7731,7 +7731,7 @@ function activateGovernmentBuildingFromPiece(obj, h) {
   });
   if (activated > 0) {
     flashConsumed('Containment annex breached!', new THREE.Vector3(obj.x, 2.2, obj.z));
-    playVoxelCubeImpact(obj, 0.85);
+    playVoxelCubeImpactSound(obj, 0.85);
     return true;
   }
   return false;

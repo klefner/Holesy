@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 57;
+export const BUILD_SUB = 58;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.58',
+    summary: 'Government building touch-crash fix.',
+    changes: [
+      'Fixed the first-contact government building activation crash caused by calling a non-existent impact-sound helper.',
+      'Government building breach feedback now uses the existing budgeted voxel impact sound gateway.',
+      'Preserves the separate government-building physics and spy/tuxedo visual treatment.'
+    ],
+  },
   {
     label: 'Master 16.57',
     summary: 'Government building visibility pass.',

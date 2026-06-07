@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.58 - 2026-06-07
+
+Government building touch-crash fix.
+
+- Fixed the first-contact government building activation crash caused by calling a non-existent impact-sound helper.
+- Government building breach feedback now uses the existing budgeted voxel impact sound gateway.
+- Preserves the separate government-building physics and spy/tuxedo visual treatment.
+
 ## Master 16.57 - 2026-06-07
 
 Government building visibility pass.
