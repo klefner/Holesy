@@ -107,14 +107,14 @@ public class GameManager : MonoBehaviour
         AllHoles.Clear();
 
         Player = HoleFactory.CreatePlayer(new Color(0.30f, 0.60f, 1.00f), Vector3.zero);
-        AllHoles.Add(Player);
+        AllHoles.Add(Player.Hole);
 
         var cfgs = AIConfig.Defaults();
         Vector3[] aiPos = { new Vector3(-40, 0, -40), new Vector3(40, 0, 40), new Vector3(-40, 0, 40) };
         for (int i = 0; i < cfgs.Length; i++)
         {
             var ai = HoleFactory.CreateAI(cfgs[i], aiPos[i]);
-            AllHoles.Add(ai);
+            AllHoles.Add(ai.Hole);
         }
 
         Camera.main.GetComponent<GameCamera>().Target = Player.Hole.transform;
