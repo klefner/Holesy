@@ -72,15 +72,7 @@ public class GameManager : MonoBehaviour
 
     void SetupLighting()
     {
-        RenderSettings.ambientLight = new Color(0.55f, 0.58f, 0.68f);
-
-        var sunGO = new GameObject("Sun");
-        var sun   = sunGO.AddComponent<Light>();
-        sun.type      = LightType.Directional;
-        sun.intensity = 1.2f;
-        sun.color     = new Color(1f, 0.95f, 0.85f);
-        sun.shadows   = LightShadows.Soft;
-        sunGO.transform.rotation = Quaternion.Euler(50f, -28f, 0f);
+        LightingSetup.ApplyDiablo();
     }
 
     void SetupCamera()
@@ -95,9 +87,10 @@ public class GameManager : MonoBehaviour
 
         var cam = Camera.main;
         cam.clearFlags      = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color(0.05f, 0.05f, 0.08f); // dark void — shows through the stencil hole
+        cam.backgroundColor = new Color(0.01f, 0.005f, 0.02f); // deep void — near-black purple, shows through stencil hole
         cam.farClipPlane    = 600f;
         cam.gameObject.AddComponent<GameCamera>();
+        cam.gameObject.AddComponent<DiabloPostProcessing>();
     }
 
     // ── Hole spawning ─────────────────────────────────────────────────────────

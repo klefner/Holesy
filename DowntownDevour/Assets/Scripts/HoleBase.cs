@@ -17,6 +17,7 @@ public class HoleBase : MonoBehaviour
     private Transform _disc;
     private Renderer  _rimRenderer;
     private Material  _rimMat;
+    private Light     _rimLight;
     private float     _flashTimer;
     private const float FLASH_DUR = 0.15f;
 
@@ -58,13 +59,25 @@ public class HoleBase : MonoBehaviour
         mf.sharedMesh = GetRingMesh();
 
         _rimMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        _rimMat.SetColor("_BaseColor", HoleColor);
-        _rimMat.SetFloat("_Smoothness", 0.65f);
-        _rimMat.SetFloat("_Metallic",   0.25f);
-        _rimMat.SetColor("_EmissionColor", HoleColor * 0.55f);
+        _rimMat.SetColor("_BaseColor", HoleColor * 0.5f);
+        _rimMat.SetFloat("_Smoothness", 0.80f);
+        _rimMat.SetFloat("_Metallic",   0.40f);
+        _rimMat.SetColor("_EmissionColor", HoleColor * 4.0f); // bright glow for Diablo bloom
         _rimMat.EnableKeyword("_EMISSION");
         _rimMat.renderQueue = 2100;
         _rimRenderer.material = _rimMat;
+
+        // Point light makes the hole cast colored light on surrounding city — the
+        // Diablo "walking light source" effect. Range scales with hole size in Update.
+        var rimLightGO = new GameObject("HoleLight");
+        rimLightGO.transform.SetParent(transform, false);
+        rimLightGO.transform.localPosition = Vector3.up * 0.5f;
+        _rimLight = rimLightGO.AddComponent<Light>();
+        _rimLight.type      = LightType.Point;
+        _rimLight.color     = HoleColor;
+        _rimLight.intensity = 2.5f;
+        _rimLight.range     = 8f;
+        _rimLight.shadows   = LightShadows.None;
 
         UpdateVisualScale();
     }
@@ -96,6 +109,9 @@ public class HoleBase : MonoBehaviour
 
         if (_rimRenderer != null)
             _rimRenderer.transform.localScale = new Vector3(Radius * 2f, 1f, Radius * 2f);
+
+        if (_rimLight != null)
+            _rimLight.range = Radius * 2.5f + 6f;
     }
 
     // ── Movement API ──────────────────────────────────────────────────────────
@@ -125,13 +141,15 @@ public class HoleBase : MonoBehaviour
         if (_rimMat != null)
         {
             _rimMat.SetColor("_BaseColor",     Color.red);
-            _rimMat.SetColor("_EmissionColor", Color.red * 0.6f);
+            _rimMat.SetColor("_EmissionColor", Color.red * 4.0f);
         }
+        if (_rimLight != null) _rimLight.color = Color.red;
     }
 
     public void Die()
     {
         Alive = false;
+        if (_rimLight != null) _rimLight.enabled = false;
         gameObject.SetActive(false);
     }
 
@@ -139,9 +157,10 @@ public class HoleBase : MonoBehaviour
     {
         if (_rimMat != null)
         {
-            _rimMat.SetColor("_BaseColor",     HoleColor);
-            _rimMat.SetColor("_EmissionColor", HoleColor * 0.55f);
+            _rimMat.SetColor("_BaseColor",     HoleColor * 0.5f);
+            _rimMat.SetColor("_EmissionColor", HoleColor * 4.0f);
         }
+        if (_rimLight != null) _rimLight.color = HoleColor;
     }
 
     // ── Ring mesh (shared, built once) ────────────────────────────────────────

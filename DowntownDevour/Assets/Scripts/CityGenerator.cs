@@ -4,28 +4,30 @@ using UnityEngine;
 public class CityGenerator : MonoBehaviour
 {
     // Ground-plane surfaces use GroundMasked (stencil hole cut-out).
-    // All above-ground objects use URP Lit.
+    // Above-ground objects use URP Lit.
     private static readonly Dictionary<Color, Material> _matCache    = new Dictionary<Color, Material>();
     private static readonly Dictionary<Color, Material> _groundCache = new Dictionary<Color, Material>();
 
-    // ── Colors ────────────────────────────────────────────────────────────────
-    static readonly Color COL_GROUND   = new Color(0.28f, 0.28f, 0.28f);
-    static readonly Color COL_ROAD     = new Color(0.18f, 0.18f, 0.18f);
-    static readonly Color COL_SIDEWALK = new Color(0.52f, 0.51f, 0.49f);
-    static readonly Color COL_GRASS    = new Color(0.25f, 0.50f, 0.22f);
-    static readonly Color COL_GLASS    = new Color(0.50f, 0.65f, 0.80f);
-    static readonly Color COL_BLDG1    = new Color(0.75f, 0.70f, 0.62f);
-    static readonly Color COL_BLDG2    = new Color(0.55f, 0.62f, 0.70f);
-    static readonly Color COL_BLDG3    = new Color(0.65f, 0.55f, 0.50f);
+    // ── Diablo dark-city palette ──────────────────────────────────────────────
+    static readonly Color COL_GROUND   = new Color(0.07f, 0.07f, 0.09f);
+    static readonly Color COL_ROAD     = new Color(0.05f, 0.05f, 0.06f);
+    static readonly Color COL_SIDEWALK = new Color(0.12f, 0.12f, 0.15f);
+    static readonly Color COL_GRASS    = new Color(0.07f, 0.15f, 0.07f);
+
+    // Building body colors — very dark with slight hue to read under lamp light
+    static readonly Color COL_GLASS = new Color(0.07f, 0.10f, 0.16f);   // dark navy glass tower
+    static readonly Color COL_BLDG1 = new Color(0.10f, 0.10f, 0.14f);   // dark charcoal-blue
+    static readonly Color COL_BLDG2 = new Color(0.13f, 0.10f, 0.10f);   // dark charcoal-warm
+    static readonly Color COL_BLDG3 = new Color(0.11f, 0.10f, 0.09f);   // dark warm-gray
 
     static readonly Color[] CAR_COLORS =
     {
-        new Color(0.85f, 0.15f, 0.15f),
-        new Color(0.20f, 0.40f, 0.85f),
-        new Color(0.92f, 0.92f, 0.92f),
-        new Color(0.90f, 0.80f, 0.10f),
-        new Color(0.38f, 0.38f, 0.38f),
-        new Color(0.55f, 0.28f, 0.08f),
+        new Color(0.55f, 0.08f, 0.08f),  // dark red
+        new Color(0.10f, 0.25f, 0.60f),  // dark blue
+        new Color(0.45f, 0.45f, 0.48f),  // silver-gray
+        new Color(0.55f, 0.48f, 0.06f),  // dark gold
+        new Color(0.18f, 0.18f, 0.18f),  // near-black
+        new Color(0.32f, 0.16f, 0.05f),  // dark brown
     };
 
     private Transform _cityRoot;
@@ -186,7 +188,7 @@ public class CityGenerator : MonoBehaviour
         go.transform.SetParent(_cityRoot, false);
         go.transform.position   = pos + Vector3.up * 0.5f;
         go.transform.localScale = Vector3.one * 0.5f;
-        ApplyLitMat(go.GetComponent<Renderer>(), new Color(0.85f, 0.70f, 0.58f));
+        ApplyLitMat(go.GetComponent<Renderer>(), new Color(0.40f, 0.30f, 0.22f));
         Destroy(go.GetComponent<Collider>());
         RegisterConsumable(go, 0.5f, 1, 10f, ObjectCategory.Person);
     }
@@ -195,7 +197,7 @@ public class CityGenerator : MonoBehaviour
     {
         pos.y = 0f;
         var go = CreateProp("Cone", pos + Vector3.up * 0.3f,
-                            new Vector3(0.35f, 0.6f, 0.35f), new Color(0.95f, 0.45f, 0.05f));
+                            new Vector3(0.35f, 0.6f, 0.35f), new Color(0.70f, 0.30f, 0.04f));
         RegisterConsumable(go, 0.4f, 1, 8f, ObjectCategory.Prop);
     }
 
@@ -203,7 +205,7 @@ public class CityGenerator : MonoBehaviour
     {
         pos.y = 0f;
         var go = CreateProp("Hydrant", pos + Vector3.up * 0.35f,
-                            new Vector3(0.45f, 0.7f, 0.45f), new Color(0.8f, 0.1f, 0.1f));
+                            new Vector3(0.45f, 0.7f, 0.45f), new Color(0.60f, 0.07f, 0.07f));
         RegisterConsumable(go, 0.5f, 1, 15f, ObjectCategory.Prop);
     }
 
@@ -211,7 +213,7 @@ public class CityGenerator : MonoBehaviour
     {
         pos.y = 0f;
         var go = CreateProp("Trash", pos + Vector3.up * 0.35f,
-                            new Vector3(0.5f, 0.7f, 0.5f), new Color(0.3f, 0.3f, 0.3f));
+                            new Vector3(0.5f, 0.7f, 0.5f), new Color(0.22f, 0.22f, 0.22f));
         RegisterConsumable(go, 0.55f, 1, 12f, ObjectCategory.Prop);
     }
 
@@ -219,7 +221,7 @@ public class CityGenerator : MonoBehaviour
     {
         pos.y = 0f;
         var go = CreateProp("Mailbox", pos + Vector3.up * 0.4f,
-                            new Vector3(0.45f, 0.8f, 0.45f), new Color(0.1f, 0.3f, 0.8f));
+                            new Vector3(0.45f, 0.8f, 0.45f), new Color(0.08f, 0.20f, 0.60f));
         RegisterConsumable(go, 0.45f, 1, 10f, ObjectCategory.Prop);
     }
 
@@ -227,14 +229,14 @@ public class CityGenerator : MonoBehaviour
     {
         pos.y = 0f;
         var trunk = CreateProp("Trunk", pos + Vector3.up * 0.6f,
-                               new Vector3(0.3f, 1.2f, 0.3f), new Color(0.35f, 0.22f, 0.12f));
+                               new Vector3(0.3f, 1.2f, 0.3f), new Color(0.18f, 0.10f, 0.06f));
 
         var canopy = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         canopy.name = "Canopy";
         canopy.transform.SetParent(_cityRoot, false);
         canopy.transform.position   = pos + Vector3.up * 1.8f;
         canopy.transform.localScale = new Vector3(1.4f, 1.4f, 1.4f);
-        ApplyLitMat(canopy.GetComponent<Renderer>(), new Color(0.20f, 0.60f, 0.20f));
+        ApplyLitMat(canopy.GetComponent<Renderer>(), new Color(0.08f, 0.20f, 0.08f));
         Destroy(canopy.GetComponent<Collider>());
 
         RegisterConsumable(trunk, 1.1f, 2, 25f, ObjectCategory.Tree);
@@ -244,19 +246,41 @@ public class CityGenerator : MonoBehaviour
     {
         pos.y = 0f;
         var go = CreateProp("Bench", pos + Vector3.up * 0.3f,
-                            new Vector3(1.0f, 0.4f, 0.4f), new Color(0.50f, 0.35f, 0.18f));
+                            new Vector3(1.0f, 0.4f, 0.4f), new Color(0.28f, 0.18f, 0.08f));
         RegisterConsumable(go, 1.0f, 2, 20f, ObjectCategory.Prop);
     }
 
     void PlaceLamp(Vector3 pos)
     {
         pos.y = 0f;
-        CreateProp("LampPole", pos + Vector3.up * 2.0f,
-                   new Vector3(0.12f, 4.0f, 0.12f), new Color(0.6f, 0.6f, 0.6f));
 
-        var go = CreateProp("Lamp", pos + Vector3.up * 0.5f,
-                            new Vector3(0.4f, 1.0f, 0.4f), new Color(0.7f, 0.7f, 0.7f));
-        RegisterConsumable(go, 0.9f, 2, 22f, ObjectCategory.Prop);
+        // Pole — dark iron
+        CreateProp("LampPole", pos + Vector3.up * 2.5f,
+                   new Vector3(0.10f, 5.0f, 0.10f), new Color(0.20f, 0.20f, 0.25f));
+
+        // Lamp head — bright emissive warm orange, drives the bloom halo
+        var headGO = CreateProp("LampHead", pos + Vector3.up * 5.2f,
+                                new Vector3(0.50f, 0.30f, 0.50f), Color.white);
+        var headMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        headMat.SetColor("_BaseColor", new Color(0.9f, 0.75f, 0.3f));
+        headMat.SetColor("_EmissionColor", new Color(1.0f, 0.85f, 0.4f) * 5f);
+        headMat.EnableKeyword("_EMISSION");
+        headMat.SetFloat("_Smoothness", 0.3f);
+        headGO.GetComponent<Renderer>().material = headMat;
+
+        // Real point light — casts warm orange glow on surrounding buildings and props
+        var lightGO = new GameObject("LampLight");
+        lightGO.transform.SetParent(_cityRoot, false);
+        lightGO.transform.position = pos + Vector3.up * 5.0f;
+        var pl = lightGO.AddComponent<Light>();
+        pl.type      = LightType.Point;
+        pl.color     = new Color(1.0f, 0.78f, 0.38f);
+        pl.intensity = 3.0f;
+        pl.range     = 14f;
+        pl.shadows   = LightShadows.None;
+
+        // Make the pole consumable (small street fixture)
+        RegisterConsumable(headGO, 0.9f, 2, 22f, ObjectCategory.Prop);
     }
 
     void PlaceBuilding(Vector3 pos, Vector3 size, Color color, float height)
@@ -266,8 +290,18 @@ public class CityGenerator : MonoBehaviour
         go.transform.SetParent(_cityRoot, false);
         go.transform.position   = pos;
         go.transform.localScale = size;
-        ApplyLitMat(go.GetComponent<Renderer>(), color);
         Destroy(go.GetComponent<Collider>());
+
+        // Per-building material with subtle warm emissive — light leaking from inside.
+        // Variation in emission gives each building a different glow intensity.
+        float emStr = Random.Range(0.15f, 0.50f);
+        var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+        mat.SetColor("_BaseColor", color);
+        mat.SetFloat("_Smoothness", 0.20f);
+        mat.SetFloat("_Metallic",   0.00f);
+        mat.SetColor("_EmissionColor", new Color(0.40f, 0.28f, 0.10f) * emStr);
+        mat.EnableKeyword("_EMISSION");
+        go.GetComponent<Renderer>().material = mat;
 
         float buildSize  = Mathf.Max(size.x, size.z);
         float buildValue = height < 8f ? 120f : height < 15f ? 300f : 600f;
@@ -316,7 +350,6 @@ public class CityGenerator : MonoBehaviour
         return go;
     }
 
-    // Ground-level boxes use GroundMasked so the hole cuts through them.
     void PlaceGroundBox(string name, Transform parent, Vector3 pos, Vector3 size, Color color)
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -335,7 +368,6 @@ public class CityGenerator : MonoBehaviour
         GameManager.Instance.AllObjects.Add(co);
     }
 
-    // URP Lit material for above-ground objects (buildings, cars, props).
     static void ApplyLitMat(Renderer r, Color c)
     {
         if (!_matCache.TryGetValue(c, out var mat))
@@ -349,8 +381,6 @@ public class CityGenerator : MonoBehaviour
         r.sharedMaterial = mat;
     }
 
-    // GroundMasked material for roads, sidewalks, ground plane.
-    // These disappear inside the hole (stencil NotEqual 1).
     static void ApplyGroundMat(Renderer r, Color c)
     {
         if (!_groundCache.TryGetValue(c, out var mat))
