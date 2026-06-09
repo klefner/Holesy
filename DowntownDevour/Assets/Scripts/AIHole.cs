@@ -28,8 +28,9 @@ public class AIHole : MonoBehaviour
 
     void Update()
     {
+        if (Hole == null || Config == null) return;
         if (!Hole.Alive) return;
-        if (GameManager.Instance.State != GameManager.GameState.Playing) return;
+        if (GameManager.Instance == null || GameManager.Instance.State != GameManager.GameState.Playing) return;
 
         _decisionTimer -= Time.deltaTime;
         if (_decisionTimer <= 0f)

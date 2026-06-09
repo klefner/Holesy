@@ -7,7 +7,8 @@ public class PlayerHole : MonoBehaviour
 
     void Update()
     {
-        if (GameManager.Instance.State != GameManager.GameState.Playing) return;
+        if (Hole == null) return;
+        if (GameManager.Instance == null || GameManager.Instance.State != GameManager.GameState.Playing) return;
 
         // Mouse target – project cursor onto the ground plane (Y = 0)
         Vector3 mouseTarget = GetMouseGroundPoint();

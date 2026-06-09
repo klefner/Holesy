@@ -23,6 +23,7 @@ public class UIManager : MonoBehaviour
 
     public void Tick()
     {
+        if (_timerText == null) return;
         var gm = GameManager.Instance;
 
         int secs = Mathf.CeilToInt(gm.TimeRemaining);

@@ -42,6 +42,7 @@ public class MilitarySystem : MonoBehaviour
     {
         if (!_running) return;
 
+        if (GameManager.Instance == null) return;
         float elapsed = GameManager.GAME_DURATION - GameManager.Instance.TimeRemaining;
         for (int i = WAVE_STARTS.Length - 1; i >= 0; i--)
         {
