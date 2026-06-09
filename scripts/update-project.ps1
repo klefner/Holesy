@@ -16,6 +16,7 @@ $PROJECT_SUB = "DowntownDevour"
 # subfolder.
 
 $SEARCH_ROOTS = @(
+    "C:\holesy",
     "$env:USERPROFILE",
     "$env:USERPROFILE\Documents",
     "$env:USERPROFILE\Desktop",
