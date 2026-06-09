@@ -6,18 +6,24 @@ using UnityEngine;
 public class AudioManager : MonoBehaviour
 {
     private AudioSource _musicSource;
+    private AudioSource _sfxSource;
     private static readonly Dictionary<string, AudioClip> _clipCache = new();
 
     const int   SAMPLE_RATE = 22050;
-    const float MASTER_VOL  = 0.55f;
+    const float MASTER_VOL  = 0.7f;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     void Awake()
     {
-        _musicSource = gameObject.AddComponent<AudioSource>();
-        _musicSource.loop   = true;
-        _musicSource.volume = 0.25f;
+        _musicSource              = gameObject.AddComponent<AudioSource>();
+        _musicSource.loop         = true;
+        _musicSource.volume       = 0.30f;
+        _musicSource.spatialBlend = 0f; // 2D — music is global, not positional
+
+        _sfxSource              = gameObject.AddComponent<AudioSource>();
+        _sfxSource.spatialBlend = 0f; // 2D — avoids distance silence from top-down camera
+        _sfxSource.volume       = MASTER_VOL;
     }
 
     public void StartMusic()
@@ -33,7 +39,7 @@ public class AudioManager : MonoBehaviour
 
     // ── Consumption sounds ────────────────────────────────────────────────────
 
-    public void PlayConsume(ObjectCategory cat, Vector3 worldPos)
+    public void PlayConsume(ObjectCategory cat)
     {
         string key;
         switch (cat)
@@ -44,12 +50,12 @@ public class AudioManager : MonoBehaviour
             case ObjectCategory.Tree:     key = "crack";     break;
             default:                      key = "clang";     break;
         }
-        PlayAt(GetClip(key), worldPos, MASTER_VOL);
+        PlayAt(GetClip(key), MASTER_VOL);
     }
 
-    public void PlayHoleEat(Vector3 worldPos)
+    public void PlayHoleEat()
     {
-        PlayAt(GetClip("eat"), worldPos, MASTER_VOL * 1.4f);
+        PlayAt(GetClip("eat"), MASTER_VOL * 1.4f);
     }
 
     // ── Clip retrieval with lazy build ────────────────────────────────────────
@@ -214,13 +220,9 @@ public class AudioManager : MonoBehaviour
         return clip;
     }
 
-    static void PlayAt(AudioClip clip, Vector3 pos, float vol)
+    void PlayAt(AudioClip clip, float vol)
     {
-        // Distance attenuation: fall off past 30 units, silent past 80
-        float dist  = Vector3.Distance(Camera.main.transform.position, pos);
-        float atten = Mathf.Clamp01(1f - (dist - 30f) / 50f);
-        if (atten <= 0.02f) return;
-
-        AudioSource.PlayClipAtPoint(clip, pos, vol * atten);
+        if (_sfxSource == null) return;
+        _sfxSource.PlayOneShot(clip, vol);
     }
 }

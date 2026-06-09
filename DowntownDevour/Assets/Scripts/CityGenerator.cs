@@ -7,7 +7,7 @@ public class CityGenerator : MonoBehaviour
     private static readonly Dictionary<Color, Material> _groundCache = new Dictionary<Color, Material>();
 
     // ── Daytime city palette ──────────────────────────────────────────────────
-    static readonly Color COL_GROUND   = new Color(0.35f, 0.35f, 0.32f);
+    static readonly Color COL_GROUND   = new Color(0.20f, 0.20f, 0.20f);
     static readonly Color COL_ROAD     = new Color(0.20f, 0.20f, 0.20f);
     static readonly Color COL_SIDEWALK = new Color(0.72f, 0.70f, 0.63f);
     static readonly Color COL_GRASS    = new Color(0.22f, 0.55f, 0.18f);

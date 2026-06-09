@@ -82,10 +82,11 @@ public class GameManager : MonoBehaviour
             var camGO = new GameObject("Main Camera");
             camGO.tag = "MainCamera";
             camGO.AddComponent<Camera>();
-            camGO.AddComponent<AudioListener>();
         }
 
         var cam = Camera.main;
+        if (cam.gameObject.GetComponent<AudioListener>() == null)
+            cam.gameObject.AddComponent<AudioListener>();
         cam.clearFlags      = CameraClearFlags.SolidColor;
         cam.backgroundColor = new Color(0.01f, 0.005f, 0.02f); // deep void — near-black purple, shows through stencil hole
         cam.farClipPlane    = 600f;
@@ -189,7 +190,7 @@ public class GameManager : MonoBehaviour
         obj.MarkConsumed(hole);
         hole.Score += obj.Value;
         hole.RecalcTargetRadius();
-        Audio.PlayConsume(obj.Category, obj.transform.position);
+        Audio.PlayConsume(obj.Category);
     }
 
     public void EatHole(HoleBase eater, HoleBase eaten)
@@ -207,7 +208,7 @@ public class GameManager : MonoBehaviour
             eater.BonusRadius += eaten.BonusRadius * 0.5f;
         eater.RecalcTargetRadius();
 
-        Audio.PlayHoleEat(eater.transform.position);
+        Audio.PlayHoleEat();
     }
 
     // ── Static helpers ────────────────────────────────────────────────────────
