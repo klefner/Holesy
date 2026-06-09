@@ -112,7 +112,8 @@ Write-Host "  Copying scripts and shaders into project..." -ForegroundColor Yell
 $INJECT_SUBFOLDERS = @(
     "Assets\Scripts",
     "Assets\Scenes",
-    "Assets\Shaders"
+    "Assets\Shaders",
+    "Assets\Resources"
 )
 
 foreach ($sub in $INJECT_SUBFOLDERS) {
