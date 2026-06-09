@@ -139,6 +139,13 @@ foreach ($sub in $INJECT_SUBFOLDERS) {
     }
 }
 
+# Self-update: keep the latest copy of this script in the project root
+$srcScript = Join-Path $TOP.FullName "scripts\update-project.ps1"
+if (Test-Path $srcScript) {
+    Copy-Item -Path $srcScript -Destination (Join-Path $INSTALL_DIR "update-project.ps1") -Force
+    Write-Host "    Updated: update-project.ps1" -ForegroundColor Gray
+}
+
 # -- Clean up -----------------------------------------------------------------
 
 Remove-Item $TEMP_ZIP -Force -ErrorAction SilentlyContinue
