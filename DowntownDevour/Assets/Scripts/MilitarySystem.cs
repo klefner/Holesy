@@ -153,14 +153,19 @@ public class MilitarySystem : MonoBehaviour
     void SpawnSoldier(Vector3 pos)
     {
         var go = CreateSoldierMesh(pos);
-        _soldiers.Add(new ActiveSoldier(go, pos));
+        // Soldiers are consumable — holes eat them for 30 pts (same as browser game)
+        var co = go.AddComponent<ConsumableObject>();
+        co.Init(0.4f, 1, 30f, ObjectCategory.Person);
+        GameManager.Instance.AllObjects.Add(co);
+        _soldiers.Add(new ActiveSoldier(go, co, pos));
     }
 
     // ── Soldier logic ─────────────────────────────────────────────────────────
 
     class ActiveSoldier
     {
-        readonly GameObject _go;
+        readonly GameObject     _go;
+        readonly ConsumableObject _consumable;
         Vector3  _pos;
         HoleBase _target;
         float    _shootTimer;
@@ -168,15 +173,17 @@ public class MilitarySystem : MonoBehaviour
         float    _reloadTimer;
         bool     _reloading;
 
-        public ActiveSoldier(GameObject go, Vector3 pos)
+        public ActiveSoldier(GameObject go, ConsumableObject consumable, Vector3 pos)
         {
-            _go  = go;
-            _pos = pos;
+            _go         = go;
+            _consumable = consumable;
+            _pos        = pos;
         }
 
         public bool Update(float dt, int waveIndex)
         {
             if (_go == null) return false;
+            if (_consumable != null && _consumable.IsConsumed) return false;
             var gm = GameManager.Instance;
             if (gm.State != GameManager.GameState.Playing) return false;
 
@@ -225,9 +232,10 @@ public class MilitarySystem : MonoBehaviour
             float hitChance = dist < 6f ? 0.6f : dist < 12f ? 0.4f : 0.2f;
             if (Random.value > hitChance) return;
 
-            float mult   = waveIndex >= 2 ? 1.25f : 1.0f;
+            float mult    = waveIndex >= 2 ? 1.25f : 1.0f;
             float baseDmg = _target.IsPlayer ? SHOT_DAMAGE_PLR : SHOT_DAMAGE_AI;
             _target.TakeDamage(baseDmg * mult);
+            GameManager.Instance?.Audio.PlayGunshot();
         }
 
         HoleBase NearestHole()

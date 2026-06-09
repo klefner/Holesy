@@ -72,7 +72,15 @@ public class GameManager : MonoBehaviour
 
     void SetupLighting()
     {
-        LightingSetup.ApplyDiablo();
+        RenderSettings.ambientLight = new Color(0.55f, 0.58f, 0.68f);
+
+        var sunGO = new GameObject("Sun");
+        var sun   = sunGO.AddComponent<Light>();
+        sun.type      = LightType.Directional;
+        sun.intensity = 1.2f;
+        sun.color     = new Color(1f, 0.95f, 0.85f);
+        sun.shadows   = LightShadows.Soft;
+        sunGO.transform.rotation = Quaternion.Euler(50f, -28f, 0f);
     }
 
     void SetupCamera()
@@ -82,16 +90,14 @@ public class GameManager : MonoBehaviour
             var camGO = new GameObject("Main Camera");
             camGO.tag = "MainCamera";
             camGO.AddComponent<Camera>();
+            camGO.AddComponent<AudioListener>();
         }
 
         var cam = Camera.main;
-        if (cam.gameObject.GetComponent<AudioListener>() == null)
-            cam.gameObject.AddComponent<AudioListener>();
         cam.clearFlags      = CameraClearFlags.SolidColor;
-        cam.backgroundColor = new Color(0.01f, 0.005f, 0.02f); // deep void — near-black purple, shows through stencil hole
+        cam.backgroundColor = new Color(0.05f, 0.05f, 0.08f); // dark void — shows through the stencil hole
         cam.farClipPlane    = 600f;
         cam.gameObject.AddComponent<GameCamera>();
-        cam.gameObject.AddComponent<DiabloPostProcessing>();
     }
 
     // ── Hole spawning ─────────────────────────────────────────────────────────
@@ -101,14 +107,14 @@ public class GameManager : MonoBehaviour
         AllHoles.Clear();
 
         Player = HoleFactory.CreatePlayer(new Color(0.30f, 0.60f, 1.00f), Vector3.zero);
-        AllHoles.Add(Player.Hole);
+        AllHoles.Add(Player);
 
         var cfgs = AIConfig.Defaults();
         Vector3[] aiPos = { new Vector3(-40, 0, -40), new Vector3(40, 0, 40), new Vector3(-40, 0, 40) };
         for (int i = 0; i < cfgs.Length; i++)
         {
             var ai = HoleFactory.CreateAI(cfgs[i], aiPos[i]);
-            AllHoles.Add(ai.Hole);
+            AllHoles.Add(ai);
         }
 
         Camera.main.GetComponent<GameCamera>().Target = Player.Hole.transform;
@@ -190,7 +196,7 @@ public class GameManager : MonoBehaviour
         obj.MarkConsumed(hole);
         hole.Score += obj.Value;
         hole.RecalcTargetRadius();
-        Audio.PlayConsume(obj.Category);
+        Audio.PlayConsume(obj.Category, obj.Size);
     }
 
     public void EatHole(HoleBase eater, HoleBase eaten)
@@ -208,7 +214,7 @@ public class GameManager : MonoBehaviour
             eater.BonusRadius += eaten.BonusRadius * 0.5f;
         eater.RecalcTargetRadius();
 
-        Audio.PlayHoleEat();
+        Audio.PlayHoleEat(eater.transform.position);
     }
 
     // ── Static helpers ────────────────────────────────────────────────────────
