@@ -15,8 +15,14 @@ $PROJECT_SUB = "DowntownDevour"
 # Searches common locations for a folder named DowntownDevour with an Assets
 # subfolder.
 
+# Exact paths checked first — no suffix appended
+$DIRECT_PATHS = @(
+    "C:\holesy\DowntownDevour",
+    "C:\Holesy\DowntownDevour"
+)
+
+# Roots where we append \DowntownDevour and look for Assets
 $SEARCH_ROOTS = @(
-    "C:\holesy",
     "$env:USERPROFILE",
     "$env:USERPROFILE\Documents",
     "$env:USERPROFILE\Desktop",
@@ -24,6 +30,9 @@ $SEARCH_ROOTS = @(
 )
 
 function Find-Project {
+    foreach ($path in $DIRECT_PATHS) {
+        if (Test-Path (Join-Path $path "Assets")) { return $path }
+    }
     foreach ($root in $SEARCH_ROOTS) {
         $candidate = Join-Path $root $PROJECT_SUB
         if (Test-Path (Join-Path $candidate "Assets")) { return $candidate }
