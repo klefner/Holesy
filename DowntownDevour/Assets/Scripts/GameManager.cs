@@ -72,15 +72,26 @@ public class GameManager : MonoBehaviour
 
     void SetupLighting()
     {
-        RenderSettings.ambientLight = new Color(0.55f, 0.58f, 0.68f);
+        RenderSettings.ambientLight = new Color(0.58f, 0.62f, 0.72f);
+        RenderSettings.fog          = false;
 
+        // Main sun — bright and warm, strong specular on glass
         var sunGO = new GameObject("Sun");
         var sun   = sunGO.AddComponent<Light>();
         sun.type      = LightType.Directional;
-        sun.intensity = 1.2f;
-        sun.color     = new Color(1f, 0.95f, 0.85f);
+        sun.intensity = 1.65f;
+        sun.color     = new Color(1.00f, 0.96f, 0.86f);
         sun.shadows   = LightShadows.Soft;
-        sunGO.transform.rotation = Quaternion.Euler(50f, -28f, 0f);
+        sunGO.transform.rotation = Quaternion.Euler(48f, -30f, 0f);
+
+        // Fill light from opposite side — cool sky bounce, no shadows
+        var fillGO = new GameObject("Fill");
+        var fill   = fillGO.AddComponent<Light>();
+        fill.type      = LightType.Directional;
+        fill.intensity = 0.35f;
+        fill.color     = new Color(0.60f, 0.72f, 0.90f);
+        fill.shadows   = LightShadows.None;
+        fillGO.transform.rotation = Quaternion.Euler(25f, 150f, 0f);
     }
 
     void SetupCamera()
