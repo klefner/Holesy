@@ -265,6 +265,7 @@ function Get-IssueFacts {
 
 function Get-GovernanceInventory {
   $expected = @(
+    'AGENTS.md',
     '00_ADMIN/Policies_and_Procedures/QA_REVIEW_STANDARD.md',
     '00_ADMIN/Policies_and_Procedures/QA_CHAT_RISK_AND_CONTROL_MATRIX.md',
     '00_ADMIN/Policies_and_Procedures/RISK_AND_CONTROLS_POLICY.md',

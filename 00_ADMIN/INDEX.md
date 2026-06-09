@@ -40,6 +40,7 @@ This index is the fast navigation file for the Holesy local project directory.
 
 ### Governing Documents
 
+- `..\AGENTS.md`
 - `Policies_and_Procedures/RISK_AND_CONTROLS_POLICY.md`
 - `Policies_and_Procedures/ENGINEERING_WORKFLOW.md`
 - `Policies_and_Procedures/DIRECTORY_STRUCTURE.md`

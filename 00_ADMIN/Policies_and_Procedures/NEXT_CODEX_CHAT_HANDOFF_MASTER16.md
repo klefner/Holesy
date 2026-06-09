@@ -2,6 +2,8 @@
 
 This document is the takeover package for any new Codex chat that needs to continue Holesy development without relying on the full prior thread.
 
+For Codex, Claude, or any other AI system, the role contract starts at the repo-root `AGENTS.md`. Read it before using this handoff so the Team Sync, implementation, QA audit, release, and handoff roles are applied consistently.
+
 ## 1. Active Handoff Status
 
 - this is the active handoff document because the approved local basis is now `Master 16`
@@ -14,7 +16,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.56`
+- current in-game label: `Master 16.59`
 
 Current basis note:
 
@@ -50,7 +52,7 @@ What `Master 16` specifically represents:
 - `Master 16.37` compacts Endless save object records, applies sparse short audio budgeting to skyscraper collapse/chunk sounds, and speeds medium-office cube descent while adding more sideways debris spread
 - `Master 16.38` completes the next `PERF-012` Phase 2 extraction by moving build metadata/patch notes, difficulty profiles, and Archive lore documents into separate ES modules
 - `Master 16.39` repairs the `Master 16.38` startup blocker by correcting the extraction boundary so game setup remains in `js/main.js` and menu controls work again
-- `Master 16.40` adds same-side hole descent paths, `Master 16.41` refines them into fixed-point vertical descent, `Master 16.42` keeps swallowed objects visibly rendered inside the well with a subtle screen-down descent drift until they fall deeper out of sight, `Master 16.43` hides those fixed-column descents whenever the live hole no longer covers the descent column, `Master 16.44` settles active medium-office cubes that miss the live mouth before they become formally swallowed, `Master 16.45` switches the active/falling visibility test to the projected screen-space mouth so pieces cannot visibly descend outside the black disk, `Master 16.46` attempted recessed-well geometry but was rejected as not reading 3D, `Master 16.47` attempted a darker abyss texture but was still rejected as too 2D, `Master 16.48` attempted deeper shaft geometry but blocked visibility into the mouth, `Master 16.49` restores the original flat black circular mouth with the existing colored rim, `Master 16.50` adds a smaller skyscraper-like upward/outward impact kick to medium-office cube releases, `Master 16.51` strengthens medium-office first-impact and cube-to-cube pool-break reactions, `Master 16.52` adds local impact jarring plus solid settled-cube collision participation, `Master 16.53` adds desktop mouse-exit steering carry, `Master 16.54` keeps medium-office impact motion continuous through support-delay and release, `Master 16.55` preserves Endless live scores through world shifts while respawning soldier-killed rivals and snapping settled medium cubes flat, and `Master 16.56` adds a net-new government building prototype with an isolated fixed-step collider/impulse physics world rather than the existing building-collapse rules
+- `Master 16.40` adds same-side hole descent paths, `Master 16.41` refines them into fixed-point vertical descent, `Master 16.42` keeps swallowed objects visibly rendered inside the well with a subtle screen-down descent drift until they fall deeper out of sight, `Master 16.43` hides those fixed-column descents whenever the live hole no longer covers the descent column, `Master 16.44` settles active medium-office cubes that miss the live mouth before they become formally swallowed, `Master 16.45` switches the active/falling visibility test to the projected screen-space mouth so pieces cannot visibly descend outside the black disk, `Master 16.46` attempted recessed-well geometry but was rejected as not reading 3D, `Master 16.47` attempted a darker abyss texture but was still rejected as too 2D, `Master 16.48` attempted deeper shaft geometry but blocked visibility into the mouth, `Master 16.49` restores the original flat black circular mouth with the existing colored rim, `Master 16.50` adds a smaller skyscraper-like upward/outward impact kick to medium-office cube releases, `Master 16.51` strengthens medium-office first-impact and cube-to-cube pool-break reactions, `Master 16.52` adds local impact jarring plus solid settled-cube collision participation, `Master 16.53` adds desktop mouse-exit steering carry, `Master 16.54` keeps medium-office impact motion continuous through support-delay and release, `Master 16.55` preserves Endless live scores through world shifts while respawning soldier-killed rivals and snapping settled medium cubes flat, `Master 16.56` adds a net-new government building prototype with an isolated fixed-step collider/impulse physics world rather than the existing building-collapse rules, `Master 16.57` improves government-building spy/tuxedo visibility, `Master 16.58` fixes the government-building touch crash, and `Master 16.59` tunes government-building column-shock collapse
 
 Last approved candidate promoted into `Master 16`:
 
@@ -61,6 +63,7 @@ Last approved candidate promoted into `Master 16`:
 - Canonical repo root: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy`
 - Always verify the repo root with `git rev-parse --show-toplevel`; in this session the non-OneDrive Desktop path resolved to a different folder and was not the governed source checkout.
 - Active branch: `codex/publish-master4-structure`
+- Required agent contract: `AGENTS.md`
 - Preserve rollback safety
 - Do not work directly on `main`
 - Distinguish local file state, git state, GitHub branch state, `main` state, and live website state
@@ -75,16 +78,20 @@ Last approved candidate promoted into `Master 16`:
 
 ## 4. Current Priority
 
-- immediate focus is regression testing `Master 16.56` through the modular package, especially the new government-building separate-physics prototype, then continuing the next `PERF-012` extraction slice after user validation
+- immediate focus is regression testing `Master 16.59` through the modular package, especially the government-building visibility, touch-crash, and column-shock follow-ups, then continuing the next `PERF-012` extraction slice after user validation
 - newly implemented Priority 1 gameplay/physics item pending user validation: medium office buildings are procedurally generated cube/floor stacks whose individual columns can teeter/lean before dropping; upper cubes wait for support failure, active cubes separate in 3D, impacted columns get varied first-impact vectors, stronger pool-break collision transfer, capped local scatter, oversized objects can jam in the visible hole, and faster falling cubes carry more impact/roll/spin energy
 - active monitor items carried from the latest QA evidence:
   - archive readability and music fit
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
 - current governance blockers:
-  - `QA-017` remains open after the 2026-06-05 audit because this restricted session still did not prove branch-visible publication for the local audit package; Team Sync can read governed state, but remote freshness and commit/push were not re-verified from this session
-  - `QA-020` remains open because governed daily-audit evidence for `2026-05-30` through `2026-06-01` is still represented only by a local missing-run note that is not yet branch-visible
-  - `QA-021` opened on 2026-06-04 because governed daily-audit evidence was also missing for `2026-06-03`; automation memory shows no corresponding run, so the gap is currently classified as automation not running
+  - no current publication blocker remains for the 2026-06-06 through 2026-06-09 governed package after the AGENTS/handoff governance publication cleanup; continue to verify new daily audit artifacts are branch-visible before treating future audit runs as complete
 - recently closed by user validation and governance repair:
+  - `QA-017` resolved on 2026-06-09 after the still-local 2026-06-06 through 2026-06-09 governance package was included in the AGENTS/handoff publication cleanup
+  - `QA-023` resolved on 2026-06-09 after the 2026-06-08 missing-run note was included in the AGENTS/handoff publication cleanup; the cause classification remains automation not running unless later scheduler evidence proves otherwise
+  - `QA-020` resolved on 2026-06-06 because commit `ea36e52` made the `2026-05-30` through `2026-06-01` missing-run note branch-visible; the cause classification remains unavailable worktree / wrong accessible checkout on `2026-05-30` and `2026-06-01`, plus unknown scheduler behavior on `2026-05-31`
+  - `QA-021` resolved on 2026-06-06 because commit `ea36e52` made the `2026-06-03` missing-run note branch-visible; the cause classification remains automation not running
+  - `QA-022` resolved on 2026-06-06 after the daily audit repaired stale `Master 16.55` build badges in the source/release entry points and stale `Master 16.52` / `Master 16.41` process-doc references
+  - `QA-024` resolved on 2026-06-09 after the daily audit repaired the new `Master 16.59` source-of-truth drift across the source/release entry-point build labels, the release manifest, the startup protocol, the active handoff, and the backlog recommendation
   - `QA-006` closed after user confirmed the long-idle tab-close defect no longer reproduces
   - `QA-007` closed for the current defect state; ongoing buff/lore wording clarity remains a product-backlog improvement item
   - `QA-016` and the `Master 16.28` traffic/soldier-growth regression set closed after user validation
@@ -98,10 +105,10 @@ Last approved candidate promoted into `Master 16`:
 
 ## 5. Immediate Next Move
 
-- treat `Master 16.56` as the current source basis within `10_SOURCE/Masters/Master 16/`
+- treat `Master 16.59` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
-- the 2026-06-02, 2026-06-04, and 2026-06-05 governance package has been published; continue current gameplay regression and the next `PERF-012` extraction slice after user validation
+- the previously blocked `2026-06-06`, `2026-06-07`, `2026-06-08` missing-run note, and `2026-06-09` audit package were included in the AGENTS/handoff governance publication cleanup; for the next audit, verify the branch-visible commit before relying on this handoff from GitHub
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
