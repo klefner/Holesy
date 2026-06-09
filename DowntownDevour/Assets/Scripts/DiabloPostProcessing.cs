@@ -2,58 +2,68 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-// Attaches to the main camera. Enables URP post-processing and builds a global
-// Volume that gives the game its Diablo dark-isometric visual identity:
-//   - ACES tonemapping for filmic contrast
-//   - Bloom halos around every light and emissive surface
-//   - Color grade that pushes shadows cool and highlights warm
-//   - Vignette that pulls the eye to the centre of the action
+// Attaches to the main camera. Creates a global post-processing Volume at runtime
+// that gives the game its Diablo dark-city visual identity.
 public class DiabloPostProcessing : MonoBehaviour
 {
     void Start()
     {
-        EnablePostProcessing();
-        BuildVolume();
+        SetupCamera();
+        CreateVolume();
     }
 
-    void EnablePostProcessing()
+    void SetupCamera()
     {
-        var data = GetComponent<UniversalAdditionalCameraData>();
-        if (data == null) data = gameObject.AddComponent<UniversalAdditionalCameraData>();
-        data.renderPostProcessing = true;
+        var urpData = GetComponent<UniversalAdditionalCameraData>();
+        if (urpData == null) urpData = gameObject.AddComponent<UniversalAdditionalCameraData>();
+        urpData.renderPostProcessing = true;
+        // Explicitly tell this camera to pick up volumes on all layers.
+        urpData.volumeLayerMask = ~0;
     }
 
-    void BuildVolume()
+    void CreateVolume()
     {
         var go     = new GameObject("DiabloVolume");
-        var volume = go.AddComponent<Volume>();
+        go.layer   = 0; // Default layer
+
+        var volume      = go.AddComponent<Volume>();
         volume.isGlobal = true;
-        volume.priority = 10f;
+        volume.priority = 100f;
 
-        var profile   = ScriptableObject.CreateInstance<VolumeProfile>();
-        volume.sharedProfile = profile;
+        // Use .profile (instance) not .sharedProfile so Unity treats it as runtime data.
+        var profile  = ScriptableObject.CreateInstance<VolumeProfile>();
+        volume.profile = profile;
 
-        // Tonemapping — ACES gives rich shadow crush and warm highlight rolloff.
+        // Tonemapping — ACES filmic contrast
         var tone = profile.Add<Tonemapping>(true);
-        tone.mode.Override(TonemappingMode.ACES);
+        tone.mode.value         = TonemappingMode.ACES;
+        tone.mode.overrideState = true;
 
-        // Bloom — halos around streetlamps, hole rim, emissive windows.
+        // Bloom — halos on lights and emissives; start aggressive so it's clearly visible
         var bloom = profile.Add<Bloom>(true);
-        bloom.threshold.Override(0.8f);
-        bloom.intensity.Override(0.7f);
-        bloom.scatter.Override(0.65f);
-        bloom.tint.Override(new Color(1.0f, 0.85f, 0.55f));
+        bloom.threshold.value         = 0.5f;
+        bloom.threshold.overrideState = true;
+        bloom.intensity.value         = 1.5f;
+        bloom.intensity.overrideState = true;
+        bloom.scatter.value           = 0.7f;
+        bloom.scatter.overrideState   = true;
 
-        // Color grade — slightly underexposed, punchy contrast, mild desaturation.
+        // Color grade — underexposed, punchy contrast, mild desaturation
         var ca = profile.Add<ColorAdjustments>(true);
-        ca.postExposure.Override(-0.3f);
-        ca.contrast.Override(22f);
-        ca.saturation.Override(-12f);
+        ca.postExposure.value         = -0.3f;
+        ca.postExposure.overrideState = true;
+        ca.contrast.value             = 22f;
+        ca.contrast.overrideState     = true;
+        ca.saturation.value           = -12f;
+        ca.saturation.overrideState   = true;
 
-        // Vignette — deep purple-black edges draw focus inward.
+        // Vignette — darken edges toward deep purple
         var vig = profile.Add<Vignette>(true);
-        vig.color.Override(new Color(0.04f, 0.0f, 0.07f));
-        vig.intensity.Override(0.38f);
-        vig.smoothness.Override(0.5f);
+        vig.color.value           = new Color(0.04f, 0.0f, 0.07f);
+        vig.color.overrideState   = true;
+        vig.intensity.value       = 0.38f;
+        vig.intensity.overrideState = true;
+        vig.smoothness.value      = 0.5f;
+        vig.smoothness.overrideState = true;
     }
 }
