@@ -261,7 +261,8 @@ public class CityGenerator : MonoBehaviour
                     new Vector3(0.9f, 0.65f, 1.4f), new Color(0.72f, 0.73f, 0.74f), 0.15f);
         }
 
-        float buildSize  = Mathf.Max(bw, bd);
+        // 0.55x so the hole needs to be ~half the footprint wide, not equal to it
+        float buildSize  = Mathf.Max(bw, bd) * 0.55f;
         float buildValue = height < 8f ? 120f : height < 15f ? 300f : 600f;
         int   tier       = height < 8f ? 4 : 5;
         Consumable(root, buildSize, tier, buildValue, ObjectCategory.Building);

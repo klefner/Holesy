@@ -6,11 +6,12 @@ using UnityEngine.UI;
 // HUD and end-screen. Uses TextMeshProUGUI (included in URP Universal 3D template).
 public class UIManager : MonoBehaviour
 {
-    public const string VERSION = "v0.5";
+    public const string VERSION = "v0.6";
 
     private Canvas            _canvas;
     private TextMeshProUGUI   _timerText;
     private TextMeshProUGUI   _tierText;
+    private TextMeshProUGUI   _growthText;
     private TextMeshProUGUI[] _scoreTexts;
     private GameObject        _endScreen;
     private TextMeshProUGUI   _endTitle;
@@ -33,7 +34,11 @@ public class UIManager : MonoBehaviour
         _timerText.color = secs <= 10 ? new Color(1f, 0.25f, 0.25f) : Color.white;
 
         if (gm.Player != null)
+        {
             _tierText.text = GameManager.TierLabel(gm.Player.Hole.Radius);
+            float pct = gm.Player.Hole.Radius / GameManager.MIN_RADIUS * 100f;
+            _growthText.text = Mathf.FloorToInt(pct).ToString("N0") + "%";
+        }
 
         for (int i = 0; i < gm.AllHoles.Count && i < _scoreTexts.Length; i++)
         {
@@ -99,6 +104,11 @@ public class UIManager : MonoBehaviour
             new Vector2(0f, 1f), new Vector2(140f, -120f), new Vector2(240f, 36f),
             22, TextAlignmentOptions.MidlineLeft);
         _tierText.color = new Color(0.9f, 0.85f, 0.45f);
+
+        _growthText = MakeTMP("Growth", "100%",
+            new Vector2(0f, 1f), new Vector2(140f, -158f), new Vector2(200f, 28f),
+            18, TextAlignmentOptions.MidlineLeft);
+        _growthText.color = new Color(0.70f, 0.90f, 1.00f, 0.85f);
 
         int count = 4;
         _scoreTexts = new TextMeshProUGUI[count];

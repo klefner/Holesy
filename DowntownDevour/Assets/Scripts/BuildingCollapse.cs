@@ -2,8 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Added to building roots by CityGenerator. ConsumableObject calls Collapse()
-// instead of the default shrink animation when this component is present.
+// Added to building roots by CityGenerator.
+// ConsumableObject.MarkConsumed() calls Collapse() instead of the shrink animation.
 public class BuildingCollapse : MonoBehaviour
 {
     readonly List<(Transform t, float worldY)> _parts = new();
@@ -30,7 +30,7 @@ public class BuildingCollapse : MonoBehaviour
             StartCoroutine(LaunchPart(t, holePos, delay, nY));
         }
 
-        Destroy(gameObject, 6f);
+        Destroy(gameObject, 8f);
         yield break;
     }
 
@@ -60,6 +60,66 @@ public class BuildingCollapse : MonoBehaviour
         rb.AddForce(outward * outSpeed + Vector3.up * upKick, ForceMode.VelocityChange);
         rb.AddTorque(Random.insideUnitSphere * 6f, ForceMode.VelocityChange);
 
-        Destroy(part.gameObject, 5f);
+        // Larger parts shatter mid-flight; tiny window bays and spires just fall whole
+        Vector3 s   = part.lossyScale;
+        float   vol = s.x * s.y * s.z;
+        if (vol > 0.8f)
+        {
+            int   fragCount = Mathf.RoundToInt(
+                Mathf.Clamp(Mathf.Log(vol + 1f) * 1.8f + Random.Range(-0.5f, 0.5f), 2, 8));
+            float fractureAt = Random.Range(0.08f, 1.3f);
+            StartCoroutine(Fracture(part.gameObject, fragCount, fractureAt));
+        }
+        else
+        {
+            Destroy(part.gameObject, 5f);
+        }
+    }
+
+    IEnumerator Fracture(GameObject piece, int fragCount, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (piece == null) yield break;
+
+        var     rb   = piece.GetComponent<Rigidbody>();
+        Vector3 vel  = rb != null ? rb.linearVelocity  : Vector3.zero;
+        Vector3 angV = rb != null ? rb.angularVelocity : Vector3.zero;
+        Vector3 pos  = piece.transform.position;
+        Vector3 scl  = piece.transform.lossyScale;
+        Material mat = piece.GetComponent<Renderer>()?.sharedMaterial;
+
+        for (int i = 0; i < fragCount; i++)
+        {
+            // Each shard is a random fraction of the parent's dimensions
+            float fx = Random.Range(0.28f, 0.78f);
+            float fy = Random.Range(0.28f, 0.78f);
+            float fz = Random.Range(0.28f, 0.78f);
+
+            var frag = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            frag.transform.position   = pos + new Vector3(
+                Random.Range(-scl.x * 0.38f, scl.x * 0.38f),
+                Random.Range(-scl.y * 0.28f, scl.y * 0.28f),
+                Random.Range(-scl.z * 0.38f, scl.z * 0.38f));
+            frag.transform.localScale = new Vector3(scl.x * fx, scl.y * fy, scl.z * fz);
+            frag.transform.rotation   = piece.transform.rotation *
+                Quaternion.Euler(
+                    Random.Range(-30f, 30f),
+                    Random.Range(-30f, 30f),
+                    Random.Range(-30f, 30f));
+
+            if (mat != null)
+                frag.GetComponent<Renderer>().sharedMaterial = mat;
+
+            var fragRb = frag.AddComponent<Rigidbody>();
+            fragRb.linearVelocity  = vel + Random.insideUnitSphere * Random.Range(1f, 4f);
+            fragRb.angularVelocity = angV + Random.insideUnitSphere * Random.Range(3f, 8f);
+            fragRb.mass            = 0.4f;
+            fragRb.linearDamping   = 0.2f;
+            fragRb.angularDamping  = 0.5f;
+
+            Destroy(frag, 4.5f);
+        }
+
+        Destroy(piece);
     }
 }
