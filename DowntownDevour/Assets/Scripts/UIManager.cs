@@ -6,7 +6,7 @@ using UnityEngine.UI;
 // HUD and end-screen. Uses TextMeshProUGUI (included in URP Universal 3D template).
 public class UIManager : MonoBehaviour
 {
-    public const string VERSION = "v0.4";
+    public const string VERSION = "v0.5";
 
     private Canvas            _canvas;
     private TextMeshProUGUI   _timerText;
@@ -85,7 +85,7 @@ public class UIManager : MonoBehaviour
 
     void BuildHUD()
     {
-        // Version stamp — always visible, bottom-left
+        // Version stamp — bottom-left, always visible
         var ver = MakeTMP("Version", VERSION,
             new Vector2(0f, 0f), new Vector2(10f, 10f), new Vector2(120f, 28f),
             15, TextAlignmentOptions.BottomLeft);
