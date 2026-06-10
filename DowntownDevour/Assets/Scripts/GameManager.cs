@@ -165,7 +165,10 @@ public class GameManager : MonoBehaviour
                 if (obj.IsConsumed || obj.Size > hole.Radius) continue;
                 float dx = obj.transform.position.x - hx;
                 float dz = obj.transform.position.z - hz;
-                if (dx * dx + dz * dz < r2)
+                // FootprintRadius lets buildings trigger when hole edge overlaps
+                // their footprint, not only when hole center reaches building center
+                float tr = hole.Radius + obj.FootprintRadius;
+                if (dx * dx + dz * dz < tr * tr)
                     _consumeQueue.Add((hole, obj));
             }
         }
@@ -207,7 +210,7 @@ public class GameManager : MonoBehaviour
         obj.MarkConsumed(hole);
         hole.Score += obj.Value;
         hole.RecalcTargetRadius();
-        Audio.PlayConsume(obj.Category, obj.Size);
+        Audio.PlayConsume(obj.Category, obj.Size, hole.IsPlayer, hole.transform.position);
     }
 
     public void EatHole(HoleBase eater, HoleBase eaten)

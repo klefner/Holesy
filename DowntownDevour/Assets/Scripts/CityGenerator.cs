@@ -262,10 +262,14 @@ public class CityGenerator : MonoBehaviour
         }
 
         // 0.55x so the hole needs to be ~half the footprint wide, not equal to it
-        float buildSize  = Mathf.Max(bw, bd) * 0.55f;
-        float buildValue = height < 8f ? 120f : height < 15f ? 300f : 600f;
-        int   tier       = height < 8f ? 4 : 5;
-        Consumable(root, buildSize, tier, buildValue, ObjectCategory.Building);
+        // buildSize = minimum hole radius needed to eat the building
+        // footprintRadius = half the building's widest face, so the hole
+        //   triggers when its EDGE (not just center) overlaps the footprint
+        float buildSize     = Mathf.Max(bw, bd) * 0.55f;
+        float footprintRad  = Mathf.Max(bw, bd) * 0.5f;
+        float buildValue    = height < 8f ? 120f : height < 15f ? 300f : 600f;
+        int   tier          = height < 8f ? 4 : 5;
+        Consumable(root, buildSize, tier, buildValue, ObjectCategory.Building, footprintRad);
 
         var collapse = root.AddComponent<BuildingCollapse>();
         foreach (Transform child in root.transform)
@@ -549,10 +553,11 @@ public class CityGenerator : MonoBehaviour
     }
 
     // ── Consumable registration ───────────────────────────────────────────
-    void Consumable(GameObject go, float size, int tier, float value, ObjectCategory cat)
+    void Consumable(GameObject go, float size, int tier, float value, ObjectCategory cat,
+                    float footprintRadius = 0f)
     {
         var co = go.AddComponent<ConsumableObject>();
-        co.Init(size, tier, value, cat);
+        co.Init(size, tier, value, cat, footprintRadius);
         GameManager.Instance.AllObjects.Add(co);
     }
 

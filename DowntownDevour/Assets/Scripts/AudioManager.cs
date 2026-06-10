@@ -7,10 +7,13 @@ public class AudioManager : MonoBehaviour
 {
     private AudioSource _musicSource;
 
-    // 8-source pool lets up to 8 SFX overlap independently with their own pitch
-    private const int   POOL = 8;
+    private const int     POOL = 8;
     private AudioSource[] _sfxPool;
     private int           _sfxIdx;
+
+    // Minimum seconds between sounds of the same category to prevent bursts
+    private readonly float[] _catCooldown  = new float[6];  // indexed by (int)ObjectCategory
+    private const    float   BURST_COOLDOWN = 0.18f;
 
     private AudioClip[] _screams;
     private AudioClip[] _trees;
@@ -62,9 +65,17 @@ public class AudioManager : MonoBehaviour
 
     public void StopMusic() => _musicSource.Stop();
 
-    // size is the ConsumableObject.Size — used to pitch-shift building sounds
-    public void PlayConsume(ObjectCategory cat, float size = 1f)
+    // isPlayer: player sounds always play.
+    // AI sounds: only play when the consuming hole is visible on screen.
+    // All sounds: per-category burst cooldown to prevent simultaneous cacophony.
+    public void PlayConsume(ObjectCategory cat, float size = 1f,
+                            bool isPlayer = true, Vector3 sourcePos = default)
     {
+        if (!isPlayer && !IsOnScreen(sourcePos)) return;
+
+        int catIdx = (int)cat;
+        if (Time.time - _catCooldown[catIdx] < BURST_COOLDOWN) return;
+        _catCooldown[catIdx] = Time.time;
         switch (cat)
         {
             case ObjectCategory.Person:
@@ -119,6 +130,14 @@ public class AudioManager : MonoBehaviour
     }
 
     // ── Internal helpers ──────────────────────────────────────────────────────
+
+    static bool IsOnScreen(Vector3 worldPos)
+    {
+        if (Camera.main == null) return true;
+        var vp = Camera.main.WorldToViewportPoint(worldPos);
+        return vp.z > 0f && vp.x >= -0.05f && vp.x <= 1.05f
+                          && vp.y >= -0.05f && vp.y <= 1.05f;
+    }
 
     void Play(AudioClip[] bank, float vol, float pitch)
     {

@@ -11,8 +11,7 @@ public class UIManager : MonoBehaviour
 
     private Canvas            _canvas;
     private TextMeshProUGUI   _timerText;
-    private TextMeshProUGUI   _tierText;
-    private TextMeshProUGUI   _growthText;
+    private TextMeshProUGUI   _inHoleText;  // tier name + growth %, shown inside the hole
     private TextMeshProUGUI[] _scoreTexts;
     private GameObject        _endScreen;
     private TextMeshProUGUI   _endTitle;
@@ -36,9 +35,9 @@ public class UIManager : MonoBehaviour
 
         if (gm.Player != null)
         {
-            _tierText.text = GameManager.TierLabel(gm.Player.Hole.Radius);
             float pct = gm.Player.Hole.Radius / GameManager.MIN_RADIUS * 100f;
-            _growthText.text = Mathf.FloorToInt(pct).ToString("N0") + "%";
+            _inHoleText.text = GameManager.TierLabel(gm.Player.Hole.Radius)
+                             + "\n" + Mathf.FloorToInt(pct).ToString("N0") + "%";
         }
 
         for (int i = 0; i < gm.AllHoles.Count && i < _scoreTexts.Length; i++)
@@ -88,7 +87,7 @@ public class UIManager : MonoBehaviour
 
         // EventSystem is required for all UI interaction (button clicks, hover).
         // Unity only creates one automatically when using the menu; we build ours in code.
-        if (FindFirstObjectByType<EventSystem>() == null)
+        if (FindAnyObjectByType<EventSystem>() == null)
         {
             var evGO = new GameObject("EventSystem");
             evGO.AddComponent<EventSystem>();
@@ -110,15 +109,12 @@ public class UIManager : MonoBehaviour
             new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(300f, 60f),
             48, TextAlignmentOptions.Center);
 
-        _tierText = MakeTMP("Tier", "Pothole",
-            new Vector2(0f, 1f), new Vector2(140f, -120f), new Vector2(240f, 36f),
-            22, TextAlignmentOptions.MidlineLeft);
-        _tierText.color = new Color(0.9f, 0.85f, 0.45f);
-
-        _growthText = MakeTMP("Growth", "100%",
-            new Vector2(0f, 1f), new Vector2(140f, -158f), new Vector2(200f, 28f),
-            18, TextAlignmentOptions.MidlineLeft);
-        _growthText.color = new Color(0.70f, 0.90f, 1.00f, 0.85f);
+        // Tier name and growth % sit inside the hole at screen center.
+        // The camera follows the player so the hole is always roughly centered.
+        _inHoleText = MakeTMP("InHole", "Pothole\n100%",
+            new Vector2(0.5f, 0.5f), new Vector2(0f, 18f), new Vector2(220f, 52f),
+            14, TextAlignmentOptions.Center);
+        _inHoleText.color = new Color(1f, 1f, 1f, 0.55f);
 
         int count = 4;
         _scoreTexts = new TextMeshProUGUI[count];
