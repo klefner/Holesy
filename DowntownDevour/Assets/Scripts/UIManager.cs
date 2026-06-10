@@ -58,7 +58,7 @@ public class UIManager : MonoBehaviour
         string body = "";
         for (int i = 0; i < sorted.Count; i++)
         {
-            string medal = i == 0 ? "★ " : (i + 1) + ". ";
+            string medal = i == 0 ? "1st  " : i == 1 ? "2nd  " : i == 2 ? "3rd  " : (i+1) + "th  ";
             body += medal + sorted[i].HoleName
                          + "  " + Mathf.FloorToInt(sorted[i].Score).ToString("N0") + "\n";
         }

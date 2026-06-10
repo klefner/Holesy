@@ -60,19 +60,21 @@ public class BuildingCollapse : MonoBehaviour
         rb.AddForce(outward * outSpeed + Vector3.up * upKick, ForceMode.VelocityChange);
         rb.AddTorque(Random.insideUnitSphere * 6f, ForceMode.VelocityChange);
 
-        // Larger parts shatter mid-flight; tiny window bays and spires just fall whole
+        // Register the launched part so the hole can consume it
+        RegisterDebris(part.gameObject, 0.9f, 12f);
+
         Vector3 s   = part.lossyScale;
         float   vol = s.x * s.y * s.z;
         if (vol > 0.8f)
         {
-            int   fragCount = Mathf.RoundToInt(
+            int   fragCount  = Mathf.RoundToInt(
                 Mathf.Clamp(Mathf.Log(vol + 1f) * 1.8f + Random.Range(-0.5f, 0.5f), 2, 8));
             float fractureAt = Random.Range(0.08f, 1.3f);
             StartCoroutine(Fracture(part.gameObject, fragCount, fractureAt));
         }
         else
         {
-            Destroy(part.gameObject, 5f);
+            Destroy(part.gameObject, 8f);
         }
     }
 
@@ -90,7 +92,6 @@ public class BuildingCollapse : MonoBehaviour
 
         for (int i = 0; i < fragCount; i++)
         {
-            // Each shard is a random fraction of the parent's dimensions
             float fx = Random.Range(0.28f, 0.78f);
             float fy = Random.Range(0.28f, 0.78f);
             float fz = Random.Range(0.28f, 0.78f);
@@ -102,10 +103,7 @@ public class BuildingCollapse : MonoBehaviour
                 Random.Range(-scl.z * 0.38f, scl.z * 0.38f));
             frag.transform.localScale = new Vector3(scl.x * fx, scl.y * fy, scl.z * fz);
             frag.transform.rotation   = piece.transform.rotation *
-                Quaternion.Euler(
-                    Random.Range(-30f, 30f),
-                    Random.Range(-30f, 30f),
-                    Random.Range(-30f, 30f));
+                Quaternion.Euler(Random.Range(-30f, 30f), Random.Range(-30f, 30f), Random.Range(-30f, 30f));
 
             if (mat != null)
                 frag.GetComponent<Renderer>().sharedMaterial = mat;
@@ -117,9 +115,19 @@ public class BuildingCollapse : MonoBehaviour
             fragRb.linearDamping   = 0.2f;
             fragRb.angularDamping  = 0.5f;
 
-            Destroy(frag, 4.5f);
+            // Register each shard so any hole can consume it
+            RegisterDebris(frag, 0.5f, 6f);
+
+            Destroy(frag, 8f);
         }
 
         Destroy(piece);
+    }
+
+    static void RegisterDebris(GameObject go, float size, float value)
+    {
+        var co = go.AddComponent<ConsumableObject>();
+        co.Init(size, 1, value, ObjectCategory.Building);
+        GameManager.Instance.AllObjects.Add(co);
     }
 }

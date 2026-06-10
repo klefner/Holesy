@@ -5,14 +5,13 @@ public enum ObjectCategory { Person, Car, Tree, Building, Prop }
 // Any city object that can be swallowed by a hole.
 public class ConsumableObject : MonoBehaviour
 {
-    public float          Size     { get; private set; }
-    public int            Tier     { get; private set; }
-    public float          Value    { get; private set; }
-    public ObjectCategory Category { get; private set; }
+    public float          Size       { get; private set; }
+    public int            Tier       { get; private set; }
+    public float          Value      { get; private set; }
+    public ObjectCategory Category   { get; private set; }
     public bool           IsConsumed { get; private set; }
 
     private bool    _falling;
-    private Vector3 _fallDirection;
     private float   _fallVel;
     private float   _spinVel;
     private float   _scaleVel = 0f;
@@ -23,10 +22,10 @@ public class ConsumableObject : MonoBehaviour
 
     public void Init(float size, int tier, float value, ObjectCategory category)
     {
-        Size     = size;
-        Tier     = tier;
-        Value    = value;
-        Category = category;
+        Size        = size;
+        Tier        = tier;
+        Value       = value;
+        Category    = category;
         _startScale = transform.localScale;
     }
 
@@ -34,18 +33,15 @@ public class ConsumableObject : MonoBehaviour
     {
         if (!_falling) return;
 
-        // Spin and fall
         transform.Rotate(Vector3.up, _spinVel * Time.deltaTime, Space.World);
         _fallVel += FALL_GRAVITY * Time.deltaTime;
         transform.position += Vector3.down * (_fallVel * Time.deltaTime);
 
-        // Shrink toward zero
         _scaleVel += Time.deltaTime / SHRINK_TIME;
         float t = Mathf.Clamp01(_scaleVel);
         transform.localScale = Vector3.Lerp(_startScale, Vector3.zero, t);
 
-        if (t >= 1f)
-            Destroy(gameObject);
+        if (t >= 1f) Destroy(gameObject);
     }
 
     public void MarkConsumed(HoleBase hole)
@@ -58,13 +54,24 @@ public class ConsumableObject : MonoBehaviour
         if (collapse != null)
         {
             collapse.Collapse(hole.transform.position);
+            return;
         }
-        else
-        {
-            _falling  = true;
-            _spinVel  = (Random.value - 0.5f) * 360f;
-            _fallVel  = 0f;
-            _scaleVel = 0f;
-        }
+
+        // Stop physics so the script-driven shrink animation takes over cleanly
+        var rb = GetComponent<Rigidbody>();
+        if (rb != null) rb.isKinematic = true;
+
+        _startScale = transform.localScale; // capture current scale (debris may differ from Init scale)
+        _falling    = true;
+        _spinVel    = (Random.value - 0.5f) * 360f;
+        _fallVel    = 0f;
+        _scaleVel   = 0f;
+    }
+
+    void OnDestroy()
+    {
+        // Handles fragments that time out before being eaten
+        if (!IsConsumed && GameManager.Instance != null)
+            GameManager.Instance.AllObjects.Remove(this);
     }
 }
