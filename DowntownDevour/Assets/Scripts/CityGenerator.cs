@@ -479,12 +479,27 @@ public class CityGenerator : MonoBehaviour
     void SpawnCars(int count)
     {
         float block = GameManager.BLOCK, half = GameManager.HALF;
-        for (int i = 0; i < count; i++)
+        const float MIN_GAP = 5f; // min center-to-center distance
+        var placed = new System.Collections.Generic.List<Vector3>(count);
+        int attempts = 0;
+
+        while (placed.Count < count && attempts < count * 10)
         {
+            attempts++;
             bool    horiz = Random.value < 0.5f;
             float   rc    = Mathf.Round(Random.Range(-3, 4)) * block;
             float   along = Random.Range(-half + 5f, half - 5f);
             Vector3 pos   = horiz ? new Vector3(along, 0f, rc) : new Vector3(rc, 0f, along);
+
+            bool clear = true;
+            foreach (var p in placed)
+            {
+                float dx = p.x - pos.x, dz = p.z - pos.z;
+                if (dx * dx + dz * dz < MIN_GAP * MIN_GAP) { clear = false; break; }
+            }
+
+            if (!clear) continue;
+            placed.Add(pos);
             SpawnCar(pos, horiz);
         }
     }

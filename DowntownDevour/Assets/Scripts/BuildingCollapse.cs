@@ -65,19 +65,18 @@ public class BuildingCollapse : MonoBehaviour
         rb.angularDamping = 0.08f;
         // Use Unity's default gravity — no custom downward push
 
-        // Tiny random nudge to break perfect vertical symmetry.
-        // Gravity does all the real work; this just prevents pieces
-        // stacking in a perfect column.
+        // Nudge magnitude scales with height — upper floors tip outward further
+        float spread = Mathf.Clamp(part.position.y * 0.12f, 0.3f, 2.0f);
         Vector3 nudge = new Vector3(
-            Random.Range(-0.4f, 0.4f),
+            Random.Range(-spread, spread),
             0f,
-            Random.Range(-0.4f, 0.4f));
+            Random.Range(-spread, spread));
         rb.AddForce(nudge, ForceMode.VelocityChange);
 
-        // Gentle tumble — NOT explosive spin
-        rb.AddTorque(
-            Random.insideUnitSphere * Random.Range(0.1f, 0.6f),
-            ForceMode.VelocityChange);
+        // Tumble on X and Z only — no Y spin so parts tip rather than spiral
+        Vector3 torqueDir = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+        if (torqueDir.sqrMagnitude < 0.01f) torqueDir = Vector3.right;
+        rb.AddTorque(torqueDir.normalized * Random.Range(0.1f, 0.6f), ForceMode.VelocityChange);
 
         // Register so any hole can eat this piece.
         // Size is based on the smallest dimension so thin panels are easy to eat

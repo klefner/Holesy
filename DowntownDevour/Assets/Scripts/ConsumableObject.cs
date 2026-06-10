@@ -11,11 +11,12 @@ public class ConsumableObject : MonoBehaviour
     public bool           IsConsumed     { get; private set; }
     public float          FootprintRadius { get; private set; }
 
-    private bool    _falling;
-    private float   _spinVel;
-    private float   _scaleVel;
-    private float   _fallVel;
-    private Vector3 _startScale;
+    private bool      _falling;
+    private float     _spinVel;
+    private float     _scaleVel;
+    private float     _fallVel;
+    private Vector3   _startScale;
+    private Transform _holeTransform;
 
     const float FALL_GRAVITY = 7f;
     const float SHRINK_TIME  = 0.85f;
@@ -34,6 +35,16 @@ public class ConsumableObject : MonoBehaviour
     void Update()
     {
         if (!_falling) return;
+
+        // Keep debris under the hole as the hole moves so it stays inside the dark void
+        if (_holeTransform != null)
+        {
+            var p  = transform.position;
+            var hp = _holeTransform.position;
+            p.x = hp.x;
+            p.z = hp.z;
+            transform.position = p;
+        }
 
         transform.Rotate(Vector3.up, _spinVel * Time.deltaTime, Space.World);
 
@@ -59,6 +70,8 @@ public class ConsumableObject : MonoBehaviour
             collapse.Collapse(hole.transform.position);
             return;
         }
+
+        _holeTransform = hole.transform;
 
         var rb = GetComponent<Rigidbody>();
         if (rb != null) rb.isKinematic = true;

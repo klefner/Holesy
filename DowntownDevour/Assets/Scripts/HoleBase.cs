@@ -22,6 +22,7 @@ public class HoleBase : MonoBehaviour
     private const float FLASH_DUR = 0.15f;
 
     private static Mesh _ringMesh;
+    private static Mesh _discMesh;
 
     // ── Init ──────────────────────────────────────────────────────────────────
 
@@ -40,14 +41,12 @@ public class HoleBase : MonoBehaviour
     void BuildVisuals()
     {
         // ── Hole disc: stencil mask, cuts hole in ground ───────────────────
-        var discGO = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        discGO.name = "Disc";
+        var discGO = new GameObject("Disc");
         discGO.transform.SetParent(transform, false);
         discGO.transform.localPosition = new Vector3(0f, -0.03f, 0f);
-        Destroy(discGO.GetComponent<Collider>());
-
-        var holeMat = new Material(Shader.Find("DowntownDevour/HoleMask"));
-        discGO.GetComponent<Renderer>().material = holeMat;
+        discGO.AddComponent<MeshFilter>().sharedMesh = GetDiscMesh();
+        var discRend = discGO.AddComponent<MeshRenderer>();
+        discRend.material = new Material(Shader.Find("DowntownDevour/HoleMask"));
         _disc = discGO.transform;
 
         // ── Colored rim ring ───────────────────────────────────────────────
@@ -163,19 +162,52 @@ public class HoleBase : MonoBehaviour
         if (_rimLight != null) _rimLight.color = HoleColor;
     }
 
+    // ── Disc mesh (shared, built once) ───────────────────────────────────────
+
+    static Mesh GetDiscMesh()
+    {
+        if (_discMesh != null) return _discMesh;
+
+        const int SEG   = 128;
+        var verts = new Vector3[SEG + 1];
+        var tris  = new int[SEG * 3];
+
+        verts[0] = Vector3.zero;
+        for (int i = 0; i < SEG; i++)
+        {
+            float a = i / (float)SEG * Mathf.PI * 2f;
+            verts[i + 1] = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+        }
+
+        for (int i = 0; i < SEG; i++)
+        {
+            int t = i * 3;
+            tris[t]     = 0;
+            tris[t + 1] = i + 1;
+            tris[t + 2] = (i + 1) % SEG + 1;
+        }
+
+        _discMesh = new Mesh { name = "HoleDisc" };
+        _discMesh.vertices  = verts;
+        _discMesh.triangles = tris;
+        _discMesh.RecalculateNormals();
+        _discMesh.RecalculateBounds();
+        return _discMesh;
+    }
+
     // ── Ring mesh (shared, built once) ────────────────────────────────────────
 
     static Mesh GetRingMesh()
     {
         if (_ringMesh != null) return _ringMesh;
 
-        const int   SEG   = 64;
+        const int   SEG   = 128;
         const float OUTER = 1.0f;
         const float INNER = 0.82f;
 
         var verts = new Vector3[SEG * 2];
         var uvs   = new Vector2[SEG * 2];
-        var tris  = new int[SEG * 6];
+        var tris  = new int   [SEG * 6];
 
         for (int i = 0; i < SEG; i++)
         {
