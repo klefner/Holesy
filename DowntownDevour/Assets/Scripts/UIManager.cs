@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 // HUD and end-screen. Uses TextMeshProUGUI (included in URP Universal 3D template).
@@ -84,6 +85,15 @@ public class UIManager : MonoBehaviour
         cs.matchWidthOrHeight  = 0.5f;
 
         go.AddComponent<GraphicRaycaster>();
+
+        // EventSystem is required for all UI interaction (button clicks, hover).
+        // Unity only creates one automatically when using the menu; we build ours in code.
+        if (FindFirstObjectByType<EventSystem>() == null)
+        {
+            var evGO = new GameObject("EventSystem");
+            evGO.AddComponent<EventSystem>();
+            evGO.AddComponent<StandaloneInputModule>();
+        }
     }
 
     // ── HUD ───────────────────────────────────────────────────────────────────
