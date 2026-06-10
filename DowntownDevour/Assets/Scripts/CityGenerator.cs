@@ -49,7 +49,7 @@ public class CityGenerator : MonoBehaviour
         go.transform.SetParent(_cityRoot, false);
         go.transform.localScale = Vector3.one * (GameManager.WORLD_SIZE / 10f);
         go.GetComponent<Renderer>().sharedMaterial = MkGroundMat(COL_GROUND);
-        Destroy(go.GetComponent<Collider>());
+        // Keep MeshCollider so physics debris lands on the ground
     }
 
     // ── Roads ─────────────────────────────────────────────────────────────
@@ -265,6 +265,10 @@ public class CityGenerator : MonoBehaviour
         float buildValue = height < 8f ? 120f : height < 15f ? 300f : 600f;
         int   tier       = height < 8f ? 4 : 5;
         Consumable(root, buildSize, tier, buildValue, ObjectCategory.Building);
+
+        var collapse = root.AddComponent<BuildingCollapse>();
+        foreach (Transform child in root.transform)
+            collapse.RegisterPart(child);
     }
 
     void WaterTower(GameObject parent, float baseY)

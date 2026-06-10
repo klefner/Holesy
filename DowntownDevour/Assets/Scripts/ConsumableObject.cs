@@ -52,12 +52,19 @@ public class ConsumableObject : MonoBehaviour
     {
         if (IsConsumed) return;
         IsConsumed = true;
-        _falling   = true;
-        _spinVel   = (Random.value - 0.5f) * 360f;
-        _fallVel   = 0f;
-        _scaleVel  = 0f;
-
-        // Remove from manager list (objects are never re-added after consume)
         GameManager.Instance.AllObjects.Remove(this);
+
+        var collapse = GetComponent<BuildingCollapse>();
+        if (collapse != null)
+        {
+            collapse.Collapse(hole.transform.position);
+        }
+        else
+        {
+            _falling  = true;
+            _spinVel  = (Random.value - 0.5f) * 360f;
+            _fallVel  = 0f;
+            _scaleVel = 0f;
+        }
     }
 }
