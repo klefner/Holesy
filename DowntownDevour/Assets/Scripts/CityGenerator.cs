@@ -182,6 +182,14 @@ public class CityGenerator : MonoBehaviour
         for (float fy = podiumH + 2.5f; fy < podiumH + shaftH - 0.5f; fy += 2.5f)
             Box(root, "Band", Y(fy), new Vector3(bw + 0.08f, 0.10f, bd + 0.08f), band, 0.55f);
 
+        // Interior floor slabs — hidden behind exterior skin, revealed when building breaks
+        // Concrete color contrasts with glass/brick exterior so player can see the building had mass
+        Color interior = new Color(0.68f, 0.62f, 0.50f);
+        float slabStep = height < 8f ? 3.2f : height < 15f ? 2.8f : 2.5f;
+        for (float fy = podiumH + slabStep * 0.5f; fy < podiumH + shaftH - 0.3f; fy += slabStep)
+            Box(root, "Slab", new Vector3(0f, fy, 0f),
+                new Vector3(bw * 0.78f, 0.20f, bd * 0.78f), interior, 0.12f);
+
         // Window bays on all 4 faces
         if (height > 5f)
         {

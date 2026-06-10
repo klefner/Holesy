@@ -67,7 +67,7 @@ public class ConsumableObject : MonoBehaviour
         var collapse = GetComponent<BuildingCollapse>();
         if (collapse != null)
         {
-            collapse.Collapse(hole.transform.position);
+            collapse.Collapse(hole.transform.position, hole.Radius);
             return;
         }
 
