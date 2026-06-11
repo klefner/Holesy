@@ -49,6 +49,11 @@ public class GameManager : MonoBehaviour
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
 
+        // Stronger-than-real gravity reads better at city scale, and matches
+        // ConsumableObject.FALL_GRAVITY so falling pace doesn't change the
+        // instant the hole takes over an object's fall.
+        Physics.gravity = new Vector3(0f, -18f, 0f);
+
         _city     = gameObject.AddComponent<CityGenerator>();
         _military = gameObject.AddComponent<MilitarySystem>();
         UI        = gameObject.AddComponent<UIManager>();

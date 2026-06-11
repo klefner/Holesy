@@ -140,6 +140,24 @@ public class BuildingCollapse : MonoBehaviour
         Destroy(part.gameObject);
     }
 
+    static PhysicsMaterial _debrisMat;
+
+    static PhysicsMaterial DebrisMat()
+    {
+        if (_debrisMat == null)
+        {
+            _debrisMat = new PhysicsMaterial("Debris")
+            {
+                staticFriction  = 0.9f,
+                dynamicFriction = 0.85f,
+                bounciness      = 0f,
+                frictionCombine = PhysicsMaterialCombine.Maximum,
+                bounceCombine   = PhysicsMaterialCombine.Minimum,
+            };
+        }
+        return _debrisMat;
+    }
+
     static Material ConcreteMat()
     {
         if (_concrete == null)
@@ -161,16 +179,20 @@ public class BuildingCollapse : MonoBehaviour
 
         part.SetParent(null);
 
-        if (part.GetComponent<Collider>() == null)
-            part.gameObject.AddComponent<BoxCollider>();
+        var col = part.GetComponent<Collider>();
+        if (col == null)
+            col = part.gameObject.AddComponent<BoxCollider>();
+        // High friction stops chunks sliding once they land; drag must stay
+        // near zero so gravity accelerates them naturally while airborne.
+        col.material = DebrisMat();
 
         Vector3 s   = part.lossyScale;
         float   vol = s.x * s.y * s.z;
 
         var rb = part.gameObject.AddComponent<Rigidbody>();
         rb.mass           = Mathf.Clamp(vol * 0.25f, 0.3f, 40f);
-        rb.linearDamping  = 1.2f;
-        rb.angularDamping = 2.0f;
+        rb.linearDamping  = 0.02f;
+        rb.angularDamping = 1.0f;
 
         // edgeFrac = 0 → part center is at hole center (falls straight in)
         //          = 1 → part center is at hole rim (topples outward)
