@@ -14,10 +14,6 @@ public class PlayerHole : MonoBehaviour
     private bool    _touching;
     private bool    _hadTouch;
 
-    // Drag distance (in screen pixels) that equals full speed.
-    // 10% of screen height works across phone sizes.
-    private float MaxDragPx => Screen.height * 0.10f;
-
     void Update()
     {
         if (Hole == null) return;
@@ -48,9 +44,8 @@ public class PlayerHole : MonoBehaviour
                     float   mag   = delta.magnitude;
                     if (mag > 2f)
                     {
-                        float   pct = Mathf.Clamp01(mag / MaxDragPx);
                         Vector3 dir = ScreenDeltaToWorld(delta / mag); // delta / mag = normalized
-                        Hole.SetTargetPosition(Hole.transform.position + dir * 60f * pct);
+                        Hole.SetTargetPosition(Hole.transform.position + dir * 60f);
                     }
                     else
                     {
