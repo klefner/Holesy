@@ -19,7 +19,8 @@ public class ConsumableObject : MonoBehaviour
     private HoleBase _hole;
 
     const float FALL_GRAVITY = 18f;
-    const float FADE_DEPTH   = 22f; // metres of visible fall below the surface
+    const float SHRINK_DEPTH = 18f;    // perspective shrink: scale = e^(-depth/this)
+    const float MIN_VISIBLE  = 0.025f; // ~a pixel — destroy below this fraction
 
     public void Init(float size, int tier, float value, ObjectCategory category,
                      float footprintRadius = 0f)
@@ -67,16 +68,16 @@ public class ConsumableObject : MonoBehaviour
             }
             if (!overHole) { Destroy(gameObject); return; }
 
-            // Scale is tied to DEPTH, not a timer: full size at the surface,
-            // gone after FADE_DEPTH metres of fall — objects keep falling and
-            // dwindling until too small to see.
+            // Perspective-style shrink tied to depth: the deeper it falls the
+            // smaller it gets, asymptotically — it never pops out at a fixed
+            // depth.  Destroyed only once it is effectively a pixel.
             float depth = -0.4f - transform.position.y;
-            float t = Mathf.Clamp01(depth / FADE_DEPTH);
-            transform.localScale = Vector3.Lerp(_startScale, Vector3.zero, t);
-            if (t >= 1f) { Destroy(gameObject); return; }
+            float f = Mathf.Exp(-depth / SHRINK_DEPTH);
+            transform.localScale = _startScale * f;
+            if (f <= MIN_VISIBLE) { Destroy(gameObject); return; }
         }
 
-        if (transform.position.y < -30f) Destroy(gameObject);
+        if (transform.position.y < -80f) Destroy(gameObject);
     }
 
     public void MarkConsumed(HoleBase hole)

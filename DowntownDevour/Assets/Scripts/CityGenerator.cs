@@ -36,9 +36,42 @@ public class CityGenerator : MonoBehaviour
         _groundCache.Clear();
         _cityRoot = new GameObject("City").transform;
         BuildGround();
+        BuildBoundaryWalls();
         BuildRoads();
         BuildBlocks();
         SpawnCars(50);
+    }
+
+    // ── Boundary walls ────────────────────────────────────────────────────
+    // Invisible colliders around the playfield so physics debris can never
+    // be launched off the map — beyond the edge there is no ground to land
+    // on or hide it, and it would tumble through the void in plain sight.
+    void BuildBoundaryWalls()
+    {
+        float half = GameManager.HALF;
+        const float H = 80f, T = 2f;
+        float len = GameManager.WORLD_SIZE + T * 2f;
+
+        Vector3[] centers = {
+            new Vector3( half + T / 2f, H / 2f, 0f),
+            new Vector3(-half - T / 2f, H / 2f, 0f),
+            new Vector3(0f, H / 2f,  half + T / 2f),
+            new Vector3(0f, H / 2f, -half - T / 2f),
+        };
+        Vector3[] sizes = {
+            new Vector3(T, H, len),
+            new Vector3(T, H, len),
+            new Vector3(len, H, T),
+            new Vector3(len, H, T),
+        };
+
+        for (int i = 0; i < 4; i++)
+        {
+            var wall = new GameObject("BoundaryWall");
+            wall.transform.SetParent(_cityRoot, false);
+            wall.transform.position = centers[i];
+            wall.AddComponent<BoxCollider>().size = sizes[i];
+        }
     }
 
     // ── Ground ────────────────────────────────────────────────────────────
