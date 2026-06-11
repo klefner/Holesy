@@ -163,8 +163,13 @@ public class GameManager : MonoBehaviour
             foreach (var obj in AllObjects)
             {
                 if (obj.IsConsumed || obj.Size > hole.Radius) continue;
+                // Debris in flight keeps real physics; the hole only takes over
+                // once the object is near ground level
+                if (obj.transform.position.y > 2f) continue;
                 float dx = obj.transform.position.x - hx;
                 float dz = obj.transform.position.z - hz;
+                // FootprintRadius makes the swallow trigger on hole-edge contact
+                // with the object's edge, not its center
                 float tr = hole.Radius + obj.FootprintRadius;
                 if (dx * dx + dz * dz < tr * tr)
                     _consumeQueue.Add((hole, obj));

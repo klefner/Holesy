@@ -379,7 +379,7 @@ public class CityGenerator : MonoBehaviour
                 new Vector3(Random.Range(-0.12f, 0.12f), yo[i], Random.Range(-0.12f, 0.12f)),
                 Quaternion.identity, Vector3.one * ro[i] * 2f, gr[i], 0.05f);
 
-        Consumable(root, 1.1f, 2, 25f, ObjectCategory.Tree);
+        Consumable(root, 1.1f, 2, 25f, ObjectCategory.Tree, 0.9f);
     }
 
     void PlaceLamp(Vector3 pos)
@@ -396,7 +396,7 @@ public class CityGenerator : MonoBehaviour
             Quaternion.identity, new Vector3(0.38f, 0.28f, 0.38f),
             new Color(1.0f, 0.95f, 0.72f), 0.75f);
 
-        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop);
+        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f);
     }
 
     void PlaceHydrant(Vector3 pos)
@@ -476,7 +476,7 @@ public class CityGenerator : MonoBehaviour
             Box(root, "Leg", new Vector3(lx[i], 0.20f, lz[i]),
                 new Vector3(0.06f, 0.40f, 0.06f), metal, 0.30f, 0.20f);
 
-        Consumable(root, 1.0f, 2, 20f, ObjectCategory.Prop);
+        Consumable(root, 1.0f, 2, 20f, ObjectCategory.Prop, 0.55f);
     }
 
     // ── Cars ──────────────────────────────────────────────────────────────
@@ -556,7 +556,7 @@ public class CityGenerator : MonoBehaviour
                 new Vector3(0.36f, 0.04f, 0.36f), rim, 0.75f, 0.55f);
         }
 
-        Consumable(root, 1.8f, 3, 50f, ObjectCategory.Car);
+        Consumable(root, 1.8f, 3, 50f, ObjectCategory.Car, 1.6f);
     }
 
     // ── Ground / road boxes ───────────────────────────────────────────────

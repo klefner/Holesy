@@ -212,7 +212,8 @@ public class BuildingCollapse : MonoBehaviour
         float value  = Mathf.Clamp(vol * 0.6f, 2f, 50f);
 
         var co = part.gameObject.AddComponent<ConsumableObject>();
-        co.Init(size, 1, value, ObjectCategory.Building);
+        co.Init(size, 1, value, ObjectCategory.Building,
+                footprintRadius: 0.5f * Mathf.Max(s.x, s.z));
         GameManager.Instance.AllObjects.Add(co);
     }
 }
