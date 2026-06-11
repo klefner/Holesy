@@ -22,9 +22,41 @@ public class BuildingCollapse : MonoBehaviour
     public void RegisterPart(Transform part)
     {
         _parts.Add(part);
+        // Standing parts are solid: debris slams into them instead of passing
+        // through, and Impact() decides whether the hit dislodges them.
+        if (part.GetComponent<Collider>() == null)
+            part.gameObject.AddComponent<BoxCollider>();
         float y = part.position.y;
         if (y < _minY) _minY = y;
         if (y > _maxY) _maxY = y;
+    }
+
+    // ── Impact from flying debris ─────────────────────────────────────────────
+
+    const float KNOCK_RESIST = 6f; // impulse per unit mass needed to dislodge
+
+    public void Impact(Transform part, Vector3 impulse)
+    {
+        int i = _parts.IndexOf(part);
+        if (i < 0) return;
+
+        Vector3 s    = part.lossyScale;
+        float   mass = Mathf.Clamp(s.x * s.y * s.z * 0.25f, 0.3f, 40f);
+
+        // Pressure vs weight: the hit only dislodges the part when the
+        // collision impulse exceeds what its own mass can absorb.  Heavy
+        // sections shrug off hits that send light panels flying.
+        if (impulse.magnitude < mass * KNOCK_RESIST) return;
+
+        _parts.RemoveAt(i);
+
+        if (NeedsFragmenting(s)) { Fragment(part); return; }
+
+        var rb = MakeDebris(part);
+        rb.AddForce(impulse, ForceMode.Impulse);
+        Vector3 tq = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+        if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
+        rb.AddTorque(tq.normalized * Random.Range(0.5f, 1.5f), ForceMode.VelocityChange);
     }
 
     public void Init(float footprintRadius) => _footprintRadius = footprintRadius;
@@ -119,7 +151,6 @@ public class BuildingCollapse : MonoBehaviour
         for (int iz = 0; iz < nz; iz++)
         {
             var chunk = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            Destroy(chunk.GetComponent<BoxCollider>());
             chunk.name = "Chunk";
             chunk.transform.SetParent(transform, true);
             chunk.transform.position = new Vector3(
@@ -171,12 +202,9 @@ public class BuildingCollapse : MonoBehaviour
 
     // ── Release ───────────────────────────────────────────────────────────────
 
-    IEnumerator ReleasePart(Transform part, float delay, float nY,
-                            float distFromCenter, float holeRadius, Vector3 holePos)
+    // Turns a static building part into live physics debris the holes can eat.
+    Rigidbody MakeDebris(Transform part)
     {
-        if (delay > 0f) yield return new WaitForSeconds(delay);
-        if (part == null) yield break;
-
         part.SetParent(null);
 
         var col = part.GetComponent<Collider>();
@@ -193,6 +221,26 @@ public class BuildingCollapse : MonoBehaviour
         rb.mass           = Mathf.Clamp(vol * 0.25f, 0.3f, 40f);
         rb.linearDamping  = 0.02f;
         rb.angularDamping = 1.0f;
+
+        float minDim = Mathf.Min(s.x, Mathf.Min(s.y, s.z));
+        float size   = Mathf.Max(0.3f, minDim * 0.45f);
+        float value  = Mathf.Clamp(vol * 0.6f, 2f, 50f);
+
+        var co = part.gameObject.AddComponent<ConsumableObject>();
+        co.Init(size, 1, value, ObjectCategory.Building,
+                footprintRadius: 0.5f * Mathf.Max(s.x, s.z));
+        GameManager.Instance.AllObjects.Add(co);
+
+        return rb;
+    }
+
+    IEnumerator ReleasePart(Transform part, float delay, float nY,
+                            float distFromCenter, float holeRadius, Vector3 holePos)
+    {
+        if (delay > 0f) yield return new WaitForSeconds(delay);
+        if (part == null) yield break;
+
+        var rb = MakeDebris(part);
 
         // edgeFrac = 0 → part center is at hole center (falls straight in)
         //          = 1 → part center is at hole rim (topples outward)
@@ -229,14 +277,5 @@ public class BuildingCollapse : MonoBehaviour
         Vector3 tq = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
         if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
         rb.AddTorque(tq.normalized * Random.Range(0.5f, 2.5f), ForceMode.VelocityChange);
-
-        float minDim = Mathf.Min(s.x, Mathf.Min(s.y, s.z));
-        float size   = Mathf.Max(0.3f, minDim * 0.45f);
-        float value  = Mathf.Clamp(vol * 0.6f, 2f, 50f);
-
-        var co = part.gameObject.AddComponent<ConsumableObject>();
-        co.Init(size, 1, value, ObjectCategory.Building,
-                footprintRadius: 0.5f * Mathf.Max(s.x, s.z));
-        GameManager.Instance.AllObjects.Add(co);
     }
 }

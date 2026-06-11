@@ -15,8 +15,9 @@ public class ConsumableObject : MonoBehaviour
     private float    _spinVel;
     private Vector3  _spinAxis;
     private float    _fallVel;
-    private Vector3  _startScale;
-    private HoleBase _hole;
+    private Vector3   _startScale;
+    private HoleBase  _hole;
+    private Rigidbody _rb;
 
     const float FALL_GRAVITY = 18f;
     const float SHRINK_DEPTH = 36f;    // perspective shrink: scale = e^(-depth/this)
@@ -78,6 +79,27 @@ public class ConsumableObject : MonoBehaviour
         }
 
         if (transform.position.y < -80f) Destroy(gameObject);
+    }
+
+    // Flying debris (and knocked-around props) can dislodge standing building
+    // parts.  The building decides whether the hit is strong enough relative
+    // to the part's weight; the impulse PhysX computed for this collision is
+    // the "pressure" of the hit, and our own recoil is already handled by the
+    // engine — equal and opposite.
+    void OnCollisionEnter(Collision c)
+    {
+        if (IsConsumed || c.contactCount == 0) return;
+        if (_rb == null) _rb = GetComponent<Rigidbody>();
+        if (_rb == null || _rb.isKinematic) return;
+
+        Transform other = c.transform;
+        if (other.parent == null) return;
+        var building = other.parent.GetComponent<BuildingCollapse>();
+        if (building == null) return;
+
+        // Impulse magnitude along the direction the hit travels into the part
+        Vector3 dir = -c.GetContact(0).normal;
+        building.Impact(other, dir * c.impulse.magnitude);
     }
 
     public void MarkConsumed(HoleBase hole)
