@@ -33,7 +33,9 @@ public class BuildingCollapse : MonoBehaviour
 
     // ── Impact from flying debris ─────────────────────────────────────────────
 
-    const float KNOCK_RESIST = 6f; // impulse per unit mass needed to dislodge
+    const float KNOCK_RESIST    = 6f;  // impulse per unit mass needed to dislodge
+    const float MAX_KNOCK_SPEED = 9f;  // m/s cap on a dislodged part's launch
+    const float MAX_DEBRIS_SPEED = 25f; // hard ceiling on any debris velocity
 
     public void Impact(Transform part, Vector3 impulse)
     {
@@ -53,7 +55,13 @@ public class BuildingCollapse : MonoBehaviour
         if (NeedsFragmenting(s)) { Fragment(part); return; }
 
         var rb = MakeDebris(part);
-        rb.AddForce(impulse, ForceMode.Impulse);
+        // The engine has already resolved the collision for the striker, so
+        // only a damped share of the impulse carries into the part — and the
+        // resulting velocity is capped so light panels never become rockets.
+        Vector3 dv = impulse * (0.5f / mass);
+        if (dv.magnitude > MAX_KNOCK_SPEED)
+            dv = dv.normalized * MAX_KNOCK_SPEED;
+        rb.AddForce(dv, ForceMode.VelocityChange);
         Vector3 tq = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
         if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
         rb.AddTorque(tq.normalized * Random.Range(0.5f, 1.5f), ForceMode.VelocityChange);
@@ -221,6 +229,10 @@ public class BuildingCollapse : MonoBehaviour
         rb.mass           = Mathf.Clamp(vol * 0.25f, 0.3f, 40f);
         rb.linearDamping  = 0.02f;
         rb.angularDamping = 1.0f;
+        rb.maxLinearVelocity = MAX_DEBRIS_SPEED;
+        // Swept collision so fast debris can't cross a wall in one physics
+        // step and come out the other side untouched
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
 
         float minDim = Mathf.Min(s.x, Mathf.Min(s.y, s.z));
         float size   = Mathf.Max(0.3f, minDim * 0.45f);

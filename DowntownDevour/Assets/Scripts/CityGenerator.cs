@@ -636,6 +636,8 @@ public class CityGenerator : MonoBehaviour
             rb.mass           = mass;
             rb.linearDamping  = 0.05f;
             rb.angularDamping = 0.8f;
+            rb.maxLinearVelocity = 25f;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             rb.Sleep();
         }
     }
