@@ -34,7 +34,15 @@ public class ConsumableObject : MonoBehaviour
 
     void Update()
     {
-        if (!_falling) return;
+        if (!_falling)
+        {
+            // Physics debris that escapes the map (launched past the world
+            // edge, where there is no ground to land on or to hide it) must
+            // vanish once below the surface.  Nothing below ground is ever
+            // visible unless it is falling inside a hole.
+            if (transform.position.y < -1.5f) Destroy(gameObject);
+            return;
+        }
 
         // Tumble around a horizontal axis only — no Y spin, no vortex
         transform.Rotate(_spinAxis, _spinVel * Time.deltaTime, Space.World);
