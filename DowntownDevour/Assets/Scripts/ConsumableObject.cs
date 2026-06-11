@@ -11,11 +11,12 @@ public class ConsumableObject : MonoBehaviour
     public bool           IsConsumed      { get; private set; }
     public float          FootprintRadius { get; private set; }
 
-    private bool    _falling;
-    private float   _spinVel;
-    private Vector3 _spinAxis;
-    private float   _fallVel;
-    private Vector3 _startScale;
+    private bool     _falling;
+    private float    _spinVel;
+    private Vector3  _spinAxis;
+    private float    _fallVel;
+    private Vector3  _startScale;
+    private HoleBase _hole;
 
     const float FALL_GRAVITY = 18f;
     const float FADE_DEPTH   = 22f; // metres of visible fall below the surface
@@ -42,11 +43,25 @@ public class ConsumableObject : MonoBehaviour
         _fallVel           += FALL_GRAVITY * Time.deltaTime;
         transform.position += Vector3.down * (_fallVel * Time.deltaTime);
 
-        // Scale is tied to DEPTH, not a timer: full size at the surface, gone
-        // after FADE_DEPTH metres of fall.  Objects keep falling and dwindling
-        // until they are too small to see — no sudden vanish line.
         if (transform.position.y < -0.4f)
         {
+            // Below the surface an object exists ONLY while the hole is still
+            // over it.  The stencil trick hides underground objects by drawing
+            // ground over them, so anywhere without ground (world edge, other
+            // holes) they would show through — erase them the moment the hole
+            // is no longer above.
+            bool overHole = false;
+            if (_hole != null && _hole.Alive)
+            {
+                float hdx = transform.position.x - _hole.transform.position.x;
+                float hdz = transform.position.z - _hole.transform.position.z;
+                overHole  = hdx * hdx + hdz * hdz < _hole.Radius * _hole.Radius;
+            }
+            if (!overHole) { Destroy(gameObject); return; }
+
+            // Scale is tied to DEPTH, not a timer: full size at the surface,
+            // gone after FADE_DEPTH metres of fall — objects keep falling and
+            // dwindling until too small to see.
             float depth = -0.4f - transform.position.y;
             float t = Mathf.Clamp01(depth / FADE_DEPTH);
             transform.localScale = Vector3.Lerp(_startScale, Vector3.zero, t);
@@ -60,6 +75,7 @@ public class ConsumableObject : MonoBehaviour
     {
         if (IsConsumed) return;
         IsConsumed = true;
+        _hole = hole;
         GameManager.Instance.AllObjects.Remove(this);
 
         // Hand off Rigidbody velocity to our scripted fall so there is no hitch
