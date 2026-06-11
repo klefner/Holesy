@@ -103,11 +103,15 @@ public class HoleBase : MonoBehaviour
 
     void UpdateVisualScale()
     {
+        // The custom disc/ring meshes are built with radius 1.0 (NOT 0.5 like the
+        // old Cylinder primitive), so scale by Radius — not diameter.  Scaling by
+        // Radius*2 made the visible hole twice the logical consume radius, which
+        // is why the drop zone looked like an inner subset of the hole.
         if (_disc != null)
-            _disc.localScale = new Vector3(Radius * 2f, 0.02f, Radius * 2f);
+            _disc.localScale = new Vector3(Radius, 0.02f, Radius);
 
         if (_rimRenderer != null)
-            _rimRenderer.transform.localScale = new Vector3(Radius * 2f, 1f, Radius * 2f);
+            _rimRenderer.transform.localScale = new Vector3(Radius, 1f, Radius);
 
         if (_rimLight != null)
             _rimLight.range = Radius * 2.5f + 6f;

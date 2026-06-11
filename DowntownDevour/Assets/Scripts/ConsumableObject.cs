@@ -18,8 +18,7 @@ public class ConsumableObject : MonoBehaviour
     private Vector3 _startScale;
 
     const float FALL_GRAVITY = 18f;
-    const float SHRINK_TIME  = 0.5f;
-    float       _shrinkTimer;
+    const float FADE_DEPTH   = 22f; // metres of visible fall below the surface
 
     public void Init(float size, int tier, float value, ObjectCategory category,
                      float footprintRadius = 0f)
@@ -43,13 +42,13 @@ public class ConsumableObject : MonoBehaviour
         _fallVel           += FALL_GRAVITY * Time.deltaTime;
         transform.position += Vector3.down * (_fallVel * Time.deltaTime);
 
-        // Object stays full size until it sinks below the ground plane.
-        // The ground mesh occludes it there, so it simply disappears naturally.
-        // We shrink only as a fast cleanup so we don't need to wait for y = -25.
+        // Scale is tied to DEPTH, not a timer: full size at the surface, gone
+        // after FADE_DEPTH metres of fall.  Objects keep falling and dwindling
+        // until they are too small to see — no sudden vanish line.
         if (transform.position.y < -0.4f)
         {
-            _shrinkTimer += Time.deltaTime;
-            float t = Mathf.Clamp01(_shrinkTimer / SHRINK_TIME);
+            float depth = -0.4f - transform.position.y;
+            float t = Mathf.Clamp01(depth / FADE_DEPTH);
             transform.localScale = Vector3.Lerp(_startScale, Vector3.zero, t);
             if (t >= 1f) { Destroy(gameObject); return; }
         }
@@ -74,7 +73,6 @@ public class ConsumableObject : MonoBehaviour
 
         _startScale  = transform.localScale;
         _falling     = true;
-        _shrinkTimer = 0f;
         _spinVel     = (Random.value < 0.5f ? 1f : -1f) * Random.Range(60f, 180f);
         _spinAxis    = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
         if (_spinAxis.sqrMagnitude < 0.01f) _spinAxis = Vector3.right;
