@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Added to building roots by CityGenerator.
+// Attached to building roots by CityGenerator.
 // ConsumableObject.MarkConsumed() calls Collapse() instead of the shrink animation.
 public class BuildingCollapse : MonoBehaviour
 {
@@ -29,12 +29,12 @@ public class BuildingCollapse : MonoBehaviour
         foreach (var (t, y) in _parts)
         {
             if (t == null) continue;
-            float dx      = t.position.x - holePos.x;
-            float dz      = t.position.z - holePos.z;
-            float dist    = Mathf.Sqrt(dx * dx + dz * dz);
-            float nY      = (y - minY) / range;
+            float dx       = t.position.x - holePos.x;
+            float dz       = t.position.z - holePos.z;
+            float dist     = Mathf.Sqrt(dx * dx + dz * dz);
+            float nY       = (y - minY) / range;
             bool  overHole = dist <= holeRadius;
-            // Lower floors fall first; outside parts wait longer based on distance
+            // Lower floors collapse first; outside parts wait longer based on distance
             float delay = nY * 0.20f + (overHole ? 0f : dist * 0.08f);
             StartCoroutine(ReleasePart(t, delay, nY, overHole, holePos));
         }
@@ -50,54 +50,70 @@ public class BuildingCollapse : MonoBehaviour
 
         part.SetParent(null);
 
-        if (part.GetComponent<Collider>() == null)
-            part.gameObject.AddComponent<BoxCollider>();
+        Vector3 s     = part.lossyScale;
+        float   vol   = s.x * s.y * s.z;
+        float   value = Mathf.Clamp(vol * 1.2f, 4f, 80f);
 
-        var rb = part.gameObject.AddComponent<Rigidbody>();
-        Vector3 s   = part.lossyScale;
-        float   vol = s.x * s.y * s.z;
-
-        rb.mass           = Mathf.Clamp(vol * 0.25f, 0.3f, 40f);
-        rb.linearDamping  = 0.03f;
-        rb.angularDamping = 0.08f;
-
-        Vector3 force;
         if (overHole)
         {
-            // Parts directly over the hole drop mostly straight down.
-            // A tiny jitter breaks perfect symmetry so pieces don't stack.
-            float j = Random.Range(0.1f, 0.4f);
-            force = new Vector3(Random.Range(-j, j), 0f, Random.Range(-j, j));
-            // Top quarter: occasional upward pop before dropping in
-            if (nY > 0.75f && Random.value < 0.35f)
-                force.y = Random.Range(1.5f, 4.0f);
+            // Parts directly over the hole fall and shrink into the void —
+            // same visual as any other consumed object so the player sees it happening.
+            StartCoroutine(SuckIntoHole(part));
         }
         else
         {
-            // Parts outside the hole topple outward; upper sections travel further
-            float   mag  = Mathf.Lerp(0.5f, 3.0f, nY);
+            // Parts outside the hole topple outward and land as collectible debris.
+            if (part.GetComponent<Collider>() == null)
+                part.gameObject.AddComponent<BoxCollider>();
+
+            var rb = part.gameObject.AddComponent<Rigidbody>();
+            rb.mass           = Mathf.Clamp(vol * 0.25f, 0.3f, 40f);
+            rb.linearDamping  = 0.03f;
+            rb.angularDamping = 0.08f;
+
+            // Outward force — upper sections fly further
+            float   mag  = Mathf.Lerp(1.5f, 5.0f, nY);
             Vector3 away = new Vector3(part.position.x - holePos.x, 0f,
                                        part.position.z - holePos.z);
             if (away.sqrMagnitude < 0.01f)
                 away = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
-            force    = away.normalized * mag;
+            Vector3 force = away.normalized * mag;
             force.x += Random.Range(-0.5f, 0.5f);
             force.z += Random.Range(-0.5f, 0.5f);
-            // Upper outside parts sometimes fly upward before falling
-            if (nY > 0.65f && Random.value < 0.4f)
+            if (nY > 0.5f && Random.value < 0.4f)
                 force.y = Random.Range(0.5f, 2.5f);
+            rb.AddForce(force, ForceMode.VelocityChange);
+
+            // XZ-only torque — no Y-axis spin so parts don't spiral
+            Vector3 tq = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+            if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
+            rb.AddTorque(tq.normalized * Random.Range(0.5f, 2.0f), ForceMode.VelocityChange);
+
+            float minDim = Mathf.Min(s.x, Mathf.Min(s.y, s.z));
+            float size   = Mathf.Max(0.4f, minDim * 0.45f);
+            RegisterDebris(part.gameObject, size, value);
         }
-        rb.AddForce(force, ForceMode.VelocityChange);
+    }
 
-        // Tumble on XZ only — no Y-axis spin
-        Vector3 tq = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
-        if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
-        rb.AddTorque(tq.normalized * Random.Range(0.2f, 1.2f), ForceMode.VelocityChange);
+    // Falls straight down while shrinking to zero — taller parts take longer.
+    IEnumerator SuckIntoHole(Transform part)
+    {
+        if (part == null) yield break;
+        Vector3 startScale = part.localScale;
+        float   fallVel    = 2f;
+        float   elapsed    = 0f;
+        float   duration   = Mathf.Clamp(part.position.y * 0.12f + 0.25f, 0.25f, 1.2f);
 
-        float minDim = Mathf.Min(s.x, Mathf.Min(s.y, s.z));
-        float size   = Mathf.Max(0.4f, minDim * 0.45f);
-        float value  = Mathf.Clamp(vol * 1.2f, 4f, 80f);
-        RegisterDebris(part.gameObject, size, value);
+        while (part != null && elapsed < duration)
+        {
+            elapsed        += Time.deltaTime;
+            fallVel        += 14f * Time.deltaTime;
+            part.position  += Vector3.down * (fallVel * Time.deltaTime);
+            part.localScale = Vector3.Lerp(startScale, Vector3.zero, elapsed / duration);
+            yield return null;
+        }
+
+        if (part != null) Destroy(part.gameObject);
     }
 
     static void RegisterDebris(GameObject go, float size, float value)
