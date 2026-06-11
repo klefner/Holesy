@@ -7,7 +7,7 @@ using UnityEngine.UI;
 // HUD and end-screen. Uses TextMeshProUGUI (included in URP Universal 3D template).
 public class UIManager : MonoBehaviour
 {
-    public const string VERSION = "v0.20";
+    public const string VERSION = "v0.21";
 
     private Canvas            _canvas;
     private TextMeshProUGUI   _timerText;

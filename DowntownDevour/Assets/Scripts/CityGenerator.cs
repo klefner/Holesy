@@ -389,7 +389,7 @@ public class CityGenerator : MonoBehaviour
         Prim(PrimitiveType.Sphere,  root, "Head", Y(1.30f), Quaternion.identity,
             Vector3.one * 0.28f, skin, 0.10f);
 
-        Consumable(root, 0.5f, 1, 10f, ObjectCategory.Person, 0.2f);
+        Consumable(root, 0.5f, 1, 10f, ObjectCategory.Person, 0.2f, mass: 0.15f);
     }
 
     void PlaceTree(Vector3 pos)
@@ -412,7 +412,7 @@ public class CityGenerator : MonoBehaviour
                 new Vector3(Random.Range(-0.12f, 0.12f), yo[i], Random.Range(-0.12f, 0.12f)),
                 Quaternion.identity, Vector3.one * ro[i] * 2f, gr[i], 0.05f);
 
-        Consumable(root, 1.1f, 2, 25f, ObjectCategory.Tree, 0.9f);
+        Consumable(root, 1.1f, 2, 25f, ObjectCategory.Tree, 0.9f, mass: 1.5f);
     }
 
     void PlaceLamp(Vector3 pos)
@@ -429,7 +429,7 @@ public class CityGenerator : MonoBehaviour
             Quaternion.identity, new Vector3(0.38f, 0.28f, 0.38f),
             new Color(1.0f, 0.95f, 0.72f), 0.75f);
 
-        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f);
+        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f);
     }
 
     void PlaceHydrant(Vector3 pos)
@@ -443,7 +443,7 @@ public class CityGenerator : MonoBehaviour
         Prim(PrimitiveType.Sphere, root, "Cap", Y(0.80f), Quaternion.identity,
             new Vector3(0.30f, 0.22f, 0.30f), Sc(red, 0.80f), 0.5f, 0.1f);
 
-        Consumable(root, 0.5f, 1, 15f, ObjectCategory.Prop, 0.2f);
+        Consumable(root, 0.5f, 1, 15f, ObjectCategory.Prop, 0.2f, mass: 1.0f);
     }
 
     void PlaceTrashCan(Vector3 pos)
@@ -457,7 +457,7 @@ public class CityGenerator : MonoBehaviour
         Prim(PrimitiveType.Cylinder, root, "Lid", Y(0.82f), Quaternion.identity,
             new Vector3(0.42f, 0.06f, 0.42f), Sc(dark, 1.2f), 0.15f);
 
-        Consumable(root, 0.55f, 1, 12f, ObjectCategory.Prop, 0.22f);
+        Consumable(root, 0.55f, 1, 12f, ObjectCategory.Prop, 0.22f, mass: 0.2f);
     }
 
     void PlaceMailbox(Vector3 pos)
@@ -474,7 +474,7 @@ public class CityGenerator : MonoBehaviour
         Prim(PrimitiveType.Sphere, root, "Dome", new Vector3(0f, 1.52f, 0f),
             Quaternion.identity, new Vector3(0.52f, 0.22f, 0.72f), Sc(blue, 0.82f), 0.40f);
 
-        Consumable(root, 0.45f, 1, 10f, ObjectCategory.Prop, 0.35f);
+        Consumable(root, 0.45f, 1, 10f, ObjectCategory.Prop, 0.35f, mass: 0.4f);
     }
 
     void PlaceCone(Vector3 pos)
@@ -489,7 +489,7 @@ public class CityGenerator : MonoBehaviour
         Box(root, "Band", Y(0.25f), new Vector3(0.32f, 0.06f, 0.32f),
             new Color(0.97f, 0.97f, 0.97f), 0.78f);
 
-        Consumable(root, 0.4f, 1, 8f, ObjectCategory.Prop, 0.25f);
+        Consumable(root, 0.4f, 1, 8f, ObjectCategory.Prop, 0.25f, mass: 0.06f);
     }
 
     void PlaceBench(Vector3 pos)
@@ -509,7 +509,7 @@ public class CityGenerator : MonoBehaviour
             Box(root, "Leg", new Vector3(lx[i], 0.20f, lz[i]),
                 new Vector3(0.06f, 0.40f, 0.06f), metal, 0.30f, 0.20f);
 
-        Consumable(root, 1.0f, 2, 20f, ObjectCategory.Prop, 0.55f);
+        Consumable(root, 1.0f, 2, 20f, ObjectCategory.Prop, 0.55f, mass: 0.6f);
     }
 
     // ── Cars ──────────────────────────────────────────────────────────────
@@ -589,7 +589,7 @@ public class CityGenerator : MonoBehaviour
                 new Vector3(0.36f, 0.04f, 0.36f), rim, 0.75f, 0.55f);
         }
 
-        Consumable(root, 1.8f, 3, 50f, ObjectCategory.Car, 1.6f);
+        Consumable(root, 1.8f, 3, 50f, ObjectCategory.Car, 1.6f, mass: 1.2f);
     }
 
     // ── Ground / road boxes ───────────────────────────────────────────────
@@ -606,11 +606,38 @@ public class CityGenerator : MonoBehaviour
 
     // ── Consumable registration ───────────────────────────────────────────
     void Consumable(GameObject go, float size, int tier, float value, ObjectCategory cat,
-                    float footprintRadius = 0f)
+                    float footprintRadius = 0f, float mass = 0f)
     {
         var co = go.AddComponent<ConsumableObject>();
         co.Init(size, tier, value, cat, footprintRadius);
         GameManager.Instance.AllObjects.Add(co);
+
+        // Objects with mass take part in physics: debris that slams into them
+        // knocks them around, and they push back on the debris in equal
+        // measure — PhysX resolves both sides by mass, so heavy and light
+        // objects react differently for free.  Bodies start asleep so the
+        // city costs nothing until something actually hits.
+        if (mass > 0f)
+        {
+            var rends = go.GetComponentsInChildren<Renderer>();
+            if (rends.Length > 0)
+            {
+                Bounds wb = rends[0].bounds;
+                for (int i = 1; i < rends.Length; i++)
+                    wb.Encapsulate(rends[i].bounds);
+
+                var bc = go.AddComponent<BoxCollider>();
+                bc.center = go.transform.InverseTransformPoint(wb.center);
+                Vector3 ls = go.transform.InverseTransformVector(wb.size);
+                bc.size = new Vector3(Mathf.Abs(ls.x), Mathf.Abs(ls.y), Mathf.Abs(ls.z));
+            }
+
+            var rb = go.AddComponent<Rigidbody>();
+            rb.mass           = mass;
+            rb.linearDamping  = 0.05f;
+            rb.angularDamping = 0.8f;
+            rb.Sleep();
+        }
     }
 
     // ── Primitive helpers ─────────────────────────────────────────────────
