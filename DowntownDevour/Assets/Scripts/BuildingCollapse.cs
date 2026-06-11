@@ -119,6 +119,7 @@ public class BuildingCollapse : MonoBehaviour
         for (int iz = 0; iz < nz; iz++)
         {
             var chunk = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            Destroy(chunk.GetComponent<BoxCollider>());
             chunk.name = "Chunk";
             chunk.transform.SetParent(transform, true);
             chunk.transform.position = new Vector3(
@@ -168,8 +169,8 @@ public class BuildingCollapse : MonoBehaviour
 
         var rb = part.gameObject.AddComponent<Rigidbody>();
         rb.mass           = Mathf.Clamp(vol * 0.25f, 0.3f, 40f);
-        rb.linearDamping  = 0.02f;
-        rb.angularDamping = 0.05f;
+        rb.linearDamping  = 1.2f;
+        rb.angularDamping = 2.0f;
 
         // edgeFrac = 0 → part center is at hole center (falls straight in)
         //          = 1 → part center is at hole rim (topples outward)

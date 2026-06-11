@@ -11,17 +11,15 @@ public class ConsumableObject : MonoBehaviour
     public bool           IsConsumed      { get; private set; }
     public float          FootprintRadius { get; private set; }
 
-    private bool      _falling;
-    private float     _spinVel;
-    private Vector3   _spinAxis;
-    private float     _scaleVel;
-    private float     _fallVel;
-    private Vector3   _startScale;
-    private Transform _holeTransform;
-    private Vector2   _holeOffset;
+    private bool    _falling;
+    private float   _spinVel;
+    private Vector3 _spinAxis;
+    private float   _fallVel;
+    private Vector3 _startScale;
 
-    const float FALL_GRAVITY = 14f;
-    const float SHRINK_TIME  = 0.6f;
+    const float FALL_GRAVITY = 18f;
+    const float SHRINK_TIME  = 0.5f;
+    float       _shrinkTimer;
 
     public void Init(float size, int tier, float value, ObjectCategory category,
                      float footprintRadius = 0f)
@@ -38,34 +36,25 @@ public class ConsumableObject : MonoBehaviour
     {
         if (!_falling) return;
 
-        // Follow the hole as it moves, but keep this object's own offset from
-        // the hole center — it falls where it was, never pulled to the middle.
-        if (_holeTransform != null)
-        {
-            var p  = transform.position;
-            var hp = _holeTransform.position;
-            p.x = hp.x + _holeOffset.x;
-            p.z = hp.z + _holeOffset.y;
-            transform.position = p;
-        }
-
-        // Tumble around a horizontal axis — never spin around Y (vortex look)
+        // Tumble around a horizontal axis only — no Y spin, no vortex
         transform.Rotate(_spinAxis, _spinVel * Time.deltaTime, Space.World);
 
+        // Fall straight down under custom gravity — no XZ interference at all
         _fallVel           += FALL_GRAVITY * Time.deltaTime;
         transform.position += Vector3.down * (_fallVel * Time.deltaTime);
 
-        // Shrink only once the object has dropped below the ground surface, so
-        // nothing visibly compresses while still at street level
-        if (transform.position.y < 0f)
+        // Object stays full size until it sinks below the ground plane.
+        // The ground mesh occludes it there, so it simply disappears naturally.
+        // We shrink only as a fast cleanup so we don't need to wait for y = -25.
+        if (transform.position.y < -0.4f)
         {
-            _scaleVel           += Time.deltaTime / SHRINK_TIME;
-            float t              = Mathf.Clamp01(_scaleVel);
+            _shrinkTimer += Time.deltaTime;
+            float t = Mathf.Clamp01(_shrinkTimer / SHRINK_TIME);
             transform.localScale = Vector3.Lerp(_startScale, Vector3.zero, t);
             if (t >= 1f) { Destroy(gameObject); return; }
         }
 
-        if (transform.position.y < -25f) Destroy(gameObject);
+        if (transform.position.y < -30f) Destroy(gameObject);
     }
 
     public void MarkConsumed(HoleBase hole)
@@ -74,18 +63,7 @@ public class ConsumableObject : MonoBehaviour
         IsConsumed = true;
         GameManager.Instance.AllObjects.Remove(this);
 
-        _holeTransform = hole.transform;
-
-        // Preserve where the object is relative to the hole, clamped just inside
-        // the rim so it sinks through the void, not through solid ground
-        Vector3 rel = transform.position - hole.transform.position;
-        var offset  = new Vector2(rel.x, rel.z);
-        float maxOff = Mathf.Max(0f, hole.Radius - 0.25f);
-        if (offset.sqrMagnitude > maxOff * maxOff)
-            offset = offset.normalized * maxOff;
-        _holeOffset = offset;
-
-        // Carry physics momentum into the scripted fall so there's no hitch
+        // Hand off Rigidbody velocity to our scripted fall so there is no hitch
         _fallVel = 0f;
         var rb = GetComponent<Rigidbody>();
         if (rb != null)
@@ -94,13 +72,13 @@ public class ConsumableObject : MonoBehaviour
             rb.isKinematic = true;
         }
 
-        _startScale = transform.localScale;
-        _falling    = true;
-        _spinVel    = (Random.value < 0.5f ? 1f : -1f) * Random.Range(40f, 140f);
-        _spinAxis   = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+        _startScale  = transform.localScale;
+        _falling     = true;
+        _shrinkTimer = 0f;
+        _spinVel     = (Random.value < 0.5f ? 1f : -1f) * Random.Range(60f, 180f);
+        _spinAxis    = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
         if (_spinAxis.sqrMagnitude < 0.01f) _spinAxis = Vector3.right;
         _spinAxis.Normalize();
-        _scaleVel   = 0f;
     }
 
     void OnDestroy()

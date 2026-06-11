@@ -356,7 +356,7 @@ public class CityGenerator : MonoBehaviour
         Prim(PrimitiveType.Sphere,  root, "Head", Y(1.30f), Quaternion.identity,
             Vector3.one * 0.28f, skin, 0.10f);
 
-        Consumable(root, 0.5f, 1, 10f, ObjectCategory.Person);
+        Consumable(root, 0.5f, 1, 10f, ObjectCategory.Person, 0.2f);
     }
 
     void PlaceTree(Vector3 pos)
@@ -410,7 +410,7 @@ public class CityGenerator : MonoBehaviour
         Prim(PrimitiveType.Sphere, root, "Cap", Y(0.80f), Quaternion.identity,
             new Vector3(0.30f, 0.22f, 0.30f), Sc(red, 0.80f), 0.5f, 0.1f);
 
-        Consumable(root, 0.5f, 1, 15f, ObjectCategory.Prop);
+        Consumable(root, 0.5f, 1, 15f, ObjectCategory.Prop, 0.2f);
     }
 
     void PlaceTrashCan(Vector3 pos)
@@ -424,7 +424,7 @@ public class CityGenerator : MonoBehaviour
         Prim(PrimitiveType.Cylinder, root, "Lid", Y(0.82f), Quaternion.identity,
             new Vector3(0.42f, 0.06f, 0.42f), Sc(dark, 1.2f), 0.15f);
 
-        Consumable(root, 0.55f, 1, 12f, ObjectCategory.Prop);
+        Consumable(root, 0.55f, 1, 12f, ObjectCategory.Prop, 0.22f);
     }
 
     void PlaceMailbox(Vector3 pos)
@@ -441,7 +441,7 @@ public class CityGenerator : MonoBehaviour
         Prim(PrimitiveType.Sphere, root, "Dome", new Vector3(0f, 1.52f, 0f),
             Quaternion.identity, new Vector3(0.52f, 0.22f, 0.72f), Sc(blue, 0.82f), 0.40f);
 
-        Consumable(root, 0.45f, 1, 10f, ObjectCategory.Prop);
+        Consumable(root, 0.45f, 1, 10f, ObjectCategory.Prop, 0.35f);
     }
 
     void PlaceCone(Vector3 pos)
@@ -456,7 +456,7 @@ public class CityGenerator : MonoBehaviour
         Box(root, "Band", Y(0.25f), new Vector3(0.32f, 0.06f, 0.32f),
             new Color(0.97f, 0.97f, 0.97f), 0.78f);
 
-        Consumable(root, 0.4f, 1, 8f, ObjectCategory.Prop);
+        Consumable(root, 0.4f, 1, 8f, ObjectCategory.Prop, 0.25f);
     }
 
     void PlaceBench(Vector3 pos)
