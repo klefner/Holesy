@@ -64,13 +64,6 @@ public class ConsumableObject : MonoBehaviour
         IsConsumed = true;
         GameManager.Instance.AllObjects.Remove(this);
 
-        var collapse = GetComponent<BuildingCollapse>();
-        if (collapse != null)
-        {
-            collapse.Collapse(hole.transform.position, hole.Radius);
-            return;
-        }
-
         _holeTransform = hole.transform;
 
         var rb = GetComponent<Rigidbody>();

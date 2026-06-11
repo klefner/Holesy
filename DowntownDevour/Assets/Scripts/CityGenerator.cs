@@ -269,17 +269,16 @@ public class CityGenerator : MonoBehaviour
                     new Vector3(0.9f, 0.65f, 1.4f), new Color(0.72f, 0.73f, 0.74f), 0.15f);
         }
 
-        // 0.55x so the hole needs to be ~half the footprint wide, not equal to it
-        // buildSize = minimum hole radius needed to eat the building
-        // footprintRadius = half the building's widest face, so the hole
-        //   triggers when its EDGE (not just center) overlaps the footprint
-        float buildSize     = Mathf.Max(bw, bd) * 0.55f;
-        float footprintRad  = Mathf.Max(bw, bd) * 0.5f;
-        float buildValue    = height < 8f ? 120f : height < 15f ? 300f : 600f;
-        int   tier          = height < 8f ? 4 : 5;
-        Consumable(root, buildSize, tier, buildValue, ObjectCategory.Building, footprintRad);
+        // Buildings are destroyed progressively, part by part, by BuildingCollapse
+        // polling hole positions — not by the all-at-once consumable path.
+        // minHoleRadius: hole must be ~half the footprint wide before it can harm
+        //   the building; footprintRad: bounding circle for cheap overlap rejection
+        //   (+1 covers podium overhang).
+        float minHoleRadius = Mathf.Max(bw, bd) * 0.55f;
+        float footprintRad  = Mathf.Max(bw, bd) * 0.5f + 1.0f;
 
         var collapse = root.AddComponent<BuildingCollapse>();
+        collapse.Init(minHoleRadius, footprintRad);
         foreach (Transform child in root.transform)
             collapse.RegisterPart(child);
     }
