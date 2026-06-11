@@ -123,7 +123,8 @@ $INJECT_SUBFOLDERS = @(
     "Assets\Scripts",
     "Assets\Scenes",
     "Assets\Shaders",
-    "Assets\Resources"
+    "Assets\Resources",
+    "Scripts"
 )
 
 foreach ($sub in $INJECT_SUBFOLDERS) {
