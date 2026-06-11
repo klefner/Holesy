@@ -1,7 +1,8 @@
-// Renders the hole disc: writes stencil=1 to the disc region, writes depth,
-// outputs NO color.  Any ground material with Stencil { Ref 1, Comp NotEqual }
-// will skip pixels inside the hole, letting the camera background (dark void)
-// show through.
+// Renders the hole disc: writes stencil=1 to the disc region, NO color,
+// NO depth.  Depth must be Off so that objects falling below the ground
+// surface are not depth-rejected by this disc — they should remain visible
+// through the hole all the way down.  Ground materials with
+// Stencil { Ref 1, Comp NotEqual } skip hole pixels using only the stencil.
 Shader "DowntownDevour/HoleMask"
 {
     SubShader
@@ -19,7 +20,7 @@ Shader "DowntownDevour/HoleMask"
             Tags { "LightMode" = "SRPDefaultUnlit" }
 
             Blend Off
-            ZWrite On
+            ZWrite Off
             ZTest LEqual
             ColorMask 0
             Cull Off
