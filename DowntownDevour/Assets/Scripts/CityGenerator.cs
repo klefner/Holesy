@@ -269,16 +269,13 @@ public class CityGenerator : MonoBehaviour
                     new Vector3(0.9f, 0.65f, 1.4f), new Color(0.72f, 0.73f, 0.74f), 0.15f);
         }
 
-        // Buildings are destroyed progressively, part by part, by BuildingCollapse
-        // polling hole positions — not by the all-at-once consumable path.
-        // minHoleRadius: hole must be ~half the footprint wide before it can harm
-        //   the building; footprintRad: bounding circle for cheap overlap rejection
-        //   (+1 covers podium overhang).
-        float minHoleRadius = Mathf.Max(bw, bd) * 0.55f;
-        float footprintRad  = Mathf.Max(bw, bd) * 0.5f + 1.0f;
+        // No single-trigger consumable on the building root — BuildingCollapse
+        // handles each piece individually as the hole sweeps under the building.
+        // footprintRad is used for a cheap bounding-circle pre-check each frame.
+        float footprintRad = Mathf.Sqrt(bw * bw + bd * bd) * 0.5f + 0.5f;
 
         var collapse = root.AddComponent<BuildingCollapse>();
-        collapse.Init(minHoleRadius, footprintRad);
+        collapse.Init(footprintRad);
         foreach (Transform child in root.transform)
             collapse.RegisterPart(child);
     }

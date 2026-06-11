@@ -163,14 +163,8 @@ public class GameManager : MonoBehaviour
             foreach (var obj in AllObjects)
             {
                 if (obj.IsConsumed || obj.Size > hole.Radius) continue;
-                // Airborne debris keeps falling under real physics until it nears
-                // the ground; only then is it swallowed (over a hole) or left to
-                // land and persist until a hole comes back for it.
-                if (obj.transform.position.y > 2.5f) continue;
                 float dx = obj.transform.position.x - hx;
                 float dz = obj.transform.position.z - hz;
-                // FootprintRadius lets wide objects trigger when the hole edge
-                // overlaps their footprint, not only at their center
                 float tr = hole.Radius + obj.FootprintRadius;
                 if (dx * dx + dz * dz < tr * tr)
                     _consumeQueue.Add((hole, obj));

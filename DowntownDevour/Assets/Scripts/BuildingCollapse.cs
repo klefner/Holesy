@@ -1,88 +1,97 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// Progressive destruction. Every frame, any piece of the building whose
-// footprint overlaps a hole breaks off IMMEDIATELY and falls under real
-// gravity — no delays, no scripted swirl. Large boxes (the shaft, slabs,
-// bands) lazily fragment into a grid of cube chunks the first time a hole
-// touches them: outer chunks keep the facade material, inner chunks are
-// concrete, so breaking the skin reveals interior mass. Chunks not over the
-// hole stay frozen in place, so only the section above the hole collapses;
-// the rest of the building keeps standing until the hole sweeps under it.
+// Progressive destruction — no all-or-nothing trigger.
+// Every frame, any piece whose XZ footprint overlaps a hole breaks off that
+// same frame (or is fragmented into smaller pieces first).  Parts at the hole
+// edge topple outward; parts over the void drop straight in.  Chunks that miss
+// the hole land and sleep as persistent debris.
 public class BuildingCollapse : MonoBehaviour
 {
-    const float CHUNK_TARGET   = 2.2f; // desired chunk edge length (m)
-    const int   MAX_PER_AXIS   = 8;
-    const float RELEASE_MARGIN = 0.3f;
+    const float CHUNK_SIZE = 2.0f;
+    const int   MAX_CHUNKS = 6;
 
     static Material _concrete;
 
     readonly List<Transform> _parts = new();
-    float _minHoleRadius;   // hole must be at least this big to harm this building
-    float _footprintRadius; // building bounding circle for cheap overlap rejection
+    float _minY          = float.MaxValue;
+    float _maxY          = float.MinValue;
+    float _footprintRadius;
 
-    public void RegisterPart(Transform part) => _parts.Add(part);
-
-    public void Init(float minHoleRadius, float footprintRadius)
+    public void RegisterPart(Transform part)
     {
-        _minHoleRadius   = minHoleRadius;
-        _footprintRadius = footprintRadius;
+        _parts.Add(part);
+        float y = part.position.y;
+        if (y < _minY) _minY = y;
+        if (y > _maxY) _maxY = y;
     }
+
+    public void Init(float footprintRadius) => _footprintRadius = footprintRadius;
+
+    // ── Per-frame scan ────────────────────────────────────────────────────────
 
     void Update()
     {
         if (GameManager.Instance == null ||
             GameManager.Instance.State != GameManager.GameState.Playing) return;
 
-        var holes = GameManager.Instance.AllHoles;
-        for (int h = 0; h < holes.Count; h++)
+        foreach (var hole in GameManager.Instance.AllHoles)
         {
-            var hole = holes[h];
-            if (!hole.Alive || hole.Radius < _minHoleRadius) continue;
+            if (!hole.Alive) continue;
 
-            Vector3 hp = hole.transform.position;
-            float dx = transform.position.x - hp.x;
-            float dz = transform.position.z - hp.z;
-            float reach = hole.Radius + _footprintRadius;
-            if (dx * dx + dz * dz > reach * reach) continue;
+            // Cheap circle-vs-circle reject before touching _parts
+            Vector3 hp  = hole.transform.position;
+            float   dx  = transform.position.x - hp.x;
+            float   dz  = transform.position.z - hp.z;
+            float   lim = hole.Radius + _footprintRadius;
+            if (dx * dx + dz * dz > lim * lim) continue;
 
-            ProcessHole(hole);
+            SweepHole(hole);
         }
 
         if (_parts.Count == 0) Destroy(gameObject);
     }
 
-    void ProcessHole(HoleBase hole)
+    void SweepHole(HoleBase hole)
     {
-        Vector3 hp = hole.transform.position;
+        Vector3 hp    = hole.transform.position;
+        float   range = Mathf.Max(_maxY - _minY, 1f);
 
-        // Backwards so we can remove entries; chunks appended by Fragment()
-        // land beyond the current index and get picked up next frame (16 ms).
         for (int i = _parts.Count - 1; i >= 0; i--)
         {
-            var part = _parts[i];
+            Transform part = _parts[i];
             if (part == null) { _parts.RemoveAt(i); continue; }
 
-            Vector3 s    = part.lossyScale;
-            float   half = 0.5f * Mathf.Sqrt(s.x * s.x + s.z * s.z);
-            float   dx   = part.position.x - hp.x;
-            float   dz   = part.position.z - hp.z;
-            float   dist = Mathf.Sqrt(dx * dx + dz * dz);
+            Vector3 s     = part.lossyScale;
+            // Radius of this part's XZ footprint (use the larger horizontal dim)
+            float   partR = 0.5f * Mathf.Max(s.x, s.z);
+            float   pdx   = part.position.x - hp.x;
+            float   pdz   = part.position.z - hp.z;
+            float   sqD   = pdx * pdx + pdz * pdz;
+            float   touch = hole.Radius + partR;
 
-            if (dist > hole.Radius + half) continue; // hole not under this part
+            // THE KEY FIX: release as soon as the hole edge touches the part edge,
+            // not only when the part center is inside the hole.
+            if (sqD >= touch * touch) continue;
+
+            _parts.RemoveAt(i);
 
             if (NeedsFragmenting(s))
             {
-                _parts.RemoveAt(i);
-                Fragment(part);
+                Fragment(part);   // next frame, the smaller chunks get caught
                 continue;
             }
 
-            if (dist <= hole.Radius + RELEASE_MARGIN)
-            {
-                _parts.RemoveAt(i);
-                Release(part);
-            }
+            float dist = Mathf.Sqrt(sqD);
+            float nY   = Mathf.Clamp01((part.position.y - _minY) / range);
+            // Wave delay: parts near the touched edge release a hair later so the
+            // collapse looks like structural failure spreading, not a pop.
+            // Never more than 0.15 s so it never reads as a pause.
+            float edgeFrac = Mathf.Clamp01(dist / Mathf.Max(hole.Radius, 0.01f));
+            float delay    = edgeFrac * 0.12f;
+
+            StartCoroutine(ReleasePart(part, delay, nY, dist, hole.Radius, hp));
         }
     }
 
@@ -90,23 +99,20 @@ public class BuildingCollapse : MonoBehaviour
 
     static bool NeedsFragmenting(Vector3 s)
     {
-        int nx = AxisCount(s.x), ny = AxisCount(s.y), nz = AxisCount(s.z);
+        int nx = Chunks(s.x), ny = Chunks(s.y), nz = Chunks(s.z);
         return nx * ny * nz > 1 && s.x * s.y * s.z > 1.5f;
     }
 
-    static int AxisCount(float d) =>
-        Mathf.Clamp(Mathf.RoundToInt(d / CHUNK_TARGET), 1, MAX_PER_AXIS);
+    static int Chunks(float d) =>
+        Mathf.Clamp(Mathf.RoundToInt(d / CHUNK_SIZE), 1, MAX_CHUNKS);
 
-    // Replace one big axis-aligned box with a grid of cube chunks occupying the
-    // same volume. Chunks stay frozen (no physics) as children of the building
-    // until the hole reaches each one.
     void Fragment(Transform part)
     {
-        Vector3 s = part.lossyScale;
-        Vector3 p = part.position;
-        int nx = AxisCount(s.x), ny = AxisCount(s.y), nz = AxisCount(s.z);
-        var  cs     = new Vector3(s.x / nx, s.y / ny, s.z / nz);
-        var  facade = part.GetComponent<Renderer>().sharedMaterial;
+        Vector3 s  = part.lossyScale;
+        Vector3 p  = part.position;
+        int nx = Chunks(s.x), ny = Chunks(s.y), nz = Chunks(s.z);
+        Vector3 cs = new Vector3(s.x / nx, s.y / ny, s.z / nz);
+        Material facade = part.GetComponent<Renderer>().sharedMaterial;
 
         for (int ix = 0; ix < nx; ix++)
         for (int iy = 0; iy < ny; iy++)
@@ -121,11 +127,11 @@ public class BuildingCollapse : MonoBehaviour
                 p.z - s.z * 0.5f + cs.z * (iz + 0.5f));
             chunk.transform.localScale = cs;
 
-            bool outer = ix == 0 || ix == nx - 1 ||
-                         iz == 0 || iz == nz - 1 ||
-                         iy == ny - 1;
+            bool isOuter = ix == 0 || ix == nx - 1 ||
+                           iz == 0 || iz == nz - 1 ||
+                           iy == ny - 1;
             chunk.GetComponent<Renderer>().sharedMaterial =
-                outer ? facade : ConcreteMat();
+                isOuter ? facade : ConcreteMat();
 
             _parts.Add(chunk.transform);
         }
@@ -144,10 +150,14 @@ public class BuildingCollapse : MonoBehaviour
         return _concrete;
     }
 
-    // ── Release: gravity takes over the same frame ────────────────────────────
+    // ── Release ───────────────────────────────────────────────────────────────
 
-    void Release(Transform part)
+    IEnumerator ReleasePart(Transform part, float delay, float nY,
+                            float distFromCenter, float holeRadius, Vector3 holePos)
     {
+        if (delay > 0f) yield return new WaitForSeconds(delay);
+        if (part == null) yield break;
+
         part.SetParent(null);
 
         if (part.GetComponent<Collider>() == null)
@@ -158,20 +168,47 @@ public class BuildingCollapse : MonoBehaviour
 
         var rb = part.gameObject.AddComponent<Rigidbody>();
         rb.mass           = Mathf.Clamp(vol * 0.25f, 0.3f, 40f);
-        rb.linearDamping  = 0.03f;
-        rb.angularDamping = 0.08f;
+        rb.linearDamping  = 0.02f;
+        rb.angularDamping = 0.05f;
 
-        // Tiny jitter so stacked pieces separate; gravity does the real work
-        rb.AddForce(new Vector3(Random.Range(-0.3f, 0.3f), 0f,
-                                Random.Range(-0.3f, 0.3f)), ForceMode.VelocityChange);
+        // edgeFrac = 0 → part center is at hole center (falls straight in)
+        //          = 1 → part center is at hole rim (topples outward)
+        float edgeFrac = Mathf.Clamp01(distFromCenter / Mathf.Max(holeRadius, 0.01f));
 
-        // XZ-only tumble — never spin on Y, so no spiral
+        Vector3 force;
+        if (edgeFrac < 0.55f)
+        {
+            // Over the void: drop with a tiny jitter so pieces don't stack
+            float j = Random.Range(0.1f, 0.5f);
+            force = new Vector3(Random.Range(-j, j), 0f, Random.Range(-j, j));
+            // Upper floors get a slight upward pop before dropping — top doesn't
+            // fall as one rigid pillar
+            force.y = nY * Random.Range(0.5f, 3.0f);
+        }
+        else
+        {
+            // At the hole edge: topple outward; upper sections travel further
+            Vector3 away = new Vector3(part.position.x - holePos.x, 0f,
+                                       part.position.z - holePos.z);
+            if (away.sqrMagnitude < 0.01f)
+                away = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+            float outMag = Mathf.Lerp(1.0f, 5.0f, nY) * edgeFrac;
+            force = away.normalized * outMag;
+            force.x += Random.Range(-0.5f, 0.5f);
+            force.z += Random.Range(-0.5f, 0.5f);
+            // Height-proportional lift so the building top arcs outward, not collapses
+            force.y = nY * Random.Range(0.5f, 2.5f) * edgeFrac;
+        }
+
+        rb.AddForce(force, ForceMode.VelocityChange);
+
+        // XZ-only tumble — Y-axis spin causes the spiral the user complained about
         Vector3 tq = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
         if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
-        rb.AddTorque(tq.normalized * Random.Range(0.3f, 1.0f), ForceMode.VelocityChange);
+        rb.AddTorque(tq.normalized * Random.Range(0.5f, 2.5f), ForceMode.VelocityChange);
 
         float minDim = Mathf.Min(s.x, Mathf.Min(s.y, s.z));
-        float size   = Mathf.Max(0.4f, minDim * 0.45f);
+        float size   = Mathf.Max(0.3f, minDim * 0.45f);
         float value  = Mathf.Clamp(vol * 0.6f, 2f, 50f);
 
         var co = part.gameObject.AddComponent<ConsumableObject>();
