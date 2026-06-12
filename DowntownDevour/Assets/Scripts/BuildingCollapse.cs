@@ -18,6 +18,17 @@ public class BuildingCollapse : MonoBehaviour
     float _minY          = float.MaxValue;
     float _maxY          = float.MinValue;
     float _footprintRadius;
+    float _strength = 1f; // per-building structural integrity
+    bool  _damaged;
+
+    public void Init(float footprintRadius)
+    {
+        _footprintRadius = footprintRadius;
+        // Per-building personality: weak structures chain-react and crumble
+        // wholesale when struck; strong ones only lose what the hole
+        // actually touches and the rest keeps standing.
+        _strength = Random.Range(0.6f, 2.4f);
+    }
 
     public void RegisterPart(Transform part)
     {
@@ -47,10 +58,13 @@ public class BuildingCollapse : MonoBehaviour
 
         // Pressure vs weight: the hit only dislodges the part when the
         // collision impulse exceeds what its own mass can absorb.  Heavy
-        // sections shrug off hits that send light panels flying.
-        if (impulse.magnitude < mass * KNOCK_RESIST) return;
+        // sections shrug off hits that send light panels flying, and each
+        // building's structural strength scales the bar — weak buildings
+        // chain-react, sturdy ones barely shed.
+        if (impulse.magnitude < mass * KNOCK_RESIST * _strength) return;
 
         _parts.RemoveAt(i);
+        MarkDamaged();
 
         if (NeedsFragmenting(s)) { Fragment(part); return; }
 
@@ -66,8 +80,6 @@ public class BuildingCollapse : MonoBehaviour
         if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
         rb.AddTorque(tq.normalized * Random.Range(0.5f, 1.5f), ForceMode.VelocityChange);
     }
-
-    public void Init(float footprintRadius) => _footprintRadius = footprintRadius;
 
     // ── Per-frame scan ────────────────────────────────────────────────────────
 
@@ -103,19 +115,25 @@ public class BuildingCollapse : MonoBehaviour
             Transform part = _parts[i];
             if (part == null) { _parts.RemoveAt(i); continue; }
 
-            Vector3 s     = part.lossyScale;
-            // Radius of this part's XZ footprint (use the larger horizontal dim)
-            float   partR = 0.5f * Mathf.Max(s.x, s.z);
-            float   pdx   = part.position.x - hp.x;
-            float   pdz   = part.position.z - hp.z;
-            float   sqD   = pdx * pdx + pdz * pdz;
-            float   touch = hole.Radius + partR;
+            Vector3 s = part.lossyScale;
+            Vector3 c = part.position;
 
-            // THE KEY FIX: release as soon as the hole edge touches the part edge,
-            // not only when the part center is inside the hole.
-            if (sqD >= touch * touch) continue;
+            // Exact rectangle-vs-circle test: clamp the hole center to the
+            // part's XZ box.  A corner clip releases only that corner — a
+            // bounding circle here made one grazing touch release parts (and
+            // fragment whole cores) the hole never actually reached.
+            float nx  = Mathf.Clamp(hp.x, c.x - 0.5f * s.x, c.x + 0.5f * s.x);
+            float nz  = Mathf.Clamp(hp.z, c.z - 0.5f * s.z, c.z + 0.5f * s.z);
+            float ndx = nx - hp.x;
+            float ndz = nz - hp.z;
+            if (ndx * ndx + ndz * ndz >= hole.Radius * hole.Radius) continue;
+
+            float pdx = c.x - hp.x;
+            float pdz = c.z - hp.z;
+            float sqD = pdx * pdx + pdz * pdz;
 
             _parts.RemoveAt(i);
+            MarkDamaged();
 
             if (NeedsFragmenting(s))
             {
@@ -133,6 +151,85 @@ public class BuildingCollapse : MonoBehaviour
 
             StartCoroutine(ReleasePart(part, delay, nY, dist, hole.Radius, hp));
         }
+    }
+
+    // ── Structural integrity ──────────────────────────────────────────────────
+    // Once a building is damaged, a slow loop checks whether each standing
+    // part is still held up.  Undermined sections sag and topple under
+    // gravity alone — no launch — so partial hits leave partial ruins, and
+    // anything left unsupported slowly leans over and falls.
+
+    void MarkDamaged()
+    {
+        if (_damaged) return;
+        _damaged = true;
+        StartCoroutine(SupportLoop());
+    }
+
+    IEnumerator SupportLoop()
+    {
+        var wait = new WaitForSeconds(0.3f);
+        while (_parts.Count > 0)
+        {
+            yield return wait;
+            ReleaseUnsupportedParts();
+        }
+    }
+
+    void ReleaseUnsupportedParts()
+    {
+        for (int i = _parts.Count - 1; i >= 0; i--)
+        {
+            Transform p = _parts[i];
+            if (p == null) { _parts.RemoveAt(i); continue; }
+            if (IsSupported(p)) continue;
+
+            _parts.RemoveAt(i);
+            // Gravity alone, plus a whisper of torque so columns lean and
+            // keel over rather than dropping perfectly straight.  Only parts
+            // the hole actually touches get the energetic launch.
+            var rb = MakeDebris(p);
+            Vector3 tq = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+            if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
+            rb.AddTorque(tq.normalized * Random.Range(0.1f, 0.4f), ForceMode.VelocityChange);
+        }
+    }
+
+    bool IsSupported(Transform part)
+    {
+        Vector3 s = part.lossyScale;
+        Vector3 c = part.position;
+        float bottom = c.y - 0.5f * s.y;
+        if (bottom <= 0.25f) return true; // standing on the ground
+
+        float ex = 0.5f * s.x, ez = 0.5f * s.z;
+
+        for (int j = 0; j < _parts.Count; j++)
+        {
+            Transform o = _parts[j];
+            if (o == null || o == part) continue;
+            Vector3 os = o.lossyScale;
+            Vector3 oc = o.position;
+
+            float gapX = Mathf.Abs(c.x - oc.x) - (ex + 0.5f * os.x);
+            float gapZ = Mathf.Abs(c.z - oc.z) - (ez + 0.5f * os.z);
+            float oTop = oc.y + 0.5f * os.y;
+            float oBot = oc.y - 0.5f * os.y;
+
+            // Resting on top of a standing part below (needs real XZ overlap)
+            float rest = bottom - oTop;
+            if (rest > -0.05f && rest < 0.35f && gapX < -0.05f && gapZ < -0.05f)
+                return true;
+
+            // Attached to the face of a standing part (windows, bands, slabs
+            // hang on the structure they decorate; side-by-side chunks at the
+            // same level do NOT count — their bottoms align, so a floating
+            // layer can't hold itself up)
+            if (bottom > oBot + 0.05f && bottom < oTop - 0.05f &&
+                gapX < 0.12f && gapZ < 0.12f)
+                return true;
+        }
+        return false;
     }
 
     // ── Fragmentation ─────────────────────────────────────────────────────────
