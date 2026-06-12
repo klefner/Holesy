@@ -712,8 +712,10 @@ Priority:
 
 Status:
 
+- completed in `Master 16.74`
 - Phase 1 completed in `Master 16.18`; source, release, and upload package folders now use the committed modular browser-client package shape
-- `ARCHITECTURE_ALIGNMENT_REVIEW_MASTER16_16_MODULAR_PACKAGE.md` maps the original alignment gaps and the remaining migration phases
+- Phase 2 completed in `Master 16.38`; build metadata, difficulty profiles, Archive lore documents, and starter unlock data now live in external modules
+- `Master 16.74` added the governed source/release package manifest and refreshed release package guidance, closing `PERF-012` as a production package migration item
 
 Description:
 
@@ -739,12 +741,12 @@ Target direction:
 
 Acceptance criteria:
 
-- publish package includes every required file and directory for GoDaddy upload
-- release README distinguishes immediate upload contents from source architecture decisions
-- no production package guidance claims `index.html` is the long-term architecture target unless the ADR is changed
-- at least one low-risk production-scope extraction is promoted from the current Master 16 line
-- browser smoke confirms external files load without console errors
-- mobile smoke confirms startup and game mode selection still work
+- completed: publish package includes every required file and directory for GoDaddy upload, enumerated in `PACKAGE_MANIFEST.md`
+- completed: release README distinguishes changed-files-only delta upload convenience from the full modular release baseline
+- completed: production package guidance says `index.html` is the entry point only
+- completed: low-risk production-scope extractions were promoted in `Master 16.38`
+- completed: browser smoke confirmed external files load without console errors
+- completed: mobile/startup and mode-selection regressions were addressed by `Master 16.18`, with later user validation through `Master 16.73`
 
 Notes:
 
@@ -754,9 +756,9 @@ Notes:
   - source game module: `10_SOURCE/Masters/Master 16/js/main.js`
   - release package mirrors that structure under `40_RELEASE/Website_Publish_Package/holesy/`
   - upload convenience folder mirrors that structure under `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.23\holesy\`
-- likely first production-scope extraction candidates are styles, build metadata, lore/document data, reward/quest tables, or non-loop UI data
+- future extraction candidates include reward/quest tables, UI/archive code, save/load code, level/theme data, and other non-loop data/configuration
 - do not combine this migration with physics, Endless balancing, or new reward systems in the same implementation slice
-- this item exists because future content growth will become painful and risky if the project keeps stuffing all systems into one HTML file
+- this item is now complete; future content growth should use new named architecture/product backlog items rather than reopening `PERF-012`
 
 ### PERF-011 Idle Menu Lifecycle And Page-Exit Cleanup
 
@@ -1216,6 +1218,22 @@ Acceptance criteria:
 - achievements can declare minimum difficulty
 - locked achievements show difficulty requirements clearly enough that players understand why they did not unlock
 - drop-rate tuning preserves the existing pacing rule: zero or one document per won round, with no drops on losses
+
+### P2B.8 Add time-of-day-specific achievements
+
+Intent:
+
+- add achievement families that can only unlock during specific time-of-day looks, such as morning, mid day, evening, or night
+- use the existing Time system as the eligibility source so achievements can require `morning`, `midday`, `evening`, `night`, or a defined group such as `evening_or_night`
+- examples can include night-only car/light challenges, evening building-window challenges, morning speed starts, and mid day clean-feed objectives
+
+Acceptance criteria:
+
+- achievement definitions can declare allowed time-of-day ids or groups
+- achievement checks read the active time-of-day state rather than duplicating lighting logic
+- locked achievements clearly explain the time-of-day requirement in the Archive / achievement surface
+- achievements cannot unlock in the wrong time-of-day state
+- time-of-day achievement checks do not add per-frame scanning overhead
 
 ## Priority 2C — Settings, Haptics, Controller, And Help UX
 
@@ -1895,19 +1913,19 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.59` as the current governed production-test baseline.
+1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.75` as the current governed production-test baseline.
 2. Treat `index.html` as the entry point for the modular package, not the whole game package; the full `/holesy/` folder remains the governed release baseline, while routine GoDaddy uploads should use a changed-files-only delta package when live is already on the previous master.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Treat `QA-006`, `QA-007`, `QA-016`, and the `Master 16.28` traffic/soldier-growth regression set as user-validated closed as of 2026-05-28; continue the new lore-clarity backlog item as product improvement, not as an open QA defect.
 5. Treat product-intent recovery controls as the immediate governance baseline; Team Sync v2 should be run at new-chat startup and before material release/package/architecture decisions.
-6. `PERF-012` Phase 2 has started: `Master 16.38` extracted build metadata, patch notes, difficulty profiles, Archive lore documents, and starter Field Pattern unlocks out of `js/main.js`; `Master 16.39` repaired the startup blocker caused by the initial extraction boundary; `Master 16.40` through `Master 16.49` refined hole-entry descent, readability, and outside-hole visibility/miss behavior for swallowed objects and active medium-office voxels; `Master 16.50` through `Master 16.52` tuned medium-office impact kick, pool-break reactions, local jarring, and solid settled-cube collisions; `Master 16.53` adds desktop mouse-exit steering carry; `Master 16.54` makes medium-office impact motion continuous through support-delay and release; `Master 16.55` fixes Endless score/rival continuity and flat settled-cube landing; `Master 16.56` adds the government-building separate-physics prototype; `Master 16.57` improves government-building spy/tuxedo visibility; `Master 16.58` fixes the government-building touch crash; and `Master 16.59` tunes government-building column-shock collapse.
-7. Commit `ea36e52` published the previously blocked `2026-05-30` through `2026-06-05` governed audit package, including the `2026-05-30_TO_2026-06-01` missing-run note, the `2026-06-03` missing-run note, and the `2026-06-02`, `2026-06-04`, and `2026-06-05` daily audit reports.
-8. The `2026-06-06` daily audit corrected stale `Master 16.55` entry-point labels plus stale `Master 16.52` / `Master 16.41` process-doc references, the `2026-06-08` missing-run gap is now explicitly documented as automation not running, and the `2026-06-09` daily audit corrected the next source-of-truth drift so the governed source/release entry points plus the startup protocol, release manifest, handoff, and backlog recommendation all match `Master 16.59`. The AGENTS/handoff governance publication cleanup includes the `2026-06-06` through `2026-06-09` audit package so future audits should verify the branch-visible commit rather than carrying the old local-only blocker forward.
-9. After `Master 16.59` user validation, continue the next `PERF-012` Phase 2 slice by extracting similarly stable data/configuration from `js/main.js`, preserving behavior and the modular package structure.
-10. The `Priority 1A - Medium Office Building Voxel Collapse` pattern is user-validated through `Master 16.37` for Save Game, Load Game, medium-building sound, skyscraper sound treatment, and medium cube fall tuning. `Master 16.49` restored the readable hole baseline, and `Master 16.50` through `Master 16.59` now need broader regression confirmation as part of the current `Master 16.59` validation pass rather than as open defects.
-10. After the next architecture slice, return to the remaining gameplay intake: lore/buff wording clarity, improved skyscraper collapse variation, house cube breakup, and daily/weekly quest/reward architecture.
+6. `PERF-012` is complete as of `Master 16.74`: Phase 1 modular package shape was completed in `Master 16.18`, Phase 2 low-risk data/config extraction was completed in `Master 16.38`, and `Master 16.74` added the governed package manifest plus refreshed release README evidence.
+7. Commit `ea36e52` published the previously unpublished `2026-05-30` through `2026-06-05` governed audit package, including the `2026-05-30_TO_2026-06-01` missing-run note, the `2026-06-03` missing-run note, and the `2026-06-02`, `2026-06-04`, and `2026-06-05` daily audit reports.
+8. The `2026-06-06` daily audit corrected stale `Master 16.55` entry-point labels plus stale `Master 16.52` / `Master 16.41` process-doc references, the `2026-06-08` missing-run gap is explicitly documented as automation not running, and the `2026-06-09` daily audit corrected the next source-of-truth drift so the governed source/release entry points plus the startup protocol, release manifest, handoff, and backlog recommendation all match `Master 16.59`. Commit `304db13` proves the `2026-06-06` through `2026-06-09` governance package became branch-visible, but the `2026-06-10`, `2026-06-11`, and `2026-06-12` daily audits are local-only in the current session, so `QA-017` remains open as a publication-control defect until a governed Git-writable, network-capable run publishes those new artifacts.
+9. The `Priority 1A - Medium Office Building Voxel Collapse` pattern is user-validated through `Master 16.71` for Save Game, Load Game, medium-building sound, skyscraper sound treatment, medium cube fall tuning, broader regression, government-building debris feel, and medium-office voxel behavior. `Master 16.73` short building-window power flicker passed live-play visual confirmation on 2026-06-11.
+10. Future modularization should be opened as new named architecture/product backlog work, with likely candidates including UI/archive extraction, save/load extraction, level/theme data extraction, and reward/quest data extraction.
+11. Validate `Master 16.75` skyscraper debris spread, then return to the remaining gameplay intake: lore/buff wording clarity, improved skyscraper collapse variation, house cube breakup, and daily/weekly quest/reward architecture.
 
 The next active engineering task is:
 
-- regression test `Master 16.59` through the modular package URL before continuing the next `PERF-012` Phase 2 architecture slice after user validation; in the next audit, verify that the AGENTS/handoff governance publication cleanup is branch-visible before closing any new publication claims.
+- validate `Master 16.75` skyscraper debris spread now that the artificial inward spread limiter is removed from non-voxel skyscraper chunks; then return to the remaining gameplay intake: lore/buff wording clarity, improved skyscraper collapse variation, house cube breakup, and daily/weekly quest/reward architecture; in the next governed Git-writable audit, publish `QA_REVIEW_DAILY_AUDIT_2026-06-10.md`, `QA_REVIEW_DAILY_AUDIT_2026-06-11.md`, and `QA_REVIEW_DAILY_AUDIT_2026-06-12.md`, then re-verify remote freshness before closing the reopened `QA-017` publication-control defect.
 

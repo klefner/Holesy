@@ -10,19 +10,18 @@ The governed release package is the complete modular `holesy/` folder. Keep it i
 
 For routine manual GoDaddy updates, provide a changed-files-only delta package by default. The delta package must preserve the same relative paths under `/holesy/` and should include only files changed since the previous approved master.
 
-Current manual delta package:
+Current governed release baseline:
 
-- `C:\Users\KentLefner\Downloads\holesy-godaddy-delta-master-16.28-from-16.27\holesy\`
+- `40_RELEASE/Website_Publish_Package/holesy/`
 
-Current full resync package:
-
-- `C:\Users\KentLefner\Downloads\holesy-godaddy-upload-master-16.28\holesy\`
+Current preserved GoDaddy convenience copies visible in Downloads may lag this baseline. Verify live state before preparing a fresh delta package.
 
 Important architecture note:
 
 - this package now follows the accepted modular browser-client package shape
 - `index.html` is only the entry point; it is not the whole game package
 - `css/styles.css` and `js/main.js` must be uploaded with it
+- `holesy/PACKAGE_MANIFEST.md` enumerates the complete required package files and directories
 - see `00_ADMIN/Requirements/ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`
 - see `00_ADMIN/Policies_and_Procedures/RELEASE_SOURCE_OF_TRUTH_MANIFEST.md`
 
@@ -37,16 +36,16 @@ This package was generated from:
 - `index.html` is the modular production/mobile-test entry point.
 - `css/styles.css` contains the primary game stylesheet.
 - `js/main.js` contains the primary game module.
+- `js/build-info.js` contains build metadata and patch notes.
+- `js/difficulty-profiles.js` contains difficulty profile data.
+- `data/lore-documents.js` contains Archive lore and starter unlock data.
+- `js/government-physics.js` contains the isolated government-building physics prototype.
+- `PACKAGE_MANIFEST.md` lists every required package file for clean install, rollback, and upload checks.
 - The bottom-left build badge opens in-game build notes for future patch-note publication.
 - This package includes the promoted lore Archive, found-document drops, achievement buffs, Archive music, starter Field Patterns, and the end-screen/feedback cleanup from the `Master 15.39` through `Master 15.45` candidate lineage.
-- Current patch label is `Master 16.28`.
-- The current package also includes the `Master 16.x` Endless Waves line through player-death stop handling, Endless save/load, rival respawn behavior, buff cooldown tuning, rival-devour growth tempering, and Endless growth reset/tuning fixes.
-- The current package completes `PERF-012` Phase 1 by aligning the source, release, and upload package folders to the committed modular browser-client structure.
-- `Master 16.24` keeps the archive/achievement spider map as a project artifact only and removes it from the player-facing game package.
-- `Master 16.25` fixes the How to Play menu button styling and includes the missing How to Play summary image in the manual GoDaddy delta package.
-- `Master 16.26` restores the full-height How to Play summary graphic and hard-caps panic-car crash slide distance.
-- `Master 16.27` fixes mobile menu action activation and restores visible growth from normal devours after soldier damage.
-- `Master 16.28` re-aligns moving traffic to its lane direction and removes hidden soldier-damage growth debt.
+- Current patch label is `Master 16.74`.
+- The current package includes the `Master 16.x` Endless Waves, save/load, medium-office voxel, government-building physics, and time-of-day lighting line through the validated `Master 16.73` short building-window power flicker.
+- `Master 16.74` completes the governed `PERF-012` modular production package migration evidence: source/release package shape is modular, low-risk data/config modules are extracted, and the package manifest records required upload files.
 
 ## Publish Rule
 

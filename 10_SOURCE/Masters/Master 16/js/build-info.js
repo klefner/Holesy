@@ -1,8 +1,145 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 59;
+export const BUILD_SUB = 75;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.75',
+    summary: 'Natural skyscraper debris spread.',
+    changes: [
+      'Removed the artificial inward spread limiter from non-voxel skyscraper chunks so debris no longer nudges back toward the original building center.',
+      'Preserved the existing medium-office voxel spread guard and behavior.'
+    ],
+  },
+  {
+    label: 'Master 16.74',
+    summary: 'PERF-012 modular package completion.',
+    changes: [
+      'Completed the PERF-012 modular production package migration evidence with a governed package manifest and refreshed release notes.',
+      'No gameplay behavior changed from Master 16.73.'
+    ],
+  },
+  {
+    label: 'Master 16.73',
+    summary: 'Short building-window power flicker.',
+    changes: [
+      'Building windows now flicker only one to three short random times after power is cut, then stay dark.',
+      'Destroyed-building windows still cannot be relit by later Time button cycling.'
+    ],
+  },
+  {
+    label: 'Master 16.72',
+    summary: 'Building window power-off flicker.',
+    changes: [
+      'Lit building windows now flicker briefly before going dark as the building starts coming apart.',
+      'Time-of-day cycling still cannot relight windows after their building has lost power.'
+    ],
+  },
+  {
+    label: 'Master 16.71',
+    summary: 'Local test cache refresh.',
+    changes: [
+      'Bumped the local test build label and asset version so Chrome reloads the repaired Time button handler instead of reusing an older wave-lock module.',
+      'No gameplay rule changed from Master 16.70: the Time button should cycle looks manually, while devoured streetlamps flicker off as they fall.'
+    ],
+  },
+  {
+    label: 'Master 16.70',
+    summary: 'Streetlamp power-off polish.',
+    changes: [
+      'Devoured streetlamps now lose power as they fall, turning off the lamp head and glow.',
+      'Time-of-day lighting no longer relights a streetlamp after it has been pulled into the hole.'
+    ],
+  },
+  {
+    label: 'Master 16.69',
+    summary: 'Time button cycle repair.',
+    changes: [
+      'The Time button once again cycles morning, mid day, evening, and night when clicked.',
+      'Wave-based modes still assign the starting look for each wave; manual Time cycling remains available for further visual testing during a wave.'
+    ],
+  },
+  {
+    label: 'Master 16.68',
+    summary: 'Wave time-of-day sequence lock.',
+    changes: [
+      'Wave-based modes now lock each wave to the fixed morning, mid day, evening, night sequence.',
+      'Endless waves repeat the sequence after night so wave 5 returns to morning.',
+      'The Time button now snaps back to the active wave time during wave-based play instead of overriding the wave look.'
+    ],
+  },
+  {
+    label: 'Master 16.67',
+    summary: 'Destroyed building lights cleanup.',
+    changes: [
+      'Lit building windows now extinguish when their building piece starts collapsing, falling, or being removed.',
+      'Skyscraper, voxel-office, and government-building collapse activation now turns off affected building windows immediately.',
+      'The Time button no longer relights windows on buildings that have already been destroyed.'
+    ],
+  },
+  {
+    label: 'Master 16.66',
+    summary: 'Evening and night city lights.',
+    changes: [
+      'Evening and night now turn on street lamp glow, sparse lit building windows, and car headlights/taillights.',
+      'Less than half of registered building windows are selected to light up, keeping the city readable without making every facade bright.',
+      'Lighting is tied to the existing Time button and uses cheap mesh/material visibility changes instead of expensive dynamic light spam.'
+    ],
+  },
+  {
+    label: 'Master 16.65',
+    summary: 'Government debris physics visibility.',
+    changes: [
+      'Government building pieces now get a short debris-escape window after first breach so shake, topple, bounce, and collision impulses are visible before the hole can swallow them.',
+      'Strengthened the government physics staged activation with larger shake, lean, blast separation, and topple-release impulses.',
+      'Improved government cube side-impact reactions with extra scatter, hop, and angular torque while preserving the separate government physics path.'
+    ],
+  },
+  {
+    label: 'Master 16.64',
+    summary: 'Weather performance rollback.',
+    changes: [
+      'Removed the in-game Weather button and weather particle system after the visual weather pass caused severe runtime slowdown.',
+      'Kept the Time button and morning, mid day, evening, and night lighting cycle because it does not run a per-frame particle field.',
+      'Removed the weather frame-update path so gameplay no longer pays weather costs in the main loop.'
+    ],
+  },
+  {
+    label: 'Master 16.63',
+    summary: 'Government building impact physics.',
+    changes: [
+      'Government building breaches now start with a visible shake-and-lean phase before pieces release.',
+      'Touched columns receive stronger upward/outward impulses so pieces can jump out and scatter instead of only dropping into the hole.',
+      'Government building cube collisions now add stronger bounce, side-impact hop, and angular spin while staying inside the separate government physics path.'
+    ],
+  },
+  {
+    label: 'Master 16.62',
+    summary: 'Weather cycle cleanup.',
+    changes: [
+      'Removed the Ash weather effect from the in-game Weather cycle.',
+      'Restored the richer Rain and Snow particle behavior from the time/weather preview pass.',
+      'Kept Clear, Rain, and Snow as the available weather preview effects.'
+    ],
+  },
+  {
+    label: 'Master 16.61',
+    summary: 'Time and weather preview controls.',
+    changes: [
+      'Added in-game Time and Weather buttons for cycling visual looks during play.',
+      'Added Clear, Rain, Snow, and Ash weather looks with lightweight scene particles.',
+      'Weather now adjusts fog, sky tint, ambient light, sun intensity, and ground tint without changing gameplay.'
+    ],
+  },
+  {
+    label: 'Master 16.60',
+    summary: 'Time-of-day lighting pass.',
+    changes: [
+      'Added distinct morning, mid day, evening, and night scene looks.',
+      'Wave-based modes now rotate sky, fog, ambient light, sun angle, and ground tint by wave.',
+      'Timed and Last Man Standing modes keep the readable mid day look as their stable baseline.'
+    ],
+  },
   {
     label: 'Master 16.59',
     summary: 'Government building column-shock collapse.',

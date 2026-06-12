@@ -2,6 +2,128 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.75 - 2026-06-12
+
+Natural skyscraper debris spread.
+
+- Removed the artificial inward spread limiter from non-voxel skyscraper chunks so debris no longer nudges back toward the original building center.
+- Preserved the existing medium-office voxel spread guard and behavior.
+
+## Master 16.74 - 2026-06-11
+
+PERF-012 modular package completion.
+
+- Added a governed package manifest to the source and release `holesy/` folders so upload checks enumerate the full modular package instead of treating `index.html` as the game.
+- Refreshed the release package README to `Master 16.74` and documented the completed modular source/release baseline.
+- No gameplay behavior changed from `Master 16.73`.
+
+## Master 16.73 - 2026-06-11
+
+Short building-window power flicker.
+
+- Building windows now flicker only one to three short random times after power is cut, then stay dark.
+- Time-of-day cycling still cannot relight windows after their building has lost power.
+
+## Master 16.72 - 2026-06-11
+
+Building window power-off flicker.
+
+- Lit building windows now flicker briefly before going dark as the building starts coming apart.
+- Time-of-day cycling still cannot relight windows after their building has lost power.
+
+## Master 16.71 - 2026-06-11
+
+Local test cache refresh.
+
+- Bumped the local test build label and asset version so Chrome reloads the repaired Time button handler instead of reusing an older wave-lock module.
+- No gameplay rule changed from Master 16.70: the Time button should cycle looks manually, while devoured streetlamps flicker off as they fall.
+
+## Master 16.70 - 2026-06-11
+
+Streetlamp power-off polish.
+
+- Devoured streetlamps now flicker out as they fall into the hole.
+- Time-of-day lighting no longer relights a streetlamp after it has been disconnected from power.
+
+## Master 16.69 - 2026-06-11
+
+Time button cycle repair.
+
+- The Time button once again cycles morning, mid day, evening, and night when clicked.
+- Wave-based modes still assign the starting look for each wave; manual Time cycling remains available for further visual testing during a wave.
+
+## Master 16.68 - 2026-06-09
+
+Wave time-of-day sequence lock.
+
+- Wave-based modes now lock each wave to the fixed morning, mid day, evening, night sequence.
+- Endless waves repeat the sequence after night so wave 5 returns to morning.
+- The Time button now snaps back to the active wave time during wave-based play instead of overriding the wave look.
+
+## Master 16.67 - 2026-06-09
+
+Destroyed building lights cleanup.
+
+- Lit building windows now extinguish when their building piece starts collapsing, falling, or being removed.
+- Skyscraper, voxel-office, and government-building collapse activation now turns off affected building windows immediately.
+- The Time button no longer relights windows on buildings that have already been destroyed.
+
+## Master 16.66 - 2026-06-09
+
+Evening and night city lights.
+
+- Evening and night now turn on street lamp glow, sparse lit building windows, and car headlights/taillights.
+- Less than half of registered building windows are selected to light up, keeping the city readable without making every facade bright.
+- Lighting is tied to the existing Time button and uses cheap mesh/material visibility changes instead of expensive dynamic light spam.
+
+## Master 16.65 - 2026-06-09
+
+Government debris physics visibility.
+
+- Government building pieces now get a short debris-escape window after first breach so shake, topple, bounce, and collision impulses are visible before the hole can swallow them.
+- Strengthened the government physics staged activation with larger shake, lean, blast separation, and topple-release impulses.
+- Improved government cube side-impact reactions with extra scatter, hop, and angular torque while preserving the separate government physics path.
+
+## Master 16.64 - 2026-06-09
+
+Weather performance rollback.
+
+- Removed the in-game Weather button and weather particle system after the visual weather pass caused severe runtime slowdown.
+- Kept the Time button and morning, mid day, evening, and night lighting cycle because it does not run a per-frame particle field.
+- Removed the weather frame-update path so gameplay no longer pays weather costs in the main loop.
+
+## Master 16.63 - 2026-06-09
+
+Government building impact physics.
+
+- Government building breaches now start with a visible shake-and-lean phase before pieces release.
+- Touched columns receive stronger upward/outward impulses so pieces can jump out and scatter instead of only dropping into the hole.
+- Government building cube collisions now add stronger bounce, side-impact hop, and angular spin while staying inside the separate government physics path.
+
+## Master 16.62 - 2026-06-09
+
+Weather cycle cleanup.
+
+- Removed the Ash weather effect from the in-game Weather cycle.
+- Restored the richer Rain and Snow particle behavior from the time/weather preview pass.
+- Kept Clear, Rain, and Snow as the available weather preview effects.
+
+## Master 16.61 - 2026-06-09
+
+Time and weather preview controls.
+
+- Added in-game Time and Weather buttons for cycling visual looks during play.
+- Added Clear, Rain, Snow, and Ash weather looks with lightweight scene particles.
+- Weather now adjusts fog, sky tint, ambient light, sun intensity, and ground tint without changing gameplay.
+
+## Master 16.60 - 2026-06-09
+
+Time-of-day lighting pass.
+
+- Added distinct morning, mid day, evening, and night scene looks.
+- Wave-based modes now rotate sky, fog, ambient light, sun angle, and ground tint by wave.
+- Timed and Last Man Standing modes keep the readable mid day look as their stable baseline.
+
 ## Master 16.59 - 2026-06-07
 
 Government building column-shock collapse.

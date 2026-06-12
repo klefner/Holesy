@@ -2,31 +2,44 @@ export const GOVERNMENT_PHYSICS_CONFIG = Object.freeze({
   fixedStep: 1 / 60,
   maxSubSteps: 3,
   gravity: 24,
-  maxFallSpeed: 28,
-  maxHorizontalSpeed: 13,
-  maxAngularSpeed: 7,
+  maxFallSpeed: 34,
+  maxHorizontalSpeed: 18,
+  maxAngularSpeed: 12,
   cellSize: 3.2,
-  solverIterations: 4,
-  restitution: 0.28,
-  groundRestitution: 0.18,
-  friction: 0.82,
+  solverIterations: 6,
+  restitution: 0.44,
+  groundRestitution: 0.26,
+  friction: 0.72,
   airDamping: 0.992,
-  groundDamping: 0.86,
-  angularDamping: 0.91,
+  groundDamping: 0.82,
+  angularDamping: 0.9,
   sleepSpeed: 0.08,
   sleepAngular: 0.1,
   sleepDelay: 0.72,
   contactSlop: 0.012,
-  activationImpulseMin: 3.4,
-  activationImpulseMax: 7.2,
-  activationLiftMin: 1.0,
-  activationLiftMax: 3.8,
-  activationJitter: 1.4,
-  activationColumnBoost: 1.55,
-  activationNeighborBoost: 0.9,
-  activationHeightLift: 0.42,
-  activationShockJitter: 0.85,
-  impactSpin: 2.8,
+  activationImpulseMin: 5.6,
+  activationImpulseMax: 11.4,
+  activationLiftMin: 2.1,
+  activationLiftMax: 7.4,
+  activationJitter: 1.9,
+  activationColumnBoost: 2.25,
+  activationNeighborBoost: 0.95,
+  activationHeightLift: 1.1,
+  activationShockJitter: 1.25,
+  shakeDuration: 0.58,
+  shakeDistance: 0.34,
+  toppleAngleMin: 0.28,
+  toppleAngleMax: 0.84,
+  toppleOffset: 0.9,
+  releaseDelayBase: 0.08,
+  releaseDelayGrid: 0.11,
+  releaseDelayFloor: 0.14,
+  releaseImpulseTopple: 4.3,
+  columnLeanImpulse: 3.4,
+  blastSeparation: 0.42,
+  sideImpactHop: 1.05,
+  sideImpactScatter: 0.62,
+  impactSpin: 5.8,
 });
 
 function randomBetween(min, max) {
@@ -88,9 +101,27 @@ export class GovernmentPhysicsWorld {
         z: options.avz || 0,
       },
       active: !!options.active,
+      released: options.released ?? !!options.active,
       sleeping: false,
       sleepTimer: 0,
       onGround: false,
+      basePosition: {
+        x: object.mesh.position.x,
+        y: object.mesh.position.y,
+        z: object.mesh.position.z,
+      },
+      baseRotation: {
+        x: object.mesh.rotation.x,
+        y: object.mesh.rotation.y,
+        z: object.mesh.rotation.z,
+      },
+      releaseDelay: options.releaseDelay || 0,
+      releaseDelayStart: options.releaseDelay || 0,
+      shakeTimer: 0,
+      toppleAngle: 0,
+      toppleDir: { x: 0, z: 0 },
+      pendingVelocity: { x: 0, y: 0, z: 0 },
+      pendingAngular: { x: 0, y: 0, z: 0 },
     };
     this.bodies.push(body);
     this.bodyByObject.set(object, body);
@@ -139,9 +170,17 @@ export class GovernmentPhysicsWorld {
     for (const body of this.bodies) {
       if (body.buildingId !== buildingId || body.object?.consumed) continue;
       body.active = true;
+      body.released = false;
       body.sleeping = false;
       body.sleepTimer = 0;
       body.object.govPhysicsActive = true;
+      body.object.govPhysicsReleased = false;
+      body.basePosition.x = body.position.x;
+      body.basePosition.y = body.position.y;
+      body.basePosition.z = body.position.z;
+      body.baseRotation.x = body.object.mesh.rotation.x;
+      body.baseRotation.y = body.object.mesh.rotation.y;
+      body.baseRotation.z = body.object.mesh.rotation.z;
       const obj = body.object || {};
       const gridDx = touchedColX == null ? 0 : Math.abs((obj.govColX ?? touchedColX) - touchedColX);
       const gridDz = touchedRowZ == null ? 0 : Math.abs((obj.govRowZ ?? touchedRowZ) - touchedRowZ);
@@ -158,13 +197,25 @@ export class GovernmentPhysicsWorld {
       const neighborBoost = neighbor ? this.config.activationNeighborBoost : 0.56;
       const impulse = randomBetween(this.config.activationImpulseMin, this.config.activationImpulseMax) * distanceFalloff * neighborBoost;
       const jitter = this.config.activationJitter + this.config.activationShockJitter * (directColumn ? 1.25 : 0.85);
-      body.velocity.x += shockDir.x * impulse + randomBetween(-jitter, jitter);
-      body.velocity.z += shockDir.z * impulse + randomBetween(-jitter, jitter);
-      body.velocity.y += randomBetween(this.config.activationLiftMin, this.config.activationLiftMax) * (directColumn ? 1.2 : 0.85) + floorRatio * this.config.activationHeightLift;
+      const lift = randomBetween(this.config.activationLiftMin, this.config.activationLiftMax) * (directColumn ? 1.28 : 0.86) + floorRatio * this.config.activationHeightLift;
+      body.pendingVelocity.x = body.velocity.x + shockDir.x * impulse + randomBetween(-jitter, jitter);
+      body.pendingVelocity.z = body.velocity.z + shockDir.z * impulse + randomBetween(-jitter, jitter);
+      body.pendingVelocity.y = body.velocity.y + lift;
       const spinScale = directColumn ? 1.18 : (neighbor ? 0.95 : 0.7);
-      body.angular.x += randomBetween(-this.config.impactSpin, this.config.impactSpin) * spinScale;
-      body.angular.y += randomBetween(-this.config.impactSpin, this.config.impactSpin) * spinScale;
-      body.angular.z += randomBetween(-this.config.impactSpin, this.config.impactSpin) * spinScale;
+      body.pendingAngular.x = body.angular.x + randomBetween(-this.config.impactSpin, this.config.impactSpin) * spinScale;
+      body.pendingAngular.y = body.angular.y + randomBetween(-this.config.impactSpin, this.config.impactSpin) * spinScale;
+      body.pendingAngular.z = body.angular.z + randomBetween(-this.config.impactSpin, this.config.impactSpin) * spinScale;
+      body.toppleDir = normalize2(shockDir.x * 0.72 + awayFromColumn.x * 0.28, shockDir.z * 0.72 + awayFromColumn.z * 0.28);
+      body.toppleAngle = randomBetween(this.config.toppleAngleMin, this.config.toppleAngleMax) * (0.55 + floorRatio) * (directColumn ? 1.18 : 0.82);
+      const delay = this.config.releaseDelayBase
+        + gridDist * this.config.releaseDelayGrid
+        + floorRatio * this.config.releaseDelayFloor
+        + randomBetween(0, directColumn ? 0.055 : 0.14);
+      body.releaseDelay = Math.max(0, directColumn ? delay * 0.55 : delay);
+      body.releaseDelayStart = Math.max(0.001, body.releaseDelay);
+      body.shakeTimer = this.config.shakeDuration;
+      body.position.x += shockDir.x * this.config.blastSeparation * (directColumn ? 1 : 0.45);
+      body.position.z += shockDir.z * this.config.blastSeparation * (directColumn ? 1 : 0.45);
       activated++;
     }
     return activated;
@@ -192,6 +243,10 @@ export class GovernmentPhysicsWorld {
 
   integrate(body, dt) {
     if (!body.active || body.sleeping || body.object?.falling || body.object?.consumed) return;
+    if (!body.released) {
+      this.updateStagedActivation(body, dt);
+      return;
+    }
     body.onGround = false;
     body.velocity.y -= this.config.gravity * dt;
     body.velocity.y = Math.max(body.velocity.y, -this.config.maxFallSpeed);
@@ -223,6 +278,41 @@ export class GovernmentPhysicsWorld {
     this.solveGround(body);
   }
 
+  updateStagedActivation(body, dt) {
+    body.releaseDelay = Math.max(0, body.releaseDelay - dt);
+    body.shakeTimer = Math.max(0, body.shakeTimer - dt);
+    const obj = body.object || {};
+    const floorRatio = Math.max(0, (obj.govFloor || 0) / Math.max(1, (obj.govFloorsY || 1) - 1));
+    const progress = clamp(1 - body.releaseDelay / body.releaseDelayStart, 0, 1);
+    const shakePhase = (body.shakeTimer / Math.max(0.001, this.config.shakeDuration));
+    const shakeAmp = this.config.shakeDistance * shakePhase * (1.1 + floorRatio);
+    const wave = Math.sin((body.releaseDelayStart - body.releaseDelay + body.mass) * 72);
+    const sideWave = Math.cos((body.releaseDelayStart - body.releaseDelay + body.mass) * 49);
+    const leanOffset = this.config.toppleOffset * progress * progress * (0.25 + floorRatio);
+    body.position.x = body.basePosition.x + body.toppleDir.x * leanOffset + body.toppleDir.z * wave * shakeAmp;
+    body.position.y = body.basePosition.y + Math.abs(wave) * shakeAmp * 0.42;
+    body.position.z = body.basePosition.z + body.toppleDir.z * leanOffset - body.toppleDir.x * sideWave * shakeAmp;
+    const mesh = body.object.mesh;
+    const leanAngle = body.toppleAngle * progress;
+    mesh.rotation.x = body.baseRotation.x + body.toppleDir.z * leanAngle + sideWave * shakeAmp * 0.55;
+    mesh.rotation.y = body.baseRotation.y + wave * shakeAmp * 0.35;
+    mesh.rotation.z = body.baseRotation.z - body.toppleDir.x * leanAngle + wave * shakeAmp * 0.55;
+    if (body.releaseDelay <= 0) this.releaseBody(body, progress);
+  }
+
+  releaseBody(body, progress = 1) {
+    body.released = true;
+    body.sleeping = false;
+    body.sleepTimer = 0;
+    body.velocity.x = body.pendingVelocity.x + body.toppleDir.x * this.config.releaseImpulseTopple * progress;
+    body.velocity.y = body.pendingVelocity.y + progress * 0.9;
+    body.velocity.z = body.pendingVelocity.z + body.toppleDir.z * this.config.releaseImpulseTopple * progress;
+    body.angular.x = body.pendingAngular.x + body.toppleDir.z * this.config.releaseImpulseTopple;
+    body.angular.y = body.pendingAngular.y + randomBetween(-this.config.impactSpin, this.config.impactSpin) * 0.42;
+    body.angular.z = body.pendingAngular.z - body.toppleDir.x * this.config.releaseImpulseTopple;
+    body.object.govPhysicsReleased = true;
+  }
+
   solveGround(body) {
     const floorY = body.half.y;
     if (body.position.y >= floorY) return;
@@ -235,6 +325,11 @@ export class GovernmentPhysicsWorld {
     body.angular.x *= this.config.groundDamping;
     body.angular.y *= this.config.groundDamping;
     body.angular.z *= this.config.groundDamping;
+    if (Math.abs(body.angular.x) + Math.abs(body.angular.z) > 0.45) {
+      const slide = Math.min(0.16, (Math.abs(body.angular.x) + Math.abs(body.angular.z)) * 0.015);
+      body.velocity.x += Math.sign(body.angular.z || randomBetween(-1, 1)) * slide;
+      body.velocity.z -= Math.sign(body.angular.x || randomBetween(-1, 1)) * slide;
+    }
   }
 
   solveContacts() {
@@ -259,7 +354,7 @@ export class GovernmentPhysicsWorld {
     let id = 1;
     for (const body of this.bodies) {
       body._gridId = id++;
-      if (!body.active || body.sleeping || body.object?.falling || body.object?.consumed) continue;
+      if (!body.active || !body.released || body.sleeping || body.object?.falling || body.object?.consumed) continue;
       const minX = Math.floor((body.position.x - body.half.x) / this.config.cellSize);
       const maxX = Math.floor((body.position.x + body.half.x) / this.config.cellSize);
       const minZ = Math.floor((body.position.z - body.half.z) / this.config.cellSize);
@@ -338,11 +433,35 @@ export class GovernmentPhysicsWorld {
       b.velocity.z -= tz * frictionImpulse * b.invMass;
     }
 
-    const spin = clamp(impulse * 0.075, 0, this.config.impactSpin);
-    a.angular.x += randomBetween(-spin, spin);
-    a.angular.z += randomBetween(-spin, spin);
-    b.angular.x += randomBetween(-spin, spin);
-    b.angular.z += randomBetween(-spin, spin);
+    const spin = clamp(impulse * 0.16, 0, this.config.impactSpin);
+    const tangentKick = tangentLen > 0.0001 ? clamp(tangentLen * 0.08, 0, spin) : spin * 0.35;
+    if (Math.abs(nx) > 0) {
+      a.angular.z -= nx * spin * a.invMass;
+      b.angular.z += nx * spin * b.invMass;
+    } else if (Math.abs(nz) > 0) {
+      a.angular.x += nz * spin * a.invMass;
+      b.angular.x -= nz * spin * b.invMass;
+    } else {
+      a.angular.x += randomBetween(-spin, spin);
+      a.angular.z += randomBetween(-spin, spin);
+      b.angular.x += randomBetween(-spin, spin);
+      b.angular.z += randomBetween(-spin, spin);
+    }
+    a.angular.y += randomBetween(-tangentKick, tangentKick);
+    b.angular.y += randomBetween(-tangentKick, tangentKick);
+    if (ny === 0 && impulse > 0.85) {
+      const hop = Math.min(this.config.sideImpactHop, impulse * 0.045);
+      a.velocity.y += hop * a.invMass;
+      b.velocity.y += hop * b.invMass;
+      a.velocity.x -= nx * this.config.sideImpactScatter * a.invMass;
+      a.velocity.z -= nz * this.config.sideImpactScatter * a.invMass;
+      b.velocity.x += nx * this.config.sideImpactScatter * b.invMass;
+      b.velocity.z += nz * this.config.sideImpactScatter * b.invMass;
+      a.angular.x += nz * this.config.columnLeanImpulse * 0.18;
+      a.angular.z -= nx * this.config.columnLeanImpulse * 0.18;
+      b.angular.x -= nz * this.config.columnLeanImpulse * 0.18;
+      b.angular.z += nx * this.config.columnLeanImpulse * 0.18;
+    }
     a.sleeping = false;
     b.sleeping = false;
     a.sleepTimer = 0;
@@ -350,7 +469,7 @@ export class GovernmentPhysicsWorld {
   }
 
   updateSleep(body, dt) {
-    if (!body.active || body.object?.falling || body.object?.consumed) return;
+    if (!body.active || !body.released || body.object?.falling || body.object?.consumed) return;
     const speed = length3(body.velocity.x, body.velocity.y, body.velocity.z);
     const angular = length3(body.angular.x, body.angular.y, body.angular.z);
     if (body.onGround && speed < this.config.sleepSpeed && angular < this.config.sleepAngular) {
@@ -379,6 +498,7 @@ export class GovernmentPhysicsWorld {
     obj.govAvy = body.angular.y;
     obj.govAvz = body.angular.z;
     obj.govPhysicsActive = body.active;
+    obj.govPhysicsReleased = body.released;
     obj.govPhysicsSleeping = body.sleeping;
   }
 }

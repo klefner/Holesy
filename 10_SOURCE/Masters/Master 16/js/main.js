@@ -671,10 +671,227 @@ const WAVE_TRANSITION_LORE = {
   3: 'That town is gone. The Parallax is stitching a new battlefield together as civilians are pushed out and hard containment takes over.',
   4: 'Another district collapses behind you. The breach reforms one last battlefield as command seals the perimeter for final containment.',
 };
+const TIME_OF_DAY_LOOKS = Object.freeze([
+  {
+    id: 'morning',
+    label: 'Morning',
+    sky: 0xffd7a8,
+    fog: 0xf6c9a2,
+    ground: 0x557f43,
+    ambientColor: 0xfff0dc,
+    ambientIntensity: 0.62,
+    sunColor: 0xffb96f,
+    sunIntensity: 0.95,
+    sunPosition: [42, 34, -58],
+  },
+  {
+    id: 'midday',
+    label: 'Mid Day',
+    sky: 0x87ceeb,
+    fog: 0x9ec7e8,
+    ground: 0x4a7c3a,
+    ambientColor: 0xffffff,
+    ambientIntensity: 0.55,
+    sunColor: 0xfff1d0,
+    sunIntensity: 1.1,
+    sunPosition: [50, 80, 30],
+  },
+  {
+    id: 'evening',
+    label: 'Evening',
+    sky: 0xd77b63,
+    fog: 0xc98b78,
+    ground: 0x405f37,
+    ambientColor: 0xffd0ba,
+    ambientIntensity: 0.5,
+    sunColor: 0xff7a35,
+    sunIntensity: 0.82,
+    sunPosition: [-72, 28, 38],
+  },
+  {
+    id: 'night',
+    label: 'Night',
+    sky: 0x111a36,
+    fog: 0x17213f,
+    ground: 0x26394a,
+    ambientColor: 0x9eb8ff,
+    ambientIntensity: 0.72,
+    sunColor: 0xc9d8ff,
+    sunIntensity: 0.48,
+    sunPosition: [-34, 54, -46],
+  },
+]);
+const WAVE_TIME_OF_DAY_SEQUENCE = Object.freeze([0, 1, 2, 3]);
 const buildVersionBtn = document.getElementById('build-version');
+const timeCycleBtn = document.getElementById('time-cycle-btn');
 const pauseVersionLabel = document.getElementById('pause-version-label');
 if (buildVersionBtn) buildVersionBtn.textContent = BUILD_LABEL;
 if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;
+
+const nightWindowVisuals = [];
+const streetLightVisuals = [];
+const vehicleLightVisuals = [];
+const litWindowMat = new THREE.MeshBasicMaterial({ color: 0xffd978 });
+const dimWindowMat = new THREE.MeshLambertMaterial({ color: 0x101723 });
+const streetLampLitMat = new THREE.MeshBasicMaterial({ color: 0xfff0a8 });
+const streetLampGlowMat = new THREE.MeshBasicMaterial({
+  color: 0xffd978,
+  transparent: true,
+  opacity: 0.22,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
+const carHeadlightMat = new THREE.MeshBasicMaterial({ color: 0xfff8cf });
+const carTaillightMat = new THREE.MeshBasicMaterial({ color: 0xff2838 });
+
+function registerNightWindow(mesh, litChance = 0.34) {
+  const entry = {
+    mesh,
+    baseMaterial: mesh.material,
+    lit: Math.random() < litChance,
+    extinguished: false,
+    powerCut: false,
+    flickerFlashesRemaining: 0,
+    nextFlickerAt: 0,
+    flickerOn: false,
+  };
+  nightWindowVisuals.push(entry);
+  const active = activeTimeOfDayLook?.id === 'evening' || activeTimeOfDayLook?.id === 'night';
+  if (active) mesh.material = entry.lit ? litWindowMat : dimWindowMat;
+}
+
+function registerStreetLight(head, glow = null) {
+  const entry = {
+    head,
+    glow,
+    baseMaterial: head.material,
+    extinguished: false,
+    powerCut: false,
+    flickerUntil: 0,
+    flickerSeed: 0,
+  };
+  streetLightVisuals.push(entry);
+  const active = activeTimeOfDayLook?.id === 'evening' || activeTimeOfDayLook?.id === 'night';
+  head.material = active ? streetLampLitMat : entry.baseMaterial;
+  if (glow) glow.visible = active;
+}
+
+function registerVehicleLight(mesh) {
+  vehicleLightVisuals.push(mesh);
+  mesh.visible = activeTimeOfDayLook?.id === 'evening' || activeTimeOfDayLook?.id === 'night';
+}
+
+function isMeshDescendantOf(mesh, root) {
+  for (let node = mesh; node; node = node.parent) {
+    if (node === root) return true;
+  }
+  return false;
+}
+
+function updateBuildingLightPowerCut(pane, now = performance.now()) {
+  if (!pane?.mesh || !pane.powerCut) return false;
+  const active = activeTimeOfDayLook?.id === 'evening' || activeTimeOfDayLook?.id === 'night';
+  if (active && pane.lit && pane.flickerFlashesRemaining > 0) {
+    if (now >= pane.nextFlickerAt) {
+      pane.flickerOn = !pane.flickerOn;
+      pane.nextFlickerAt = now + 35 + Math.random() * 55;
+      if (!pane.flickerOn) pane.flickerFlashesRemaining--;
+    }
+    pane.mesh.material = pane.flickerOn ? litWindowMat : dimWindowMat;
+    return true;
+  }
+  pane.extinguished = true;
+  pane.mesh.material = active ? dimWindowMat : pane.baseMaterial;
+  return true;
+}
+
+function updateBuildingLightPowerCuts(now = performance.now()) {
+  for (const pane of nightWindowVisuals) updateBuildingLightPowerCut(pane, now);
+}
+
+function extinguishBuildingLights(obj, flicker = true) {
+  if (!obj?.mesh) return;
+  const now = performance.now();
+  for (const pane of nightWindowVisuals) {
+    if (!pane.mesh || !isMeshDescendantOf(pane.mesh, obj.mesh)) continue;
+    pane.powerCut = true;
+    pane.extinguished = false;
+    pane.flickerFlashesRemaining = flicker && pane.lit ? 1 + Math.floor(Math.random() * 3) : 0;
+    pane.nextFlickerAt = now + 25 + Math.random() * 45;
+    pane.flickerOn = false;
+    updateBuildingLightPowerCut(pane, now);
+  }
+}
+
+function updateStreetLightPowerCut(lamp, now = performance.now()) {
+  if (!lamp?.head || !lamp.powerCut) return false;
+  const active = activeTimeOfDayLook?.id === 'evening' || activeTimeOfDayLook?.id === 'night';
+  if (active && now < lamp.flickerUntil) {
+    const flickerOn = Math.sin((now + lamp.flickerSeed) * 0.075) > -0.18;
+    lamp.head.material = flickerOn ? streetLampLitMat : lamp.baseMaterial;
+    if (lamp.glow) lamp.glow.visible = flickerOn;
+    return true;
+  }
+  lamp.extinguished = true;
+  lamp.head.material = lamp.baseMaterial;
+  if (lamp.glow) lamp.glow.visible = false;
+  return true;
+}
+
+function updateStreetLightPowerCuts(now = performance.now()) {
+  for (const lamp of streetLightVisuals) updateStreetLightPowerCut(lamp, now);
+}
+
+function cutStreetLightPower(obj, flicker = true) {
+  if (!obj?.mesh) return;
+  const now = performance.now();
+  for (const lamp of streetLightVisuals) {
+    if (!lamp.head || !isMeshDescendantOf(lamp.head, obj.mesh)) continue;
+    lamp.powerCut = true;
+    lamp.extinguished = false;
+    lamp.flickerUntil = flicker ? now + 360 + Math.random() * 220 : now;
+    lamp.flickerSeed = Math.random() * 1000;
+    updateStreetLightPowerCut(lamp, now);
+  }
+}
+
+function extinguishStackLights(stackId) {
+  if (stackId === undefined || stackId === null) return;
+  for (const piece of physicsStackPieces) {
+    if (piece.stackId === stackId) extinguishBuildingLights(piece);
+  }
+}
+
+function extinguishGovernmentBuildingLights(buildingId) {
+  if (!buildingId) return;
+  for (const piece of objects) {
+    if (piece.isGovernmentBuildingPiece && piece.govBuildingId === buildingId) {
+      extinguishBuildingLights(piece);
+    }
+  }
+}
+
+function applyNightLighting() {
+  const active = activeTimeOfDayLook?.id === 'evening' || activeTimeOfDayLook?.id === 'night';
+  for (const pane of nightWindowVisuals) {
+    if (!pane.mesh) continue;
+    if (updateBuildingLightPowerCut(pane)) continue;
+    if (pane.extinguished) {
+      pane.mesh.material = active ? dimWindowMat : pane.baseMaterial;
+    } else {
+      pane.mesh.material = active ? (pane.lit ? litWindowMat : dimWindowMat) : pane.baseMaterial;
+    }
+  }
+  for (const lamp of streetLightVisuals) {
+    if (!lamp.head) continue;
+    if (updateStreetLightPowerCut(lamp)) continue;
+    lamp.head.material = active && !lamp.extinguished ? streetLampLitMat : lamp.baseMaterial;
+    if (lamp.glow) lamp.glow.visible = active && !lamp.extinguished;
+  }
+  for (const light of vehicleLightVisuals) {
+    light.visible = active;
+  }
+}
 
 const HOLE_DESCENT_CONFIG = Object.freeze({
   bottomRadiusFactor: 1.0,
@@ -749,6 +966,73 @@ const ground = new THREE.Mesh(groundGeom, groundMat);
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 scene.add(ground);
+
+let currentTimeOfDayIndex = 1;
+let activeTimeOfDayLook = TIME_OF_DAY_LOOKS[currentTimeOfDayIndex];
+
+function getTimeOfDayLookForWave(waveNum) {
+  const sequenceIndex = Math.max(0, Math.floor((waveNum || 1) - 1)) % WAVE_TIME_OF_DAY_SEQUENCE.length;
+  const index = WAVE_TIME_OF_DAY_SEQUENCE[sequenceIndex];
+  return TIME_OF_DAY_LOOKS[index];
+}
+
+function getTimeOfDayIndexForWave(waveNum) {
+  const sequenceIndex = Math.max(0, Math.floor((waveNum || 1) - 1)) % WAVE_TIME_OF_DAY_SEQUENCE.length;
+  return WAVE_TIME_OF_DAY_SEQUENCE[sequenceIndex];
+}
+
+function updateVisualCycleButtonLabels() {
+  if (timeCycleBtn) timeCycleBtn.textContent = `Time: ${activeTimeOfDayLook.label}`;
+}
+
+function applyVisualAtmosphere() {
+  const look = activeTimeOfDayLook;
+  renderer.setClearColor(look.sky);
+  if (scene.fog) {
+    scene.fog.color.setHex(look.fog);
+    scene.fog.near = 80;
+    scene.fog.far = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.fogFar;
+  }
+  ambient.color.setHex(look.ambientColor);
+  ambient.intensity = look.ambientIntensity;
+  sun.color.setHex(look.sunColor);
+  sun.intensity = look.sunIntensity;
+  sun.position.set(...look.sunPosition);
+  groundMat.color.setHex(look.ground);
+  applyNightLighting();
+  updateVisualCycleButtonLabels();
+}
+
+function applyTimeOfDayLook(waveNum) {
+  currentTimeOfDayIndex = getTimeOfDayIndexForWave(waveNum);
+  activeTimeOfDayLook = getTimeOfDayLookForWave(waveNum);
+  applyVisualAtmosphere();
+  return activeTimeOfDayLook;
+}
+
+function applyTimeOfDayLookByIndex(index) {
+  currentTimeOfDayIndex = ((index % TIME_OF_DAY_LOOKS.length) + TIME_OF_DAY_LOOKS.length) % TIME_OF_DAY_LOOKS.length;
+  activeTimeOfDayLook = TIME_OF_DAY_LOOKS[currentTimeOfDayIndex];
+  applyVisualAtmosphere();
+  return activeTimeOfDayLook;
+}
+
+function getActiveWaveTimeOfDayWave() {
+  if (isGameState(GAME_STATES.WAVE_TRANSITION) && pendingWaveStartWave) return pendingWaveStartWave;
+  return currentWave || 1;
+}
+
+function isWaveTimeOfDayLocked() {
+  return isWaveBasedMode() && isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION);
+}
+
+function cycleTimeOfDayLook() {
+  const look = applyTimeOfDayLookByIndex(currentTimeOfDayIndex + 1);
+  showEventBanner(`TIME OF DAY: ${look.label}`, 1800);
+  wakeRenderLoop();
+}
+
+applyTimeOfDayLook(2);
 
 const arenaMaskMaterial = new THREE.MeshBasicMaterial({
   color: 0x05070f,
@@ -972,6 +1256,7 @@ function makeObject(mesh, size, tier, value, pos) {
 }
 
 function removeObjectFromActiveLists(obj) {
+  extinguishBuildingLights(obj);
   if (obj.isGovernmentBuildingPiece) governmentPhysics.removeObject(obj);
   const objectIndex = objects.indexOf(obj);
   if (objectIndex >= 0) objects.splice(objectIndex, 1);
@@ -1182,6 +1467,10 @@ function makeLamp(pos) {
     sharedBoxMat(0xfff176));
   head.position.set(0.7, 2.85, 0);
   g.add(head);
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(0.58, 10, 8), streetLampGlowMat);
+  glow.position.copy(head.position);
+  g.add(glow);
+  registerStreetLight(head, glow);
   g.children.forEach(c => c.castShadow = true);
   const obj = makeObject(g, 0.9, 2, 22, pos);
   obj.isProp = true;
@@ -1208,6 +1497,16 @@ function makeCar(pos) {
     wheel.rotation.z = Math.PI / 2;
     wheel.position.set(wx, 0.3, wz);
     g.add(wheel);
+  }
+  for (const x of [-0.45, 0.45]) {
+    const headlight = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.05), carHeadlightMat);
+    headlight.position.set(x, 0.64, -1.63);
+    g.add(headlight);
+    registerVehicleLight(headlight);
+    const taillight = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.05), carTaillightMat);
+    taillight.position.set(x, 0.64, 1.63);
+    g.add(taillight);
+    registerVehicleLight(taillight);
   }
   g.rotation.y = Math.random() < 0.5 ? 0 : Math.PI / 2;
   g.children.forEach(c => c.castShadow = true);
@@ -1238,6 +1537,7 @@ function makeSmallBuilding(pos) {
       const win = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.05), winMat);
       win.position.set(fx, fy, d/2 + 0.01);
       g.add(win);
+      registerNightWindow(win, 0.38);
     }
   }
   // door
@@ -1290,21 +1590,25 @@ function makeMidBuilding(pos) {
             const pane = new THREE.Mesh(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), glassMat);
             pane.position.set(0, 0.06, cubeSize / 2 + 0.014);
             piece.add(pane);
+            registerNightWindow(pane, 0.32);
           }
           if (isBack) {
             const pane = new THREE.Mesh(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), glassMat);
             pane.position.set(0, 0.06, -cubeSize / 2 - 0.014);
             piece.add(pane);
+            registerNightWindow(pane, 0.32);
           }
           if (isLeft) {
             const pane = new THREE.Mesh(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), glassMat);
             pane.position.set(-cubeSize / 2 - 0.014, 0.06, 0);
             piece.add(pane);
+            registerNightWindow(pane, 0.32);
           }
           if (isRight) {
             const pane = new THREE.Mesh(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), glassMat);
             pane.position.set(cubeSize / 2 + 0.014, 0.06, 0);
             piece.add(pane);
+            registerNightWindow(pane, 0.32);
           }
         }
 
@@ -1417,6 +1721,7 @@ function makeGovernmentBuilding(pos) {
           const pane = new THREE.Mesh(geometry, windowMat);
           pane.position.set(x, y, z);
           g.add(pane);
+          registerNightWindow(pane, 0.28);
         };
         if (!isTop) {
           if (isFront) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, pieceD / 2 + 0.023);
@@ -1457,6 +1762,7 @@ function makeGovernmentBuilding(pos) {
         obj.isGovernmentBuildingPiece = true;
         obj.govBuildingId = buildingId;
         obj.govPhysicsActive = false;
+        obj.govPhysicsReleased = false;
         obj.govPieceW = pieceW;
         obj.govPieceH = pieceH;
         obj.govPieceD = pieceD;
@@ -1523,21 +1829,25 @@ function makeSkyscraper(pos) {
             const band = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
             band.position.set(0, 0.02, cellD / 2 + 0.021);
             piece.add(band);
+            registerNightWindow(band, 0.3);
           }
           if (isBack) {
             const band = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
             band.position.set(0, 0.02, -cellD / 2 - 0.021);
             piece.add(band);
+            registerNightWindow(band, 0.3);
           }
           if (isRight) {
             const band = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
             band.position.set(cellW / 2 + 0.021, 0.02, 0);
             piece.add(band);
+            registerNightWindow(band, 0.3);
           }
           if (isLeft) {
             const band = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
             band.position.set(-cellW / 2 - 0.021, 0.02, 0);
             piece.add(band);
+            registerNightWindow(band, 0.3);
           }
         }
 
@@ -5250,6 +5560,7 @@ function enterTimedOrLmsRound() {
   running = true;
   restoreGameplayAudioMix();
   resetStandardRoundTuning();
+  applyTimeOfDayLook(2);
   setArenaScale(1.0);
   scheduleAidDropForCurrentMode();
   if (lmsMode) {
@@ -5679,7 +5990,9 @@ function serializeObjectState(obj) {
   if (obj.isGovernmentBuildingPiece) {
     state.govBuildingId = obj.govBuildingId || 0;
     addBool('govPhysicsActive', obj.govPhysicsActive);
+    addBool('govPhysicsReleased', obj.govPhysicsReleased);
     addBool('govPhysicsSleeping', obj.govPhysicsSleeping);
+    addNumber('govDebrisProtectedRemainingMs', getRemainingMs(obj.govDebrisProtectedUntil));
     addNumber('govPieceW', obj.govPieceW || 0);
     addNumber('govPieceH', obj.govPieceH || 0);
     addNumber('govPieceD', obj.govPieceD || 0);
@@ -5755,11 +6068,13 @@ function makeSavedSkyscraperChunk(state) {
       const band = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
       band.position.set(0, 0.02, z);
       g.add(band);
+      registerNightWindow(band, 0.3);
     };
     const addSideBand = (x) => {
       const band = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
       band.position.set(x, 0.02, 0);
       g.add(band);
+      registerNightWindow(band, 0.3);
     };
     if (isFront) addFrontBackBand(cellD / 2 + 0.021);
     if (isBack) addFrontBackBand(-cellD / 2 - 0.021);
@@ -5796,6 +6111,7 @@ function makeSavedMidVoxelCube(state) {
       const pane = new THREE.Mesh(geometry, glassMat);
       pane.position.copy(position);
       g.add(pane);
+      registerNightWindow(pane, 0.32);
     };
     if (row === rowsZ - 1) addPane(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), new THREE.Vector3(0, 0.06, cubeSize / 2 + 0.014));
     if (row === 0) addPane(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), new THREE.Vector3(0, 0.06, -cubeSize / 2 - 0.014));
@@ -5838,6 +6154,7 @@ function makeSavedGovernmentBuildingPiece(state) {
     const pane = new THREE.Mesh(geometry, windowMat);
     pane.position.set(x, y, z);
     g.add(pane);
+    registerNightWindow(pane, 0.28);
   };
   if (!isTop) {
     if (row === rowsZ - 1) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, pieceD / 2 + 0.023);
@@ -5876,7 +6193,9 @@ function makeSavedGovernmentBuildingPiece(state) {
   obj.isGovernmentBuildingPiece = true;
   obj.govBuildingId = state.govBuildingId || nextGovernmentBuildingId++;
   obj.govPhysicsActive = !!state.govPhysicsActive;
+  obj.govPhysicsReleased = state.govPhysicsReleased ?? obj.govPhysicsActive;
   obj.govPhysicsSleeping = !!state.govPhysicsSleeping;
+  obj.govDebrisProtectedUntil = restoreFutureTimestamp(state.govDebrisProtectedRemainingMs, performance.now());
   obj.govPieceW = pieceW;
   obj.govPieceH = pieceH;
   obj.govPieceD = pieceD;
@@ -5892,6 +6211,7 @@ function makeSavedGovernmentBuildingPiece(state) {
     half: { x: pieceW / 2, y: pieceH / 2, z: pieceD / 2 },
     mass: 1 + obj.govFloor * 0.04,
     active: obj.govPhysicsActive,
+    released: obj.govPhysicsReleased,
     vx: state.govVx || 0,
     vy: state.govVy || 0,
     vz: state.govVz || 0,
@@ -5927,6 +6247,10 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
   obj.fallScreenDownZ = state.fallScreenDownZ ?? 1;
   obj.fallStartY = state.fallStartY || 0;
   if (obj.falling) setHoleDescentRenderMode(obj, true);
+  if (obj.falling || state.stackActive || state.govPhysicsActive) {
+    extinguishBuildingLights(obj, false);
+    cutStreetLightPower(obj, false);
+  }
   obj.jammedInHole = !!state.jammedInHole;
   obj.jammedHole = state.jammedHoleIndex >= 0 ? holes[state.jammedHoleIndex] : null;
   obj.jamOffsetX = state.jamOffsetX || 0;
@@ -5992,7 +6316,10 @@ function restoreObjectCommonState(obj, state, now = performance.now()) {
       body.angular.y = state.govAvy || 0;
       body.angular.z = state.govAvz || 0;
       body.active = !!state.govPhysicsActive;
+      body.released = state.govPhysicsReleased ?? body.active;
       body.sleeping = !!state.govPhysicsSleeping;
+      obj.govPhysicsReleased = body.released;
+      obj.govDebrisProtectedUntil = restoreFutureTimestamp(state.govDebrisProtectedRemainingMs, performance.now());
     }
   }
   if (obj.physicsStackPiece) {
@@ -6328,6 +6655,7 @@ function loadEndlessGame() {
   currentSoldierHitChanceMult = save.currentSoldierHitChanceMult || activeDifficultyProfile.soldierHitChanceMult;
   pendingPlayerEndReason = save.pendingPlayerEndReason || '';
   aidDropCountdown = typeof save.aidDropCountdown === 'number' ? save.aidDropCountdown : null;
+  applyTimeOfDayLook(currentWave);
   setArenaScale(save.currentArenaScale || getWaveConfig(currentWave).worldScale || 1.0);
   tearDownWorld();
 
@@ -6518,6 +6846,9 @@ function tearDownWorld() {
   governmentPhysics.clear();
   movingCars.length = 0;
   movingPeople.length = 0;
+  nightWindowVisuals.length = 0;
+  streetLightVisuals.length = 0;
+  vehicleLightVisuals.length = 0;
   for (const fx of carCrashEffects) {
     if (fx.mesh && fx.mesh.parent) scene.remove(fx.mesh);
   }
@@ -6688,6 +7019,7 @@ function startWave(waveNum) {
   setEndlessPressureForWave(waveNum);
   const cfg = getWaveConfig(waveNum);
   applyWaveConfig(cfg);
+  applyTimeOfDayLook(waveNum);
   const worldShift = isEndlessWorldShiftWave(waveNum);
   if (worldShift) resetHoleSizesForEndlessWorldShift();
   scheduleWaveAidDrop();
@@ -7360,6 +7692,7 @@ pauseBtn.addEventListener('click', () => {
   if (pauseOverlay.classList.contains('hidden')) pauseGame();
   else resumeGame();
 });
+if (timeCycleBtn) timeCycleBtn.addEventListener('click', () => cycleTimeOfDayLook());
 pauseResumeBtn.addEventListener('click', () => resumeGame());
 pauseSaveBtn.addEventListener('click', () => saveEndlessGame());
 pauseExitBtn.addEventListener('click', () => {
@@ -7730,6 +8063,13 @@ function activateGovernmentBuildingFromPiece(obj, h) {
     radius: h?.radius ?? 0,
   });
   if (activated > 0) {
+    extinguishGovernmentBuildingLights(obj.govBuildingId);
+    const debrisProtectedUntil = performance.now() + 1350;
+    for (const piece of objects) {
+      if (piece.isGovernmentBuildingPiece && piece.govBuildingId === obj.govBuildingId) {
+        piece.govDebrisProtectedUntil = debrisProtectedUntil;
+      }
+    }
     flashConsumed('Containment annex breached!', new THREE.Vector3(obj.x, 2.2, obj.z));
     playVoxelCubeImpactSound(obj, 0.85);
     return true;
@@ -7744,6 +8084,7 @@ function beginConsume(h, obj) {
     return;
   }
   if (obj.isGovernmentBuildingPiece && obj.govPhysicsActive) {
+    if ((obj.govDebrisProtectedUntil || 0) > performance.now()) return;
     governmentPhysics.removeObject(obj);
   }
   if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
@@ -7751,6 +8092,8 @@ function beginConsume(h, obj) {
   } else if (obj.physicsStackPiece && !obj.isVoxelBuildingCube) {
     if (!activatePhysicsStack(obj.stackId, h, obj)) return;
   }
+  extinguishBuildingLights(obj, true);
+  cutStreetLightPower(obj, true);
   obj.falling = true;
   obj.fallVel = 0;
   obj.spin = (Math.random() - 0.5) * 4;
@@ -8235,6 +8578,7 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
   const firstActivation = !activePhysicsStackIds.has(stackId);
   if (firstActivation) {
     activePhysicsStackIds.add(stackId);
+    extinguishStackLights(stackId);
     if (!music.muted) {
       const sourceX = sourceHole?.x ?? player.x;
       const sourceZ = sourceHole?.z ?? player.z;
@@ -8376,6 +8720,7 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     activated = true;
   }
   if (activated) {
+    extinguishStackLights(stackId);
     jarVoxelBuildingPieces(seedPiece, sourceHole, leanDir);
     activePhysicsStackIds.add(stackId);
     if (!music.muted) {
@@ -8639,7 +8984,7 @@ function updatePhysicsStackPieces(dt) {
     const spreadZ = piece.z - piece.stackCenterZ;
     const spread = Math.hypot(spreadX, spreadZ);
     const maxSpread = piece.stackMaxSpread || STACK_PHYSICS_CONFIG.maxCollapseSpread;
-    if (spread > maxSpread) {
+    if (piece.isVoxelBuildingCube && spread > maxSpread) {
       const pullBack = (spread - maxSpread) / spread;
       piece.x -= spreadX * pullBack * 0.22;
       piece.z -= spreadZ * pullBack * 0.22;
@@ -10611,7 +10956,6 @@ function animate(frameNow = performance.now()) {
     updateHoleWind();
     updateActiveEffectsUi();
   }
-
   if (running) {
     // Timer only counts down in normal mode. In LMS, time is paused at 0.
     if (!lmsMode) {
@@ -10751,6 +11095,8 @@ function animate(frameNow = performance.now()) {
     }
 
     // --- Update falling objects ---
+    updateBuildingLightPowerCuts(performance.now());
+    updateStreetLightPowerCuts(performance.now());
     for (const obj of objects) {
       if (obj.consumed) continue;
       if (!obj.falling) continue;

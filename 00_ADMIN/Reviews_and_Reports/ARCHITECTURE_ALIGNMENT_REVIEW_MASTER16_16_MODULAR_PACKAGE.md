@@ -12,6 +12,10 @@ Holesy is committed to the accepted modular browser-client architecture. This re
 
 `Master 16.18` preserves that package shape and fixes the first startup regression found during regression testing: the menu rendered, but module execution halted before mode-selection and Begin listeners were wired.
 
+`Master 16.38` completed the Phase 2 low-risk JS/data extraction by moving build metadata, difficulty profiles, and Archive lore/starter unlock data into ES modules.
+
+`Master 16.74` closes `PERF-012` as a production package migration item by adding a governed package manifest to the source and release `holesy/` folders, refreshing release package guidance, and confirming the modular package baseline remains the release source of truth.
+
 `index.html` is now the package entry point only. It must not be described as the entire game package or as a return to single-file architecture.
 
 ## Master 16.17 Update
@@ -31,11 +35,10 @@ Master 16.18 hotfix evidence:
 - removed custom global/window state writes from module startup
 - verified Endless mode selection and Begin via the modular package URL
 
-Remaining architecture work:
+Remaining architecture work after PERF-012:
 
-- `js/main.js` is still intentionally large after Phase 1.
-- Phase 2 should extract build metadata, difficulty profiles, lore documents, and similarly stable data/configuration.
-- Later phases should extract UI/archive, save/load, levels/theme, rewards/quests, and eventually gameplay systems when slices can be tested safely.
+- `js/main.js` is still intentionally large, but that no longer blocks the production package migration.
+- Future extraction of UI/archive, save/load, levels/theme, rewards/quests, and gameplay systems should be tracked as separate feature-support architecture items rather than reopening `PERF-012`.
 
 ## Governing Decision
 
@@ -126,41 +129,48 @@ Current package shape:
 - Move the primary game module into `js/main.js`.
 - Validate that CSS loads locally and on mobile.
 
-### Phase 2: Low-Risk JS/Data Extraction
+### Phase 2: Low-Risk JS/Data Extraction - Completed In Master 16.38
 
 - Extract build metadata to `js/build-info.js`.
 - Extract difficulty profiles to `js/difficulty-profiles.js`.
 - Extract lore documents to `data/lore-documents.js` or `data/lore-documents.json`, depending on the lowest-risk import path.
-- Keep game loop, rendering, input, collision, audio, AI, and save/load inside `index.html` until smaller seams are proven.
+- Keep game loop, rendering, input, collision, audio, AI, and save/load inside `js/main.js` until smaller seams are proven.
 
-### Phase 3: Gameplay System Modules
+### PERF-012 Closure - Completed In Master 16.74
+
+- Source and release package folders preserve the modular browser-client structure.
+- `PACKAGE_MANIFEST.md` now enumerates every required governed upload file and directory.
+- The release package README distinguishes the full modular baseline from changed-files-only GoDaddy delta upload convenience.
+- `index.html` remains the package entry point only.
+- Future extraction work is still desirable, but it should be tracked as new architecture/product work, not as an open PERF-012 blocker.
+
+### Future Phase: Gameplay System Modules
 
 - Extract UI and archive code to `js/ui.js` / `js/archive.js`.
 - Extract save/load to `js/saveSystem.js`.
 - Extract wave config and level/theme definitions to `js/levels.js` and `data/levels.json`.
 - Extract player/rival logic only after save/load and UI extraction are stable.
 
-### Phase 4: Asset Discipline
+### Future Phase: Asset Discipline
 
 - Move generated or embedded audio into `assets/audio/` when practical.
 - Move future theme art, object sprites/textures, and world packs into `assets/images/` or dedicated theme folders.
-- Add a package manifest that enumerates every required upload file before GoDaddy release.
+- Keep `PACKAGE_MANIFEST.md` current whenever package files are added or removed.
 
 ## Future Chat Control
 
 Every future chat must treat this as a committed architecture constraint:
 
 - `index.html` is the package entry point only.
-- The default next architecture task is `PERF-012` Phase 2.
+- `PERF-012` is complete as of `Master 16.74`; do not reopen it for general future modularization.
 - Any release/package answer must identify the full package shape and whether it aligns with the modular target.
 - A single-file production answer is incomplete unless the user explicitly approves a temporary exception for that specific release.
 
 ## Recommended Next Engineering Action
 
-Continue `PERF-012` with Phase 2:
+Return to product/gameplay intake or open a new named architecture item for the next extraction family:
 
-- extract build metadata to `js/build-info.js`
-- extract difficulty profiles to a stable config/data module
-- extract lore documents to a stable data module
-- preserve gameplay behavior in each slice
-- run local browser smoke and mobile smoke before promotion
+- UI/archive extraction
+- save/load extraction
+- level/theme data extraction
+- reward/quest data extraction
