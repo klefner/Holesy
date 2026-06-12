@@ -16,6 +16,7 @@ public class ShaderPreprocessor : IPreprocessBuildWithReport
     static readonly string[] Required =
     {
         "Universal Render Pipeline/Lit",
+        "Universal Render Pipeline/Unlit",
         "DowntownDevour/HoleMask",
         "DowntownDevour/GroundMasked",
     };

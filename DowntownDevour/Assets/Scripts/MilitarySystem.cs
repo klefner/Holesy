@@ -230,12 +230,24 @@ public class MilitarySystem : MonoBehaviour
         void TryShoot(float dist, int waveIndex)
         {
             float hitChance = dist < 6f ? 0.6f : dist < 12f ? 0.4f : 0.2f;
-            if (Random.value > hitChance) return;
+            bool  hit       = Random.value <= hitChance;
 
+            // Every shot is visible and audible; misses scatter around the rim
+            Vector3 muzzle = _pos + Vector3.up * 0.9f;
+            Vector3 impact = _target.transform.position + Vector3.up * 0.05f;
+            if (!hit)
+            {
+                Vector2 off = Random.insideUnitCircle.normalized
+                            * Random.Range(_target.Radius + 0.3f, _target.Radius + 2.0f);
+                impact += new Vector3(off.x, 0f, off.y);
+            }
+            SpawnTracer(muzzle, impact);
+            GameManager.Instance?.Audio.PlayGunshot();
+
+            if (!hit) return;
             float mult    = waveIndex >= 2 ? 1.25f : 1.0f;
             float baseDmg = _target.IsPlayer ? SHOT_DAMAGE_PLR : SHOT_DAMAGE_AI;
             _target.TakeDamage(baseDmg * mult);
-            GameManager.Instance?.Audio.PlayGunshot();
         }
 
         HoleBase NearestHole()
@@ -255,6 +267,40 @@ public class MilitarySystem : MonoBehaviour
         {
             float dx = a.x - b.x, dz = a.z - b.z;
             return Mathf.Sqrt(dx * dx + dz * dz);
+        }
+    }
+
+    // ── Bullet tracers ────────────────────────────────────────────────────────
+
+    static Material _tracerMat;
+
+    static void SpawnTracer(Vector3 from, Vector3 to)
+    {
+        if (_tracerMat == null)
+        {
+            _tracerMat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+            _tracerMat.SetColor("_BaseColor", new Color(1f, 0.9f, 0.45f));
+        }
+
+        var go = new GameObject("Tracer");
+        var lr = go.AddComponent<LineRenderer>();
+        lr.positionCount = 2;
+        lr.SetPosition(0, from);
+        lr.SetPosition(1, to);
+        lr.startWidth = 0.05f;
+        lr.endWidth   = 0.02f;
+        lr.material   = _tracerMat;
+        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        go.AddComponent<TracerFade>();
+    }
+
+    class TracerFade : MonoBehaviour
+    {
+        float _life = 0.07f;
+        void Update()
+        {
+            _life -= Time.deltaTime;
+            if (_life <= 0f) Destroy(gameObject);
         }
     }
 

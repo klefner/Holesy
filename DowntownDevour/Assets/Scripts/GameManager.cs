@@ -225,6 +225,8 @@ public class GameManager : MonoBehaviour
     {
         if (!eaten.Alive) return;
         eaten.Die();
+        // Being eaten is a lose condition for the player (browser parity)
+        if (eaten.IsPlayer) EndGame();
 
         float reward = 250f
             + Mathf.Floor(eaten.Score   * 0.3f)
@@ -242,7 +244,23 @@ public class GameManager : MonoBehaviour
     // ── Static helpers ────────────────────────────────────────────────────────
 
     public static float RadiusFromScore(HoleBase h)
-        => MIN_RADIUS + GROWTH_K * Mathf.Log(1f + h.Score / GROWTH_SCALE) + h.BonusRadius;
+        => ScoreRadius(h.Score) + h.BonusRadius;
+
+    // Base radius earned by score alone (no bonus), always >= MIN_RADIUS
+    public static float ScoreRadius(float score)
+        => MIN_RADIUS + GROWTH_K * Mathf.Log(1f + score / GROWTH_SCALE);
+
+    // Inverse of ScoreRadius: the score that yields the given base radius
+    public static float ScoreForRadius(float baseRadius)
+        => GROWTH_SCALE * (Mathf.Exp((baseRadius - MIN_RADIUS) / GROWTH_K) - 1f);
+
+    // Called when gunfire shrinks a hole below survivable size
+    public void OnHoleShotDown(HoleBase h)
+    {
+        if (!h.Alive) return;
+        h.Die();
+        if (h.IsPlayer) EndGame();
+    }
 
     public static string TierLabel(float radius)
     {

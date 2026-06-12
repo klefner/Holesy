@@ -133,13 +133,41 @@ public class HoleBase : MonoBehaviour
 
     public void RecalcTargetRadius()
     {
-        TargetRadius = Mathf.Max(GameManager.MIN_HOLE_RADIUS, GameManager.RadiusFromScore(this));
+        TargetRadius = Mathf.Max(GameManager.MIN_HOLE_RADIUS,
+                                 GameManager.RadiusFromScore(this) - _damageShrink);
     }
+
+    // Direct radius deficit from gunfire that score can no longer absorb.
+    // Lets sustained fire push a hole below the formula's MIN_RADIUS floor
+    // and kill it (browser parity: holes can be shot down).
+    private float _damageShrink;
 
     public void TakeDamage(float amount)
     {
-        BonusRadius = Mathf.Max(0f, BonusRadius - amount);
+        if (!Alive) return;
+
+        // 1. Bonus radius (earned by eating holes) absorbs damage first
+        float fromBonus = Mathf.Min(BonusRadius, amount);
+        BonusRadius -= fromBonus;
+        float rem = amount - fromBonus;
+
+        // 2. Then earned size: walk Score back down the inverse growth curve
+        if (rem > 0f)
+        {
+            float scoreR    = GameManager.ScoreRadius(Score);
+            float scorePart = Mathf.Min(scoreR - GameManager.MIN_RADIUS, rem);
+            if (scorePart > 0f)
+            {
+                Score = Mathf.Max(0f, GameManager.ScoreForRadius(scoreR - scorePart));
+                rem  -= scorePart;
+            }
+        }
+
+        // 3. Anything left shrinks the hole directly, below the formula floor
+        if (rem > 0f) _damageShrink += rem;
+
         RecalcTargetRadius();
+
         _flashTimer = FLASH_DUR;
         if (_rimMat != null)
         {
@@ -147,6 +175,9 @@ public class HoleBase : MonoBehaviour
             _rimMat.SetColor("_EmissionColor", Color.red * 4.0f);
         }
         if (_rimLight != null) _rimLight.color = Color.red;
+
+        if (GameManager.RadiusFromScore(this) - _damageShrink < GameManager.MIN_HOLE_RADIUS)
+            GameManager.Instance.OnHoleShotDown(this);
     }
 
     public void Die()
