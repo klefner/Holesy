@@ -18,6 +18,39 @@ Write-Host "  Downtown Devour - Build & Play Both" -ForegroundColor Cyan
 Write-Host "  =====================================" -ForegroundColor Cyan
 Write-Host ""
 
+# -- Pull latest code from GitHub first ----------------------------------------
+# This replaces the separate update-project step.  The Unity project lives
+# inside the repo, so a git pull is all that's needed to sync everything.
+
+$REPO_ROOTS = @(
+    "C:\holesy",
+    "C:\holesy-repo",
+    "$env:USERPROFILE\holesy",
+    "$env:USERPROFILE\Holesy"
+)
+$PULL_DIR = $null
+foreach ($root in $REPO_ROOTS) {
+    if (Test-Path (Join-Path $root ".git")) { $PULL_DIR = $root; break }
+}
+
+if ($PULL_DIR) {
+    Write-Host "  Pulling latest code..." -ForegroundColor Yellow
+    Push-Location $PULL_DIR
+    git fetch origin $BRANCH 2>&1 | Out-Null
+    git checkout $BRANCH 2>&1 | Out-Null
+    git pull origin $BRANCH 2>&1
+    Pop-Location
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "  Code up to date." -ForegroundColor Green
+    } else {
+        Write-Host "  WARNING: git pull failed — building with current local files." -ForegroundColor Yellow
+    }
+} else {
+    Write-Host "  WARNING: repo not found — building with current local files." -ForegroundColor Yellow
+}
+
+Write-Host ""
+
 # -- Locate Unity project ------------------------------------------------------
 
 $PROJECT_DIRS = @(
@@ -110,15 +143,11 @@ Write-Host "  Both builds succeeded." -ForegroundColor Green
 
 # -- Deploy Web build to GitHub Pages -------------------------------------------
 
-$REPO_ROOTS = @(
-    "C:\holesy",
-    "C:\holesy-repo",
-    "$env:USERPROFILE\holesy",
-    "$env:USERPROFILE\Holesy"
-)
-$REPO_DIR = $null
-foreach ($root in $REPO_ROOTS) {
-    if (Test-Path (Join-Path $root ".git")) { $REPO_DIR = $root; break }
+$REPO_DIR = $PULL_DIR
+if (-not $REPO_DIR) {
+    foreach ($root in $REPO_ROOTS) {
+        if (Test-Path (Join-Path $root ".git")) { $REPO_DIR = $root; break }
+    }
 }
 
 if ($REPO_DIR) {

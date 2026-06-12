@@ -20,7 +20,7 @@ public class ConsumableObject : MonoBehaviour
     private Rigidbody _rb;
 
     const float FALL_GRAVITY = 18f;
-    const float SHRINK_DEPTH = 36f;    // perspective shrink: scale = e^(-depth/this)
+    const float SHRINK_DEPTH = 72f;    // perspective shrink: scale = e^(-depth/this)
     const float MIN_VISIBLE  = 0.025f; // ~a pixel — destroy below this fraction
 
     public void Init(float size, int tier, float value, ObjectCategory category,
