@@ -7,7 +7,7 @@ using UnityEngine.UI;
 // HUD and end-screen. Uses TextMeshProUGUI (included in URP Universal 3D template).
 public class UIManager : MonoBehaviour
 {
-    public const string VERSION = "v0.26";
+    public const string VERSION = "v0.27";
 
     private Canvas            _canvas;
     private TextMeshProUGUI   _timerText;
@@ -168,6 +168,29 @@ public class UIManager : MonoBehaviour
         btnGO.AddComponent<Button>().onClick.AddListener(() => GameManager.Instance.RestartGame());
 
         MakeTMPChild(btnGO, "BtnLabel", "PLAY AGAIN",
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(240f, 54f),
+            26, TextAlignmentOptions.Center);
+
+        // Exit button — below PLAY AGAIN
+        var exitGO = new GameObject("ExitBtn");
+        exitGO.transform.SetParent(_endScreen.transform, false);
+        var exitImg = exitGO.AddComponent<Image>();
+        exitImg.color = new Color(0.75f, 0.15f, 0.15f, 0.92f);
+        var exitRT = exitGO.GetComponent<RectTransform>();
+        exitRT.anchorMin        = new Vector2(0.5f, 0.14f);
+        exitRT.anchorMax        = new Vector2(0.5f, 0.14f);
+        exitRT.sizeDelta        = new Vector2(260f, 64f);
+        exitRT.anchoredPosition = Vector2.zero;
+        exitGO.AddComponent<Button>().onClick.AddListener(() =>
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
+        });
+
+        MakeTMPChild(exitGO, "ExitLabel", "EXIT",
             new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(240f, 54f),
             26, TextAlignmentOptions.Center);
 

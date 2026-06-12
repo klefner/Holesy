@@ -109,10 +109,10 @@ public class BuildingCollapse : MonoBehaviour
             float   lim = hole.Radius + _footprintRadius;
             if (dx * dx + dz * dz > lim * lim) continue;
 
-            // An undersized hole can't bring the structure down — it only
-            // rattles the building and occasionally shakes a small piece off.
-            if (hole.Radius >= _minHoleRadius) SweepHole(hole);
-            else                               rattled |= Nibble(hole);
+            // Per-part gating: SweepHole skips any part the hole is too small
+            // to dislodge.  If nothing was released the hole only rattles.
+            bool released = SweepHole(hole);
+            if (!released) rattled |= Nibble(hole);
         }
 
         ApplyShake(rattled);
@@ -184,10 +184,11 @@ public class BuildingCollapse : MonoBehaviour
         }
     }
 
-    void SweepHole(HoleBase hole)
+    bool SweepHole(HoleBase hole)
     {
         Vector3 hp    = hole.transform.position;
         float   range = Mathf.Max(_maxY - _minY, 1f);
+        bool    any   = false;
 
         for (int i = _parts.Count - 1; i >= 0; i--)
         {
@@ -206,6 +207,14 @@ public class BuildingCollapse : MonoBehaviour
             float ndx = nx - hp.x;
             float ndz = nz - hp.z;
             if (ndx * ndx + ndz * ndz >= hole.Radius * hole.Radius) continue;
+
+            // Per-part size gate: hole must be at least 35% of the part's
+            // narrower XZ dimension.  Small holes chip away small decorative
+            // pieces; only a large enough hole brings down major sections.
+            float partMin = Mathf.Min(s.x, s.z) * 0.35f;
+            if (hole.Radius < partMin) continue;
+
+            any = true;
 
             float pdx = c.x - hp.x;
             float pdz = c.z - hp.z;
@@ -230,6 +239,7 @@ public class BuildingCollapse : MonoBehaviour
 
             StartCoroutine(ReleasePart(part, delay, nY, dist, hole.Radius, hp));
         }
+        return any;
     }
 
     // ── Structural integrity ──────────────────────────────────────────────────
@@ -466,4 +476,5 @@ public class BuildingCollapse : MonoBehaviour
         if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
         rb.AddTorque(tq.normalized * Random.Range(0.5f, 2.5f), ForceMode.VelocityChange);
     }
+
 }
