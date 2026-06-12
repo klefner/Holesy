@@ -39,11 +39,19 @@ if ($PULL_DIR) {
     git fetch origin $BRANCH 2>&1 | Out-Null
     git checkout $BRANCH 2>&1 | Out-Null
     git pull origin $BRANCH 2>&1
+    $pullOk = ($LASTEXITCODE -eq 0)
     Pop-Location
-    if ($LASTEXITCODE -eq 0) {
+    if ($pullOk) {
         Write-Host "  Code up to date." -ForegroundColor Green
     } else {
-        Write-Host "  WARNING: git pull failed — building with current local files." -ForegroundColor Yellow
+        # A failed pull means the build silently compiles OLD code — this is
+        # exactly how new versions stopped showing up in the game.  Stop hard.
+        Write-Host ""
+        Write-Host "  ERROR: git pull failed. Refusing to build stale code." -ForegroundColor Red
+        Write-Host "  Open PowerShell in $PULL_DIR, run 'git status', and send" -ForegroundColor Yellow
+        Write-Host "  Claude the output so the repo can be repaired." -ForegroundColor Yellow
+        Read-Host "  Press Enter to close"
+        exit 1
     }
 } else {
     Write-Host "  WARNING: repo not found — building with current local files." -ForegroundColor Yellow
@@ -52,8 +60,13 @@ if ($PULL_DIR) {
 Write-Host ""
 
 # -- Locate Unity project ------------------------------------------------------
+# The project inside the pulled repo ALWAYS wins.  Searching fixed paths first
+# can silently pick up a stale copy of the project left behind by the old
+# setup/update scripts, which then builds outdated code forever.
 
-$PROJECT_DIRS = @(
+$PROJECT_DIRS = @()
+if ($PULL_DIR) { $PROJECT_DIRS += (Join-Path $PULL_DIR "DowntownDevour") }
+$PROJECT_DIRS += @(
     "C:\holesy\DowntownDevour",
     "$env:USERPROFILE\holesy\DowntownDevour",
     "$env:USERPROFILE\Holesy\DowntownDevour"
@@ -70,6 +83,18 @@ if (-not $PROJ) {
     exit 1
 }
 Write-Host "  Project: $PROJ" -ForegroundColor Green
+
+# Read the version stamp from the code about to be built, so the finished
+# build can be verified against it after compiling.
+$EXPECTED_VERSION = $null
+$uiFile = Join-Path $PROJ "Assets\Scripts\UIManager.cs"
+if (Test-Path $uiFile) {
+    $m = Select-String -Path $uiFile -Pattern 'VERSION\s*=\s*"(v[0-9.]+)"' | Select-Object -First 1
+    if ($m) {
+        $EXPECTED_VERSION = $m.Matches[0].Groups[1].Value
+        Write-Host "  Code version: $EXPECTED_VERSION" -ForegroundColor Green
+    }
+}
 
 # -- Close the Unity editor if it is open ---------------------------------------
 # Graceful close only (same as clicking the X) so Unity saves and shuts down
@@ -131,6 +156,11 @@ $BUILDS = Join-Path $PROJ "Builds"
 $LOG    = Join-Path $BUILDS "build.log"
 New-Item -ItemType Directory -Path $BUILDS -Force | Out-Null
 
+# Wipe old outputs first.  Leftovers from a previous build can make a failed
+# or skipped build look successful (the file-exists checks below would pass).
+Remove-Item (Join-Path $BUILDS "Windows") -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item (Join-Path $BUILDS "Web")     -Recurse -Force -ErrorAction SilentlyContinue
+
 Write-Host ""
 Write-Host "  Building Windows PC + Web (this takes several minutes)..." -ForegroundColor Yellow
 Write-Host "  Progress log: $LOG" -ForegroundColor Gray
@@ -158,6 +188,28 @@ if ($proc.ExitCode -ne 0 -or
 }
 
 Write-Host "  Both builds succeeded." -ForegroundColor Green
+
+# -- Verify the build actually contains the current code -------------------------
+# String constants (like the UIManager version stamp) end up in Web.data.
+# If the stamp is missing, the build compiled from a different (stale) copy
+# of the project — deploying it would be pointless.
+
+if ($EXPECTED_VERSION) {
+    $dataFile = Join-Path $WEB_DIR "Build\Web.data"
+    if (Test-Path $dataFile) {
+        $found = Select-String -Path $dataFile -Pattern ([regex]::Escape($EXPECTED_VERSION)) -Quiet
+        if ($found) {
+            Write-Host "  Verified: build contains $EXPECTED_VERSION." -ForegroundColor Green
+        } else {
+            Write-Host ""
+            Write-Host "  ERROR: build does NOT contain $EXPECTED_VERSION — it compiled stale code." -ForegroundColor Red
+            Write-Host "  Project built: $PROJ" -ForegroundColor Red
+            Write-Host "  Tell Claude this happened and include the two lines above." -ForegroundColor Yellow
+            Read-Host "  Press Enter to close"
+            exit 1
+        }
+    }
+}
 
 # -- Deploy Web build to GitHub Pages -------------------------------------------
 
