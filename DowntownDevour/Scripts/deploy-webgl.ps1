@@ -17,7 +17,7 @@ Write-Host ""
 
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# ── Locate Unity Web build ────────────────────────────────────────────────────
+# ------ Locate Unity Web build ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Write-Host "  Enter the path to your Unity Web build folder." -ForegroundColor Yellow
 Write-Host "  (The folder containing index.html and a Build subfolder)" -ForegroundColor Gray
@@ -36,7 +36,7 @@ if (-not (Test-Path (Join-Path $BUILD_DIR "index.html"))) {
 
 Write-Host "  Build found." -ForegroundColor Green
 
-# ── Locate local git repo ─────────────────────────────────────────────────────
+# ------ Locate local git repo ---------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 $REPO_ROOTS = @(
     "C:\holesy",
@@ -82,7 +82,7 @@ if (-not $REPO_DIR) {
 
 Write-Host "  Repo: $REPO_DIR" -ForegroundColor Green
 
-# ── Check git ─────────────────────────────────────────────────────────────────
+# ------ Check git ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 try { git --version 2>&1 | Out-Null }
 catch {
@@ -92,7 +92,7 @@ catch {
     exit 1
 }
 
-# ── Sync and prepare branch ───────────────────────────────────────────────────
+# ------ Sync and prepare branch ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Push-Location $REPO_DIR
 
@@ -101,7 +101,7 @@ git fetch origin $BRANCH 2>&1 | Out-Null
 git checkout $BRANCH 2>&1 | Out-Null
 git pull origin $BRANCH 2>&1 | Out-Null
 
-# ── Copy build to docs/ ───────────────────────────────────────────────────────
+# ------ Copy build to docs/ ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 $DOCS_DIR = Join-Path $REPO_DIR "docs"
 
@@ -116,7 +116,7 @@ New-Item -ItemType File -Path (Join-Path $DOCS_DIR ".nojekyll") -Force | Out-Nul
 
 Write-Host "  Build copied." -ForegroundColor Green
 
-# ── Commit and push ───────────────────────────────────────────────────────────
+# ------ Commit and push ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Write-Host "  Pushing to GitHub..." -ForegroundColor Yellow
 
@@ -140,7 +140,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Pop-Location
 
-# ── Done ─────────────────────────────────────────────────────────────────────
+# ------ Done ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Write-Host ""
 Write-Host "  Deployed!" -ForegroundColor Green

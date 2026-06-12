@@ -50,7 +50,7 @@ git pull origin $BRANCH 2>&1
 $pullOk = ($LASTEXITCODE -eq 0)
 Pop-Location
 if (-not $pullOk) {
-    # A failed pull means the build would silently compile OLD code —
+    # A failed pull means the build would silently compile OLD code -
     # exactly the bug where new versions never show up in the game.
     Write-Host ""
     Write-Host "  ERROR: git pull failed. Refusing to build stale code." -ForegroundColor Red
@@ -89,7 +89,7 @@ Write-Host "  Project: $PROJ" -ForegroundColor Green
 
 # -- Inject the pulled code into the project ------------------------------------
 # This replaces the old update-project.ps1 step.  Without it, the project
-# keeps compiling whatever code it last received — the exact cause of builds
+# keeps compiling whatever code it last received - the exact cause of builds
 # being stuck on an old version while the repo was current.
 
 $REPO_PROJ = Join-Path $REPO_DIR "DowntownDevour"
@@ -121,7 +121,7 @@ if (Test-Path $uiFile) {
 
 # -- Close the Unity editor if it is open ---------------------------------------
 # Graceful close only (same as clicking the X) so Unity saves and shuts down
-# cleanly.  If a "save changes?" dialog pops up, answer it — the script waits.
+# cleanly.  If a "save changes?" dialog pops up, answer it - the script waits.
 
 $unityRunning = Get-Process Unity -ErrorAction SilentlyContinue
 if ($unityRunning) {
@@ -215,7 +215,7 @@ Write-Host "  Both builds succeeded." -ForegroundColor Green
 # -- Verify the build actually contains the current code -------------------------
 # String constants (like the UIManager version stamp) end up in Web.data.
 # If the stamp is missing, the build compiled from a different (stale) copy
-# of the project — deploying it would be pointless.
+# of the project - deploying it would be pointless.
 
 if ($EXPECTED_VERSION) {
     $dataFile = Join-Path $WEB_DIR "Build\Web.data"
@@ -225,7 +225,7 @@ if ($EXPECTED_VERSION) {
             Write-Host "  Verified: build contains $EXPECTED_VERSION." -ForegroundColor Green
         } else {
             Write-Host ""
-            Write-Host "  ERROR: build does NOT contain $EXPECTED_VERSION — it compiled stale code." -ForegroundColor Red
+            Write-Host "  ERROR: build does NOT contain $EXPECTED_VERSION - it compiled stale code." -ForegroundColor Red
             Write-Host "  Project built: $PROJ" -ForegroundColor Red
             Write-Host "  Tell Claude this happened and include the two lines above." -ForegroundColor Yellow
             Read-Host "  Press Enter to close"

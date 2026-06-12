@@ -15,7 +15,7 @@ $PROJECT_SUB = "DowntownDevour"
 # Searches common locations for a folder named DowntownDevour with an Assets
 # subfolder.
 
-# Exact paths checked first — no suffix appended
+# Exact paths checked first - no suffix appended
 $DIRECT_PATHS = @(
     "C:\holesy\DowntownDevour",
     "C:\Holesy\DowntownDevour"
