@@ -84,7 +84,7 @@ Last approved candidate promoted into `Master 16`:
   - archive readability and music fit
   - starter buff-pattern guidance, end-screen flow, feedback-noise cleanup, skyscraper-warning timing, and the build-notes modal
 - current governance defects:
-  - `QA-017` remains open on 2026-06-12 because commit `304db13` made the earlier `2026-06-06` through `2026-06-09` governance package branch-visible, but the governed repo still holds local-only `QA_REVIEW_DAILY_AUDIT_2026-06-10.md`, `QA_REVIEW_DAILY_AUDIT_2026-06-11.md`, and `QA_REVIEW_DAILY_AUDIT_2026-06-12.md` without commit/push proof; this is a publication-control defect, not a gameplay blocker
+  - none currently classified as gameplay blockers; `QA-017` was resolved on 2026-06-12 after commit `a0df57e` published the `2026-06-10`, `2026-06-11`, and `2026-06-12` daily audit artifacts and post-push checks verified remote freshness
 - recently closed by user validation and governance repair:
   - `QA-023` resolved on 2026-06-09 after the 2026-06-08 missing-run note was included in the AGENTS/handoff publication cleanup; the cause classification remains automation not running unless later scheduler evidence proves otherwise
   - `QA-020` resolved on 2026-06-06 because commit `ea36e52` made the `2026-05-30` through `2026-06-01` missing-run note branch-visible; the cause classification remains unavailable worktree / wrong accessible checkout on `2026-05-30` and `2026-06-01`, plus unknown scheduler behavior on `2026-05-31`
@@ -107,7 +107,7 @@ Last approved candidate promoted into `Master 16`:
 - treat `Master 16.75` as the current source basis within `10_SOURCE/Masters/Master 16/`
 - treat `index.html` as the package entry point only; the full modular `/holesy/` folder remains the governed release baseline
 - for routine manual GoDaddy uploads, provide a changed-files-only delta package by default when live is already on the previous approved master
-- treat commit `304db13` as proof that the previously unpublished `2026-06-06`, `2026-06-07`, `2026-06-08` missing-run note, and `2026-06-09` audit package became branch-visible, but keep `QA-017` open as a publication-control defect until a later governed Git-writable session also publishes `QA_REVIEW_DAILY_AUDIT_2026-06-10.md`, `QA_REVIEW_DAILY_AUDIT_2026-06-11.md`, and `QA_REVIEW_DAILY_AUDIT_2026-06-12.md`
+- treat commit `304db13` as proof that the previously unpublished `2026-06-06`, `2026-06-07`, `2026-06-08` missing-run note, and `2026-06-09` audit package became branch-visible; treat commit `a0df57e` as proof that `QA_REVIEW_DAILY_AUDIT_2026-06-10.md`, `QA_REVIEW_DAILY_AUDIT_2026-06-11.md`, and `QA_REVIEW_DAILY_AUDIT_2026-06-12.md` are also branch-visible and that `QA-017` is resolved
 - validate the promoted website package and local master against the current recommendation:
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
   - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\40_RELEASE\Website_Publish_Package\holesy\index.html`
