@@ -71,15 +71,33 @@ if (-not $PROJ) {
 }
 Write-Host "  Project: $PROJ" -ForegroundColor Green
 
-# -- Refuse to build while the editor is open ----------------------------------
+# -- Close the Unity editor if it is open ---------------------------------------
+# Graceful close only (same as clicking the X) so Unity saves and shuts down
+# cleanly.  If a "save changes?" dialog pops up, answer it — the script waits.
 
 $unityRunning = Get-Process Unity -ErrorAction SilentlyContinue
 if ($unityRunning) {
+    Write-Host "  Unity is open - closing it..." -ForegroundColor Yellow
+    $unityRunning | ForEach-Object { $_.CloseMainWindow() | Out-Null }
+
+    $waited = 0
+    while ((Get-Process Unity -ErrorAction SilentlyContinue) -and $waited -lt 90) {
+        Start-Sleep -Seconds 2
+        $waited += 2
+        if ($waited -eq 10) {
+            Write-Host "  Still closing... if Unity is asking to save, answer the dialog." -ForegroundColor Gray
+        }
+    }
+
+    if (Get-Process Unity -ErrorAction SilentlyContinue) {
+        Write-Host ""
+        Write-Host "  ERROR: Unity did not close (waited 90 s)." -ForegroundColor Red
+        Write-Host "  Close it manually, then double-click this file again." -ForegroundColor Red
+        Read-Host "  Press Enter to close"
+        exit 1
+    }
+    Write-Host "  Unity closed." -ForegroundColor Green
     Write-Host ""
-    Write-Host "  ERROR: Unity is running. Close the Unity editor first," -ForegroundColor Red
-    Write-Host "  then double-click this file again." -ForegroundColor Red
-    Read-Host "  Press Enter to close"
-    exit 1
 }
 
 # -- Locate the matching Unity editor ------------------------------------------
