@@ -1,10 +1,9 @@
 # ============================================================
 #  Downtown Devour - Build & Play Both
-#  Builds the Windows PC player AND the Web player, deploys the
-#  Web build to GitHub Pages, then launches the PC game.
-#
-#  IMPORTANT: Close the Unity editor before running this -
-#  batch builds cannot run while the project is open.
+#  Pulls the latest code, injects it into the local Unity
+#  project, builds the Windows PC player AND the Web player,
+#  verifies the build contains the new code, deploys the Web
+#  build to GitHub Pages, then launches the PC game.
 # ============================================================
 
 $REPO_OWNER = "klefner"
@@ -18,58 +17,62 @@ Write-Host "  Downtown Devour - Build & Play Both" -ForegroundColor Cyan
 Write-Host "  =====================================" -ForegroundColor Cyan
 Write-Host ""
 
-# -- Pull latest code from GitHub first ----------------------------------------
-# This replaces the separate update-project step.  The Unity project lives
-# inside the repo, so a git pull is all that's needed to sync everything.
+# -- Locate the git repo and pull the latest code -------------------------------
 
 $REPO_ROOTS = @(
     "C:\holesy",
     "C:\holesy-repo",
     "$env:USERPROFILE\holesy",
-    "$env:USERPROFILE\Holesy"
+    "$env:USERPROFILE\Holesy",
+    "$env:USERPROFILE\Documents\holesy",
+    "$env:USERPROFILE\Documents\Holesy",
+    "$env:USERPROFILE\Desktop\holesy",
+    "$env:USERPROFILE\Desktop\Holesy"
 )
-$PULL_DIR = $null
+$REPO_DIR = $null
 foreach ($root in $REPO_ROOTS) {
-    if (Test-Path (Join-Path $root ".git")) { $PULL_DIR = $root; break }
+    if (Test-Path (Join-Path $root ".git")) { $REPO_DIR = $root; break }
 }
 
-if ($PULL_DIR) {
-    Write-Host "  Pulling latest code..." -ForegroundColor Yellow
-    Push-Location $PULL_DIR
-    git fetch origin $BRANCH 2>&1 | Out-Null
-    git checkout $BRANCH 2>&1 | Out-Null
-    git pull origin $BRANCH 2>&1
-    $pullOk = ($LASTEXITCODE -eq 0)
-    Pop-Location
-    if ($pullOk) {
-        Write-Host "  Code up to date." -ForegroundColor Green
-    } else {
-        # A failed pull means the build silently compiles OLD code — this is
-        # exactly how new versions stopped showing up in the game.  Stop hard.
-        Write-Host ""
-        Write-Host "  ERROR: git pull failed. Refusing to build stale code." -ForegroundColor Red
-        Write-Host "  Open PowerShell in $PULL_DIR, run 'git status', and send" -ForegroundColor Yellow
-        Write-Host "  Claude the output so the repo can be repaired." -ForegroundColor Yellow
-        Read-Host "  Press Enter to close"
-        exit 1
-    }
-} else {
-    Write-Host "  WARNING: repo not found — building with current local files." -ForegroundColor Yellow
+if (-not $REPO_DIR) {
+    Write-Host "  ERROR: git repo not found. Looked in:" -ForegroundColor Red
+    $REPO_ROOTS | ForEach-Object { Write-Host "    $_" -ForegroundColor Red }
+    Read-Host "  Press Enter to close"
+    exit 1
 }
+Write-Host "  Repo:    $REPO_DIR" -ForegroundColor Green
 
+Write-Host "  Pulling latest code..." -ForegroundColor Yellow
+Push-Location $REPO_DIR
+git fetch origin $BRANCH 2>&1 | Out-Null
+git checkout $BRANCH 2>&1 | Out-Null
+git pull origin $BRANCH 2>&1
+$pullOk = ($LASTEXITCODE -eq 0)
+Pop-Location
+if (-not $pullOk) {
+    # A failed pull means the build would silently compile OLD code —
+    # exactly the bug where new versions never show up in the game.
+    Write-Host ""
+    Write-Host "  ERROR: git pull failed. Refusing to build stale code." -ForegroundColor Red
+    Write-Host "  Open PowerShell in $REPO_DIR, run 'git status', and send" -ForegroundColor Yellow
+    Write-Host "  Claude the output so the repo can be repaired." -ForegroundColor Yellow
+    Read-Host "  Press Enter to close"
+    exit 1
+}
+Write-Host "  Code up to date." -ForegroundColor Green
 Write-Host ""
 
-# -- Locate Unity project ------------------------------------------------------
-# The project inside the pulled repo ALWAYS wins.  Searching fixed paths first
-# can silently pick up a stale copy of the project left behind by the old
-# setup/update scripts, which then builds outdated code forever.
+# -- Locate the Unity project ---------------------------------------------------
+# The standalone project (created by setup-project.ps1 and opened in Unity)
+# carries the URP pipeline assets the repo does not track, so it is the one
+# that must be built.  Fresh code is injected into it below.
 
-$PROJECT_DIRS = @()
-if ($PULL_DIR) { $PROJECT_DIRS += (Join-Path $PULL_DIR "DowntownDevour") }
-$PROJECT_DIRS += @(
+$PROJECT_DIRS = @(
     "C:\holesy\DowntownDevour",
     "$env:USERPROFILE\holesy\DowntownDevour",
-    "$env:USERPROFILE\Holesy\DowntownDevour"
+    "$env:USERPROFILE\Holesy\DowntownDevour",
+    "$env:USERPROFILE\DowntownDevour",
+    (Join-Path $REPO_DIR "DowntownDevour")
 )
 
 $PROJ = $null
@@ -83,6 +86,26 @@ if (-not $PROJ) {
     exit 1
 }
 Write-Host "  Project: $PROJ" -ForegroundColor Green
+
+# -- Inject the pulled code into the project ------------------------------------
+# This replaces the old update-project.ps1 step.  Without it, the project
+# keeps compiling whatever code it last received — the exact cause of builds
+# being stuck on an old version while the repo was current.
+
+$REPO_PROJ = Join-Path $REPO_DIR "DowntownDevour"
+if ((Resolve-Path $PROJ).Path -ne (Resolve-Path $REPO_PROJ -ErrorAction SilentlyContinue).Path) {
+    Write-Host "  Updating project code from repo..." -ForegroundColor Yellow
+    $INJECT = @("Assets\Scripts", "Assets\Scenes", "Assets\Shaders", "Assets\Resources", "Scripts")
+    foreach ($sub in $INJECT) {
+        $src = Join-Path $REPO_PROJ $sub
+        $dst = Join-Path $PROJ $sub
+        if (Test-Path $src) {
+            if (-not (Test-Path $dst)) { New-Item -ItemType Directory -Path $dst -Force | Out-Null }
+            Copy-Item -Path "$src\*" -Destination $dst -Recurse -Force
+            Write-Host "    Updated: $sub" -ForegroundColor Gray
+        }
+    }
+}
 
 # Read the version stamp from the code about to be built, so the finished
 # build can be verified against it after compiling.
@@ -213,42 +236,31 @@ if ($EXPECTED_VERSION) {
 
 # -- Deploy Web build to GitHub Pages -------------------------------------------
 
-$REPO_DIR = $PULL_DIR
-if (-not $REPO_DIR) {
-    foreach ($root in $REPO_ROOTS) {
-        if (Test-Path (Join-Path $root ".git")) { $REPO_DIR = $root; break }
-    }
-}
+Write-Host ""
+Write-Host "  Deploying Web build to GitHub Pages..." -ForegroundColor Yellow
+Push-Location $REPO_DIR
 
-if ($REPO_DIR) {
-    Write-Host ""
-    Write-Host "  Deploying Web build to GitHub Pages..." -ForegroundColor Yellow
-    Push-Location $REPO_DIR
+git fetch origin $BRANCH 2>&1 | Out-Null
+git checkout $BRANCH 2>&1 | Out-Null
+git pull origin $BRANCH 2>&1 | Out-Null
 
-    git fetch origin $BRANCH 2>&1 | Out-Null
-    git checkout $BRANCH 2>&1 | Out-Null
-    git pull origin $BRANCH 2>&1 | Out-Null
+$DOCS_DIR = Join-Path $REPO_DIR "docs"
+if (Test-Path $DOCS_DIR) { Remove-Item $DOCS_DIR -Recurse -Force }
+New-Item -ItemType Directory -Path $DOCS_DIR -Force | Out-Null
+Copy-Item -Path "$WEB_DIR\*" -Destination $DOCS_DIR -Recurse -Force
+New-Item -ItemType File -Path (Join-Path $DOCS_DIR ".nojekyll") -Force | Out-Null
 
-    $DOCS_DIR = Join-Path $REPO_DIR "docs"
-    if (Test-Path $DOCS_DIR) { Remove-Item $DOCS_DIR -Recurse -Force }
-    New-Item -ItemType Directory -Path $DOCS_DIR -Force | Out-Null
-    Copy-Item -Path "$WEB_DIR\*" -Destination $DOCS_DIR -Recurse -Force
-    New-Item -ItemType File -Path (Join-Path $DOCS_DIR ".nojekyll") -Force | Out-Null
+git add docs/ 2>&1 | Out-Null
+$timestamp = Get-Date -Format "yyyy-MM-dd HH:mm"
+git commit -m "Deploy Web build $timestamp" 2>&1 | Out-Null
+git push -u origin $BRANCH 2>&1
 
-    git add docs/ 2>&1 | Out-Null
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm"
-    git commit -m "Deploy Web build $timestamp" 2>&1 | Out-Null
-    git push -u origin $BRANCH 2>&1
-
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "  Web build deployed." -ForegroundColor Green
-    } else {
-        Write-Host "  WARNING: push failed - web deploy skipped. PC build still works." -ForegroundColor Yellow
-    }
-    Pop-Location
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "  Web build deployed." -ForegroundColor Green
 } else {
-    Write-Host "  WARNING: local repo not found - web deploy skipped." -ForegroundColor Yellow
+    Write-Host "  WARNING: push failed - web deploy skipped. PC build still works." -ForegroundColor Yellow
 }
+Pop-Location
 
 # -- Launch the PC game ----------------------------------------------------------
 
