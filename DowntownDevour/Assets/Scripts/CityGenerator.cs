@@ -307,8 +307,13 @@ public class CityGenerator : MonoBehaviour
         // footprintRad is used for a cheap bounding-circle pre-check each frame.
         float footprintRad = Mathf.Sqrt(bw * bw + bd * bd) * 0.5f + 0.5f;
 
+        // A hole has to be a meaningful fraction of the building's size to
+        // bring it down; smaller holes only rattle it.  Bigger and taller
+        // buildings demand a bigger hole.
+        float minHole = Mathf.Clamp(0.30f * Mathf.Min(bw, bd) + 0.05f * height, 0.8f, 5f);
+
         var collapse = root.AddComponent<BuildingCollapse>();
-        collapse.Init(footprintRad);
+        collapse.Init(footprintRad, minHole);
         foreach (Transform child in root.transform)
             collapse.RegisterPart(child);
     }

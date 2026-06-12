@@ -20,10 +20,19 @@ public class BuildingCollapse : MonoBehaviour
     float _footprintRadius;
     float _strength = 1f; // per-building structural integrity
     bool  _damaged;
+    float _minHoleRadius;  // smaller holes only rattle the building
 
-    public void Init(float footprintRadius)
+    // Undersized-hole shake state
+    Vector3 _basePos;
+    bool    _baseSet;
+    float   _shakePhase;
+    float   _nibbleTimer;
+    float   _nextNibble = 1.5f;
+
+    public void Init(float footprintRadius, float minHoleRadius)
     {
         _footprintRadius = footprintRadius;
+        _minHoleRadius   = minHoleRadius;
         // Per-building personality: weak structures chain-react and crumble
         // wholesale when struck; strong ones only lose what the hole
         // actually touches and the rest keeps standing.
@@ -88,6 +97,7 @@ public class BuildingCollapse : MonoBehaviour
         if (GameManager.Instance == null ||
             GameManager.Instance.State != GameManager.GameState.Playing) return;
 
+        bool rattled = false;
         foreach (var hole in GameManager.Instance.AllHoles)
         {
             if (!hole.Alive) continue;
@@ -99,10 +109,79 @@ public class BuildingCollapse : MonoBehaviour
             float   lim = hole.Radius + _footprintRadius;
             if (dx * dx + dz * dz > lim * lim) continue;
 
-            SweepHole(hole);
+            // An undersized hole can't bring the structure down — it only
+            // rattles the building and occasionally shakes a small piece off.
+            if (hole.Radius >= _minHoleRadius) SweepHole(hole);
+            else                               rattled |= Nibble(hole);
         }
 
+        ApplyShake(rattled);
+
         if (_parts.Count == 0) Destroy(gameObject);
+    }
+
+    // ── Undersized hole: tremble + occasional shed ────────────────────────────
+
+    bool Nibble(HoleBase hole)
+    {
+        Vector3 hp = hole.transform.position;
+        float   r2 = hole.Radius * hole.Radius;
+
+        bool      touching = false;
+        Transform smallest = null;
+        float     bestVol  = float.MaxValue;
+
+        foreach (Transform part in _parts)
+        {
+            if (part == null) continue;
+            Vector3 s = part.lossyScale;
+            Vector3 c = part.position;
+            float nx  = Mathf.Clamp(hp.x, c.x - 0.5f * s.x, c.x + 0.5f * s.x);
+            float nz  = Mathf.Clamp(hp.z, c.z - 0.5f * s.z, c.z + 0.5f * s.z);
+            float ndx = nx - hp.x;
+            float ndz = nz - hp.z;
+            if (ndx * ndx + ndz * ndz >= r2) continue;
+
+            touching = true;
+            float vol = s.x * s.y * s.z;
+            if (vol < 1.5f && vol < bestVol) { bestVol = vol; smallest = part; }
+        }
+
+        if (!touching) return false;
+
+        _nibbleTimer += Time.deltaTime;
+        if (_nibbleTimer >= _nextNibble && smallest != null)
+        {
+            _nibbleTimer = 0f;
+            _nextNibble  = Random.Range(1.2f, 2.6f);
+
+            _parts.Remove(smallest);
+            MarkDamaged();
+            var rb = MakeDebris(smallest);
+            rb.AddForce(new Vector3(Random.Range(-1f, 1f), Random.Range(0.5f, 1.5f),
+                                    Random.Range(-1f, 1f)), ForceMode.VelocityChange);
+            Vector3 tq = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
+            if (tq.sqrMagnitude < 0.01f) tq = Vector3.right;
+            rb.AddTorque(tq.normalized * Random.Range(0.3f, 1.0f), ForceMode.VelocityChange);
+        }
+        return true;
+    }
+
+    void ApplyShake(bool rattled)
+    {
+        if (rattled)
+        {
+            if (!_baseSet) { _basePos = transform.position; _baseSet = true; }
+            _shakePhase += Time.deltaTime * 30f;
+            const float A = 0.05f;
+            transform.position = _basePos + new Vector3(
+                Mathf.Sin(_shakePhase) * A, 0f, Mathf.Sin(_shakePhase * 1.31f) * A);
+        }
+        else if (_baseSet)
+        {
+            transform.position = _basePos;
+            _baseSet = false;
+        }
     }
 
     void SweepHole(HoleBase hole)
