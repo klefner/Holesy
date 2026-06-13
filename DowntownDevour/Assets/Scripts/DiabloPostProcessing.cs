@@ -42,7 +42,7 @@ public class DiabloPostProcessing : MonoBehaviour
         // Bloom — halos on lights and emissives; aggressive for Diablo night glow
         // Higher intensity and scatter so lamp halos and window glow halo out properly
         var bloom = profile.Add<Bloom>(true);
-        bloom.threshold.value         = 0.4f;   // lower threshold catches more emissives
+        bloom.threshold.value         = 0.25f;  // lower threshold catches more emissives
         bloom.threshold.overrideState = true;
         bloom.intensity.value         = 2.2f;   // stronger halo effect in dark scene
         bloom.intensity.overrideState = true;
@@ -51,7 +51,7 @@ public class DiabloPostProcessing : MonoBehaviour
 
         // Color grade — underexposed, punchy contrast, mild desaturation
         var ca = profile.Add<ColorAdjustments>(true);
-        ca.postExposure.value         = -0.3f;
+        ca.postExposure.value         = 0.0f;
         ca.postExposure.overrideState = true;
         ca.contrast.value             = 22f;
         ca.contrast.overrideState     = true;

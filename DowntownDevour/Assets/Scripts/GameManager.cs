@@ -77,30 +77,26 @@ public class GameManager : MonoBehaviour
 
     void SetupLighting()
     {
-        // Near-black ambient — deep night sky. The hole rim light and window
-        // emissives carry the scene; bright ambient would wash them out.
-        // Flat mode ensures we get exactly this colour, not a skybox blend.
+        // Dark night city — ambient is low but the city should still read.
+        // 0.04 was invisible; 0.18 gives silhouettes while keeping emissives dramatic.
         RenderSettings.ambientMode  = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.04f, 0.04f, 0.07f);
+        RenderSettings.ambientLight = new Color(0.18f, 0.18f, 0.25f);
 
-        // Atmospheric fog — gives the far city a deep purple-blue haze,
-        // makes the scene read as rainy night rather than empty void.
-        RenderSettings.fog          = true;
-        RenderSettings.fogMode      = FogMode.Linear;
-        RenderSettings.fogColor     = new Color(0.04f, 0.03f, 0.08f);
-        RenderSettings.fogStartDistance = 80f;
-        RenderSettings.fogEndDistance   = 220f;
+        // Atmospheric fog — purple-black haze obscures the far city edge.
+        RenderSettings.fog              = true;
+        RenderSettings.fogMode          = FogMode.Linear;
+        RenderSettings.fogColor         = new Color(0.05f, 0.04f, 0.10f);
+        RenderSettings.fogStartDistance = 60f;
+        RenderSettings.fogEndDistance   = 200f;
 
-        // Moon — very dim blue-grey, just enough to silhouette building shapes
+        // Moon — dim cool-blue directional, enough to silhouette building edges.
         var sunGO = new GameObject("Sun");
         var sun   = sunGO.AddComponent<Light>();
         sun.type      = LightType.Directional;
-        sun.intensity = 0.18f;
-        sun.color     = new Color(0.72f, 0.78f, 0.95f);
+        sun.intensity = 0.55f;
+        sun.color     = new Color(0.62f, 0.70f, 0.90f);
         sun.shadows   = LightShadows.Soft;
         sunGO.transform.rotation = Quaternion.Euler(28f, -30f, 0f);
-
-        // No fill light at night — darkness is a feature
     }
 
     void SetupCamera()

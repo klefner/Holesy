@@ -252,7 +252,7 @@ public class CityGenerator : MonoBehaviour
             float stH  = Mathf.Min(podiumH > 0f ? podiumH : 2.0f, 2.4f);
             float ep2  = 0.06f;
             Color sgB  = new Color(0.10f, 0.13f, 0.20f);  // dark glass panel
-            Color sgE  = new Color(0.72f, 0.48f, 0.18f);  // warm amber interior
+            Color sgE  = new Color(2.0f, 1.3f, 0.45f);  // warm amber interior
             EmissiveBox(root, "StoreF", new Vector3(0f,  stH * 0.5f,  bd * 0.5f + ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
             EmissiveBox(root, "StoreB", new Vector3(0f,  stH * 0.5f, -bd * 0.5f - ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
             EmissiveBox(root, "StoreR", new Vector3( bw * 0.5f + ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, 0.75f);
@@ -266,8 +266,8 @@ public class CityGenerator : MonoBehaviour
             Color winBase = new Color(0.06f, 0.07f, 0.10f);
             // Emissive: warm amber for most buildings, cool blue-white for glass towers
             Color winEmit = isGlass
-                ? new Color(0.55f, 0.72f, 1.40f)   // cool neon-blue HDR
-                : new Color(1.20f, 0.85f, 0.30f);   // warm amber HDR (>1 triggers bloom)
+                ? new Color(1.5f, 2.2f, 4.5f)    // cool neon-blue HDR
+                : new Color(3.5f, 2.5f, 0.8f);   // warm amber HDR (>1 triggers bloom)
 
             float bayH = shaftH * 0.76f;
             float bayY = podiumH + shaftH * 0.50f;
@@ -616,7 +616,7 @@ public class CityGenerator : MonoBehaviour
 
         // Emissive globe — warm amber HDR so bloom halos around it
         Color globeBase = new Color(0.98f, 0.90f, 0.60f);
-        Color globeEmit = new Color(2.0f,  1.60f, 0.60f);  // HDR amber
+        Color globeEmit = new Color(4.5f,  3.5f, 1.2f);  // HDR amber
         EmissivePrim(PrimitiveType.Sphere, root, "Globe", new Vector3(0.9f, 4.72f, 0f),
             Quaternion.identity, new Vector3(0.38f, 0.28f, 0.38f), globeBase, globeEmit, 0.75f);
 
@@ -627,8 +627,8 @@ public class CityGenerator : MonoBehaviour
         var pt = lightGO.AddComponent<Light>();
         pt.type      = LightType.Point;
         pt.color     = new Color(1.0f, 0.78f, 0.35f);
-        pt.intensity = 3.5f;
-        pt.range     = 12f;
+        pt.intensity = 8.0f;
+        pt.range     = 18f;
         pt.shadows   = LightShadows.None;  // performance — many lamps in scene
 
         Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f);
