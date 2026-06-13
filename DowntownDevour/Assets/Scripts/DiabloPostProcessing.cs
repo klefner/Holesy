@@ -39,13 +39,14 @@ public class DiabloPostProcessing : MonoBehaviour
         tone.mode.value         = TonemappingMode.ACES;
         tone.mode.overrideState = true;
 
-        // Bloom — halos on lights and emissives; start aggressive so it's clearly visible
+        // Bloom — halos on lights and emissives; aggressive for Diablo night glow
+        // Higher intensity and scatter so lamp halos and window glow halo out properly
         var bloom = profile.Add<Bloom>(true);
-        bloom.threshold.value         = 0.5f;
+        bloom.threshold.value         = 0.4f;   // lower threshold catches more emissives
         bloom.threshold.overrideState = true;
-        bloom.intensity.value         = 1.5f;
+        bloom.intensity.value         = 2.2f;   // stronger halo effect in dark scene
         bloom.intensity.overrideState = true;
-        bloom.scatter.value           = 0.7f;
+        bloom.scatter.value           = 0.75f;  // slightly wider spread
         bloom.scatter.overrideState   = true;
 
         // Color grade — underexposed, punchy contrast, mild desaturation
@@ -57,13 +58,13 @@ public class DiabloPostProcessing : MonoBehaviour
         ca.saturation.value           = -12f;
         ca.saturation.overrideState   = true;
 
-        // Vignette — darken edges toward deep purple
+        // Vignette — heavy purple-black edge crush, Diablo signature
         var vig = profile.Add<Vignette>(true);
-        vig.color.value           = new Color(0.04f, 0.0f, 0.07f);
+        vig.color.value           = new Color(0.02f, 0.0f, 0.05f);  // deeper purple-black
         vig.color.overrideState   = true;
-        vig.intensity.value       = 0.38f;
+        vig.intensity.value       = 0.48f;   // stronger edge darkening
         vig.intensity.overrideState = true;
-        vig.smoothness.value      = 0.5f;
+        vig.smoothness.value      = 0.45f;
         vig.smoothness.overrideState = true;
     }
 }

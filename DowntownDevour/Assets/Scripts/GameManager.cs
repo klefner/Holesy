@@ -79,6 +79,8 @@ public class GameManager : MonoBehaviour
     {
         // Near-black ambient — deep night sky. The hole rim light and window
         // emissives carry the scene; bright ambient would wash them out.
+        // Flat mode ensures we get exactly this colour, not a skybox blend.
+        RenderSettings.ambientMode  = UnityEngine.Rendering.AmbientMode.Flat;
         RenderSettings.ambientLight = new Color(0.04f, 0.04f, 0.07f);
 
         // Atmospheric fog — gives the far city a deep purple-blue haze,
