@@ -11,8 +11,8 @@ public class CityGenerator : MonoBehaviour
     static readonly Color COL_GROUND    = new Color(0.22f, 0.22f, 0.22f);
     static readonly Color COL_ROAD      = new Color(0.16f, 0.16f, 0.16f);
     static readonly Color COL_SIDEWALK  = new Color(0.14f, 0.14f, 0.13f);  // dark wet concrete
-    static readonly Color COL_LANE_MRK  = new Color(0.90f, 0.80f, 0.15f);
-    static readonly Color COL_CROSSWALK = new Color(0.92f, 0.92f, 0.90f);
+    static readonly Color COL_LANE_MRK  = new Color(0.55f, 0.48f, 0.08f);  // dim yellow reflective
+    static readonly Color COL_CROSSWALK = new Color(0.38f, 0.38f, 0.36f);  // dim grey reflective
 
     // Night city palette — dark concrete, smoked glass, deep stone
     static readonly Color COL_GLASS = new Color(0.08f, 0.12f, 0.18f);  // near-black tinted glass
@@ -20,13 +20,15 @@ public class CityGenerator : MonoBehaviour
     static readonly Color COL_BLDG2 = new Color(0.15f, 0.18f, 0.24f);  // dark blue-grey brutalist
     static readonly Color COL_BLDG3 = new Color(0.20f, 0.15f, 0.12f);  // dark terracotta brick
 
+    // Night car palette — dark, muted. They read as silhouettes; the emissive
+    // headlights and taillights carry the car identity in the darkness.
     static readonly Color[] CAR_COLORS = {
-        new Color(0.85f, 0.15f, 0.15f),
-        new Color(0.20f, 0.40f, 0.85f),
-        new Color(0.92f, 0.92f, 0.92f),
-        new Color(0.90f, 0.80f, 0.10f),
-        new Color(0.38f, 0.38f, 0.38f),
-        new Color(0.55f, 0.28f, 0.08f),
+        new Color(0.28f, 0.06f, 0.06f),  // deep crimson
+        new Color(0.08f, 0.12f, 0.30f),  // dark navy
+        new Color(0.18f, 0.18f, 0.20f),  // dark silver-grey
+        new Color(0.26f, 0.22f, 0.04f),  // dark olive-gold
+        new Color(0.10f, 0.10f, 0.11f),  // near-black
+        new Color(0.20f, 0.10f, 0.04f),  // dark rust
     };
 
     private Transform _cityRoot;
@@ -414,10 +416,11 @@ public class CityGenerator : MonoBehaviour
 
         float[] yo = { 1.5f, 2.2f, 2.8f };
         float[] ro = { 1.2f, 1.0f, 0.65f };
+        // Dark night foliage — nearly black-green, only silhouette reads
         Color[] gr = {
-            new Color(0.17f, 0.55f, 0.14f),
-            new Color(0.22f, 0.63f, 0.18f),
-            new Color(0.28f, 0.70f, 0.23f),
+            new Color(0.05f, 0.12f, 0.05f),
+            new Color(0.06f, 0.14f, 0.06f),
+            new Color(0.07f, 0.16f, 0.07f),
         };
         for (int i = 0; i < 3; i++)
             Prim(PrimitiveType.Sphere, root, "Canopy",

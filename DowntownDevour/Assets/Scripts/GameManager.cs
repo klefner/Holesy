@@ -80,7 +80,14 @@ public class GameManager : MonoBehaviour
         // Near-black ambient — deep night sky. The hole rim light and window
         // emissives carry the scene; bright ambient would wash them out.
         RenderSettings.ambientLight = new Color(0.04f, 0.04f, 0.07f);
-        RenderSettings.fog          = false;
+
+        // Atmospheric fog — gives the far city a deep purple-blue haze,
+        // makes the scene read as rainy night rather than empty void.
+        RenderSettings.fog          = true;
+        RenderSettings.fogMode      = FogMode.Linear;
+        RenderSettings.fogColor     = new Color(0.04f, 0.03f, 0.08f);
+        RenderSettings.fogStartDistance = 80f;
+        RenderSettings.fogEndDistance   = 220f;
 
         // Moon — very dim blue-grey, just enough to silhouette building shapes
         var sunGO = new GameObject("Sun");
