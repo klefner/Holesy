@@ -9,14 +9,15 @@ public class CityGenerator : MonoBehaviour
     // ── Palette ───────────────────────────────────────────────────────────
     static readonly Color COL_GROUND    = new Color(0.22f, 0.22f, 0.22f);
     static readonly Color COL_ROAD      = new Color(0.16f, 0.16f, 0.16f);
-    static readonly Color COL_SIDEWALK  = new Color(0.72f, 0.70f, 0.63f);
+    static readonly Color COL_SIDEWALK  = new Color(0.14f, 0.14f, 0.13f);  // dark wet concrete
     static readonly Color COL_LANE_MRK  = new Color(0.90f, 0.80f, 0.15f);
     static readonly Color COL_CROSSWALK = new Color(0.92f, 0.92f, 0.90f);
 
-    static readonly Color COL_GLASS = new Color(0.50f, 0.65f, 0.82f);
-    static readonly Color COL_BLDG1 = new Color(0.82f, 0.76f, 0.62f);
-    static readonly Color COL_BLDG2 = new Color(0.58f, 0.65f, 0.78f);
-    static readonly Color COL_BLDG3 = new Color(0.78f, 0.62f, 0.52f);
+    // Night city palette — dark concrete, smoked glass, deep stone
+    static readonly Color COL_GLASS = new Color(0.08f, 0.12f, 0.18f);  // near-black tinted glass
+    static readonly Color COL_BLDG1 = new Color(0.22f, 0.20f, 0.17f);  // dark concrete/stone
+    static readonly Color COL_BLDG2 = new Color(0.15f, 0.18f, 0.24f);  // dark blue-grey brutalist
+    static readonly Color COL_BLDG3 = new Color(0.20f, 0.15f, 0.12f);  // dark terracotta brick
 
     static readonly Color[] CAR_COLORS = {
         new Color(0.85f, 0.15f, 0.15f),
