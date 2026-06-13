@@ -43,6 +43,7 @@ public class CityGenerator : MonoBehaviour
         BuildGround();
         BuildBoundaryWalls();
         BuildRoads();
+        BuildPuddles();
         BuildBlocks();
         SpawnCars(50);
     }
@@ -216,6 +217,21 @@ public class CityGenerator : MonoBehaviour
         float shaftMid = podiumH + shaftH / 2f;
         Box(root, "Shaft", Y(shaftMid), new Vector3(bw, shaftH, bd), col, sm, mt);
 
+        // Corner pilasters — thin vertical elements at shaft corners for edge definition
+        // and shadow play under the moon. Slightly lighter than the building base.
+        if (height > 4f)
+        {
+            Color plCol = Sc(col, 1.20f);
+            float plS   = 0.16f;
+            float plOff = plS * 0.45f;
+            float[] plX = {  bw * 0.5f + plOff, -bw * 0.5f - plOff };
+            float[] plZ = {  bd * 0.5f + plOff, -bd * 0.5f - plOff };
+            foreach (float px in plX)
+            foreach (float pz in plZ)
+                Box(root, "Pilaster", new Vector3(px, shaftMid, pz),
+                    new Vector3(plS, shaftH + 0.15f, plS), plCol, 0.25f);
+        }
+
         // Horizontal floor bands
         Color band = Sc(col, isGlass ? 1.38f : 1.22f);
         for (float fy = podiumH + 2.5f; fy < podiumH + shaftH - 0.5f; fy += 2.5f)
@@ -228,6 +244,20 @@ public class CityGenerator : MonoBehaviour
         for (float fy = podiumH + slabStep * 0.5f; fy < podiumH + shaftH - 0.3f; fy += slabStep)
             Box(root, "Slab", new Vector3(0f, fy, 0f),
                 new Vector3(bw * 0.78f, 0.20f, bd * 0.78f), interior, 0.12f);
+
+        // Ground-floor retail storefront — glass band with warm amber interior glow.
+        // Visible at street level, makes buildings feel inhabited.
+        if (isMed || isTall)
+        {
+            float stH  = Mathf.Min(podiumH > 0f ? podiumH : 2.0f, 2.4f);
+            float ep2  = 0.06f;
+            Color sgB  = new Color(0.10f, 0.13f, 0.20f);  // dark glass panel
+            Color sgE  = new Color(0.72f, 0.48f, 0.18f);  // warm amber interior
+            EmissiveBox(root, "StoreF", new Vector3(0f,  stH * 0.5f,  bd * 0.5f + ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
+            EmissiveBox(root, "StoreB", new Vector3(0f,  stH * 0.5f, -bd * 0.5f - ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
+            EmissiveBox(root, "StoreR", new Vector3( bw * 0.5f + ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, 0.75f);
+            EmissiveBox(root, "StoreL", new Vector3(-bw * 0.5f - ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, 0.75f);
+        }
 
         // Window bays on all 4 faces — emissive for night glow
         if (height > 5f)
@@ -317,6 +347,7 @@ public class CityGenerator : MonoBehaviour
                     new Vector3(Random.Range(0.9f, 1.6f), 0.75f, Random.Range(1.1f, 2.0f)),
                     new Color(0.72f, 0.73f, 0.74f), 0.18f);
             if (Random.value < 0.20f) WaterTower(root, topOfShaft + 0.7f);
+            if (Random.value < 0.30f) PlaceSatelliteDish(root, topOfShaft + 0.7f, bw, bd);
         }
         else
         {
@@ -332,6 +363,11 @@ public class CityGenerator : MonoBehaviour
         // 30% chance per building. Adds Blade Runner / Diablo urban texture.
         if (height > 5f && Random.value < 0.30f)
             PlaceNeonSign(root, bw, bd, podiumH + shaftH * Random.Range(0.25f, 0.65f));
+
+        // Fire escapes — zigzag metal platforms on one face of mid-rise buildings.
+        // 25% chance; excluded from glass towers to keep their clean geometry.
+        if (isMed && !isTall && !isGlass && Random.value < 0.25f)
+            PlaceFireEscape(root, bw, bd, podiumH, topOfShaft);
 
         // No single-trigger consumable on the building root — BuildingCollapse
         // handles each piece individually as the hole sweeps under the building.
@@ -390,6 +426,78 @@ public class CityGenerator : MonoBehaviour
             default: lp = new Vector3(-bw / 2f - thick, y, 0f); ls = new Vector3(thick, signH, signW); break;
         }
         EmissiveBox(building, "Neon", lp, ls, neonBase, neon, 0.7f);
+    }
+
+    // ── Reflective puddles ────────────────────────────────────────────────
+    // Very thin, near-mirror boxes (sm=0.98) on the road surface at
+    // intersections. With the PBR GroundMasked shader they pick up lamp
+    // post specular as bright mirror-like reflections — classic rainy night.
+    void BuildPuddles()
+    {
+        Color puddle = new Color(0.07f, 0.07f, 0.11f);
+        float block  = GameManager.BLOCK, rw = GameManager.ROAD_W;
+        for (int i = -3; i <= 3; i++)
+        for (int j = -3; j <= 3; j++)
+        {
+            float cx = i * block, cz = j * block;
+            int count = Random.Range(1, 4);
+            for (int k = 0; k < count; k++)
+            {
+                float px = cx + Random.Range(-rw * 0.38f, rw * 0.38f);
+                float pz = cz + Random.Range(-rw * 0.38f, rw * 0.38f);
+                float pw = Random.Range(0.35f, 1.60f);
+                float pd = Random.Range(0.15f, 0.65f);
+                GroundBox("Puddle", new Vector3(px, 0.042f, pz),
+                    new Vector3(pw, 0.002f, pd), puddle, 0.98f);
+            }
+        }
+    }
+
+    // ── Fire escapes ──────────────────────────────────────────────────────
+    // Horizontal landing platforms at every floor with outer railings.
+    // Placed on a random face of mid-rise concrete/brick buildings.
+    void PlaceFireEscape(GameObject bldg, float bw, float bd, float baseY, float topY)
+    {
+        Color metal = new Color(0.30f, 0.30f, 0.33f);
+        bool  onX   = Random.value < 0.5f;
+        float fW    = onX ? Mathf.Min(bw * 0.45f, 1.8f) : Mathf.Min(bd * 0.45f, 1.8f);
+        float depth = 0.75f;
+        float face  = (onX ? bw : bd) * 0.5f;
+
+        for (float fy = baseY + 2.6f; fy < topY - 0.8f; fy += 3.0f)
+        {
+            // Landing platform
+            Vector3 platPos = onX ? new Vector3(face + depth * 0.5f, fy,        0f)
+                                  : new Vector3(0f,                   fy, face + depth * 0.5f);
+            Vector3 platSz  = onX ? new Vector3(depth, 0.06f, fW) : new Vector3(fW, 0.06f, depth);
+            Box(bldg, "FEPlat", platPos, platSz, metal, 0.40f, 0.25f);
+
+            // Outer railing
+            Vector3 railPos = onX ? new Vector3(face + depth, fy + 0.55f,        0f)
+                                  : new Vector3(0f,            fy + 0.55f, face + depth);
+            Vector3 railSz  = onX ? new Vector3(0.04f, 0.5f, fW) : new Vector3(fW, 0.5f, 0.04f);
+            Box(bldg, "FERail", railPos, railSz, metal, 0.40f, 0.25f);
+        }
+    }
+
+    // ── Satellite dishes ──────────────────────────────────────────────────
+    void PlaceSatelliteDish(GameObject parent, float baseY, float bw, float bd)
+    {
+        float ox   = Random.Range(-bw * 0.28f, bw * 0.28f);
+        float oz   = Random.Range(-bd * 0.28f, bd * 0.28f);
+        Color dark = new Color(0.28f, 0.28f, 0.30f);
+
+        Prim(PrimitiveType.Cylinder, parent, "DishMast",
+            new Vector3(ox, baseY + 0.42f, oz), Quaternion.identity,
+            new Vector3(0.06f, 0.42f, 0.06f), dark, 0.40f, 0.30f);
+        Prim(PrimitiveType.Sphere, parent, "Dish",
+            new Vector3(ox + 0.18f, baseY + 1.05f, oz),
+            Quaternion.Euler(0f, 0f, 42f),
+            new Vector3(0.58f, 0.58f, 0.09f), dark, 0.38f, 0.22f);
+        Prim(PrimitiveType.Cylinder, parent, "DishArm",
+            new Vector3(ox + 0.08f, baseY + 1.05f, oz),
+            Quaternion.Euler(0f, 0f, 90f),
+            new Vector3(0.03f, 0.22f, 0.03f), dark, 0.40f, 0.30f);
     }
 
     void WaterTower(GameObject parent, float baseY)
@@ -655,6 +763,13 @@ public class CityGenerator : MonoBehaviour
         // Bumpers
         Box(root, "FBump", new Vector3(0f, 0.35f,  1.78f), new Vector3(1.55f, 0.30f, 0.20f), dark, 0.30f);
         Box(root, "RBump", new Vector3(0f, 0.35f, -1.78f), new Vector3(1.55f, 0.30f, 0.20f), dark, 0.30f);
+
+        // Dashboard / interior glow — dim warm orange visible through windshield.
+        // HDR value kept low (< 1) so it adds a glow without triggering bloom.
+        Color dashBase = new Color(0.22f, 0.12f, 0.04f);
+        Color dashEmit = new Color(0.50f, 0.30f, 0.06f);
+        EmissiveBox(root, "Dash", new Vector3(0f, 0.92f, 0.58f),
+            new Vector3(1.25f, 0.14f, 0.04f), dashBase, dashEmit, 0.25f);
 
         // Headlights / taillights — emissive so they glow at night
         Color headBase = new Color(0.95f, 0.95f, 0.88f);
