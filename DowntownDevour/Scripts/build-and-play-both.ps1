@@ -185,15 +185,48 @@ Remove-Item (Join-Path $BUILDS "Windows") -Recurse -Force -ErrorAction SilentlyC
 Remove-Item (Join-Path $BUILDS "Web")     -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
-Write-Host "  Building Windows PC + Web (this takes several minutes)..." -ForegroundColor Yellow
-Write-Host "  Progress log: $LOG" -ForegroundColor Gray
+Write-Host "  Building Windows PC + Web (WebGL can take 15-30 min)..." -ForegroundColor Yellow
+Write-Host "  Log: $LOG" -ForegroundColor Gray
+Write-Host "  Progress dots appear every 15 s while Unity is working." -ForegroundColor Gray
+Write-Host ""
 
 $proc = Start-Process -FilePath $UNITY -ArgumentList @(
     "-batchmode", "-quit",
     "-projectPath", "`"$PROJ`"",
     "-executeMethod", "AutoBuild.BuildAll",
     "-logFile", "`"$LOG`""
-) -PassThru -Wait -NoNewWindow
+) -PassThru -NoNewWindow
+
+# Poll every 15 s so the window shows visible progress instead of looking frozen.
+# We also print the last meaningful log line so you can see what Unity is doing.
+$buildStart  = Get-Date
+$lastLogSize = 0
+$dots        = 0
+
+while (-not $proc.HasExited) {
+    Start-Sleep -Seconds 15
+    $elapsed = [int](((Get-Date) - $buildStart).TotalSeconds)
+    $min     = [int]($elapsed / 60)
+    $sec     = $elapsed % 60
+
+    $logLine = ""
+    if (Test-Path $LOG) {
+        $sz = (Get-Item $LOG).Length
+        if ($sz -ne $lastLogSize) {
+            $lastLogSize = $sz
+            # Show the last non-blank line from the log for context
+            $logLine = (Get-Content $LOG -ErrorAction SilentlyContinue |
+                        Where-Object { $_.Trim() -ne "" } |
+                        Select-Object -Last 1)
+        }
+    }
+
+    $dots++
+    $dot = "." * (($dots % 4) + 1)
+    $timeStr = if ($min -gt 0) { "${min}m ${sec}s" } else { "${sec}s" }
+    Write-Host ("  [{0,-4}] {1}" -f $timeStr, ($logLine -replace "^\[.*?\]\s*", "").Trim()) -ForegroundColor Gray
+}
+$proc.WaitForExit()
 
 $PC_EXE  = Join-Path $BUILDS "Windows\DowntownDevour.exe"
 $WEB_DIR = Join-Path $BUILDS "Web"
