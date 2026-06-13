@@ -3,8 +3,9 @@ using UnityEngine;
 
 public class CityGenerator : MonoBehaviour
 {
-    static readonly Dictionary<string, Material> _litCache    = new Dictionary<string, Material>();
-    static readonly Dictionary<string, Material> _groundCache = new Dictionary<string, Material>();
+    static readonly Dictionary<string, Material> _litCache      = new Dictionary<string, Material>();
+    static readonly Dictionary<string, Material> _groundCache   = new Dictionary<string, Material>();
+    static readonly Dictionary<string, Material> _emissiveCache = new Dictionary<string, Material>();
 
     // ── Palette ───────────────────────────────────────────────────────────
     static readonly Color COL_GROUND    = new Color(0.22f, 0.22f, 0.22f);
@@ -35,6 +36,7 @@ public class CityGenerator : MonoBehaviour
     {
         _litCache.Clear();
         _groundCache.Clear();
+        _emissiveCache.Clear();
         _cityRoot = new GameObject("City").transform;
         BuildGround();
         BuildBoundaryWalls();
@@ -224,12 +226,16 @@ public class CityGenerator : MonoBehaviour
             Box(root, "Slab", new Vector3(0f, fy, 0f),
                 new Vector3(bw * 0.78f, 0.20f, bd * 0.78f), interior, 0.12f);
 
-        // Window bays on all 4 faces
+        // Window bays on all 4 faces — emissive for night glow
         if (height > 5f)
         {
-            Color win  = new Color(Mathf.Min(1f, col.r * 0.18f + 0.04f),
-                                   Mathf.Min(1f, col.g * 0.18f + 0.04f),
-                                   Mathf.Min(1f, col.b * 0.18f + 0.13f));
+            // Base (dark) window color
+            Color winBase = new Color(0.06f, 0.07f, 0.10f);
+            // Emissive: warm amber for most buildings, cool blue-white for glass towers
+            Color winEmit = isGlass
+                ? new Color(0.55f, 0.72f, 1.40f)   // cool neon-blue HDR
+                : new Color(1.20f, 0.85f, 0.30f);   // warm amber HDR (>1 triggers bloom)
+
             float bayH = shaftH * 0.76f;
             float bayY = podiumH + shaftH * 0.50f;
             float ep   = 0.04f;
@@ -241,14 +247,14 @@ public class CityGenerator : MonoBehaviour
             for (int wi = 1; wi <= nW; wi++)
             {
                 float x = -bw/2f + bw / (nW + 1f) * wi;
-                Box(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), win, 0.78f);
-                Box(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), win, 0.78f);
+                EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, winEmit);
+                EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, winEmit);
             }
             for (int wi = 1; wi <= nD; wi++)
             {
                 float z = -bd/2f + bd / (nD + 1f) * wi;
-                Box(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), win, 0.78f);
-                Box(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), win, 0.78f);
+                EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, winEmit);
+                EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, winEmit);
             }
         }
 
@@ -425,15 +431,29 @@ public class CityGenerator : MonoBehaviour
     {
         pos.y = 0f;
         var root = Root("Lamp", pos);
-        Color metal = new Color(0.58f, 0.60f, 0.65f);
+        Color metal = new Color(0.28f, 0.30f, 0.34f);  // dark metal at night
 
         Prim(PrimitiveType.Cylinder, root, "Pole", Y(2.5f), Quaternion.identity,
             new Vector3(0.09f, 2.5f, 0.09f), metal, 0.4f, 0.4f);
         Prim(PrimitiveType.Cylinder, root, "Arm", new Vector3(0.5f, 4.9f, 0f),
             Quaternion.Euler(0f, 0f, 90f), new Vector3(0.07f, 0.5f, 0.07f), metal, 0.4f, 0.4f);
-        Prim(PrimitiveType.Sphere, root, "Globe", new Vector3(0.9f, 4.72f, 0f),
-            Quaternion.identity, new Vector3(0.38f, 0.28f, 0.38f),
-            new Color(1.0f, 0.95f, 0.72f), 0.75f);
+
+        // Emissive globe — warm amber HDR so bloom halos around it
+        Color globeBase = new Color(0.98f, 0.90f, 0.60f);
+        Color globeEmit = new Color(2.0f,  1.60f, 0.60f);  // HDR amber
+        EmissivePrim(PrimitiveType.Sphere, root, "Globe", new Vector3(0.9f, 4.72f, 0f),
+            Quaternion.identity, new Vector3(0.38f, 0.28f, 0.38f), globeBase, globeEmit, 0.75f);
+
+        // Point light — casts amber pool on the street below
+        var lightGO = new GameObject("LampLight");
+        lightGO.transform.SetParent(root.transform, false);
+        lightGO.transform.localPosition = new Vector3(0.9f, 4.5f, 0f);
+        var pt = lightGO.AddComponent<Light>();
+        pt.type      = LightType.Point;
+        pt.color     = new Color(1.0f, 0.78f, 0.35f);
+        pt.intensity = 3.5f;
+        pt.range     = 12f;
+        pt.shadows   = LightShadows.None;  // performance — many lamps in scene
 
         Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f);
     }
@@ -568,13 +588,15 @@ public class CityGenerator : MonoBehaviour
         Box(root, "FBump", new Vector3(0f, 0.35f,  1.78f), new Vector3(1.55f, 0.30f, 0.20f), dark, 0.30f);
         Box(root, "RBump", new Vector3(0f, 0.35f, -1.78f), new Vector3(1.55f, 0.30f, 0.20f), dark, 0.30f);
 
-        // Headlights / taillights
-        Color headCol = new Color(1.00f, 0.97f, 0.86f);
-        Color tailCol = new Color(0.90f, 0.10f, 0.10f);
-        Box(root, "HLR", new Vector3( 0.60f, 0.55f,  1.80f), new Vector3(0.34f, 0.22f, 0.06f), headCol, 0.80f);
-        Box(root, "HLL", new Vector3(-0.60f, 0.55f,  1.80f), new Vector3(0.34f, 0.22f, 0.06f), headCol, 0.80f);
-        Box(root, "TLR", new Vector3( 0.60f, 0.55f, -1.80f), new Vector3(0.34f, 0.22f, 0.06f), tailCol, 0.70f);
-        Box(root, "TLL", new Vector3(-0.60f, 0.55f, -1.80f), new Vector3(0.34f, 0.22f, 0.06f), tailCol, 0.70f);
+        // Headlights / taillights — emissive so they glow at night
+        Color headBase = new Color(0.95f, 0.95f, 0.88f);
+        Color headEmit = new Color(2.0f,  1.95f, 1.60f);   // bright white-warm HDR
+        Color tailBase = new Color(0.80f, 0.05f, 0.05f);
+        Color tailEmit = new Color(1.80f, 0.08f, 0.08f);   // saturated red HDR
+        EmissiveBox(root, "HLR", new Vector3( 0.60f, 0.55f,  1.80f), new Vector3(0.34f, 0.22f, 0.06f), headBase, headEmit, 0.80f);
+        EmissiveBox(root, "HLL", new Vector3(-0.60f, 0.55f,  1.80f), new Vector3(0.34f, 0.22f, 0.06f), headBase, headEmit, 0.80f);
+        EmissiveBox(root, "TLR", new Vector3( 0.60f, 0.55f, -1.80f), new Vector3(0.34f, 0.22f, 0.06f), tailBase, tailEmit, 0.70f);
+        EmissiveBox(root, "TLL", new Vector3(-0.60f, 0.55f, -1.80f), new Vector3(0.34f, 0.22f, 0.06f), tailBase, tailEmit, 0.70f);
 
         // Wheels: 4 tires + hubcaps
         Color tire = new Color(0.08f, 0.08f, 0.09f);
@@ -702,6 +724,46 @@ public class CityGenerator : MonoBehaviour
         }
         return mat;
     }
+
+    // Emissive material — used for lit windows, lamp globes, car lights.
+    // emissiveColor should be the raw HDR colour (values > 1 are fine — URP bloom picks them up).
+    static Material MkEmissiveMat(Color baseColor, Color emissiveColor, float sm = 0.5f)
+    {
+        string key = $"e{(int)(emissiveColor.r*255)},{(int)(emissiveColor.g*255)},{(int)(emissiveColor.b*255)},{(int)(emissiveColor.a*100)}";
+        if (!_emissiveCache.TryGetValue(key, out var mat))
+        {
+            mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat.SetColor("_BaseColor",  baseColor);
+            mat.SetFloat("_Smoothness", sm);
+            mat.SetFloat("_Metallic",   0f);
+            mat.EnableKeyword("_EMISSION");
+            mat.SetColor("_EmissionColor", emissiveColor);
+            mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            _emissiveCache[key] = mat;
+        }
+        return mat;
+    }
+
+    // Emissive primitive helper — places a glowing mesh child
+    static GameObject EmissivePrim(PrimitiveType type, GameObject parent, string name,
+                                   Vector3 lp, Quaternion lr, Vector3 ls,
+                                   Color baseColor, Color emissiveColor, float sm = 0.5f)
+    {
+        var go = GameObject.CreatePrimitive(type);
+        go.name = name;
+        go.transform.SetParent(parent.transform, false);
+        go.transform.localPosition = lp;
+        go.transform.localRotation = lr;
+        go.transform.localScale    = ls;
+        go.GetComponent<Renderer>().sharedMaterial = MkEmissiveMat(baseColor, emissiveColor, sm);
+        Destroy(go.GetComponent<Collider>());
+        return go;
+    }
+
+    static GameObject EmissiveBox(GameObject parent, string name, Vector3 lp, Vector3 ls,
+                                  Color baseColor, Color emissiveColor, float sm = 0.5f)
+        => EmissivePrim(PrimitiveType.Cube, parent, name, lp, Quaternion.identity, ls,
+                        baseColor, emissiveColor, sm);
 
     // ── Color + position utilities ────────────────────────────────────────
     static Color  Sc(Color c, float f)
