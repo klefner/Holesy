@@ -60,11 +60,24 @@ public class DiabloPostProcessing : MonoBehaviour
 
         // Vignette — heavy purple-black edge crush, Diablo signature
         var vig = profile.Add<Vignette>(true);
-        vig.color.value           = new Color(0.02f, 0.0f, 0.05f);  // deeper purple-black
-        vig.color.overrideState   = true;
-        vig.intensity.value       = 0.48f;   // stronger edge darkening
-        vig.intensity.overrideState = true;
-        vig.smoothness.value      = 0.45f;
+        vig.color.value              = new Color(0.02f, 0.0f, 0.05f);
+        vig.color.overrideState      = true;
+        vig.intensity.value          = 0.48f;
+        vig.intensity.overrideState  = true;
+        vig.smoothness.value         = 0.45f;
         vig.smoothness.overrideState = true;
+
+        // Chromatic aberration — slight lens fringing around emissive sources
+        var chr = profile.Add<ChromaticAberration>(true);
+        chr.intensity.value         = 0.12f;
+        chr.intensity.overrideState = true;
+
+        // Film grain — very subtle cinematic noise texture over the frame
+        var grain = profile.Add<FilmGrain>(true);
+        grain.type.value            = FilmGrainLookup.Thin1;
+        grain.intensity.value       = 0.08f;
+        grain.intensity.overrideState = true;
+        grain.response.value        = 0.8f;
+        grain.response.overrideState = true;
     }
 }

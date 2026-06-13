@@ -86,7 +86,7 @@ public class CityGenerator : MonoBehaviour
         go.name = "Ground";
         go.transform.SetParent(_cityRoot, false);
         go.transform.localScale = Vector3.one * (GameManager.WORLD_SIZE / 10f);
-        go.GetComponent<Renderer>().sharedMaterial = MkGroundMat(COL_GROUND);
+        go.GetComponent<Renderer>().sharedMaterial = MkGroundMat(COL_GROUND, 0.18f);
         // Keep MeshCollider so physics debris lands on the ground
     }
 
@@ -101,10 +101,11 @@ public class CityGenerator : MonoBehaviour
         for (int i = -3; i <= 3; i++)
         {
             float c = i * block;
+            // sm=0.88 → wet asphalt; lamp post specular halos on road surface
             GroundBox("RoadV", new Vector3(c, thick/2f, 0f),
-                new Vector3(rw, thick, GameManager.WORLD_SIZE), COL_ROAD);
+                new Vector3(rw, thick, GameManager.WORLD_SIZE), COL_ROAD, 0.88f);
             GroundBox("RoadH", new Vector3(0f, thick/2f, c),
-                new Vector3(GameManager.WORLD_SIZE, thick, rw), COL_ROAD);
+                new Vector3(GameManager.WORLD_SIZE, thick, rw), COL_ROAD, 0.88f);
 
             for (float p = -half + dashLen/2f; p < half; p += dashLen + dashGap)
             {
@@ -126,13 +127,13 @@ public class CityGenerator : MonoBehaviour
             {
                 float o = s * 1.1f;
                 GroundBox("CwN", new Vector3(cx + o, cwH/2f, cz + ofs),
-                    new Vector3(cwW, cwH, cwDepth), COL_CROSSWALK);
+                    new Vector3(cwW, cwH, cwDepth), COL_CROSSWALK, 0.55f);
                 GroundBox("CwS", new Vector3(cx + o, cwH/2f, cz - ofs),
-                    new Vector3(cwW, cwH, cwDepth), COL_CROSSWALK);
+                    new Vector3(cwW, cwH, cwDepth), COL_CROSSWALK, 0.55f);
                 GroundBox("CwE", new Vector3(cx + ofs, cwH/2f, cz + o),
-                    new Vector3(cwDepth, cwH, cwW), COL_CROSSWALK);
+                    new Vector3(cwDepth, cwH, cwW), COL_CROSSWALK, 0.55f);
                 GroundBox("CwW", new Vector3(cx - ofs, cwH/2f, cz + o),
-                    new Vector3(cwDepth, cwH, cwW), COL_CROSSWALK);
+                    new Vector3(cwDepth, cwH, cwW), COL_CROSSWALK, 0.55f);
             }
         }
     }
@@ -151,7 +152,7 @@ public class CityGenerator : MonoBehaviour
     {
         float half = size / 2f - 1f;
         GroundBox("Sidewalk", centre + Vector3.up * 0.015f,
-            new Vector3(size - 0.5f, 0.03f, size - 0.5f), COL_SIDEWALK);
+            new Vector3(size - 0.5f, 0.03f, size - 0.5f), COL_SIDEWALK, 0.45f);
 
         float roll = Random.value;
         if (roll < 0.35f)
@@ -249,14 +250,20 @@ public class CityGenerator : MonoBehaviour
             for (int wi = 1; wi <= nW; wi++)
             {
                 float x = -bw/2f + bw / (nW + 1f) * wi;
-                EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, winEmit);
-                EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, winEmit);
+                Color wef = WindowEmit(winEmit); Color web = WindowEmit(winEmit);
+                if (Random.value < 0.65f) EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, wef);
+                else                      Box(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
+                if (Random.value < 0.65f) EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, web);
+                else                      Box(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
             }
             for (int wi = 1; wi <= nD; wi++)
             {
                 float z = -bd/2f + bd / (nD + 1f) * wi;
-                EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, winEmit);
-                EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, winEmit);
+                Color wre = WindowEmit(winEmit); Color wle = WindowEmit(winEmit);
+                if (Random.value < 0.65f) EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre);
+                else                      Box(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
+                if (Random.value < 0.65f) EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wle);
+                else                      Box(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
             }
         }
 
@@ -279,8 +286,13 @@ public class CityGenerator : MonoBehaviour
                 float topH = height * 0.10f;
                 Box(root, "Top", Y(topStart + topH/2f),
                     new Vector3(midW * 0.60f, topH, midD * 0.60f), Sc(col, 1.22f), 0.90f, 0.12f);
-                Box(root, "Spire", Y(topStart + topH + 2.2f),
+                var spire = Box(root, "Spire", Y(topStart + topH + 2.2f),
                     new Vector3(0.22f, 4.0f, 0.22f), new Color(0.78f, 0.80f, 0.86f), 0.85f, 0.65f);
+                // Blinking red aviation light at the very tip
+                var antGO = EmissivePrim(PrimitiveType.Sphere, root, "Antenna",
+                    new Vector3(0f, topStart + topH + 4.6f, 0f), Quaternion.identity,
+                    Vector3.one * 0.18f, new Color(0.9f, 0.05f, 0.05f), new Color(2.5f, 0.05f, 0.05f));
+                antGO.AddComponent<AntennaLight>();
             }
             else
             {
@@ -288,6 +300,11 @@ public class CityGenerator : MonoBehaviour
                 Box(root, "Crown", Y(topStart + crownH/2f),
                     new Vector3(midW * 0.82f, crownH, midD * 0.82f), Sc(col, 0.88f), 0.18f);
                 if (Random.value < 0.30f) WaterTower(root, topStart + crownH);
+                // Blinking antenna on concrete towers too
+                var antGO = EmissivePrim(PrimitiveType.Sphere, root, "Antenna",
+                    new Vector3(0f, topStart + crownH + 0.25f, 0f), Quaternion.identity,
+                    Vector3.one * 0.15f, new Color(0.9f, 0.05f, 0.05f), new Color(2.5f, 0.05f, 0.05f));
+                antGO.AddComponent<AntennaLight>();
             }
         }
         else if (isMed)
@@ -311,6 +328,11 @@ public class CityGenerator : MonoBehaviour
                     new Vector3(0.9f, 0.65f, 1.4f), new Color(0.72f, 0.73f, 0.74f), 0.15f);
         }
 
+        // Neon signs — placed on a random face of buildings taller than 5 units,
+        // 30% chance per building. Adds Blade Runner / Diablo urban texture.
+        if (height > 5f && Random.value < 0.30f)
+            PlaceNeonSign(root, bw, bd, podiumH + shaftH * Random.Range(0.25f, 0.65f));
+
         // No single-trigger consumable on the building root — BuildingCollapse
         // handles each piece individually as the hole sweeps under the building.
         // footprintRad is used for a cheap bounding-circle pre-check each frame.
@@ -325,6 +347,49 @@ public class CityGenerator : MonoBehaviour
         collapse.Init(footprintRad, minHole);
         foreach (Transform child in root.transform)
             collapse.RegisterPart(child);
+    }
+
+    // Per-window emissive colour with random brightness so not all windows
+    // look identical — some rooms more brightly lit than others.
+    static Color WindowEmit(Color baseEmit)
+    {
+        float t = Random.Range(0.55f, 1.40f);
+        return new Color(baseEmit.r * t, baseEmit.g * t, baseEmit.b * t);
+    }
+
+    static readonly Color[] _neonColors =
+    {
+        new Color(0.0f, 3.0f, 3.5f),
+        new Color(3.0f, 0.0f, 2.8f),
+        new Color(3.2f, 1.4f, 0.0f),
+        new Color(0.0f, 3.2f, 0.4f),
+        new Color(3.0f, 0.1f, 0.1f),
+        new Color(0.2f, 0.8f, 3.5f),
+        new Color(2.8f, 2.8f, 2.8f),
+    };
+
+    // Procedural neon sign: a thin emissive rectangle on a random building face.
+    // In a dark scene with bloom at 2.2 these glow intensely out to several metres.
+    void PlaceNeonSign(GameObject building, float bw, float bd, float y)
+    {
+        Color neon     = _neonColors[Random.Range(0, _neonColors.Length)];
+        Color neonBase = new Color(neon.r * 0.2f, neon.g * 0.2f, neon.b * 0.2f);
+        float signW    = Random.Range(0.6f, Mathf.Min(bw * 0.65f, 2.2f));
+        float signH    = Random.Range(0.22f, 0.55f);
+        float thick    = 0.06f;
+
+        // Pick a random face (North/South on Z axis, East/West on X axis)
+        int face = Random.Range(0, 4);
+        Vector3 lp;
+        Vector3 ls;
+        switch (face)
+        {
+            case 0: lp = new Vector3(0f, y,  bd / 2f + thick); ls = new Vector3(signW, signH, thick); break;
+            case 1: lp = new Vector3(0f, y, -bd / 2f - thick); ls = new Vector3(signW, signH, thick); break;
+            case 2: lp = new Vector3( bw / 2f + thick, y, 0f); ls = new Vector3(thick, signH, signW); break;
+            default: lp = new Vector3(-bw / 2f - thick, y, 0f); ls = new Vector3(thick, signH, signW); break;
+        }
+        EmissiveBox(building, "Neon", lp, ls, neonBase, neon, 0.7f);
     }
 
     void WaterTower(GameObject parent, float baseY)
@@ -624,14 +689,14 @@ public class CityGenerator : MonoBehaviour
     }
 
     // ── Ground / road boxes ───────────────────────────────────────────────
-    void GroundBox(string name, Vector3 pos, Vector3 size, Color col)
+    void GroundBox(string name, Vector3 pos, Vector3 size, Color col, float sm = 0.05f)
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
         go.name = name;
         go.transform.SetParent(_cityRoot, false);
         go.transform.position   = pos;
         go.transform.localScale = size;
-        go.GetComponent<Renderer>().sharedMaterial = MkGroundMat(col);
+        go.GetComponent<Renderer>().sharedMaterial = MkGroundMat(col, sm);
         Destroy(go.GetComponent<Collider>());
     }
 
@@ -716,13 +781,14 @@ public class CityGenerator : MonoBehaviour
         return mat;
     }
 
-    static Material MkGroundMat(Color c)
+    static Material MkGroundMat(Color c, float sm = 0.05f)
     {
-        string key = $"{(int)(c.r*255)},{(int)(c.g*255)},{(int)(c.b*255)}";
+        string key = $"{(int)(c.r*255)},{(int)(c.g*255)},{(int)(c.b*255)},{(int)(sm*100)}";
         if (!_groundCache.TryGetValue(key, out var mat))
         {
             mat = new Material(Shader.Find("DowntownDevour/GroundMasked"));
-            mat.SetColor("_BaseColor", c);
+            mat.SetColor("_BaseColor",  c);
+            mat.SetFloat("_Smoothness", sm);
             _groundCache[key] = mat;
         }
         return mat;
@@ -772,4 +838,38 @@ public class CityGenerator : MonoBehaviour
     static Color  Sc(Color c, float f)
         => new Color(Mathf.Clamp01(c.r*f), Mathf.Clamp01(c.g*f), Mathf.Clamp01(c.b*f), c.a);
     static Vector3 Y(float y) => new Vector3(0f, y, 0f);
+}
+
+// Blinking red aviation light on tall building antennae.
+// Blinks on briefly, then off for 1.5–3 s, randomised per instance so
+// a city of towers doesn't pulse in unison.
+public class AntennaLight : MonoBehaviour
+{
+    Material _mat;
+    float    _timer;
+    bool     _on = false;
+
+    static readonly Color ON_COLOR  = new Color(2.5f, 0.05f, 0.05f);
+    static readonly Color OFF_COLOR = Color.black;
+
+    void Start()
+    {
+        _mat   = GetComponent<Renderer>().material; // creates instance
+        _timer = Random.Range(0f, 3.0f);            // stagger across the skyline
+        Apply();
+    }
+
+    void Update()
+    {
+        _timer -= Time.deltaTime;
+        if (_timer > 0f) return;
+
+        _on    = !_on;
+        _timer = _on ? Random.Range(0.08f, 0.18f) : Random.Range(1.5f, 3.2f);
+        Apply();
+    }
+
+    void Apply() => _mat.SetColor("_EmissionColor", _on ? ON_COLOR : OFF_COLOR);
+
+    void OnDestroy() { if (_mat != null) Destroy(_mat); }
 }
