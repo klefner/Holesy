@@ -7,7 +7,7 @@ using UnityEngine.UI;
 // HUD and end-screen. Uses TextMeshProUGUI (included in URP Universal 3D template).
 public class UIManager : MonoBehaviour
 {
-    public const string VERSION = "v0.32";
+    public const string VERSION = "v0.33";
 
     private Canvas            _canvas;
     private TextMeshProUGUI   _timerText;
@@ -16,12 +16,14 @@ public class UIManager : MonoBehaviour
     private GameObject        _endScreen;
     private TextMeshProUGUI   _endTitle;
     private TextMeshProUGUI   _endBody;
+    private GameObject        _pauseScreen;
 
     public void Init()
     {
         BuildCanvas();
         BuildHUD();
         BuildEndScreen();
+        BuildPauseScreen();
     }
 
     public void Tick()
@@ -116,6 +118,23 @@ public class UIManager : MonoBehaviour
             14, TextAlignmentOptions.Center);
         _inHoleText.color = new Color(1f, 1f, 1f, 0.55f);
 
+        // Pause button — bottom-right, out of the way of the scoreboard. Opens
+        // the pause menu (which offers Resume / Exit). Esc and P also toggle it.
+        var pauseBtnGO = new GameObject("PauseBtn");
+        pauseBtnGO.transform.SetParent(_canvas.transform, false);
+        var pauseImg = pauseBtnGO.AddComponent<Image>();
+        pauseImg.color = new Color(0.20f, 0.20f, 0.28f, 0.85f);
+        var pauseRT = pauseBtnGO.GetComponent<RectTransform>();
+        pauseRT.anchorMin        = new Vector2(1f, 0f);
+        pauseRT.anchorMax        = new Vector2(1f, 0f);
+        pauseRT.pivot            = new Vector2(1f, 0f);
+        pauseRT.anchoredPosition = new Vector2(-20f, 20f);
+        pauseRT.sizeDelta        = new Vector2(120f, 48f);
+        pauseBtnGO.AddComponent<Button>().onClick.AddListener(() => GameManager.Instance.TogglePause());
+        MakeTMPChild(pauseBtnGO, "PauseLabel", "II  MENU",
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110f, 44f),
+            20, TextAlignmentOptions.Center);
+
         int count = 4;
         _scoreTexts = new TextMeshProUGUI[count];
         for (int i = 0; i < count; i++)
@@ -181,14 +200,7 @@ public class UIManager : MonoBehaviour
         exitRT.anchorMax        = new Vector2(0.5f, 0.14f);
         exitRT.sizeDelta        = new Vector2(260f, 64f);
         exitRT.anchoredPosition = Vector2.zero;
-        exitGO.AddComponent<Button>().onClick.AddListener(() =>
-        {
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            Application.Quit();
-#endif
-        });
+        exitGO.AddComponent<Button>().onClick.AddListener(() => GameManager.Instance.QuitGame());
 
         MakeTMPChild(exitGO, "ExitLabel", "EXIT",
             new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(240f, 54f),
@@ -196,6 +208,61 @@ public class UIManager : MonoBehaviour
 
         _endScreen.SetActive(false);
     }
+
+    // ── Pause screen ──────────────────────────────────────────────────────────
+
+    void BuildPauseScreen()
+    {
+        _pauseScreen = new GameObject("PauseScreen");
+        _pauseScreen.transform.SetParent(_canvas.transform, false);
+
+        var overlay = _pauseScreen.AddComponent<Image>();
+        overlay.color = new Color(0f, 0f, 0f, 0.82f);
+        var rt = _pauseScreen.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+
+        var title = MakeTMPChild(_pauseScreen, "PauseTitle", "PAUSED",
+            new Vector2(0.5f, 0.62f), new Vector2(0f, 0f), new Vector2(700f, 90f),
+            64, TextAlignmentOptions.Center);
+        title.fontStyle = FontStyles.Bold;
+
+        // Resume button
+        var resumeGO = new GameObject("ResumeBtn");
+        resumeGO.transform.SetParent(_pauseScreen.transform, false);
+        var resumeImg = resumeGO.AddComponent<Image>();
+        resumeImg.color = new Color(0.20f, 0.60f, 1f, 0.92f);
+        var resumeRT = resumeGO.GetComponent<RectTransform>();
+        resumeRT.anchorMin        = new Vector2(0.5f, 0.42f);
+        resumeRT.anchorMax        = new Vector2(0.5f, 0.42f);
+        resumeRT.sizeDelta        = new Vector2(260f, 64f);
+        resumeRT.anchoredPosition = Vector2.zero;
+        resumeGO.AddComponent<Button>().onClick.AddListener(() => GameManager.Instance.Resume());
+        MakeTMPChild(resumeGO, "ResumeLabel", "RESUME",
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(240f, 54f),
+            26, TextAlignmentOptions.Center);
+
+        // Exit button — leaves the game mid-play
+        var exitGO = new GameObject("PauseExitBtn");
+        exitGO.transform.SetParent(_pauseScreen.transform, false);
+        var exitImg = exitGO.AddComponent<Image>();
+        exitImg.color = new Color(0.75f, 0.15f, 0.15f, 0.92f);
+        var exitRT = exitGO.GetComponent<RectTransform>();
+        exitRT.anchorMin        = new Vector2(0.5f, 0.30f);
+        exitRT.anchorMax        = new Vector2(0.5f, 0.30f);
+        exitRT.sizeDelta        = new Vector2(260f, 64f);
+        exitRT.anchoredPosition = Vector2.zero;
+        exitGO.AddComponent<Button>().onClick.AddListener(() => GameManager.Instance.QuitGame());
+        MakeTMPChild(exitGO, "PauseExitLabel", "EXIT",
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(240f, 54f),
+            26, TextAlignmentOptions.Center);
+
+        _pauseScreen.SetActive(false);
+    }
+
+    public void ShowPauseScreen() { if (_pauseScreen != null) _pauseScreen.SetActive(true); }
+    public void HidePauseScreen() { if (_pauseScreen != null) _pauseScreen.SetActive(false); }
 
     // ── TMP factory helpers ───────────────────────────────────────────────────
 

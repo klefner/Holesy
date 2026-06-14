@@ -25,7 +25,7 @@ public class GameManager : MonoBehaviour
     public const float AI_SPEED      = 12f;
     public const float AI_FLEE_SPEED = 13.5f;
 
-    public enum GameState { Playing, GameOver }
+    public enum GameState { Playing, Paused, GameOver }
 
     public GameState              State         { get; private set; }
     public float                  TimeRemaining { get; private set; }
@@ -65,6 +65,10 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        // A previous run (or a pause before scene reload) may have left time
+        // frozen — always restore normal flow when a fresh game begins.
+        Time.timeScale = 1f;
+
         TimeRemaining = GAME_DURATION;
         State         = GameState.Playing;
 
@@ -77,10 +81,12 @@ public class GameManager : MonoBehaviour
 
     void SetupLighting()
     {
-        // Dark night city — ambient is low but the city should still read.
-        // 0.04 was invisible; 0.18 gives silhouettes while keeping emissives dramatic.
+        // Dark night city — ambient gives only faint silhouettes; the player's
+        // follow-lantern (see SpawnHoles) is what actually makes the area around
+        // the hole readable. The dark night building albedos (0.08–0.22) swallow
+        // ambient on their own, so the lantern carries playability.
         RenderSettings.ambientMode  = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.18f, 0.18f, 0.25f);
+        RenderSettings.ambientLight = new Color(0.26f, 0.26f, 0.34f);
 
         // Atmospheric fog — purple-black haze obscures the far city edge.
         RenderSettings.fog              = true;
@@ -93,7 +99,7 @@ public class GameManager : MonoBehaviour
         var sunGO = new GameObject("Sun");
         var sun   = sunGO.AddComponent<Light>();
         sun.type      = LightType.Directional;
-        sun.intensity = 0.55f;
+        sun.intensity = 0.70f;
         sun.color     = new Color(0.62f, 0.70f, 0.90f);
         sun.shadows   = LightShadows.Soft;
         sunGO.transform.rotation = Quaternion.Euler(28f, -30f, 0f);
@@ -125,6 +131,7 @@ public class GameManager : MonoBehaviour
 
         Player = HoleFactory.CreatePlayer(new Color(0.30f, 0.60f, 1.00f), Vector3.zero);
         AllHoles.Add(Player.Hole);
+        AddPlayerLantern(Player.Hole.transform);
 
         var cfgs = AIConfig.Defaults();
         Vector3[] aiPos = { new Vector3(-40, 0, -40), new Vector3(40, 0, 40), new Vector3(-40, 0, 40) };
@@ -137,10 +144,35 @@ public class GameManager : MonoBehaviour
         Camera.main.GetComponent<GameCamera>().Target = Player.Hole.transform;
     }
 
+    // A bright warm light floating above the player's hole. Parented to the hole
+    // transform, so it tracks the hole automatically as it moves. This is the
+    // primary illumination the player navigates by — the night city is otherwise
+    // too dark to read.
+    void AddPlayerLantern(Transform holeTransform)
+    {
+        var go = new GameObject("PlayerLantern");
+        go.transform.SetParent(holeTransform, false);
+        go.transform.localPosition = new Vector3(0f, 16f, 0f);
+
+        var l = go.AddComponent<Light>();
+        l.type       = LightType.Point;
+        l.color      = new Color(1.0f, 0.94f, 0.82f); // warm white
+        l.intensity  = 32f;
+        l.range      = 55f;
+        l.shadows    = LightShadows.None;             // performance — many objects in pool
+        l.renderMode = LightRenderMode.ForcePixel;    // ensure per-pixel quality for the hero light
+    }
+
     // ── Main loop ─────────────────────────────────────────────────────────────
 
     void Update()
     {
+        // Pause is reachable any time the game is live (not on the end screen).
+        // Esc / P toggle it; the on-screen pause button does the same.
+        if (State != GameState.GameOver &&
+            (Input.GetKeyDown(KeyCode.Escape) || Input.GetKeyDown(KeyCode.P)))
+            TogglePause();
+
         if (State != GameState.Playing) return;
 
         TimeRemaining -= Time.deltaTime;
@@ -210,6 +242,44 @@ public class GameManager : MonoBehaviour
                     EatHole(bigger, smaller);
             }
         }
+    }
+
+    // ── Pause ─────────────────────────────────────────────────────────────────
+
+    public bool IsPaused => State == GameState.Paused;
+
+    public void TogglePause()
+    {
+        if (State == GameState.Playing)      Pause();
+        else if (State == GameState.Paused)  Resume();
+    }
+
+    public void Pause()
+    {
+        if (State != GameState.Playing) return;
+        State          = GameState.Paused;
+        Time.timeScale = 0f;   // freezes movement, AI, physics and the timer
+        UI.ShowPauseScreen();
+    }
+
+    public void Resume()
+    {
+        if (State != GameState.Paused) return;
+        State          = GameState.Playing;
+        Time.timeScale = 1f;
+        UI.HidePauseScreen();
+    }
+
+    // Leaves the game mid-play. In a build this quits the application; in the
+    // editor it stops play mode. Matches the end-screen EXIT behaviour.
+    public void QuitGame()
+    {
+        Time.timeScale = 1f;
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
     }
 
     // ── Public game actions ───────────────────────────────────────────────────
@@ -284,12 +354,16 @@ public class GameManager : MonoBehaviour
 
     void EndGame()
     {
-        State = GameState.GameOver;
+        State          = GameState.GameOver;
+        Time.timeScale = 1f;   // ensure the end screen is interactive even if paused
         _military.Stop();
         UI.ShowEndScreen();
         Audio.StopMusic();
     }
 
     public void RestartGame()
-        => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    {
+        Time.timeScale = 1f;   // timeScale persists across scene loads — reset it
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
 }
