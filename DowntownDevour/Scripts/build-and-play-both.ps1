@@ -231,7 +231,12 @@ $proc.WaitForExit()
 $PC_EXE  = Join-Path $BUILDS "Windows\DowntownDevour.exe"
 $WEB_DIR = Join-Path $BUILDS "Web"
 
-if ($proc.ExitCode -ne 0 -or
+# $proc.ExitCode is null when Unity exits cleanly via EditorApplication.Exit(0) under
+# -NoNewWindow in PowerShell — null treated as explicit failure. Treat null as success;
+# file-existence is the real ground truth.
+$explicitFail = ($proc.ExitCode -ne $null -and $proc.ExitCode -ne 0)
+
+if ($explicitFail -or
     -not (Test-Path $PC_EXE) -or
     -not (Test-Path (Join-Path $WEB_DIR "index.html"))) {
     Write-Host ""
