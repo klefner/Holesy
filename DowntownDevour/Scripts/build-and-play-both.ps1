@@ -236,9 +236,21 @@ if ($proc.ExitCode -ne 0 -or
     -not (Test-Path (Join-Path $WEB_DIR "index.html"))) {
     Write-Host ""
     Write-Host "  ERROR: Build failed (exit $($proc.ExitCode))." -ForegroundColor Red
-    Write-Host "  Check the log: $LOG" -ForegroundColor Red
     Write-Host "  (If the PC build failed: install 'Windows Build Support' for this" -ForegroundColor Gray
     Write-Host "   Unity version via Unity Hub > Installs > gear icon > Add modules.)" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "  ── Last 60 lines of build.log ──────────────────────────────────" -ForegroundColor Yellow
+    if (Test-Path $LOG) {
+        $logLines = Get-Content $LOG -ErrorAction SilentlyContinue
+        $tail = if ($logLines.Count -gt 60) { $logLines[($logLines.Count - 60)..($logLines.Count - 1)] } else { $logLines }
+        foreach ($line in $tail) { Write-Host "  $line" -ForegroundColor Gray }
+    } else {
+        Write-Host "  (log file not found)" -ForegroundColor Red
+    }
+    Write-Host "  ────────────────────────────────────────────────────────────────" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "  Full log: $LOG" -ForegroundColor Cyan
+    Write-Host "  (Copy the lines above and send them to Claude for diagnosis.)" -ForegroundColor Cyan
     Read-Host "  Press Enter to close"
     exit 1
 }
