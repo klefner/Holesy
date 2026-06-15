@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -40,6 +41,7 @@ public class GameManager : MonoBehaviour
 
     private CityGenerator  _city;
     private MilitarySystem _military;
+    private TrafficSystem  _traffic;
     private Light          _sunLight;       // stored so CycleTimeOfDay can change it at runtime
     private Light          _playerLantern;  // follow-light above the player; brightness varies by TOD
 
@@ -60,6 +62,7 @@ public class GameManager : MonoBehaviour
 
         _city     = gameObject.AddComponent<CityGenerator>();
         _military = gameObject.AddComponent<MilitarySystem>();
+        _traffic  = gameObject.AddComponent<TrafficSystem>();
         UI        = gameObject.AddComponent<UIManager>();
         Audio     = gameObject.AddComponent<AudioManager>();
 
@@ -135,6 +138,13 @@ public class GameManager : MonoBehaviour
         cam.farClipPlane    = 600f;
         cam.gameObject.AddComponent<GameCamera>();
         cam.gameObject.AddComponent<DiabloPostProcessing>();
+
+        // Forward+ removes the per-object 4-light limit so all lamp posts and car
+        // headlights actually illuminate the ground and buildings rather than
+        // only the 4 closest-to-center lights affecting each mesh.
+        var urpCam = cam.gameObject.GetComponent<UniversalAdditionalCameraData>()
+                  ?? cam.gameObject.AddComponent<UniversalAdditionalCameraData>();
+        urpCam.renderingPath = RenderingPath.ForwardPlus;
     }
 
     // ── Hole spawning ─────────────────────────────────────────────────────────
@@ -253,6 +263,7 @@ public class GameManager : MonoBehaviour
         SetNightOnlyLights(false);
         SetCarLights(false);
         SetLantern(2f);
+        _traffic?.StopTraffic();
     }
 
     void ApplyAfternoon()
@@ -275,6 +286,7 @@ public class GameManager : MonoBehaviour
         SetNightOnlyLights(false);
         SetCarLights(false);
         SetLantern(2f);
+        _traffic?.StopTraffic();
     }
 
     void ApplyEvening()
@@ -297,6 +309,7 @@ public class GameManager : MonoBehaviour
         SetNightOnlyLights(true);
         SetCarLights(true);
         SetLantern(16f);
+        _traffic?.StartTraffic();
     }
 
     void ApplyNight()
@@ -319,6 +332,7 @@ public class GameManager : MonoBehaviour
         SetNightOnlyLights(true);
         SetCarLights(true);
         SetLantern(24f);
+        _traffic?.StartTraffic();
     }
 
     void SetLantern(float intensity)
