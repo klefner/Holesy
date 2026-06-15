@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -39,11 +38,12 @@ public class GameManager : MonoBehaviour
     public UIManager    UI    { get; private set; }
     public AudioManager Audio { get; private set; }
 
-    private CityGenerator  _city;
-    private MilitarySystem _military;
-    private TrafficSystem  _traffic;
-    private Light          _sunLight;       // stored so CycleTimeOfDay can change it at runtime
-    private Light          _playerLantern;  // follow-light above the player; brightness varies by TOD
+    private CityGenerator        _city;
+    private MilitarySystem       _military;
+    private TrafficSystem        _traffic;
+    private DiabloPostProcessing _post;          // TOD-aware colour grade
+    private Light                _sunLight;       // stored so CycleTimeOfDay can change it at runtime
+    private Light                _playerLantern;  // follow-light above the player; brightness varies by TOD
 
     private readonly List<(HoleBase hole, ConsumableObject obj)> _consumeQueue
         = new List<(HoleBase, ConsumableObject)>();
@@ -137,14 +137,7 @@ public class GameManager : MonoBehaviour
         cam.backgroundColor = new Color(0.05f, 0.05f, 0.08f); // dark void — shows through the stencil hole
         cam.farClipPlane    = 600f;
         cam.gameObject.AddComponent<GameCamera>();
-        cam.gameObject.AddComponent<DiabloPostProcessing>();
-
-        // Forward+ removes the per-object 4-light limit so all lamp posts and car
-        // headlights actually illuminate the ground and buildings rather than
-        // only the 4 closest-to-center lights affecting each mesh.
-        var urpCam = cam.gameObject.GetComponent<UniversalAdditionalCameraData>()
-                  ?? cam.gameObject.AddComponent<UniversalAdditionalCameraData>();
-        urpCam.renderingPath = RenderingPath.ForwardPlus;
+        _post = cam.gameObject.AddComponent<DiabloPostProcessing>();
     }
 
     // ── Hole spawning ─────────────────────────────────────────────────────────
@@ -264,6 +257,9 @@ public class GameManager : MonoBehaviour
         SetCarLights(false);
         SetLantern(2f);
         _traffic?.StopTraffic();
+        // Daytime: filmic ACES, high bloom threshold so only true emissives halo.
+        _post?.SetGrade(darkMode: false, exposure: 0.1f, bloomThreshold: 1.1f,
+                        bloomIntensity: 0.7f, vignette: 0.15f);
     }
 
     void ApplyAfternoon()
@@ -287,52 +283,65 @@ public class GameManager : MonoBehaviour
         SetCarLights(false);
         SetLantern(2f);
         _traffic?.StopTraffic();
+        _post?.SetGrade(darkMode: false, exposure: 0.1f, bloomThreshold: 1.1f,
+                        bloomIntensity: 0.7f, vignette: 0.15f);
     }
 
     void ApplyEvening()
     {
-        RenderSettings.ambientLight     = new Color(0.46f, 0.36f, 0.26f);
+        // Dusk: warm and moody but still readable. Ambient lifted from the old
+        // near-black so the city is navigable without relying on dynamic lights
+        // (URP's per-object light limit means we can't count on dozens of them).
+        RenderSettings.ambientLight     = new Color(0.40f, 0.32f, 0.28f);
         RenderSettings.fogColor         = new Color(0.48f, 0.32f, 0.22f);
-        RenderSettings.fogStartDistance = 80f;
-        RenderSettings.fogEndDistance   = 240f;
-        _sunLight.color                 = new Color(1.00f, 0.55f, 0.20f);
-        _sunLight.intensity             = 0.85f;
-        _sunLight.transform.rotation    = Quaternion.Euler(8f, -15f, 0f);
-        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.60f, 0.38f, 0.22f);
+        RenderSettings.fogStartDistance = 90f;
+        RenderSettings.fogEndDistance   = 280f;
+        _sunLight.color                 = new Color(1.00f, 0.60f, 0.28f);
+        _sunLight.intensity             = 1.05f;
+        _sunLight.transform.rotation    = Quaternion.Euler(10f, -15f, 0f);
+        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.42f, 0.26f, 0.18f);
 
         SetBuildingPalette(
-            new Color(0.18f, 0.22f, 0.30f),
-            new Color(0.38f, 0.34f, 0.28f),
-            new Color(0.28f, 0.30f, 0.36f),
-            new Color(0.38f, 0.28f, 0.22f));
+            new Color(0.30f, 0.34f, 0.44f),
+            new Color(0.50f, 0.44f, 0.36f),
+            new Color(0.38f, 0.40f, 0.48f),
+            new Color(0.50f, 0.38f, 0.30f));
         SetBuildingLights(true);
         SetNightOnlyLights(true);
         SetCarLights(true);
         SetLantern(16f);
         _traffic?.StartTraffic();
+        // Dark grade: Neutral tonemapping + lifted exposure keeps midtones; lower
+        // bloom threshold so lit windows, lamps and headlights glow.
+        _post?.SetGrade(darkMode: true, exposure: 0.45f, bloomThreshold: 0.85f,
+                        bloomIntensity: 0.9f, vignette: 0.22f);
     }
 
     void ApplyNight()
     {
-        RenderSettings.ambientLight     = new Color(0.18f, 0.18f, 0.25f);
-        RenderSettings.fogColor         = new Color(0.05f, 0.04f, 0.10f);
-        RenderSettings.fogStartDistance = 60f;
-        RenderSettings.fogEndDistance   = 200f;
-        _sunLight.color                 = new Color(0.62f, 0.70f, 0.90f);
-        _sunLight.intensity             = 0.55f;
-        _sunLight.transform.rotation    = Quaternion.Euler(28f, -30f, 0f);
-        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.01f, 0.005f, 0.02f);
+        // Night: genuinely dark but the moon + raised ambient keep shapes legible;
+        // the player lantern, rim ring and city lights carry the atmosphere.
+        RenderSettings.ambientLight     = new Color(0.26f, 0.27f, 0.36f);
+        RenderSettings.fogColor         = new Color(0.06f, 0.06f, 0.13f);
+        RenderSettings.fogStartDistance = 70f;
+        RenderSettings.fogEndDistance   = 240f;
+        _sunLight.color                 = new Color(0.66f, 0.74f, 0.95f);
+        _sunLight.intensity             = 0.75f;
+        _sunLight.transform.rotation    = Quaternion.Euler(35f, -30f, 0f);
+        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.02f, 0.02f, 0.05f);
 
         SetBuildingPalette(
-            new Color(0.08f, 0.12f, 0.18f),
-            new Color(0.22f, 0.20f, 0.17f),
-            new Color(0.15f, 0.18f, 0.24f),
-            new Color(0.20f, 0.15f, 0.12f));
+            new Color(0.16f, 0.20f, 0.30f),
+            new Color(0.32f, 0.30f, 0.26f),
+            new Color(0.24f, 0.28f, 0.36f),
+            new Color(0.30f, 0.23f, 0.18f));
         SetBuildingLights(true);
         SetNightOnlyLights(true);
         SetCarLights(true);
         SetLantern(24f);
         _traffic?.StartTraffic();
+        _post?.SetGrade(darkMode: true, exposure: 0.60f, bloomThreshold: 0.80f,
+                        bloomIntensity: 1.0f, vignette: 0.26f);
     }
 
     void SetLantern(float intensity)

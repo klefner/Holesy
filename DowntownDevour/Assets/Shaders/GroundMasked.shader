@@ -96,7 +96,7 @@ Shader "DowntownDevour/GroundMasked"
                 half  NdotLMain  = saturate(dot(N, mainLight.direction));
                 half3 H_main     = normalize(mainLight.direction + V);
                 half  spec_main  = pow(saturate(dot(N, H_main)), specPow) * _Smoothness;
-                half3 color = albedo * (mainLight.color * NdotLMain * 0.12h)
+                half3 color = albedo * (mainLight.color * NdotLMain * 0.30h)
                             + mainLight.color * spec_main * 0.8h;
 
                 // ── Additional point lights (lamp posts, car lights, hole) ──
@@ -116,8 +116,8 @@ Shader "DowntownDevour/GroundMasked"
                 }
                 #endif
 
-                // ── Ambient (near-black flat ambient) ───────────────────────
-                color += albedo * SampleSH(N) * 0.5h;
+                // ── Ambient ─────────────────────────────────────────────────
+                color += albedo * SampleSH(N) * 0.85h;
 
                 // ── Fog ─────────────────────────────────────────────────────
                 color = MixFog(color, IN.fogFactor);
