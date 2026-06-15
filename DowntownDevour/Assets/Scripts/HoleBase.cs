@@ -125,14 +125,15 @@ public class HoleBase : MonoBehaviour
 
             if (darkMode)
             {
-                // Rim ring becomes a real light source in evening/night, brightening
+                // Rim ring is a real light source in evening/night: a strong baseline
+                // so the area around the hole is always navigable, brightening further
                 // with each lamp consumed — the hole grows into a moving street lamp.
                 float glow = _rimGlow;
-                _rimLight.intensity = Mathf.Min(2.5f + glow * 1.8f, 35f);
-                _rimLight.range     = Radius * 3.5f + 8f + glow * 2f;
+                _rimLight.intensity = Mathf.Min(16f + glow * 1.8f, 45f);
+                _rimLight.range     = Radius * 3.5f + 22f + glow * 2f;
                 // Brighten the rim emission (skip during damage flash so red still shows)
                 if (_rimMat != null && _flashTimer <= 0f)
-                    _rimMat.SetColor("_EmissionColor", HoleColor * (4f + glow * 0.6f));
+                    _rimMat.SetColor("_EmissionColor", HoleColor * (5f + glow * 0.6f));
             }
             else
             {

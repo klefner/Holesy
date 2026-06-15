@@ -40,7 +40,8 @@ public class GameManager : MonoBehaviour
 
     private CityGenerator  _city;
     private MilitarySystem _military;
-    private Light          _sunLight;  // stored so CycleTimeOfDay can change it at runtime
+    private Light          _sunLight;       // stored so CycleTimeOfDay can change it at runtime
+    private Light          _playerLantern;  // follow-light above the player; brightness varies by TOD
 
     private readonly List<(HoleBase hole, ConsumableObject obj)> _consumeQueue
         = new List<(HoleBase, ConsumableObject)>();
@@ -76,8 +77,8 @@ public class GameManager : MonoBehaviour
         State         = GameState.Playing;
 
         _city.Build();
-        ApplyTimeOfDay(CurrentTimeOfDay);  // set initial palette + building lights
-        SpawnHoles();
+        SpawnHoles();                      // creates the player lantern referenced below
+        ApplyTimeOfDay(CurrentTimeOfDay);  // set initial palette, building lights, lantern
         _military.Begin();
         UI.Init();
         Audio.StartMusic();
@@ -157,13 +158,13 @@ public class GameManager : MonoBehaviour
         go.transform.SetParent(holeTransform, false);
         go.transform.localPosition = new Vector3(0f, 16f, 0f);
 
-        var l = go.AddComponent<Light>();
-        l.type       = LightType.Point;
-        l.color      = new Color(1.0f, 0.94f, 0.82f); // warm white
-        l.intensity  = 6f;                            // subtle fill in daytime (was the night hero light)
-        l.range      = 45f;
-        l.shadows    = LightShadows.None;             // performance — many objects in pool
-        l.renderMode = LightRenderMode.ForcePixel;    // ensure per-pixel quality for the hero light
+        _playerLantern = go.AddComponent<Light>();
+        _playerLantern.type       = LightType.Point;
+        _playerLantern.color      = new Color(1.0f, 0.94f, 0.82f); // warm white
+        _playerLantern.intensity  = 6f;                            // overwritten per-TOD by ApplyTimeOfDay
+        _playerLantern.range      = 55f;
+        _playerLantern.shadows    = LightShadows.None;             // performance — many objects in pool
+        _playerLantern.renderMode = LightRenderMode.ForcePixel;    // per-pixel quality for the hero light
     }
 
     // ── Time of day ───────────────────────────────────────────────────────────
@@ -206,21 +207,23 @@ public class GameManager : MonoBehaviour
 
     void ApplyMorning()
     {
-        RenderSettings.ambientLight     = new Color(0.52f, 0.48f, 0.44f);
-        RenderSettings.fogColor         = new Color(0.85f, 0.78f, 0.72f);
-        RenderSettings.fogStartDistance = 120f;
-        RenderSettings.fogEndDistance   = 320f;
-        _sunLight.color                 = new Color(1.00f, 0.80f, 0.55f);
-        _sunLight.intensity             = 0.90f;
-        _sunLight.transform.rotation    = Quaternion.Euler(15f, 45f, 0f);
-        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.87f, 0.72f, 0.62f);
+        // Bright warm daytime — clearly lit, just golden and softer than noon.
+        RenderSettings.ambientLight     = new Color(0.66f, 0.62f, 0.56f);
+        RenderSettings.fogColor         = new Color(0.90f, 0.82f, 0.74f);
+        RenderSettings.fogStartDistance = 140f;
+        RenderSettings.fogEndDistance   = 340f;
+        _sunLight.color                 = new Color(1.00f, 0.86f, 0.64f);
+        _sunLight.intensity             = 1.30f;
+        _sunLight.transform.rotation    = Quaternion.Euler(28f, 45f, 0f);
+        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.88f, 0.78f, 0.66f);
 
         SetBuildingPalette(
-            new Color(0.38f, 0.45f, 0.58f),
-            new Color(0.58f, 0.54f, 0.48f),
-            new Color(0.44f, 0.48f, 0.56f),
-            new Color(0.62f, 0.48f, 0.40f));
+            new Color(0.46f, 0.52f, 0.64f),
+            new Color(0.64f, 0.58f, 0.50f),
+            new Color(0.50f, 0.54f, 0.62f),
+            new Color(0.68f, 0.52f, 0.42f));
         SetBuildingLights(false);
+        SetLantern(2f);   // daytime — barely-there warm fill
     }
 
     void ApplyAfternoon()
@@ -240,6 +243,7 @@ public class GameManager : MonoBehaviour
             new Color(0.46f, 0.52f, 0.62f),
             new Color(0.66f, 0.52f, 0.42f));
         SetBuildingLights(false);
+        SetLantern(2f);   // daytime — barely-there warm fill
     }
 
     void ApplyEvening()
@@ -259,6 +263,7 @@ public class GameManager : MonoBehaviour
             new Color(0.28f, 0.30f, 0.36f),
             new Color(0.38f, 0.28f, 0.22f));
         SetBuildingLights(true);   // ~65% of windows + storefronts glow amber/blue
+        SetLantern(16f);           // dusk — strong fill so the area around the hole reads
     }
 
     void ApplyNight()
@@ -278,6 +283,12 @@ public class GameManager : MonoBehaviour
             new Color(0.15f, 0.18f, 0.24f),
             new Color(0.20f, 0.15f, 0.12f));
         SetBuildingLights(true);   // city glows in the dark
+        SetLantern(24f);           // night — the lantern + rim ring carry navigation
+    }
+
+    void SetLantern(float intensity)
+    {
+        if (_playerLantern != null) _playerLantern.intensity = intensity;
     }
 
     // ── Main loop ─────────────────────────────────────────────────────────────
