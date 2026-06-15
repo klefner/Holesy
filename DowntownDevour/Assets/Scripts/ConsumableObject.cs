@@ -10,6 +10,7 @@ public class ConsumableObject : MonoBehaviour
     public ObjectCategory Category        { get; private set; }
     public bool           IsConsumed      { get; private set; }
     public float          FootprintRadius { get; private set; }
+    public bool           IsLightSource   { get; set; } = false;
 
     private bool     _falling;
     private float    _spinVel;

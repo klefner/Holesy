@@ -25,19 +25,22 @@ public class GameManager : MonoBehaviour
     public const float AI_SPEED      = 12f;
     public const float AI_FLEE_SPEED = 13.5f;
 
-    public enum GameState { Playing, Paused, GameOver }
+    public enum GameState  { Playing, Paused, GameOver }
+    public enum TimeOfDay  { Morning, Afternoon, Evening, Night }
 
-    public GameState              State         { get; private set; }
-    public float                  TimeRemaining { get; private set; }
-    public PlayerHole             Player        { get; private set; }
-    public List<HoleBase>         AllHoles      { get; } = new List<HoleBase>();
-    public List<ConsumableObject> AllObjects    { get; } = new List<ConsumableObject>();
+    public GameState              State            { get; private set; }
+    public TimeOfDay              CurrentTimeOfDay { get; private set; } = TimeOfDay.Afternoon;
+    public float                  TimeRemaining    { get; private set; }
+    public PlayerHole             Player           { get; private set; }
+    public List<HoleBase>         AllHoles         { get; } = new List<HoleBase>();
+    public List<ConsumableObject> AllObjects       { get; } = new List<ConsumableObject>();
 
     public UIManager    UI    { get; private set; }
     public AudioManager Audio { get; private set; }
 
     private CityGenerator  _city;
     private MilitarySystem _military;
+    private Light          _sunLight;  // stored so CycleTimeOfDay can change it at runtime
 
     private readonly List<(HoleBase hole, ConsumableObject obj)> _consumeQueue
         = new List<(HoleBase, ConsumableObject)>();
@@ -73,6 +76,7 @@ public class GameManager : MonoBehaviour
         State         = GameState.Playing;
 
         _city.Build();
+        ApplyTimeOfDay(CurrentTimeOfDay);  // set initial palette + building lights
         SpawnHoles();
         _military.Begin();
         UI.Init();
@@ -93,13 +97,14 @@ public class GameManager : MonoBehaviour
         RenderSettings.fogStartDistance = 130f;
         RenderSettings.fogEndDistance   = 340f;
 
-        // Sun — strong warm-white directional from a high angle, soft shadows.
+        // Sun / moon — created once; CycleTimeOfDay() updates it at runtime.
         var sunGO = new GameObject("Sun");
-        var sun   = sunGO.AddComponent<Light>();
-        sun.type      = LightType.Directional;
-        sun.intensity = 1.40f;
-        sun.color     = new Color(1.00f, 0.97f, 0.90f);
-        sun.shadows   = LightShadows.Soft;
+        _sunLight             = sunGO.AddComponent<Light>();
+        _sunLight.type        = LightType.Directional;
+        _sunLight.shadows     = LightShadows.Soft;
+        // Initial values — ApplyTimeOfDay() will overwrite after the city builds.
+        _sunLight.intensity   = 1.40f;
+        _sunLight.color       = new Color(1.00f, 0.97f, 0.90f);
         sunGO.transform.rotation = Quaternion.Euler(50f, -35f, 0f);
     }
 
@@ -159,6 +164,120 @@ public class GameManager : MonoBehaviour
         l.range      = 45f;
         l.shadows    = LightShadows.None;             // performance — many objects in pool
         l.renderMode = LightRenderMode.ForcePixel;    // ensure per-pixel quality for the hero light
+    }
+
+    // ── Time of day ───────────────────────────────────────────────────────────
+
+    public void CycleTimeOfDay()
+    {
+        CurrentTimeOfDay = (TimeOfDay)(((int)CurrentTimeOfDay + 1) % 4);
+        ApplyTimeOfDay(CurrentTimeOfDay);
+    }
+
+    void ApplyTimeOfDay(TimeOfDay tod)
+    {
+        switch (tod)
+        {
+            case TimeOfDay.Morning:   ApplyMorning();   break;
+            case TimeOfDay.Afternoon: ApplyAfternoon(); break;
+            case TimeOfDay.Evening:   ApplyEvening();   break;
+            case TimeOfDay.Night:     ApplyNight();     break;
+        }
+    }
+
+    // Building lights on/off — evening and night are "lit" states.
+    void SetBuildingLights(bool on)
+    {
+        foreach (var mat in CityGenerator.BuildingLightMats)
+        {
+            if (on) mat.EnableKeyword("_EMISSION");
+            else    mat.DisableKeyword("_EMISSION");
+        }
+    }
+
+    // Base colours for the 4 building types, applied to the shared material instances.
+    void SetBuildingPalette(Color glass, Color c1, Color c2, Color brick)
+    {
+        if (_city.BuildingMatGlass     != null) _city.BuildingMatGlass.SetColor("_BaseColor",     glass);
+        if (_city.BuildingMatConcrete1 != null) _city.BuildingMatConcrete1.SetColor("_BaseColor", c1);
+        if (_city.BuildingMatConcrete2 != null) _city.BuildingMatConcrete2.SetColor("_BaseColor", c2);
+        if (_city.BuildingMatBrick     != null) _city.BuildingMatBrick.SetColor("_BaseColor",     brick);
+    }
+
+    void ApplyMorning()
+    {
+        RenderSettings.ambientLight     = new Color(0.52f, 0.48f, 0.44f);
+        RenderSettings.fogColor         = new Color(0.85f, 0.78f, 0.72f);
+        RenderSettings.fogStartDistance = 120f;
+        RenderSettings.fogEndDistance   = 320f;
+        _sunLight.color                 = new Color(1.00f, 0.80f, 0.55f);
+        _sunLight.intensity             = 0.90f;
+        _sunLight.transform.rotation    = Quaternion.Euler(15f, 45f, 0f);
+        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.87f, 0.72f, 0.62f);
+
+        SetBuildingPalette(
+            new Color(0.38f, 0.45f, 0.58f),
+            new Color(0.58f, 0.54f, 0.48f),
+            new Color(0.44f, 0.48f, 0.56f),
+            new Color(0.62f, 0.48f, 0.40f));
+        SetBuildingLights(false);
+    }
+
+    void ApplyAfternoon()
+    {
+        RenderSettings.ambientLight     = new Color(0.58f, 0.60f, 0.66f);
+        RenderSettings.fogColor         = new Color(0.74f, 0.80f, 0.90f);
+        RenderSettings.fogStartDistance = 130f;
+        RenderSettings.fogEndDistance   = 340f;
+        _sunLight.color                 = new Color(1.00f, 0.97f, 0.90f);
+        _sunLight.intensity             = 1.40f;
+        _sunLight.transform.rotation    = Quaternion.Euler(50f, -35f, 0f);
+        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.52f, 0.68f, 0.90f);
+
+        SetBuildingPalette(
+            new Color(0.42f, 0.55f, 0.72f),
+            new Color(0.62f, 0.60f, 0.54f),
+            new Color(0.46f, 0.52f, 0.62f),
+            new Color(0.66f, 0.52f, 0.42f));
+        SetBuildingLights(false);
+    }
+
+    void ApplyEvening()
+    {
+        RenderSettings.ambientLight     = new Color(0.46f, 0.36f, 0.26f);
+        RenderSettings.fogColor         = new Color(0.48f, 0.32f, 0.22f);
+        RenderSettings.fogStartDistance = 80f;
+        RenderSettings.fogEndDistance   = 240f;
+        _sunLight.color                 = new Color(1.00f, 0.55f, 0.20f);
+        _sunLight.intensity             = 0.85f;
+        _sunLight.transform.rotation    = Quaternion.Euler(8f, -15f, 0f);
+        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.60f, 0.38f, 0.22f);
+
+        SetBuildingPalette(
+            new Color(0.18f, 0.22f, 0.30f),
+            new Color(0.38f, 0.34f, 0.28f),
+            new Color(0.28f, 0.30f, 0.36f),
+            new Color(0.38f, 0.28f, 0.22f));
+        SetBuildingLights(true);   // ~65% of windows + storefronts glow amber/blue
+    }
+
+    void ApplyNight()
+    {
+        RenderSettings.ambientLight     = new Color(0.18f, 0.18f, 0.25f);
+        RenderSettings.fogColor         = new Color(0.05f, 0.04f, 0.10f);
+        RenderSettings.fogStartDistance = 60f;
+        RenderSettings.fogEndDistance   = 200f;
+        _sunLight.color                 = new Color(0.62f, 0.70f, 0.90f);
+        _sunLight.intensity             = 0.55f;
+        _sunLight.transform.rotation    = Quaternion.Euler(28f, -30f, 0f);
+        if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.01f, 0.005f, 0.02f);
+
+        SetBuildingPalette(
+            new Color(0.08f, 0.12f, 0.18f),
+            new Color(0.22f, 0.20f, 0.17f),
+            new Color(0.15f, 0.18f, 0.24f),
+            new Color(0.20f, 0.15f, 0.12f));
+        SetBuildingLights(true);   // city glows in the dark
     }
 
     // ── Main loop ─────────────────────────────────────────────────────────────
@@ -288,6 +407,12 @@ public class GameManager : MonoBehaviour
         hole.Score += obj.Value;
         hole.RecalcTargetRadius();
         Audio.PlayConsume(obj.Category, obj.Size, hole.IsPlayer, hole.transform.position);
+
+        // In evening/night the rim ring is a light source — eating a street lamp
+        // or other light source makes the hole glow brighter.
+        if (obj.IsLightSource &&
+            (CurrentTimeOfDay == TimeOfDay.Evening || CurrentTimeOfDay == TimeOfDay.Night))
+            hole.AddRimGlow(1.0f);
     }
 
     public void EatHole(HoleBase eater, HoleBase eaten)

@@ -7,6 +7,17 @@ public class CityGenerator : MonoBehaviour
     static readonly Dictionary<string, Material> _groundCache   = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _emissiveCache = new Dictionary<string, Material>();
 
+    // Materials for all building lights (windows + storefronts). GameManager toggles
+    // them when the time-of-day changes to/from evening or night.
+    public static readonly List<Material> BuildingLightMats = new List<Material>();
+
+    // The 4 building-wall material instances — exposed so GameManager can swap
+    // base colours when cycling the time-of-day palette.
+    public Material BuildingMatGlass;
+    public Material BuildingMatConcrete1;
+    public Material BuildingMatConcrete2;
+    public Material BuildingMatBrick;
+
     // ── Palette ───────────────────────────────────────────────────────────
     static readonly Color COL_GROUND    = new Color(0.22f, 0.22f, 0.22f);
     static readonly Color COL_ROAD      = new Color(0.16f, 0.16f, 0.16f);
@@ -39,6 +50,7 @@ public class CityGenerator : MonoBehaviour
         _litCache.Clear();
         _groundCache.Clear();
         _emissiveCache.Clear();
+        BuildingLightMats.Clear();
         _cityRoot = new GameObject("City").transform;
         BuildGround();
         BuildBoundaryWalls();
@@ -46,6 +58,13 @@ public class CityGenerator : MonoBehaviour
         BuildPuddles();
         BuildBlocks();
         SpawnCars(50);
+
+        // Cache the 4 primary building-wall materials so GameManager can swap
+        // their base colour when cycling time-of-day palettes.
+        BuildingMatGlass     = MkLitMat(COL_GLASS, 0.75f, 0.05f);
+        BuildingMatConcrete1 = MkLitMat(COL_BLDG1, 0.12f, 0f);
+        BuildingMatConcrete2 = MkLitMat(COL_BLDG2, 0.12f, 0f);
+        BuildingMatBrick     = MkLitMat(COL_BLDG3, 0.12f, 0f);
     }
 
     // ── Boundary walls ────────────────────────────────────────────────────
@@ -253,6 +272,8 @@ public class CityGenerator : MonoBehaviour
             float ep2  = 0.06f;
             Color sgB  = new Color(0.10f, 0.13f, 0.20f);  // dark glass panel
             Color sgE  = new Color(2.0f, 1.3f, 0.45f);  // warm amber interior
+            // Track storefront mat once (all 4 panels share the same cached material)
+            BuildingLightMats.Add(MkEmissiveMat(sgB, sgE, 0.75f));
             EmissiveBox(root, "StoreF", new Vector3(0f,  stH * 0.5f,  bd * 0.5f + ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
             EmissiveBox(root, "StoreB", new Vector3(0f,  stH * 0.5f, -bd * 0.5f - ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
             EmissiveBox(root, "StoreR", new Vector3( bw * 0.5f + ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, 0.75f);
@@ -281,19 +302,19 @@ public class CityGenerator : MonoBehaviour
             {
                 float x = -bw/2f + bw / (nW + 1f) * wi;
                 Color wef = WindowEmit(winEmit); Color web = WindowEmit(winEmit);
-                if (Random.value < 0.65f) EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, wef);
-                else                      Box(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
-                if (Random.value < 0.65f) EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, web);
-                else                      Box(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
+                if (Random.value < 0.65f) { BuildingLightMats.Add(MkEmissiveMat(winBase, wef)); EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, wef); }
+                else                        Box(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
+                if (Random.value < 0.65f) { BuildingLightMats.Add(MkEmissiveMat(winBase, web)); EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, web); }
+                else                        Box(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
             }
             for (int wi = 1; wi <= nD; wi++)
             {
                 float z = -bd/2f + bd / (nD + 1f) * wi;
                 Color wre = WindowEmit(winEmit); Color wle = WindowEmit(winEmit);
-                if (Random.value < 0.65f) EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre);
-                else                      Box(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
-                if (Random.value < 0.65f) EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wle);
-                else                      Box(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
+                if (Random.value < 0.65f) { BuildingLightMats.Add(MkEmissiveMat(winBase, wre)); EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre); }
+                else                        Box(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
+                if (Random.value < 0.65f) { BuildingLightMats.Add(MkEmissiveMat(winBase, wle)); EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wle); }
+                else                        Box(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
             }
         }
 
@@ -631,7 +652,7 @@ public class CityGenerator : MonoBehaviour
         pt.range     = 18f;
         pt.shadows   = LightShadows.None;  // performance — many lamps in scene
 
-        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f);
+        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f).IsLightSource = true;
     }
 
     void PlaceHydrant(Vector3 pos)
@@ -816,8 +837,8 @@ public class CityGenerator : MonoBehaviour
     }
 
     // ── Consumable registration ───────────────────────────────────────────
-    void Consumable(GameObject go, float size, int tier, float value, ObjectCategory cat,
-                    float footprintRadius = 0f, float mass = 0f)
+    ConsumableObject Consumable(GameObject go, float size, int tier, float value, ObjectCategory cat,
+                                float footprintRadius = 0f, float mass = 0f)
     {
         var co = go.AddComponent<ConsumableObject>();
         co.Init(size, tier, value, cat, footprintRadius);
@@ -851,6 +872,7 @@ public class CityGenerator : MonoBehaviour
             rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
             rb.Sleep();
         }
+        return co;
     }
 
     // ── Primitive helpers ─────────────────────────────────────────────────

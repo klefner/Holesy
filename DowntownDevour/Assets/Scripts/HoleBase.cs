@@ -21,6 +21,10 @@ public class HoleBase : MonoBehaviour
     private float     _flashTimer;
     private const float FLASH_DUR = 0.15f;
 
+    // Glow accumulated from eating light sources. Drives rim light in evening/night.
+    private float _rimGlow;
+    public void AddRimGlow(float amount) => _rimGlow = Mathf.Min(_rimGlow + amount, 30f);
+
     private static Mesh _ringMesh;
     private static Mesh _discMesh;
 
@@ -114,7 +118,28 @@ public class HoleBase : MonoBehaviour
             _rimRenderer.transform.localScale = new Vector3(Radius, 1f, Radius);
 
         if (_rimLight != null)
-            _rimLight.range = Radius * 2.5f + 6f;
+        {
+            bool darkMode = GameManager.Instance != null &&
+                (GameManager.Instance.CurrentTimeOfDay == GameManager.TimeOfDay.Evening ||
+                 GameManager.Instance.CurrentTimeOfDay == GameManager.TimeOfDay.Night);
+
+            if (darkMode)
+            {
+                // Rim ring becomes a real light source in evening/night, brightening
+                // with each lamp consumed — the hole grows into a moving street lamp.
+                float glow = _rimGlow;
+                _rimLight.intensity = Mathf.Min(2.5f + glow * 1.8f, 35f);
+                _rimLight.range     = Radius * 3.5f + 8f + glow * 2f;
+                // Brighten the rim emission (skip during damage flash so red still shows)
+                if (_rimMat != null && _flashTimer <= 0f)
+                    _rimMat.SetColor("_EmissionColor", HoleColor * (4f + glow * 0.6f));
+            }
+            else
+            {
+                _rimLight.intensity = 2.5f;
+                _rimLight.range     = Radius * 2.5f + 6f;
+            }
+        }
     }
 
     // ── Movement API ──────────────────────────────────────────────────────────

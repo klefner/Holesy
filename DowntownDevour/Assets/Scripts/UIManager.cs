@@ -7,7 +7,7 @@ using UnityEngine.UI;
 // HUD and end-screen. Uses TextMeshProUGUI (included in URP Universal 3D template).
 public class UIManager : MonoBehaviour
 {
-    public const string VERSION = "v0.34";
+    public const string VERSION = "v0.35";
 
     private Canvas            _canvas;
     private TextMeshProUGUI   _timerText;
@@ -17,6 +17,7 @@ public class UIManager : MonoBehaviour
     private TextMeshProUGUI   _endTitle;
     private TextMeshProUGUI   _endBody;
     private GameObject        _pauseScreen;
+    private TextMeshProUGUI   _todLabel;   // updated each frame to show current TOD
 
     public void Init()
     {
@@ -34,6 +35,15 @@ public class UIManager : MonoBehaviour
         int secs = Mathf.CeilToInt(gm.TimeRemaining);
         _timerText.text  = FormatTime(secs);
         _timerText.color = secs <= 10 ? new Color(1f, 0.25f, 0.25f) : Color.white;
+
+        if (_todLabel != null)
+            _todLabel.text = gm.CurrentTimeOfDay switch {
+                GameManager.TimeOfDay.Morning   => "MORNING",
+                GameManager.TimeOfDay.Afternoon => "AFTERNOON",
+                GameManager.TimeOfDay.Evening   => "EVENING",
+                GameManager.TimeOfDay.Night     => "NIGHT",
+                _                               => ""
+            };
 
         if (gm.Player != null)
         {
@@ -118,22 +128,39 @@ public class UIManager : MonoBehaviour
             14, TextAlignmentOptions.Center);
         _inHoleText.color = new Color(1f, 1f, 1f, 0.55f);
 
-        // Pause button — bottom-right, out of the way of the scoreboard. Opens
-        // the pause menu (which offers Resume / Exit). Esc and P also toggle it.
+        // ── MENU button — top-right, left of AI score column ──────────────────
+        // The score column sits at anchor(1,1) offset -20, width 200 → left edge at -220.
+        // We sit immediately left of it with a 10px gap.
         var pauseBtnGO = new GameObject("PauseBtn");
         pauseBtnGO.transform.SetParent(_canvas.transform, false);
         var pauseImg = pauseBtnGO.AddComponent<Image>();
         pauseImg.color = new Color(0.20f, 0.20f, 0.28f, 0.85f);
         var pauseRT = pauseBtnGO.GetComponent<RectTransform>();
-        pauseRT.anchorMin        = new Vector2(1f, 0f);
-        pauseRT.anchorMax        = new Vector2(1f, 0f);
-        pauseRT.pivot            = new Vector2(1f, 0f);
-        pauseRT.anchoredPosition = new Vector2(-20f, 20f);
-        pauseRT.sizeDelta        = new Vector2(120f, 48f);
+        pauseRT.anchorMin        = new Vector2(1f, 1f);
+        pauseRT.anchorMax        = new Vector2(1f, 1f);
+        pauseRT.pivot            = new Vector2(1f, 1f);
+        pauseRT.anchoredPosition = new Vector2(-230f, -20f);
+        pauseRT.sizeDelta        = new Vector2(120f, 44f);
         pauseBtnGO.AddComponent<Button>().onClick.AddListener(() => GameManager.Instance.TogglePause());
         MakeTMPChild(pauseBtnGO, "PauseLabel", "II  MENU",
-            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110f, 44f),
-            20, TextAlignmentOptions.Center);
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(110f, 40f),
+            18, TextAlignmentOptions.Center);
+
+        // ── Time-of-day cycle button — below MENU, same column ────────────────
+        var todBtnGO = new GameObject("TODBtn");
+        todBtnGO.transform.SetParent(_canvas.transform, false);
+        var todImg = todBtnGO.AddComponent<Image>();
+        todImg.color = new Color(0.18f, 0.28f, 0.22f, 0.85f);
+        var todRT = todBtnGO.GetComponent<RectTransform>();
+        todRT.anchorMin        = new Vector2(1f, 1f);
+        todRT.anchorMax        = new Vector2(1f, 1f);
+        todRT.pivot            = new Vector2(1f, 1f);
+        todRT.anchoredPosition = new Vector2(-230f, -72f);
+        todRT.sizeDelta        = new Vector2(120f, 44f);
+        todBtnGO.AddComponent<Button>().onClick.AddListener(() => GameManager.Instance.CycleTimeOfDay());
+        _todLabel = MakeTMPChild(todBtnGO, "TODLabel", "AFTERNOON",
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(114f, 40f),
+            14, TextAlignmentOptions.Center);
 
         int count = 4;
         _scoreTexts = new TextMeshProUGUI[count];
