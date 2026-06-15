@@ -81,28 +81,26 @@ public class GameManager : MonoBehaviour
 
     void SetupLighting()
     {
-        // Dark night city — ambient gives only faint silhouettes; the player's
-        // follow-lantern (see SpawnHoles) is what actually makes the area around
-        // the hole readable. The dark night building albedos (0.08–0.22) swallow
-        // ambient on their own, so the lantern carries playability.
+        // DAYTIME lighting — bright and even so all city detail reads clearly.
+        // (Night/Diablo mode is preserved in git history; this is a review pass.)
         RenderSettings.ambientMode  = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.26f, 0.26f, 0.34f);
+        RenderSettings.ambientLight = new Color(0.58f, 0.60f, 0.66f);
 
-        // Atmospheric fog — purple-black haze obscures the far city edge.
+        // Light distance haze — keeps the far edge soft without hiding the city.
         RenderSettings.fog              = true;
         RenderSettings.fogMode          = FogMode.Linear;
-        RenderSettings.fogColor         = new Color(0.05f, 0.04f, 0.10f);
-        RenderSettings.fogStartDistance = 60f;
-        RenderSettings.fogEndDistance   = 200f;
+        RenderSettings.fogColor         = new Color(0.74f, 0.80f, 0.90f);
+        RenderSettings.fogStartDistance = 130f;
+        RenderSettings.fogEndDistance   = 340f;
 
-        // Moon — dim cool-blue directional, enough to silhouette building edges.
+        // Sun — strong warm-white directional from a high angle, soft shadows.
         var sunGO = new GameObject("Sun");
         var sun   = sunGO.AddComponent<Light>();
         sun.type      = LightType.Directional;
-        sun.intensity = 0.70f;
-        sun.color     = new Color(0.62f, 0.70f, 0.90f);
+        sun.intensity = 1.40f;
+        sun.color     = new Color(1.00f, 0.97f, 0.90f);
         sun.shadows   = LightShadows.Soft;
-        sunGO.transform.rotation = Quaternion.Euler(28f, -30f, 0f);
+        sunGO.transform.rotation = Quaternion.Euler(50f, -35f, 0f);
     }
 
     void SetupCamera()
@@ -157,8 +155,8 @@ public class GameManager : MonoBehaviour
         var l = go.AddComponent<Light>();
         l.type       = LightType.Point;
         l.color      = new Color(1.0f, 0.94f, 0.82f); // warm white
-        l.intensity  = 32f;
-        l.range      = 55f;
+        l.intensity  = 6f;                            // subtle fill in daytime (was the night hero light)
+        l.range      = 45f;
         l.shadows    = LightShadows.None;             // performance — many objects in pool
         l.renderMode = LightRenderMode.ForcePixel;    // ensure per-pixel quality for the hero light
     }

@@ -18,8 +18,8 @@ public class GameCamera : MonoBehaviour
         if (cam == null) return;
         cam.fieldOfView     = FOV;
         cam.farClipPlane    = 600f;
-        // Deep void behind the hole — near-black with slight purple cast.
-        cam.backgroundColor = new Color(0.01f, 0.005f, 0.02f);
+        // Daytime sky blue — shows through the stencil hole and at the world edge.
+        cam.backgroundColor = new Color(0.52f, 0.68f, 0.90f);
     }
 
     void LateUpdate()
