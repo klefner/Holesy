@@ -7,24 +7,36 @@ using UnityEngine.UI;
 // HUD and end-screen. Uses TextMeshProUGUI (included in URP Universal 3D template).
 public class UIManager : MonoBehaviour
 {
-    public const string VERSION = "v0.36";
+    public const string VERSION = "v0.37";
 
     private Canvas            _canvas;
+    private GameObject        _hudRoot;     // all in-game HUD widgets; hidden on title/menu
     private TextMeshProUGUI   _timerText;
     private TextMeshProUGUI   _inHoleText;  // tier name + growth %, shown inside the hole
     private TextMeshProUGUI[] _scoreTexts;
+    private GameObject        _startScreen;
     private GameObject        _endScreen;
     private TextMeshProUGUI   _endTitle;
+    private TextMeshProUGUI   _endSubtitle;
     private TextMeshProUGUI   _endBody;
     private GameObject        _pauseScreen;
     private TextMeshProUGUI   _todLabel;   // updated each frame to show current TOD
+
+    // Title-screen mode picker. Only "Timed" is implemented; the others are
+    // placeholders (selectable, but the round always runs the timed game for now).
+    private Image[] _modeBg;
+    private int     _selectedMode;
+    static readonly Color MODE_SEL   = new Color(0.20f, 0.55f, 0.95f, 0.90f);
+    static readonly Color MODE_UNSEL = new Color(0.16f, 0.16f, 0.22f, 0.80f);
 
     public void Init()
     {
         BuildCanvas();
         BuildHUD();
+        BuildStartScreen();
         BuildEndScreen();
         BuildPauseScreen();
+        ShowStartScreen();   // title screen first; gameplay starts on PLAY
     }
 
     public void Tick()
@@ -63,22 +75,43 @@ public class UIManager : MonoBehaviour
     public void ShowEndScreen()
     {
         _endScreen.SetActive(true);
+        _hudRoot.SetActive(false);
 
-        var sorted = new List<HoleBase>(GameManager.Instance.AllHoles);
+        var gm     = GameManager.Instance;
+        var player = gm.Player.Hole;
+        var sorted = new List<HoleBase>(gm.AllHoles);
         sorted.Sort((a, b) => b.Score.CompareTo(a.Score));
 
+        // Reason title + subtitle, mirroring the browser's endGame() framing.
+        int aliveCount = 0;
+        foreach (var h in gm.AllHoles) if (h.Alive) aliveCount++;
+
+        string reason;
+        if      (!player.Alive)                                   reason = "You got devoured.";
+        else if (aliveCount == 1 && sorted[0] == player)          reason = "Last hole standing. Devour complete.";
+        else if (gm.TimeRemaining <= 0f)                          reason = "Time's up!";
+        else                                                      reason = "Round over.";
+
+        string subtitle = player.Radius >= 6.0f
+            ? "You grew massive. Absolute menace."
+            : "Final leaderboard below.";
+
+        _endTitle.text    = reason;
+        _endTitle.color   = (sorted[0] == player) ? new Color(1f, 0.85f, 0.1f) : Color.white;
+        _endSubtitle.text = subtitle;
+
+        // Leaderboard — medals for top 3, (You) tag, (eaten) status.
         string body = "";
         for (int i = 0; i < sorted.Count; i++)
         {
-            string medal = i == 0 ? "1st  " : i == 1 ? "2nd  " : i == 2 ? "3rd  " : (i+1) + "th  ";
-            body += medal + sorted[i].HoleName
-                         + "  " + Mathf.FloorToInt(sorted[i].Score).ToString("N0") + "\n";
+            var h = sorted[i];
+            string medal  = i == 0 ? "1st  " : i == 1 ? "2nd  " : i == 2 ? "3rd  " : (i + 1) + ".  ";
+            string you    = h == player ? " (You)"   : "";
+            string status = h.Alive     ? ""         : " (eaten)";
+            body += medal + h.HoleName + you + status
+                  + "    " + Mathf.FloorToInt(h.Score).ToString("N0") + "\n";
         }
         _endBody.text = body.TrimEnd();
-
-        bool playerWon   = sorted[0] == GameManager.Instance.Player.Hole;
-        _endTitle.text   = playerWon ? "VICTORY" : "GAME OVER";
-        _endTitle.color  = playerWon ? new Color(1f, 0.85f, 0.1f) : Color.white;
     }
 
     // ── Canvas ────────────────────────────────────────────────────────────────
@@ -111,19 +144,28 @@ public class UIManager : MonoBehaviour
 
     void BuildHUD()
     {
-        // Version stamp — bottom-left, always visible
+        // Version stamp — bottom-left, always visible (stays on canvas, not _hudRoot)
         var ver = MakeTMP("Version", VERSION,
             new Vector2(0f, 0f), new Vector2(10f, 10f), new Vector2(120f, 28f),
             15, TextAlignmentOptions.BottomLeft);
         ver.color = new Color(1f, 1f, 1f, 0.40f);
 
-        _timerText = MakeTMP("Timer", "2:00",
+        // All in-game HUD widgets live under _hudRoot so they can be hidden as a
+        // group while the title / menu screen is showing.
+        _hudRoot = new GameObject("HUD");
+        _hudRoot.transform.SetParent(_canvas.transform, false);
+        var hudRT = _hudRoot.AddComponent<RectTransform>();
+        hudRT.anchorMin = Vector2.zero;
+        hudRT.anchorMax = Vector2.one;
+        hudRT.offsetMin = hudRT.offsetMax = Vector2.zero;
+
+        _timerText = MakeTMPChild(_hudRoot, "Timer", "2:00",
             new Vector2(0.5f, 1f), new Vector2(0f, -40f), new Vector2(300f, 60f),
             48, TextAlignmentOptions.Center);
 
         // Tier name and growth % sit inside the hole at screen center.
         // The camera follows the player so the hole is always roughly centered.
-        _inHoleText = MakeTMP("InHole", "Pothole\n100%",
+        _inHoleText = MakeTMPChild(_hudRoot, "InHole", "Pothole\n100%",
             new Vector2(0.5f, 0.5f), new Vector2(0f, 18f), new Vector2(220f, 52f),
             14, TextAlignmentOptions.Center);
         _inHoleText.color = new Color(1f, 1f, 1f, 0.55f);
@@ -132,7 +174,7 @@ public class UIManager : MonoBehaviour
         // The score column sits at anchor(1,1) offset -20, width 200 → left edge at -220.
         // We sit immediately left of it with a 10px gap.
         var pauseBtnGO = new GameObject("PauseBtn");
-        pauseBtnGO.transform.SetParent(_canvas.transform, false);
+        pauseBtnGO.transform.SetParent(_hudRoot.transform, false);
         var pauseImg = pauseBtnGO.AddComponent<Image>();
         pauseImg.color = new Color(0.20f, 0.20f, 0.28f, 0.85f);
         var pauseRT = pauseBtnGO.GetComponent<RectTransform>();
@@ -148,7 +190,7 @@ public class UIManager : MonoBehaviour
 
         // ── Time-of-day cycle button — below MENU, same column ────────────────
         var todBtnGO = new GameObject("TODBtn");
-        todBtnGO.transform.SetParent(_canvas.transform, false);
+        todBtnGO.transform.SetParent(_hudRoot.transform, false);
         var todImg = todBtnGO.AddComponent<Image>();
         todImg.color = new Color(0.18f, 0.28f, 0.22f, 0.85f);
         var todRT = todBtnGO.GetComponent<RectTransform>();
@@ -171,11 +213,130 @@ public class UIManager : MonoBehaviour
             float yOff    = -20f - (i > 0 ? (i - 1) * 80f : 0f);
             var   align   = i == 0 ? TextAlignmentOptions.TopLeft : TextAlignmentOptions.TopRight;
 
-            _scoreTexts[i] = MakeTMP("Score" + i, "",
+            _scoreTexts[i] = MakeTMPChild(_hudRoot, "Score" + i, "",
                 new Vector2(xPivot, 1f),
                 new Vector2(xOffset, yOff),
                 new Vector2(200f, 70f), 20, align);
         }
+    }
+
+    // ── Start / title screen ────────────────────────────────────────────────────
+    // Mirrors the browser version's title overlay: name, pitch, mode picker
+    // (Timed / Last Man Standing / Waves), play button, and control tips.
+
+    void BuildStartScreen()
+    {
+        _startScreen = new GameObject("StartScreen");
+        _startScreen.transform.SetParent(_canvas.transform, false);
+
+        var overlay = _startScreen.AddComponent<Image>();
+        overlay.color = new Color(0.02f, 0.02f, 0.05f, 0.88f);
+        var rt = _startScreen.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = rt.offsetMax = Vector2.zero;
+
+        var title = MakeTMPChild(_startScreen, "Title", "Downtown Devour",
+            new Vector2(0.5f, 0.92f), Vector2.zero, new Vector2(900f, 90f),
+            66, TextAlignmentOptions.Center);
+        title.fontStyle = FontStyles.Bold;
+        title.color     = new Color(1f, 0.85f, 0.30f);
+
+        var sub = MakeTMPChild(_startScreen, "Subtitle",
+            "You're a hungry hole competing against 3 rival holes. Eat everything. " +
+            "Grow bigger. Devour your rivals. Last hole standing wins.",
+            new Vector2(0.5f, 0.82f), Vector2.zero, new Vector2(760f, 70f),
+            20, TextAlignmentOptions.Center);
+        sub.color = new Color(0.85f, 0.88f, 0.95f);
+
+        MakeTMPChild(_startScreen, "PickTitle", "Choose Game Mode",
+            new Vector2(0.5f, 0.70f), Vector2.zero, new Vector2(500f, 40f),
+            24, TextAlignmentOptions.Center);
+
+        // Three mode options, stacked.
+        string[] labels = { "Timed", "Last Man Standing", "Waves" };
+        string[] descs  = {
+            "Two-minute round. Score wins. Classic Downtown Devour.",
+            "No timer. No scoring pressure. Survive until only one hole remains.   (coming soon)",
+            "Four progressively brutal waves. Smaller boards, deadlier soldiers. Score accumulates.   (coming soon)",
+        };
+        _modeBg = new Image[3];
+        for (int i = 0; i < 3; i++)
+        {
+            int idx = i;
+            var opt = new GameObject("Mode" + i);
+            opt.transform.SetParent(_startScreen.transform, false);
+            var img = opt.AddComponent<Image>();
+            img.color  = i == 0 ? MODE_SEL : MODE_UNSEL;
+            _modeBg[i] = img;
+            var oRT = opt.GetComponent<RectTransform>();
+            oRT.anchorMin        = new Vector2(0.5f, 0.62f);
+            oRT.anchorMax        = new Vector2(0.5f, 0.62f);
+            oRT.pivot            = new Vector2(0.5f, 1f);
+            oRT.sizeDelta        = new Vector2(620f, 64f);
+            oRT.anchoredPosition = new Vector2(0f, -i * 72f);
+            opt.AddComponent<Button>().onClick.AddListener(() => SelectMode(idx));
+
+            var lbl = MakeTMPChild(opt, "Label", labels[i],
+                new Vector2(0f, 1f), new Vector2(18f, -8f), new Vector2(580f, 28f),
+                20, TextAlignmentOptions.Left);
+            lbl.fontStyle = FontStyles.Bold;
+            var dsc = MakeTMPChild(opt, "Desc", descs[i],
+                new Vector2(0f, 1f), new Vector2(18f, -34f), new Vector2(584f, 26f),
+                13, TextAlignmentOptions.Left);
+            dsc.color = new Color(0.80f, 0.84f, 0.90f);
+        }
+
+        // PLAY button
+        var playGO = new GameObject("PlayBtn");
+        playGO.transform.SetParent(_startScreen.transform, false);
+        var playImg = playGO.AddComponent<Image>();
+        playImg.color = new Color(0.20f, 0.70f, 0.30f, 0.95f);
+        var pRT = playGO.GetComponent<RectTransform>();
+        pRT.anchorMin        = new Vector2(0.5f, 0.30f);
+        pRT.anchorMax        = new Vector2(0.5f, 0.30f);
+        pRT.sizeDelta        = new Vector2(300f, 70f);
+        pRT.anchoredPosition = Vector2.zero;
+        playGO.AddComponent<Button>().onClick.AddListener(() => GameManager.Instance.StartPlaying());
+        var playLbl = MakeTMPChild(playGO, "PlayLabel", "PLAY",
+            new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(280f, 60f),
+            30, TextAlignmentOptions.Center);
+        playLbl.fontStyle = FontStyles.Bold;
+
+        var tips = MakeTMPChild(_startScreen, "Tips",
+            "Desktop: move your mouse OR use W/A/S/D (or arrow keys) to steer.\n" +
+            "Mobile: drag in the direction you want to go (joystick-style).\n" +
+            "Avoid bigger holes — they'll eat you. Hunt smaller ones.",
+            new Vector2(0.5f, 0.17f), Vector2.zero, new Vector2(760f, 80f),
+            15, TextAlignmentOptions.Center);
+        tips.color = new Color(0.78f, 0.82f, 0.88f);
+
+        var credit = MakeTMPChild(_startScreen, "MusicCredit",
+            "Music: procedurally generated orchestral theme in D minor, 128 BPM",
+            new Vector2(0.5f, 0.06f), Vector2.zero, new Vector2(500f, 26f),
+            11, TextAlignmentOptions.Center);
+        credit.color = new Color(1f, 1f, 1f, 0.40f);
+
+        _startScreen.SetActive(false);
+    }
+
+    void SelectMode(int idx)
+    {
+        _selectedMode = idx;
+        for (int i = 0; i < _modeBg.Length; i++)
+            _modeBg[i].color = i == idx ? MODE_SEL : MODE_UNSEL;
+    }
+
+    public void ShowStartScreen()
+    {
+        if (_startScreen != null) _startScreen.SetActive(true);
+        if (_hudRoot     != null) _hudRoot.SetActive(false);
+    }
+
+    public void HideStartScreen()
+    {
+        if (_startScreen != null) _startScreen.SetActive(false);
+        if (_hudRoot     != null) _hudRoot.SetActive(true);
     }
 
     // ── End screen ────────────────────────────────────────────────────────────
@@ -193,13 +354,23 @@ public class UIManager : MonoBehaviour
         rt.offsetMin = rt.offsetMax = Vector2.zero;
 
         _endTitle = MakeTMPChild(_endScreen, "Title", "GAME OVER",
-            new Vector2(0.5f, 0.65f), new Vector2(0f, 0f), new Vector2(700f, 90f),
-            64, TextAlignmentOptions.Center);
+            new Vector2(0.5f, 0.82f), new Vector2(0f, 0f), new Vector2(800f, 80f),
+            56, TextAlignmentOptions.Center);
         _endTitle.fontStyle = FontStyles.Bold;
 
+        _endSubtitle = MakeTMPChild(_endScreen, "Subtitle", "",
+            new Vector2(0.5f, 0.73f), new Vector2(0f, 0f), new Vector2(700f, 40f),
+            20, TextAlignmentOptions.Center);
+        _endSubtitle.color = new Color(0.85f, 0.88f, 0.95f);
+
+        var scoresTitle = MakeTMPChild(_endScreen, "ScoresTitle", "Final Scores",
+            new Vector2(0.5f, 0.64f), new Vector2(0f, 0f), new Vector2(500f, 36f),
+            24, TextAlignmentOptions.Center);
+        scoresTitle.color = new Color(1f, 0.85f, 0.30f);
+
         _endBody = MakeTMPChild(_endScreen, "Scores", "",
-            new Vector2(0.5f, 0.45f), new Vector2(0f, 0f), new Vector2(500f, 200f),
-            30, TextAlignmentOptions.Top);
+            new Vector2(0.5f, 0.40f), new Vector2(0f, 0f), new Vector2(560f, 220f),
+            24, TextAlignmentOptions.Top);
 
         // Restart button
         var btnGO = new GameObject("RestartBtn");

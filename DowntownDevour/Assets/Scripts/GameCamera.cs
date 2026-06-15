@@ -29,4 +29,13 @@ public class GameCamera : MonoBehaviour
         transform.position = Vector3.Lerp(transform.position, desired, SMOOTH * Time.deltaTime);
         transform.LookAt(Target.position + Vector3.up * 0.5f);
     }
+
+    // Immediately frame the target with no smoothing — used to set up the
+    // static title-screen view before gameplay (and time) starts.
+    public void SnapToTarget()
+    {
+        if (Target == null) return;
+        transform.position = Target.position + OFFSET;
+        transform.LookAt(Target.position + Vector3.up * 0.5f);
+    }
 }

@@ -25,7 +25,7 @@ public class GameManager : MonoBehaviour
     public const float AI_SPEED      = 12f;
     public const float AI_FLEE_SPEED = 13.5f;
 
-    public enum GameState  { Playing, Paused, GameOver }
+    public enum GameState  { Menu, Playing, Paused, GameOver }
     public enum TimeOfDay  { Morning, Afternoon, Evening, Night }
 
     public GameState              State            { get; private set; }
@@ -69,18 +69,28 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        // A previous run (or a pause before scene reload) may have left time
-        // frozen — always restore normal flow when a fresh game begins.
         Time.timeScale = 1f;
-
-        TimeRemaining = GAME_DURATION;
-        State         = GameState.Playing;
+        TimeRemaining  = GAME_DURATION;
 
         _city.Build();
         SpawnHoles();                      // creates the player lantern referenced below
         ApplyTimeOfDay(CurrentTimeOfDay);  // set initial palette, building lights, lantern
+        UI.Init();                         // shows the title screen
+
+        // Frame the static scene behind the title overlay, then freeze until PLAY.
+        Camera.main.GetComponent<GameCamera>().SnapToTarget();
+        State          = GameState.Menu;
+        Time.timeScale = 0f;
+    }
+
+    // Called by the title-screen PLAY button: begins the round.
+    public void StartPlaying()
+    {
+        if (State != GameState.Menu) return;
+        State          = GameState.Playing;
+        Time.timeScale = 1f;
+        UI.HideStartScreen();
         _military.Begin();
-        UI.Init();
         Audio.StartMusic();
     }
 
