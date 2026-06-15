@@ -658,16 +658,19 @@ public class CityGenerator : MonoBehaviour
         EmissivePrim(PrimitiveType.Sphere, root, "Globe", new Vector3(0.9f, 4.72f, 0f),
             Quaternion.identity, new Vector3(0.38f, 0.28f, 0.38f), globeBase, globeEmit, 0.75f);
 
-        // Point light — casts amber pool on the street below
+        // Spotlight aimed down — visible cone of amber light pooling on the street
         var lightGO = new GameObject("LampLight");
         lightGO.transform.SetParent(root.transform, false);
         lightGO.transform.localPosition = new Vector3(0.9f, 4.5f, 0f);
+        lightGO.transform.localRotation = Quaternion.LookRotation(Vector3.down);
         var pt = lightGO.AddComponent<Light>();
-        pt.type      = LightType.Point;
-        pt.color     = new Color(1.0f, 0.78f, 0.35f);
-        pt.intensity = 14.0f;
-        pt.range     = 32f;
-        pt.shadows   = LightShadows.None;  // performance — many lamps in scene
+        pt.type           = LightType.Spot;
+        pt.spotAngle      = 76f;
+        pt.innerSpotAngle = 28f;
+        pt.color          = new Color(1.0f, 0.78f, 0.35f);
+        pt.intensity      = 45f;
+        pt.range          = 13f;
+        pt.shadows        = LightShadows.None;
         NightOnlyLights.Add(pt);
 
         Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f).IsLightSource = true;
@@ -788,8 +791,23 @@ public class CityGenerator : MonoBehaviour
         Color dark  = Sc(col, 0.52f);
         Color glass = new Color(0.14f, 0.22f, 0.32f);
 
-        var root = Root("Car", pos);
-        if (!horizontal) root.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+        // Right-hand-traffic lane assignment per road orientation.
+        float   lane     = GameManager.ROAD_W / 4f;
+        bool    goPos    = Random.value < 0.5f;
+        Vector3 driveDir;
+        Vector3 laneOfs;
+        if (horizontal)          // road runs along X
+        {
+            driveDir = goPos ? Vector3.right   : Vector3.left;
+            laneOfs  = goPos ? new Vector3(0f, 0f, -lane) : new Vector3(0f, 0f, lane);
+        }
+        else                     // road runs along Z
+        {
+            driveDir = goPos ? Vector3.forward : Vector3.back;
+            laneOfs  = goPos ? new Vector3( lane, 0f, 0f) : new Vector3(-lane, 0f, 0f);
+        }
+        var root = Root("Car", pos + laneOfs);
+        root.transform.rotation = Quaternion.LookRotation(driveDir, Vector3.up);
 
         // Body and cabin
         Box(root, "Body",  Y(0.52f), new Vector3(1.70f, 0.62f, 3.50f), col, 0.60f, 0.10f);
@@ -820,17 +838,19 @@ public class CityGenerator : MonoBehaviour
         EmissiveBox(root, "TLR", new Vector3( 0.60f, 0.55f, -1.80f), new Vector3(0.34f, 0.22f, 0.06f), tailBase, tailEmit, 0.70f);
         EmissiveBox(root, "TLL", new Vector3(-0.60f, 0.55f, -1.80f), new Vector3(0.34f, 0.22f, 0.06f), tailBase, tailEmit, 0.70f);
 
-        // Headlight and taillight Point Lights — cast real light that moves with the car.
-        // Child of root so they follow the car when physics kicks it around.
+        // Headlight Spotlight — cone of light down the road ahead. Inherits car rotation
+        // so it naturally aims in the drive direction without extra local rotation.
         var hlGO = new GameObject("HeadLight");
         hlGO.transform.SetParent(root.transform, false);
         hlGO.transform.localPosition = new Vector3(0f, 0.55f, 1.85f);
         var hl = hlGO.AddComponent<Light>();
-        hl.type      = LightType.Point;
-        hl.color     = new Color(1.0f, 0.95f, 0.85f);
-        hl.intensity = 8f;
-        hl.range     = 24f;
-        hl.shadows   = LightShadows.None;
+        hl.type           = LightType.Spot;
+        hl.spotAngle      = 28f;
+        hl.innerSpotAngle = 10f;
+        hl.color          = new Color(1.0f, 0.95f, 0.85f);
+        hl.intensity      = 28f;
+        hl.range          = 24f;
+        hl.shadows        = LightShadows.None;
         NightOnlyLights.Add(hl);
 
         var tlGO = new GameObject("TailLight");
@@ -863,7 +883,10 @@ public class CityGenerator : MonoBehaviour
                 new Vector3(0.36f, 0.04f, 0.36f), rim, 0.75f, 0.55f);
         }
 
-        Consumable(root, 1.8f, 3, 50f, ObjectCategory.Car, 1.6f, mass: 1.2f);
+        var co     = Consumable(root, 1.8f, 3, 50f, ObjectCategory.Car, 1.6f, mass: 1.2f);
+        var driver = root.AddComponent<CarDriver>();
+        driver.DriveDir   = driveDir;
+        driver.Consumable = co;
     }
 
     // ── Ground / road boxes ───────────────────────────────────────────────
