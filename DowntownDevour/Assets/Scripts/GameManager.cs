@@ -196,10 +196,28 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Building lights on/off — evening and night are "lit" states.
+    // Building lights on/off — windows, storefronts, and lamp globes.
     void SetBuildingLights(bool on)
     {
         foreach (var mat in CityGenerator.BuildingLightMats)
+        {
+            if (on) mat.EnableKeyword("_EMISSION");
+            else    mat.DisableKeyword("_EMISSION");
+        }
+    }
+
+    // Toggle all scene point lights that should only cast light at evening/night:
+    // lamp posts and car headlights/taillights.
+    void SetNightOnlyLights(bool on)
+    {
+        foreach (var lt in CityGenerator.NightOnlyLights)
+            if (lt != null) lt.enabled = on;
+    }
+
+    // Toggle car headlight and taillight emissive mesh materials.
+    void SetCarLights(bool on)
+    {
+        foreach (var mat in CityGenerator.CarLightMats)
         {
             if (on) mat.EnableKeyword("_EMISSION");
             else    mat.DisableKeyword("_EMISSION");
@@ -217,13 +235,12 @@ public class GameManager : MonoBehaviour
 
     void ApplyMorning()
     {
-        // Bright warm daytime — clearly lit, just golden and softer than noon.
-        RenderSettings.ambientLight     = new Color(0.66f, 0.62f, 0.56f);
+        RenderSettings.ambientLight     = new Color(0.72f, 0.68f, 0.62f);
         RenderSettings.fogColor         = new Color(0.90f, 0.82f, 0.74f);
         RenderSettings.fogStartDistance = 140f;
-        RenderSettings.fogEndDistance   = 340f;
+        RenderSettings.fogEndDistance   = 360f;
         _sunLight.color                 = new Color(1.00f, 0.86f, 0.64f);
-        _sunLight.intensity             = 1.30f;
+        _sunLight.intensity             = 1.50f;
         _sunLight.transform.rotation    = Quaternion.Euler(28f, 45f, 0f);
         if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.88f, 0.78f, 0.66f);
 
@@ -233,17 +250,19 @@ public class GameManager : MonoBehaviour
             new Color(0.50f, 0.54f, 0.62f),
             new Color(0.68f, 0.52f, 0.42f));
         SetBuildingLights(false);
-        SetLantern(2f);   // daytime — barely-there warm fill
+        SetNightOnlyLights(false);
+        SetCarLights(false);
+        SetLantern(2f);
     }
 
     void ApplyAfternoon()
     {
-        RenderSettings.ambientLight     = new Color(0.58f, 0.60f, 0.66f);
-        RenderSettings.fogColor         = new Color(0.74f, 0.80f, 0.90f);
-        RenderSettings.fogStartDistance = 130f;
-        RenderSettings.fogEndDistance   = 340f;
+        RenderSettings.ambientLight     = new Color(0.75f, 0.78f, 0.84f);
+        RenderSettings.fogColor         = new Color(0.76f, 0.82f, 0.92f);
+        RenderSettings.fogStartDistance = 160f;
+        RenderSettings.fogEndDistance   = 380f;
         _sunLight.color                 = new Color(1.00f, 0.97f, 0.90f);
-        _sunLight.intensity             = 1.40f;
+        _sunLight.intensity             = 1.80f;
         _sunLight.transform.rotation    = Quaternion.Euler(50f, -35f, 0f);
         if (Camera.main != null)        Camera.main.backgroundColor = new Color(0.52f, 0.68f, 0.90f);
 
@@ -253,7 +272,9 @@ public class GameManager : MonoBehaviour
             new Color(0.46f, 0.52f, 0.62f),
             new Color(0.66f, 0.52f, 0.42f));
         SetBuildingLights(false);
-        SetLantern(2f);   // daytime — barely-there warm fill
+        SetNightOnlyLights(false);
+        SetCarLights(false);
+        SetLantern(2f);
     }
 
     void ApplyEvening()
@@ -272,8 +293,10 @@ public class GameManager : MonoBehaviour
             new Color(0.38f, 0.34f, 0.28f),
             new Color(0.28f, 0.30f, 0.36f),
             new Color(0.38f, 0.28f, 0.22f));
-        SetBuildingLights(true);   // ~65% of windows + storefronts glow amber/blue
-        SetLantern(16f);           // dusk — strong fill so the area around the hole reads
+        SetBuildingLights(true);
+        SetNightOnlyLights(true);
+        SetCarLights(true);
+        SetLantern(16f);
     }
 
     void ApplyNight()
@@ -292,8 +315,10 @@ public class GameManager : MonoBehaviour
             new Color(0.22f, 0.20f, 0.17f),
             new Color(0.15f, 0.18f, 0.24f),
             new Color(0.20f, 0.15f, 0.12f));
-        SetBuildingLights(true);   // city glows in the dark
-        SetLantern(24f);           // night — the lantern + rim ring carry navigation
+        SetBuildingLights(true);
+        SetNightOnlyLights(true);
+        SetCarLights(true);
+        SetLantern(24f);
     }
 
     void SetLantern(float intensity)

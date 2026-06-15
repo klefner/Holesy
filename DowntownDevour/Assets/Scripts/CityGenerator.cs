@@ -7,9 +7,15 @@ public class CityGenerator : MonoBehaviour
     static readonly Dictionary<string, Material> _groundCache   = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _emissiveCache = new Dictionary<string, Material>();
 
-    // Materials for all building lights (windows + storefronts). GameManager toggles
-    // them when the time-of-day changes to/from evening or night.
+    // Materials for all building lights (windows + storefronts + lamp globes). GameManager
+    // toggles them when the time-of-day changes to/from evening or night.
     public static readonly List<Material> BuildingLightMats = new List<Material>();
+
+    // Point lights that should only be on during evening/night: lamp posts + car headlights/taillights.
+    public static readonly List<Light>    NightOnlyLights   = new List<Light>();
+
+    // Emissive materials for car headlights and taillights (shared across all cars).
+    public static readonly List<Material> CarLightMats      = new List<Material>();
 
     // The 4 building-wall material instances — exposed so GameManager can swap
     // base colours when cycling the time-of-day palette.
@@ -51,6 +57,8 @@ public class CityGenerator : MonoBehaviour
         _groundCache.Clear();
         _emissiveCache.Clear();
         BuildingLightMats.Clear();
+        NightOnlyLights.Clear();
+        CarLightMats.Clear();
         _cityRoot = new GameObject("City").transform;
         BuildGround();
         BuildBoundaryWalls();
@@ -61,6 +69,15 @@ public class CityGenerator : MonoBehaviour
 
         // Cache the 4 primary building-wall materials so GameManager can swap
         // their base colour when cycling time-of-day palettes.
+        // Track shared emissive materials once for the night-only toggle.
+        // All lamp globes share one cached material; same for car headlights and taillights.
+        BuildingLightMats.Add(MkEmissiveMat(
+            new Color(0.98f, 0.90f, 0.60f), new Color(4.5f, 3.5f, 1.2f), 0.75f));
+        CarLightMats.Add(MkEmissiveMat(
+            new Color(0.95f, 0.95f, 0.88f), new Color(2.0f, 1.95f, 1.60f), 0.80f));
+        CarLightMats.Add(MkEmissiveMat(
+            new Color(0.80f, 0.05f, 0.05f), new Color(1.80f, 0.08f, 0.08f), 0.70f));
+
         BuildingMatGlass     = MkLitMat(COL_GLASS, 0.75f, 0.05f);
         BuildingMatConcrete1 = MkLitMat(COL_BLDG1, 0.12f, 0f);
         BuildingMatConcrete2 = MkLitMat(COL_BLDG2, 0.12f, 0f);
@@ -648,9 +665,10 @@ public class CityGenerator : MonoBehaviour
         var pt = lightGO.AddComponent<Light>();
         pt.type      = LightType.Point;
         pt.color     = new Color(1.0f, 0.78f, 0.35f);
-        pt.intensity = 8.0f;
-        pt.range     = 18f;
+        pt.intensity = 14.0f;
+        pt.range     = 32f;
         pt.shadows   = LightShadows.None;  // performance — many lamps in scene
+        NightOnlyLights.Add(pt);
 
         Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f).IsLightSource = true;
     }
@@ -801,6 +819,30 @@ public class CityGenerator : MonoBehaviour
         EmissiveBox(root, "HLL", new Vector3(-0.60f, 0.55f,  1.80f), new Vector3(0.34f, 0.22f, 0.06f), headBase, headEmit, 0.80f);
         EmissiveBox(root, "TLR", new Vector3( 0.60f, 0.55f, -1.80f), new Vector3(0.34f, 0.22f, 0.06f), tailBase, tailEmit, 0.70f);
         EmissiveBox(root, "TLL", new Vector3(-0.60f, 0.55f, -1.80f), new Vector3(0.34f, 0.22f, 0.06f), tailBase, tailEmit, 0.70f);
+
+        // Headlight and taillight Point Lights — cast real light that moves with the car.
+        // Child of root so they follow the car when physics kicks it around.
+        var hlGO = new GameObject("HeadLight");
+        hlGO.transform.SetParent(root.transform, false);
+        hlGO.transform.localPosition = new Vector3(0f, 0.55f, 1.85f);
+        var hl = hlGO.AddComponent<Light>();
+        hl.type      = LightType.Point;
+        hl.color     = new Color(1.0f, 0.95f, 0.85f);
+        hl.intensity = 8f;
+        hl.range     = 24f;
+        hl.shadows   = LightShadows.None;
+        NightOnlyLights.Add(hl);
+
+        var tlGO = new GameObject("TailLight");
+        tlGO.transform.SetParent(root.transform, false);
+        tlGO.transform.localPosition = new Vector3(0f, 0.55f, -1.85f);
+        var tl = tlGO.AddComponent<Light>();
+        tl.type      = LightType.Point;
+        tl.color     = new Color(1.0f, 0.05f, 0.05f);
+        tl.intensity = 4f;
+        tl.range     = 12f;
+        tl.shadows   = LightShadows.None;
+        NightOnlyLights.Add(tl);
 
         // Wheels: 4 tires + hubcaps
         Color tire = new Color(0.08f, 0.08f, 0.09f);
