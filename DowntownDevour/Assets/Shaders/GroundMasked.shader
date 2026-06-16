@@ -46,10 +46,16 @@ Shader "DowntownDevour/GroundMasked"
             #pragma multi_compile_instancing
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            // Forward+ clustered light loop keywords. The keyword was renamed across URP
+            // versions (_FORWARD_PLUS → _CLUSTER_LIGHT_LOOP), so declare both and let the
+            // LIGHT_LOOP macros use whichever the active SRP defines.
+            #pragma multi_compile _ _FORWARD_PLUS
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RealtimeLights.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
@@ -101,21 +107,31 @@ Shader "DowntownDevour/GroundMasked"
                 half3 color = albedo * (mainLight.color * NdotLMain * 0.30h)
                             + mainLight.color * spec_main * 0.8h;
 
-                // ── Additional point lights (lamp posts, car lights, hole) ──
-                #ifdef _ADDITIONAL_LIGHTS
-                uint lightCount = GetAdditionalLightsCount();
-                UNITY_LOOP
-                for (uint i = 0u; i < lightCount; ++i)
-                {
-                    Light light  = GetAdditionalLight(i, IN.positionWS);
+                // ── Additional lights (lamp posts, car lights) — Forward & Forward+ ──
+                // Classic Forward culls lights per-object and caps the count, so a giant
+                // ground mesh never sees distant lamps — streets stay black under them.
+                // The LIGHT_LOOP macros use the Forward+ clustered light list when active
+                // (no per-object limit) and fall back to the classic loop otherwise.
+                // GetAdditionalLightsCount() returns 0 in Forward+, so we MUST go through
+                // the macros rather than a manual for-loop. The clustered iterator reads
+                // positionWS + normalizedScreenSpaceUV off a variable literally named
+                // inputData, so that name is mandatory here.
+                #if defined(_ADDITIONAL_LIGHTS) || defined(_FORWARD_PLUS) || defined(_CLUSTER_LIGHT_LOOP)
+                InputData inputData = (InputData)0;
+                inputData.positionWS              = IN.positionWS;
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(IN.positionHCS);
+
+                uint pixelLightCount = GetAdditionalLightsCount();
+                LIGHT_LOOP_BEGIN(pixelLightCount)
+                    Light light  = GetAdditionalLight(lightIndex, IN.positionWS);
                     half  NdotL  = saturate(dot(N, light.direction));
                     half3 H_add  = normalize(light.direction + V);
                     half  spec   = pow(saturate(dot(N, H_add)), specPow) * _Smoothness;
                     half  att    = light.distanceAttenuation;
-                    // Diffuse very subtle (road is dark); specular carries the wet look
+                    // Diffuse lifts the pavement under each lamp; specular keeps the wet sheen.
                     color += albedo * light.color * att * NdotL * 0.55h
                            + light.color          * att * spec  * 2.2h;
-                }
+                LIGHT_LOOP_END
                 #endif
 
                 // ── Ambient ─────────────────────────────────────────────────
