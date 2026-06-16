@@ -113,7 +113,7 @@ Shader "DowntownDevour/GroundMasked"
                     half  spec   = pow(saturate(dot(N, H_add)), specPow) * _Smoothness;
                     half  att    = light.distanceAttenuation;
                     // Diffuse very subtle (road is dark); specular carries the wet look
-                    color += albedo * light.color * att * NdotL * 0.18h
+                    color += albedo * light.color * att * NdotL * 0.55h
                            + light.color          * att * spec  * 2.2h;
                 }
                 #endif

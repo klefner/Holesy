@@ -663,57 +663,23 @@ public class CityGenerator : MonoBehaviour
         EmissivePrim(PrimitiveType.Sphere, root, "Globe", new Vector3(0.9f, 4.72f, 0f),
             Quaternion.identity, new Vector3(0.38f, 0.28f, 0.38f), globeBase, globeEmit, 0.75f);
 
-        // Spotlight aimed down — visible cone of amber light pooling on the street
-        var lightGO = new GameObject("LampLight");
+        // Point light at lamp head — radiates in all directions so the road, nearby
+        // building walls, and passing objects all catch warm amber (Diablo style).
+        // No visible cone or disc; attenuation does all the falloff work.
+        var lightGO = new GameObject("LampPointLight");
         lightGO.transform.SetParent(root.transform, false);
         lightGO.transform.localPosition = new Vector3(0.9f, 4.5f, 0f);
-        lightGO.transform.localRotation = Quaternion.LookRotation(Vector3.down);
         var pt = lightGO.AddComponent<Light>();
-        pt.type           = LightType.Spot;
-        pt.spotAngle      = 76f;
-        pt.innerSpotAngle = 28f;
-        pt.color          = new Color(1.0f, 0.78f, 0.35f);
-        pt.intensity      = 45f;
-        pt.range          = 13f;
-        pt.shadows        = LightShadows.None;
+        pt.type      = LightType.Point;
+        pt.color     = new Color(1.0f, 0.72f, 0.28f);
+        pt.intensity = 35f;
+        pt.range     = 15f;
+        pt.shadows   = LightShadows.None;
         NightOnlyLights.Add(pt);
 
-        // Outer glow pool — per-instance material so each lamp flickers independently.
-        // HDR at (3, 1.8, 0.45) sits well above bloom threshold at Evening (0.85).
-        Color outerEmit = new Color(3.0f, 1.8f, 0.45f);
-        var outerMat = new Material(Shader.Find("DowntownDevour/GroundMasked"));
-        outerMat.SetColor("_BaseColor",     new Color(0.20f, 0.12f, 0.04f));
-        outerMat.SetFloat("_Smoothness",    0.05f);
-        outerMat.SetColor("_EmissionColor", outerEmit);
-        var pool = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        pool.name = "LightPool";
-        pool.transform.SetParent(root.transform, false);
-        pool.transform.localPosition = new Vector3(0.9f, 0.006f, 0f);
-        pool.transform.localRotation = Quaternion.identity;
-        pool.transform.localScale    = new Vector3(5.0f, 0.003f, 5.0f);
-        pool.GetComponent<Renderer>().sharedMaterial = outerMat;
-        Destroy(pool.GetComponent<Collider>());
-        TrackBuildingLight(outerMat, outerEmit);
-
-        // Inner hot-spot — tight bright core directly below the head, drives intense bloom falloff.
-        Color innerEmit = new Color(6.0f, 3.5f, 0.8f);
-        var innerMat = new Material(Shader.Find("DowntownDevour/GroundMasked"));
-        innerMat.SetColor("_BaseColor",     new Color(0.30f, 0.18f, 0.05f));
-        innerMat.SetFloat("_Smoothness",    0.05f);
-        innerMat.SetColor("_EmissionColor", innerEmit);
-        var inner = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        inner.name = "LightPoolInner";
-        inner.transform.SetParent(root.transform, false);
-        inner.transform.localPosition = new Vector3(0.9f, 0.007f, 0f);
-        inner.transform.localRotation = Quaternion.identity;
-        inner.transform.localScale    = new Vector3(1.5f, 0.003f, 1.5f);
-        inner.GetComponent<Renderer>().sharedMaterial = innerMat;
-        Destroy(inner.GetComponent<Collider>());
-        TrackBuildingLight(innerMat, innerEmit);
-
-        // Sodium-vapour flicker — drives spotlight intensity and both pool discs in sync.
+        // Sodium-vapour flicker on the point light intensity only.
         var ll = root.AddComponent<LampLight>();
-        ll.Init(pt, outerMat, outerEmit, innerMat, innerEmit);
+        ll.Init(pt, null, Color.black, null, Color.black);
 
         // Tiny mosquito swarm orbiting the lamp head (night only).
         var mq = root.AddComponent<LampMosquitoes>();
