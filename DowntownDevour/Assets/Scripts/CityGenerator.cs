@@ -678,19 +678,46 @@ public class CityGenerator : MonoBehaviour
         pt.shadows        = LightShadows.None;
         NightOnlyLights.Add(pt);
 
-        // Emissive disc on the road directly beneath the lamp head. Simulates the
-        // amber light pool using the stencil-aware GroundMasked shader (so the hole
-        // cuts through it) with HDR emission that triggers bloom at night.
-        Color poolEmit = new Color(1.0f, 0.60f, 0.15f);
+        // Outer glow pool — per-instance material so each lamp flickers independently.
+        // HDR at (3, 1.8, 0.45) sits well above bloom threshold at Evening (0.85).
+        Color outerEmit = new Color(3.0f, 1.8f, 0.45f);
+        var outerMat = new Material(Shader.Find("DowntownDevour/GroundMasked"));
+        outerMat.SetColor("_BaseColor",     new Color(0.20f, 0.12f, 0.04f));
+        outerMat.SetFloat("_Smoothness",    0.05f);
+        outerMat.SetColor("_EmissionColor", outerEmit);
         var pool = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         pool.name = "LightPool";
         pool.transform.SetParent(root.transform, false);
         pool.transform.localPosition = new Vector3(0.9f, 0.006f, 0f);
+        pool.transform.localRotation = Quaternion.identity;
         pool.transform.localScale    = new Vector3(5.0f, 0.003f, 5.0f);
-        pool.GetComponent<Renderer>().sharedMaterial = MkEmissiveGroundMat(
-            new Color(0.20f, 0.12f, 0.04f), poolEmit);
+        pool.GetComponent<Renderer>().sharedMaterial = outerMat;
         Destroy(pool.GetComponent<Collider>());
-        TrackBuildingLight(pool.GetComponent<Renderer>().sharedMaterial, poolEmit);
+        TrackBuildingLight(outerMat, outerEmit);
+
+        // Inner hot-spot — tight bright core directly below the head, drives intense bloom falloff.
+        Color innerEmit = new Color(6.0f, 3.5f, 0.8f);
+        var innerMat = new Material(Shader.Find("DowntownDevour/GroundMasked"));
+        innerMat.SetColor("_BaseColor",     new Color(0.30f, 0.18f, 0.05f));
+        innerMat.SetFloat("_Smoothness",    0.05f);
+        innerMat.SetColor("_EmissionColor", innerEmit);
+        var inner = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        inner.name = "LightPoolInner";
+        inner.transform.SetParent(root.transform, false);
+        inner.transform.localPosition = new Vector3(0.9f, 0.007f, 0f);
+        inner.transform.localRotation = Quaternion.identity;
+        inner.transform.localScale    = new Vector3(1.5f, 0.003f, 1.5f);
+        inner.GetComponent<Renderer>().sharedMaterial = innerMat;
+        Destroy(inner.GetComponent<Collider>());
+        TrackBuildingLight(innerMat, innerEmit);
+
+        // Sodium-vapour flicker — drives spotlight intensity and both pool discs in sync.
+        var ll = root.AddComponent<LampLight>();
+        ll.Init(pt, outerMat, outerEmit, innerMat, innerEmit);
+
+        // Tiny mosquito swarm orbiting the lamp head (night only).
+        var mq = root.AddComponent<LampMosquitoes>();
+        mq.Init(pt, new Vector3(0.9f, 4.72f, 0f));
 
         Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f).IsLightSource = true;
     }
