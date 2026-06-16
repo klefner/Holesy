@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -70,12 +71,12 @@ public class GameManager : MonoBehaviour
         SetupCamera();
     }
 
-    void Start()
+    IEnumerator Start()
     {
         Time.timeScale = 1f;
         TimeRemaining  = GAME_DURATION;
 
-        _city.Build();
+        yield return StartCoroutine(_city.Build());
         SpawnHoles();                      // creates the player lantern referenced below
         ApplyTimeOfDay(CurrentTimeOfDay);  // set initial palette, building lights, lantern
         UI.Init();                         // shows the title screen

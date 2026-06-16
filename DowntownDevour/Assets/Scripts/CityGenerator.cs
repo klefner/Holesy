@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -58,7 +59,10 @@ public class CityGenerator : MonoBehaviour
     private Transform _cityRoot;
 
     // ── Entry ─────────────────────────────────────────────────────────────
-    public void Build()
+    // Coroutine so city generation spreads across multiple frames. This keeps
+    // the JS call-stack depth bounded on each frame — critical for mobile
+    // browsers whose JS engines enforce smaller max call-stack limits than desktop.
+    public IEnumerator Build()
     {
         _litCache.Clear();
         _groundCache.Clear();
@@ -72,8 +76,11 @@ public class CityGenerator : MonoBehaviour
         BuildGround();
         BuildBoundaryWalls();
         BuildRoads();
+        yield return null;
         BuildPuddles();
-        BuildBlocks();
+        yield return null;
+        yield return StartCoroutine(BuildBlocksAsync());
+        yield return null;
         SpawnCars(50);
 
         // Cache the 4 primary building-wall materials so GameManager can swap
@@ -186,13 +193,18 @@ public class CityGenerator : MonoBehaviour
     }
 
     // ── Blocks ────────────────────────────────────────────────────────────
-    void BuildBlocks()
+    // Yield between each column of blocks so the 7×7 grid is built over 7 frames
+    // rather than one; prevents a single-frame call-stack spike on mobile WebGL.
+    IEnumerator BuildBlocksAsync()
     {
         float block = GameManager.BLOCK, rw = GameManager.ROAD_W;
         float interior = block - rw;
         for (int bx = -3; bx <= 3; bx++)
-        for (int bz = -3; bz <= 3; bz++)
-            BuildBlock(new Vector3(bx * block, 0f, bz * block), interior);
+        {
+            for (int bz = -3; bz <= 3; bz++)
+                BuildBlock(new Vector3(bx * block, 0f, bz * block), interior);
+            yield return null;
+        }
     }
 
     void BuildBlock(Vector3 centre, float size)

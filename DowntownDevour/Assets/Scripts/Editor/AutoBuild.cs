@@ -25,6 +25,12 @@ public static class AutoBuild
         if (!Build(scenes, BuildTarget.StandaloneWindows64,
                    "Builds/Windows/DowntownDevour.exe", "Windows PC")) return;
 
+        // Gzip so GitHub Pages serves with Content-Encoding: gzip at the CDN level,
+        // avoiding Unity's JS Brotli decompressor which overflows the call stack on
+        // mobile Safari/Chrome (smaller JS stack than desktop browsers).
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+        PlayerSettings.WebGL.decompressionFallback = true;
+
         if (!Build(scenes, BuildTarget.WebGL,
                    "Builds/Web", "Web")) return;
 
