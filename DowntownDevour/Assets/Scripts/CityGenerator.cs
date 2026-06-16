@@ -341,7 +341,7 @@ public class CityGenerator : MonoBehaviour
                 Color wre = WindowEmit(winEmit); Color wle = WindowEmit(winEmit);
                 if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wre), wre, Random.value < litChance); EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre); }
                 else                        Box(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
-                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wle), wle, Random.value < litChance); EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f); }
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wle), wle, Random.value < litChance); EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wle); }
                 else                        Box(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
             }
         }
