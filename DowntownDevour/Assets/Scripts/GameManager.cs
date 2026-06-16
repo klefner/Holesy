@@ -204,11 +204,16 @@ public class GameManager : MonoBehaviour
     // the result is reliable regardless of shader keyword compilation state.
     void SetBuildingLights(bool on)
     {
-        var mats  = CityGenerator.BuildingLightMats;
-        var emits = CityGenerator.BuildingLightEmitOn;
+        var mats   = CityGenerator.BuildingLightMats;
+        var emits  = CityGenerator.BuildingLightEmitOn;
+        var active = CityGenerator.BuildingLightNightOn;
         for (int i = 0; i < mats.Count; i++)
-            if (mats[i] != null)
-                mats[i].SetColor("_EmissionColor", on && i < emits.Count ? emits[i] : Color.black);
+        {
+            if (mats[i] == null) continue;
+            bool nightOn = i >= active.Count || active[i];
+            mats[i].SetColor("_EmissionColor",
+                on && nightOn && i < emits.Count ? emits[i] : Color.black);
+        }
     }
 
     // Toggle all scene point lights that should only cast light at evening/night:

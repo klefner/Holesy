@@ -12,7 +12,11 @@ public class CityGenerator : MonoBehaviour
     public static readonly List<Material> BuildingLightMats   = new List<Material>();
     // Matching HDR emission colours for each entry in BuildingLightMats.
     // SetBuildingLights sets _EmissionColor to this value (on) or Color.black (off).
-    public static readonly List<Color>    BuildingLightEmitOn = new List<Color>();
+    public static readonly List<Color>    BuildingLightEmitOn  = new List<Color>();
+    // Whether each entry should be lit at night. Storefronts/globes = always true;
+    // windows get a per-building random fraction (20–60%) so buildings look inhabited
+    // but not uniformly blazing.
+    public static readonly List<bool>     BuildingLightNightOn = new List<bool>();
 
     // Point lights that should only be on during evening/night: lamp posts + car headlights/taillights.
     public static readonly List<Light>    NightOnlyLights   = new List<Light>();
@@ -61,6 +65,7 @@ public class CityGenerator : MonoBehaviour
         _emissiveCache.Clear();
         BuildingLightMats.Clear();
         BuildingLightEmitOn.Clear();
+        BuildingLightNightOn.Clear();
         NightOnlyLights.Clear();
         CarLightMats.Clear();
         _cityRoot = new GameObject("City").transform;
@@ -302,15 +307,16 @@ public class CityGenerator : MonoBehaviour
             EmissiveBox(root, "StoreL", new Vector3(-bw * 0.5f - ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, 0.75f);
         }
 
-        // Window bays on all 4 faces — emissive for night glow
+        // Window bays on all 4 faces — emissive for night glow.
+        // Each building gets its own random occupancy rate (20–60%) so some look
+        // busy (office tower at 9 pm) and others nearly empty (residential).
         if (height > 5f)
         {
-            // Base (dark) window color
-            Color winBase = new Color(0.06f, 0.07f, 0.10f);
-            // Emissive: warm amber for most buildings, cool blue-white for glass towers
-            Color winEmit = isGlass
-                ? new Color(1.5f, 2.2f, 4.5f)    // cool neon-blue HDR
-                : new Color(3.5f, 2.5f, 0.8f);   // warm amber HDR (>1 triggers bloom)
+            Color winBase   = new Color(0.06f, 0.07f, 0.10f);
+            Color winEmit   = isGlass
+                ? new Color(1.5f, 2.2f, 4.5f)
+                : new Color(3.5f, 2.5f, 0.8f);
+            float litChance = Random.Range(0.20f, 0.60f);  // per-building occupancy
 
             float bayH = shaftH * 0.76f;
             float bayY = podiumH + shaftH * 0.50f;
@@ -324,18 +330,18 @@ public class CityGenerator : MonoBehaviour
             {
                 float x = -bw/2f + bw / (nW + 1f) * wi;
                 Color wef = WindowEmit(winEmit); Color web = WindowEmit(winEmit);
-                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wef), wef); EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, wef); }
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wef), wef, Random.value < litChance); EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, wef); }
                 else                        Box(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
-                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, web), web); EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, web); }
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, web), web, Random.value < litChance); EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, web); }
                 else                        Box(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
             }
             for (int wi = 1; wi <= nD; wi++)
             {
                 float z = -bd/2f + bd / (nD + 1f) * wi;
                 Color wre = WindowEmit(winEmit); Color wle = WindowEmit(winEmit);
-                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wre), wre); EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre); }
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wre), wre, Random.value < litChance); EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre); }
                 else                        Box(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
-                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wle), wle); EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wle); }
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wle), wle, Random.value < litChance); EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f); }
                 else                        Box(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
             }
         }
@@ -1027,12 +1033,13 @@ public class CityGenerator : MonoBehaviour
     }
 
     // Register an emissive material for the night-only toggle.
-    // Using _EmissionColor value control (set to emitOn or black) rather than keyword
-    // toggling — more reliable across Unity 6 shader variants.
-    static void TrackBuildingLight(Material mat, Color emitOn)
+    // nightOn=false reserves the slot but keeps the window dark even at night,
+    // giving each building a unique occupancy pattern.
+    static void TrackBuildingLight(Material mat, Color emitOn, bool nightOn = true)
     {
         BuildingLightMats.Add(mat);
         BuildingLightEmitOn.Add(emitOn);
+        BuildingLightNightOn.Add(nightOn);
     }
 
     // Emissive material — used for lit windows, lamp globes, car lights.
