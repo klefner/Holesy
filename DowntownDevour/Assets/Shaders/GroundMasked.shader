@@ -5,8 +5,9 @@ Shader "DowntownDevour/GroundMasked"
 {
     Properties
     {
-        _BaseColor  ("Color",      Color)  = (0.35, 0.35, 0.35, 1)
-        _Smoothness ("Smoothness", Float)  = 0.05
+        _BaseColor      ("Color",           Color)  = (0.35, 0.35, 0.35, 1)
+        _Smoothness     ("Smoothness",      Float)  = 0.05
+        [HDR] _EmissionColor ("Emission Color", Color) = (0, 0, 0, 0)
     }
 
     SubShader
@@ -53,6 +54,7 @@ Shader "DowntownDevour/GroundMasked"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
                 float  _Smoothness;
+                float4 _EmissionColor;
             CBUFFER_END
 
             struct Attributes
@@ -118,6 +120,9 @@ Shader "DowntownDevour/GroundMasked"
 
                 // ── Ambient ─────────────────────────────────────────────────
                 color += albedo * SampleSH(N) * 0.85h;
+
+                // ── Emission (lamp pools, emissive decals) ───────────────────
+                color += half3(_EmissionColor.r, _EmissionColor.g, _EmissionColor.b);
 
                 // ── Fog ─────────────────────────────────────────────────────
                 color = MixFog(color, IN.fogFactor);

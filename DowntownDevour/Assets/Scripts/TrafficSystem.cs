@@ -85,7 +85,8 @@ public class TrafficSystem : MonoBehaviour
         Color glass = new Color(0.14f, 0.22f, 0.32f);
 
         var root = new GameObject("TrafficCar");
-        root.transform.position = pos;
+        root.transform.position   = pos;
+        root.transform.localScale = Vector3.one * 0.60f;
 
         // Rotate so local +Z aligns with drive direction
         if      (Mathf.Abs(dir.x) > 0.5f)
@@ -158,7 +159,7 @@ public class TrafficSystem : MonoBehaviour
         rb.isKinematic    = true;   // CarDriver moves it manually; hole releases it
 
         var co = root.AddComponent<ConsumableObject>();
-        co.Init(1.8f, 3, 50f, ObjectCategory.Car, 1.6f);
+        co.Init(1.1f, 3, 50f, ObjectCategory.Car, 1.0f);
         GameManager.Instance.AllObjects.Add(co);
 
         var driver = root.AddComponent<CarDriver>();

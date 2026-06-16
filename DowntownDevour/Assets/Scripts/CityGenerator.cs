@@ -9,7 +9,10 @@ public class CityGenerator : MonoBehaviour
 
     // Materials for all building lights (windows + storefronts + lamp globes). GameManager
     // toggles them when the time-of-day changes to/from evening or night.
-    public static readonly List<Material> BuildingLightMats = new List<Material>();
+    public static readonly List<Material> BuildingLightMats   = new List<Material>();
+    // Matching HDR emission colours for each entry in BuildingLightMats.
+    // SetBuildingLights sets _EmissionColor to this value (on) or Color.black (off).
+    public static readonly List<Color>    BuildingLightEmitOn = new List<Color>();
 
     // Point lights that should only be on during evening/night: lamp posts + car headlights/taillights.
     public static readonly List<Light>    NightOnlyLights   = new List<Light>();
@@ -57,6 +60,7 @@ public class CityGenerator : MonoBehaviour
         _groundCache.Clear();
         _emissiveCache.Clear();
         BuildingLightMats.Clear();
+        BuildingLightEmitOn.Clear();
         NightOnlyLights.Clear();
         CarLightMats.Clear();
         _cityRoot = new GameObject("City").transform;
@@ -71,8 +75,9 @@ public class CityGenerator : MonoBehaviour
         // their base colour when cycling time-of-day palettes.
         // Track shared emissive materials once for the night-only toggle.
         // All lamp globes share one cached material; same for car headlights and taillights.
-        BuildingLightMats.Add(MkEmissiveMat(
-            new Color(0.98f, 0.90f, 0.60f), new Color(4.5f, 3.5f, 1.2f), 0.75f));
+        TrackBuildingLight(
+            MkEmissiveMat(new Color(0.98f, 0.90f, 0.60f), new Color(4.5f, 3.5f, 1.2f), 0.75f),
+            new Color(4.5f, 3.5f, 1.2f));
         CarLightMats.Add(MkEmissiveMat(
             new Color(0.95f, 0.95f, 0.88f), new Color(2.0f, 1.95f, 1.60f), 0.80f));
         CarLightMats.Add(MkEmissiveMat(
@@ -290,7 +295,7 @@ public class CityGenerator : MonoBehaviour
             Color sgB  = new Color(0.10f, 0.13f, 0.20f);  // dark glass panel
             Color sgE  = new Color(2.0f, 1.3f, 0.45f);  // warm amber interior
             // Track storefront mat once (all 4 panels share the same cached material)
-            BuildingLightMats.Add(MkEmissiveMat(sgB, sgE, 0.75f));
+            TrackBuildingLight(MkEmissiveMat(sgB, sgE, 0.75f), sgE);
             EmissiveBox(root, "StoreF", new Vector3(0f,  stH * 0.5f,  bd * 0.5f + ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
             EmissiveBox(root, "StoreB", new Vector3(0f,  stH * 0.5f, -bd * 0.5f - ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
             EmissiveBox(root, "StoreR", new Vector3( bw * 0.5f + ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, 0.75f);
@@ -319,18 +324,18 @@ public class CityGenerator : MonoBehaviour
             {
                 float x = -bw/2f + bw / (nW + 1f) * wi;
                 Color wef = WindowEmit(winEmit); Color web = WindowEmit(winEmit);
-                if (Random.value < 0.65f) { BuildingLightMats.Add(MkEmissiveMat(winBase, wef)); EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, wef); }
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wef), wef); EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, wef); }
                 else                        Box(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
-                if (Random.value < 0.65f) { BuildingLightMats.Add(MkEmissiveMat(winBase, web)); EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, web); }
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, web), web); EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, web); }
                 else                        Box(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
             }
             for (int wi = 1; wi <= nD; wi++)
             {
                 float z = -bd/2f + bd / (nD + 1f) * wi;
                 Color wre = WindowEmit(winEmit); Color wle = WindowEmit(winEmit);
-                if (Random.value < 0.65f) { BuildingLightMats.Add(MkEmissiveMat(winBase, wre)); EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre); }
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wre), wre); EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre); }
                 else                        Box(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
-                if (Random.value < 0.65f) { BuildingLightMats.Add(MkEmissiveMat(winBase, wle)); EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wle); }
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wle), wle); EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wle); }
                 else                        Box(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
             }
         }
@@ -673,6 +678,20 @@ public class CityGenerator : MonoBehaviour
         pt.shadows        = LightShadows.None;
         NightOnlyLights.Add(pt);
 
+        // Emissive disc on the road directly beneath the lamp head. Simulates the
+        // amber light pool using the stencil-aware GroundMasked shader (so the hole
+        // cuts through it) with HDR emission that triggers bloom at night.
+        Color poolEmit = new Color(1.0f, 0.60f, 0.15f);
+        var pool = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        pool.name = "LightPool";
+        pool.transform.SetParent(root.transform, false);
+        pool.transform.localPosition = new Vector3(0.9f, 0.006f, 0f);
+        pool.transform.localScale    = new Vector3(5.0f, 0.003f, 5.0f);
+        pool.GetComponent<Renderer>().sharedMaterial = MkEmissiveGroundMat(
+            new Color(0.20f, 0.12f, 0.04f), poolEmit);
+        Destroy(pool.GetComponent<Collider>());
+        TrackBuildingLight(pool.GetComponent<Renderer>().sharedMaterial, poolEmit);
+
         Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f).IsLightSource = true;
     }
 
@@ -807,7 +826,8 @@ public class CityGenerator : MonoBehaviour
             laneOfs  = goPos ? new Vector3( lane, 0f, 0f) : new Vector3(-lane, 0f, 0f);
         }
         var root = Root("Car", pos + laneOfs);
-        root.transform.rotation = Quaternion.LookRotation(driveDir, Vector3.up);
+        root.transform.rotation   = Quaternion.LookRotation(driveDir, Vector3.up);
+        root.transform.localScale = Vector3.one * 0.60f;
 
         // Body and cabin
         Box(root, "Body",  Y(0.52f), new Vector3(1.70f, 0.62f, 3.50f), col, 0.60f, 0.10f);
@@ -883,7 +903,7 @@ public class CityGenerator : MonoBehaviour
                 new Vector3(0.36f, 0.04f, 0.36f), rim, 0.75f, 0.55f);
         }
 
-        var co     = Consumable(root, 1.8f, 3, 50f, ObjectCategory.Car, 1.6f, mass: 1.2f);
+        var co     = Consumable(root, 1.1f, 3, 50f, ObjectCategory.Car, 1.0f, mass: 1.2f);
         var driver = root.AddComponent<CarDriver>();
         driver.DriveDir   = driveDir;
         driver.Consumable = co;
@@ -994,6 +1014,32 @@ public class CityGenerator : MonoBehaviour
             _groundCache[key] = mat;
         }
         return mat;
+    }
+
+    // Emissive variant of GroundMasked — used for lamp pool discs.
+    // The shader always adds _EmissionColor.rgb to output, so setting it to black
+    // is the "off" state. Stencil test is identical to regular ground (hole cuts through).
+    static Material MkEmissiveGroundMat(Color baseColor, Color emitColor, float sm = 0.05f)
+    {
+        string key = $"eg{(int)(emitColor.r*1000)},{(int)(emitColor.g*1000)},{(int)(emitColor.b*1000)}";
+        if (!_groundCache.TryGetValue(key, out var mat))
+        {
+            mat = new Material(Shader.Find("DowntownDevour/GroundMasked"));
+            mat.SetColor("_BaseColor",      baseColor);
+            mat.SetFloat("_Smoothness",     sm);
+            mat.SetColor("_EmissionColor",  emitColor);
+            _groundCache[key] = mat;
+        }
+        return mat;
+    }
+
+    // Register an emissive material for the night-only toggle.
+    // Using _EmissionColor value control (set to emitOn or black) rather than keyword
+    // toggling — more reliable across Unity 6 shader variants.
+    static void TrackBuildingLight(Material mat, Color emitOn)
+    {
+        BuildingLightMats.Add(mat);
+        BuildingLightEmitOn.Add(emitOn);
     }
 
     // Emissive material — used for lit windows, lamp globes, car lights.

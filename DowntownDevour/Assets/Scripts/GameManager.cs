@@ -199,14 +199,16 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Building lights on/off — windows, storefronts, and lamp globes.
+    // Building lights on/off — windows, storefronts, lamp globes, and lamp pool discs.
+    // Controls _EmissionColor directly (set to the tracked HDR colour or black) so
+    // the result is reliable regardless of shader keyword compilation state.
     void SetBuildingLights(bool on)
     {
-        foreach (var mat in CityGenerator.BuildingLightMats)
-        {
-            if (on) mat.EnableKeyword("_EMISSION");
-            else    mat.DisableKeyword("_EMISSION");
-        }
+        var mats  = CityGenerator.BuildingLightMats;
+        var emits = CityGenerator.BuildingLightEmitOn;
+        for (int i = 0; i < mats.Count; i++)
+            if (mats[i] != null)
+                mats[i].SetColor("_EmissionColor", on && i < emits.Count ? emits[i] : Color.black);
     }
 
     // Toggle all scene point lights that should only cast light at evening/night:
