@@ -30,7 +30,7 @@ public class GameManager : MonoBehaviour
     public enum TimeOfDay  { Morning, Afternoon, Evening, Night }
 
     public GameState              State            { get; private set; }
-    public TimeOfDay              CurrentTimeOfDay { get; private set; } = TimeOfDay.Afternoon;
+    public TimeOfDay              CurrentTimeOfDay { get; private set; } = TimeOfDay.Night;
     public float                  TimeRemaining    { get; private set; }
     public PlayerHole             Player           { get; private set; }
     public List<HoleBase>         AllHoles         { get; } = new List<HoleBase>();
