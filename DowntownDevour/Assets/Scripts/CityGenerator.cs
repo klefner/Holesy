@@ -9,7 +9,6 @@ public class CityGenerator : MonoBehaviour
     static readonly Dictionary<string, Material> _litCache      = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _groundCache   = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _emissiveCache = new Dictionary<string, Material>();
-    static readonly Dictionary<string, Material> _unlitCache    = new Dictionary<string, Material>();
 
     // Materials for all building lights (windows + storefronts + lamp globes). GameManager
     // toggles them when the time-of-day changes to/from evening or night.
@@ -26,7 +25,10 @@ public class CityGenerator : MonoBehaviour
     public static readonly List<Light>    NightOnlyLights   = new List<Light>();
 
     // Emissive materials for car headlights and taillights (shared across all cars).
-    public static readonly List<Material> CarLightMats      = new List<Material>();
+    // CarLightEmitColors stores the matching HDR colour so SetCarLights can restore
+    // it after being zeroed to black during daytime — same pattern as SetBuildingLights.
+    public static readonly List<Material> CarLightMats       = new List<Material>();
+    public static readonly List<Color>    CarLightEmitColors = new List<Color>();
 
     // The 4 building-wall material instances — exposed so GameManager can swap
     // base colours when cycling the time-of-day palette.
@@ -70,12 +72,12 @@ public class CityGenerator : MonoBehaviour
         _litCache.Clear();
         _groundCache.Clear();
         _emissiveCache.Clear();
-        _unlitCache.Clear();
         BuildingLightMats.Clear();
         BuildingLightEmitOn.Clear();
         BuildingLightNightOn.Clear();
         NightOnlyLights.Clear();
         CarLightMats.Clear();
+        CarLightEmitColors.Clear();
         _cityRoot = new GameObject("City").transform;
         BuildGround();
         BuildBoundaryWalls();
@@ -94,10 +96,10 @@ public class CityGenerator : MonoBehaviour
         TrackBuildingLight(
             MkEmissiveMat(new Color(0.98f, 0.90f, 0.60f), new Color(4.5f, 3.5f, 1.2f), 0.75f),
             new Color(4.5f, 3.5f, 1.2f));
-        CarLightMats.Add(MkEmissiveMat(
-            new Color(0.95f, 0.95f, 0.88f), new Color(2.0f, 1.95f, 1.60f), 0.80f));
-        CarLightMats.Add(MkEmissiveMat(
-            new Color(0.80f, 0.05f, 0.05f), new Color(1.80f, 0.08f, 0.08f), 0.70f));
+        CarLightMats.Add(MkEmissiveMat(new Color(0.95f, 0.95f, 0.88f), new Color(2.0f,  1.95f, 1.60f), 0.80f));
+        CarLightEmitColors.Add(new Color(2.0f, 1.95f, 1.60f));
+        CarLightMats.Add(MkEmissiveMat(new Color(0.80f, 0.05f, 0.05f), new Color(1.80f, 0.08f, 0.08f), 0.70f));
+        CarLightEmitColors.Add(new Color(1.80f, 0.08f, 0.08f));
 
         BuildingMatGlass     = MkLitMat(COL_GLASS, 0.75f, 0.05f);
         BuildingMatConcrete1 = MkLitMat(COL_BLDG1, 0.12f, 0f);
@@ -987,26 +989,24 @@ public class CityGenerator : MonoBehaviour
         return co;
     }
 
-    // Replace each child renderer's material with an Unlit variant whose colour is
-    // boosted to peak brightness 0.85.  Unlit renders the exact colour with zero
-    // shader keyword dependencies — _EMISSION variants are stripped by the WebGL
-    // build pipeline when no pre-baked materials use them, silently zeroing emission
-    // on mobile.  Unlit sidesteps that entirely and is guaranteed visible on device.
+    // Give each child renderer an emissive CityLit material keyed to its base colour.
+    // CityLit adds _EmissionColor unconditionally — no _EMISSION keyword, no build-time
+    // stripping risk.  Registered night-only so SetBuildingLights() dims props during day.
     static void AddNightGlow(GameObject go)
     {
         foreach (var r in go.GetComponentsInChildren<Renderer>())
         {
             var m = r.sharedMaterial;
             if (m == null || !m.HasProperty("_BaseColor")) continue;
-            Color bc = m.GetColor("_BaseColor");
-            float pk = Mathf.Max(bc.r, Mathf.Max(bc.g, bc.b));
+            Color bc  = m.GetColor("_BaseColor");
+            float sm  = m.HasProperty("_Smoothness") ? m.GetFloat("_Smoothness") : 0.1f;
+            float pk  = Mathf.Max(bc.r, Mathf.Max(bc.g, bc.b));
             if (pk < 0.01f) pk = 0.01f;
-            float k = 0.85f / pk;
-            Color bright = new Color(
-                Mathf.Clamp01(bc.r * k),
-                Mathf.Clamp01(bc.g * k),
-                Mathf.Clamp01(bc.b * k), 1f);
-            r.sharedMaterial = MkUnlitMat(bright);
+            float k   = 1.1f / pk;
+            Color emit = new Color(bc.r * k, bc.g * k, bc.b * k);
+            var em = MkEmissiveMat(bc, emit, sm);
+            r.sharedMaterial = em;
+            TrackBuildingLight(em, emit, nightOn: true);
         }
     }
 
@@ -1044,7 +1044,7 @@ public class CityGenerator : MonoBehaviour
         string key = $"{(int)(c.r*255)},{(int)(c.g*255)},{(int)(c.b*255)},{(int)(sm*100)},{(int)(mt*100)}";
         if (!_litCache.TryGetValue(key, out var mat))
         {
-            mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat = new Material(Shader.Find("DowntownDevour/CityLit"));
             mat.SetColor("_BaseColor", c);
             mat.SetFloat("_Smoothness", sm);
             mat.SetFloat("_Metallic",   mt);
@@ -1093,33 +1093,20 @@ public class CityGenerator : MonoBehaviour
         BuildingLightNightOn.Add(nightOn);
     }
 
-    // Emissive material — used for lit windows, lamp globes, car lights.
-    // emissiveColor should be the raw HDR colour (values > 1 are fine — URP bloom picks them up).
+    // Emissive material — used for lit windows, lamp globes, car lights, prop glow.
+    // CityLit always adds _EmissionColor to output — no _EMISSION keyword needed.
+    // emissiveColor can be HDR (values > 1); URP bloom halos fire on those pixels.
     static Material MkEmissiveMat(Color baseColor, Color emissiveColor, float sm = 0.5f)
     {
         string key = $"e{(int)(emissiveColor.r*255)},{(int)(emissiveColor.g*255)},{(int)(emissiveColor.b*255)},{(int)(emissiveColor.a*100)}";
         if (!_emissiveCache.TryGetValue(key, out var mat))
         {
-            mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            mat.SetColor("_BaseColor",  baseColor);
-            mat.SetFloat("_Smoothness", sm);
-            mat.SetFloat("_Metallic",   0f);
-            mat.EnableKeyword("_EMISSION");
+            mat = new Material(Shader.Find("DowntownDevour/CityLit"));
+            mat.SetColor("_BaseColor",     baseColor);
+            mat.SetFloat("_Smoothness",    sm);
+            mat.SetFloat("_Metallic",      0f);
             mat.SetColor("_EmissionColor", emissiveColor);
-            mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             _emissiveCache[key] = mat;
-        }
-        return mat;
-    }
-
-    static Material MkUnlitMat(Color c)
-    {
-        string key = $"u{(int)(c.r*255)},{(int)(c.g*255)},{(int)(c.b*255)}";
-        if (!_unlitCache.TryGetValue(key, out var mat))
-        {
-            mat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
-            mat.SetColor("_BaseColor", c);
-            _unlitCache[key] = mat;
         }
         return mat;
     }

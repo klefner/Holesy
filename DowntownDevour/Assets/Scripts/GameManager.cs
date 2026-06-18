@@ -226,12 +226,16 @@ public class GameManager : MonoBehaviour
     }
 
     // Toggle car headlight and taillight emissive mesh materials.
+    // Uses SetColor("_EmissionColor") so it works with CityLit (no keyword switch needed).
     void SetCarLights(bool on)
     {
-        foreach (var mat in CityGenerator.CarLightMats)
+        var mats  = CityGenerator.CarLightMats;
+        var emits = CityGenerator.CarLightEmitColors;
+        for (int i = 0; i < mats.Count; i++)
         {
-            if (on) mat.EnableKeyword("_EMISSION");
-            else    mat.DisableKeyword("_EMISSION");
+            if (mats[i] == null) continue;
+            mats[i].SetColor("_EmissionColor",
+                on && i < emits.Count ? emits[i] : Color.black);
         }
     }
 
@@ -484,12 +488,26 @@ public class GameManager : MonoBehaviour
         hole.Score += obj.Value;
         hole.RecalcTargetRadius();
         Audio.PlayConsume(obj.Category, obj.Size, hole.IsPlayer, hole.transform.position);
+        if (hole.IsPlayer) TriggerHaptic();
 
         // In evening/night the rim ring is a light source — eating a street lamp
         // or other light source makes the hole glow brighter.
         if (obj.IsLightSource &&
             (CurrentTimeOfDay == TimeOfDay.Evening || CurrentTimeOfDay == TimeOfDay.Night))
             hole.AddRimGlow(1.0f);
+    }
+
+    // One short vibration pulse per object devoured — gives mobile players tactile
+    // confirmation of a consume.  Uses the Web Vibration API (Android Chrome/Firefox).
+    // iOS Safari does not implement navigator.vibrate so the call is a silent no-op there;
+    // the guard keeps it from throwing a JS error when the property is absent.
+    void TriggerHaptic()
+    {
+#if UNITY_WEBGL && !UNITY_EDITOR
+#pragma warning disable CS0618
+        Application.ExternalEval("if(typeof navigator!=='undefined'&&navigator.vibrate)navigator.vibrate(30);");
+#pragma warning restore CS0618
+#endif
     }
 
     public void EatHole(HoleBase eater, HoleBase eaten)
