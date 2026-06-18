@@ -632,9 +632,16 @@ public class CityGenerator : MonoBehaviour
         Color skin  = new Color(Random.Range(0.60f, 0.92f), Random.Range(0.42f, 0.72f),
                                 Random.Range(0.32f, 0.55f));
 
-        var bodyGo = Prim(PrimitiveType.Capsule, root, "Body", Y(0.58f), Quaternion.identity,
-            new Vector3(0.34f, 0.58f, 0.34f), cloth, 0.08f);
-        bodyGo.GetComponent<Renderer>().sharedMaterial = MkEmissiveMat(cloth, cloth * 0.4f, 0.08f);
+        // HDR cloth glow — scale ensures peak channel exceeds bloom threshold (0.80)
+        // so a visible halo fires at night. Tracked in BuildingLightMats so
+        // ApplyAfternoon() zeroes the emission exactly like building windows.
+        float peak     = Mathf.Max(cloth.r, cloth.g, cloth.b);
+        float s        = Mathf.Max(2.0f, 0.90f / peak);
+        Color clothEmit = new Color(cloth.r * s, cloth.g * s, cloth.b * s);
+        var bodyMat = MkEmissiveMat(cloth, clothEmit, 0.08f);
+        TrackBuildingLight(bodyMat, clothEmit, nightOn: true);
+        EmissivePrim(PrimitiveType.Capsule, root, "Body", Y(0.58f), Quaternion.identity,
+            new Vector3(0.34f, 0.58f, 0.34f), cloth, clothEmit, 0.08f);
         Prim(PrimitiveType.Sphere,  root, "Head", Y(1.30f), Quaternion.identity,
             Vector3.one * 0.28f, skin, 0.10f);
 
@@ -651,17 +658,25 @@ public class CityGenerator : MonoBehaviour
 
         float[] yo = { 1.5f, 2.2f, 2.8f };
         float[] ro = { 1.2f, 1.0f, 0.65f };
+        // Base greens and matching HDR emissions — unique per layer so each gets its
+        // own material in the cache (correct base colour in daytime when emission is off).
         Color[] gr = {
-            new Color(0.10f, 0.25f, 0.10f),
-            new Color(0.11f, 0.28f, 0.11f),
-            new Color(0.12f, 0.30f, 0.12f),
+            new Color(0.08f, 0.22f, 0.08f),
+            new Color(0.09f, 0.24f, 0.09f),
+            new Color(0.10f, 0.26f, 0.10f),
+        };
+        Color[] grEmit = {
+            new Color(0.10f, 1.20f, 0.15f),
+            new Color(0.11f, 1.22f, 0.16f),
+            new Color(0.12f, 1.24f, 0.17f),
         };
         for (int i = 0; i < 3; i++)
         {
-            var canopy = Prim(PrimitiveType.Sphere, root, "Canopy",
+            var canopyMat = MkEmissiveMat(gr[i], grEmit[i], 0.05f);
+            TrackBuildingLight(canopyMat, grEmit[i], nightOn: true);
+            EmissivePrim(PrimitiveType.Sphere, root, "Canopy",
                 new Vector3(Random.Range(-0.12f, 0.12f), yo[i], Random.Range(-0.12f, 0.12f)),
-                Quaternion.identity, Vector3.one * ro[i] * 2f, gr[i], 0.05f);
-            canopy.GetComponent<Renderer>().sharedMaterial = MkEmissiveMat(gr[i], gr[i] * 0.3f, 0.05f);
+                Quaternion.identity, Vector3.one * ro[i] * 2f, gr[i], grEmit[i], 0.05f);
         }
 
         Consumable(root, 1.1f, 2, 25f, ObjectCategory.Tree, 0.9f, mass: 1.5f);
