@@ -4,14 +4,12 @@ using UnityEngine;
 
 public class CityGenerator : MonoBehaviour
 {
-    // DIAGNOSTIC (v0.54): hide the ground plane + all road/sidewalk/marking surfaces
-    // (renderers only — colliders stay, so physics is unchanged) to test whether the
-    // consumable props are being depth-occluded by the ground on mobile.
-    public const bool HideGroundForDebug = true;
+    public const bool HideGroundForDebug = false;
 
     static readonly Dictionary<string, Material> _litCache      = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _groundCache   = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _emissiveCache = new Dictionary<string, Material>();
+    static readonly Dictionary<string, Material> _unlitCache    = new Dictionary<string, Material>();
 
     // Materials for all building lights (windows + storefronts + lamp globes). GameManager
     // toggles them when the time-of-day changes to/from evening or night.
@@ -72,6 +70,7 @@ public class CityGenerator : MonoBehaviour
         _litCache.Clear();
         _groundCache.Clear();
         _emissiveCache.Clear();
+        _unlitCache.Clear();
         BuildingLightMats.Clear();
         BuildingLightEmitOn.Clear();
         BuildingLightNightOn.Clear();
@@ -988,27 +987,26 @@ public class CityGenerator : MonoBehaviour
         return co;
     }
 
-    // Swap each child renderer's lit material for an emissive variant keyed to its
-    // own base colour, then register it night-only so SetBuildingLights() turns the
-    // glow on at night and off in daytime — same toggle path as the building windows.
-    // Emission peak is normalised to ~1.1 (HDR), matching the visible car tail-lights.
+    // Replace each child renderer's material with an Unlit variant whose colour is
+    // boosted to peak brightness 0.85.  Unlit renders the exact colour with zero
+    // shader keyword dependencies — _EMISSION variants are stripped by the WebGL
+    // build pipeline when no pre-baked materials use them, silently zeroing emission
+    // on mobile.  Unlit sidesteps that entirely and is guaranteed visible on device.
     static void AddNightGlow(GameObject go)
     {
         foreach (var r in go.GetComponentsInChildren<Renderer>())
         {
             var m = r.sharedMaterial;
             if (m == null || !m.HasProperty("_BaseColor")) continue;
-
-            Color bc  = m.GetColor("_BaseColor");
-            float sm  = m.HasProperty("_Smoothness") ? m.GetFloat("_Smoothness") : 0.1f;
-            float pk  = Mathf.Max(bc.r, Mathf.Max(bc.g, bc.b));
-            if (pk < 0.02f) pk = 0.02f;                 // guard near-black colours
-            float k   = 1.1f / pk;                       // brightest channel → ~1.1 HDR
-            Color emit = new Color(bc.r * k, bc.g * k, bc.b * k);
-
-            var em = MkEmissiveMat(bc, emit, sm);
-            r.sharedMaterial = em;
-            TrackBuildingLight(em, emit, nightOn: true);
+            Color bc = m.GetColor("_BaseColor");
+            float pk = Mathf.Max(bc.r, Mathf.Max(bc.g, bc.b));
+            if (pk < 0.01f) pk = 0.01f;
+            float k = 0.85f / pk;
+            Color bright = new Color(
+                Mathf.Clamp01(bc.r * k),
+                Mathf.Clamp01(bc.g * k),
+                Mathf.Clamp01(bc.b * k), 1f);
+            r.sharedMaterial = MkUnlitMat(bright);
         }
     }
 
@@ -1110,6 +1108,18 @@ public class CityGenerator : MonoBehaviour
             mat.SetColor("_EmissionColor", emissiveColor);
             mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             _emissiveCache[key] = mat;
+        }
+        return mat;
+    }
+
+    static Material MkUnlitMat(Color c)
+    {
+        string key = $"u{(int)(c.r*255)},{(int)(c.g*255)},{(int)(c.b*255)}";
+        if (!_unlitCache.TryGetValue(key, out var mat))
+        {
+            mat = new Material(Shader.Find("Universal Render Pipeline/Unlit"));
+            mat.SetColor("_BaseColor", c);
+            _unlitCache[key] = mat;
         }
         return mat;
     }
