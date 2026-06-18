@@ -387,7 +387,7 @@ public class BuildingCollapse : MonoBehaviour
     {
         if (_concrete == null)
         {
-            _concrete = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            _concrete = new Material(Shader.Find("DowntownDevour/CityLit"));
             _concrete.SetColor("_BaseColor", new Color(0.68f, 0.62f, 0.50f));
             _concrete.SetFloat("_Smoothness", 0.10f);
         }

@@ -11,6 +11,10 @@ public class ConsumableObject : MonoBehaviour
     public bool           IsConsumed      { get; private set; }
     public float          FootprintRadius { get; private set; }
     public bool           IsLightSource   { get; set; } = false;
+    // When true, consuming this object triggers a flicker-off on its emissive
+    // renderers.  Set to true for any prop that went through AddNightGlow().
+    // False for cars (lights stay on) and lamps (LampLight handles it).
+    public bool           DimOnConsume    { get; set; } = false;
 
     private bool     _falling;
     private float    _spinVel;
@@ -109,6 +113,7 @@ public class ConsumableObject : MonoBehaviour
         IsConsumed = true;
         _hole = hole;
         GameManager.Instance.AllObjects.Remove(this);
+        if (DimOnConsume) StartCoroutine(DimEmission());
 
         // Hand off Rigidbody velocity to our scripted fall so there is no hitch
         _fallVel = 0f;
@@ -125,6 +130,39 @@ public class ConsumableObject : MonoBehaviour
         _spinAxis    = new Vector3(Random.Range(-1f, 1f), 0f, Random.Range(-1f, 1f));
         if (_spinAxis.sqrMagnitude < 0.01f) _spinAxis = Vector3.right;
         _spinAxis.Normalize();
+    }
+
+    // Flicker off all emissive renderers when this object is consumed.
+    // Uses MaterialPropertyBlock so the shared material is not globally affected.
+    System.Collections.IEnumerator DimEmission()
+    {
+        var rends = GetComponentsInChildren<Renderer>();
+        var active = new System.Collections.Generic.List<(Renderer r, Color emit)>();
+        foreach (var r in rends)
+        {
+            var m = r.sharedMaterial;
+            if (m == null || !m.HasProperty("_EmissionColor")) continue;
+            Color ec = m.GetColor("_EmissionColor");
+            if (ec.maxColorComponent < 0.01f) continue;   // daytime / unlit — skip
+            active.Add((r, ec));
+        }
+        if (active.Count == 0) yield break;
+
+        var block = new MaterialPropertyBlock();
+        int n = Random.Range(1, 4);
+        for (int f = 0; f < n; f++)
+        {
+            foreach (var (r, emit) in active)
+            {
+                block.SetColor("_EmissionColor", emit);
+                r.SetPropertyBlock(block);
+            }
+            yield return new WaitForSeconds(Random.Range(0.04f, 0.10f));
+            block.SetColor("_EmissionColor", Color.black);
+            foreach (var (r, _) in active) r.SetPropertyBlock(block);
+            yield return new WaitForSeconds(Random.Range(0.06f, 0.16f));
+        }
+        // Block stays set to black on each renderer — permanently dark.
     }
 
     void OnDestroy()

@@ -225,6 +225,12 @@ public class GameManager : MonoBehaviour
             if (lt != null) lt.enabled = on;
     }
 
+    void SetWindowLights(bool on)
+    {
+        foreach (var wl in CityGenerator.WindowLights)
+            if (wl != null) wl.SetNight(on);
+    }
+
     // Toggle car headlight and taillight emissive mesh materials.
     // Uses SetColor("_EmissionColor") so it works with CityLit (no keyword switch needed).
     void SetCarLights(bool on)
@@ -265,6 +271,7 @@ public class GameManager : MonoBehaviour
             new Color(0.50f, 0.54f, 0.62f),
             new Color(0.68f, 0.52f, 0.42f));
         SetBuildingLights(false);
+        SetWindowLights(false);
         SetNightOnlyLights(false);
         SetCarLights(false);
         SetLantern(2f);
@@ -291,6 +298,7 @@ public class GameManager : MonoBehaviour
             new Color(0.46f, 0.52f, 0.62f),
             new Color(0.66f, 0.52f, 0.42f));
         SetBuildingLights(false);
+        SetWindowLights(false);
         SetNightOnlyLights(false);
         SetCarLights(false);
         SetLantern(2f);
@@ -319,6 +327,7 @@ public class GameManager : MonoBehaviour
             new Color(0.38f, 0.40f, 0.48f),
             new Color(0.50f, 0.38f, 0.30f));
         SetBuildingLights(true);
+        SetWindowLights(true);
         SetNightOnlyLights(true);
         SetCarLights(true);
         SetLantern(16f);
@@ -348,6 +357,7 @@ public class GameManager : MonoBehaviour
             new Color(0.24f, 0.28f, 0.36f),
             new Color(0.30f, 0.23f, 0.18f));
         SetBuildingLights(true);
+        SetWindowLights(true);
         SetNightOnlyLights(true);
         SetCarLights(true);
         SetLantern(24f);

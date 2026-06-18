@@ -7,7 +7,7 @@ using UnityEngine.UI;
 // HUD and end-screen. Uses TextMeshProUGUI (included in URP Universal 3D template).
 public class UIManager : MonoBehaviour
 {
-    public const string VERSION = "v0.57";
+    public const string VERSION = "v0.58";
 
     private Canvas            _canvas;
     private GameObject        _hudRoot;     // all in-game HUD widgets; hidden on title/menu
