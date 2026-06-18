@@ -632,8 +632,9 @@ public class CityGenerator : MonoBehaviour
         Color skin  = new Color(Random.Range(0.60f, 0.92f), Random.Range(0.42f, 0.72f),
                                 Random.Range(0.32f, 0.55f));
 
-        Prim(PrimitiveType.Capsule, root, "Body", Y(0.58f), Quaternion.identity,
+        var bodyGo = Prim(PrimitiveType.Capsule, root, "Body", Y(0.58f), Quaternion.identity,
             new Vector3(0.34f, 0.58f, 0.34f), cloth, 0.08f);
+        bodyGo.GetComponent<Renderer>().sharedMaterial = MkEmissiveMat(cloth, cloth * 0.4f, 0.08f);
         Prim(PrimitiveType.Sphere,  root, "Head", Y(1.30f), Quaternion.identity,
             Vector3.one * 0.28f, skin, 0.10f);
 
@@ -650,16 +651,18 @@ public class CityGenerator : MonoBehaviour
 
         float[] yo = { 1.5f, 2.2f, 2.8f };
         float[] ro = { 1.2f, 1.0f, 0.65f };
-        // Dark night foliage — nearly black-green, only silhouette reads
         Color[] gr = {
-            new Color(0.05f, 0.12f, 0.05f),
-            new Color(0.06f, 0.14f, 0.06f),
-            new Color(0.07f, 0.16f, 0.07f),
+            new Color(0.10f, 0.25f, 0.10f),
+            new Color(0.11f, 0.28f, 0.11f),
+            new Color(0.12f, 0.30f, 0.12f),
         };
         for (int i = 0; i < 3; i++)
-            Prim(PrimitiveType.Sphere, root, "Canopy",
+        {
+            var canopy = Prim(PrimitiveType.Sphere, root, "Canopy",
                 new Vector3(Random.Range(-0.12f, 0.12f), yo[i], Random.Range(-0.12f, 0.12f)),
                 Quaternion.identity, Vector3.one * ro[i] * 2f, gr[i], 0.05f);
+            canopy.GetComponent<Renderer>().sharedMaterial = MkEmissiveMat(gr[i], gr[i] * 0.3f, 0.05f);
+        }
 
         Consumable(root, 1.1f, 2, 25f, ObjectCategory.Tree, 0.9f, mass: 1.5f);
     }
