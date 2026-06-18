@@ -25,16 +25,21 @@ public static class AutoBuild
         if (!Build(scenes, BuildTarget.StandaloneWindows64,
                    "Builds/Windows/DowntownDevour.exe", "Windows PC")) return;
 
-        // Gzip so GitHub Pages serves with Content-Encoding: gzip at the CDN level,
-        // avoiding Unity's JS Brotli decompressor which overflows the call stack on
-        // mobile Safari/Chrome (smaller JS stack than desktop browsers).
-        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
-        PlayerSettings.WebGL.decompressionFallback = true;
+        // Mobile/WebGL build is disabled for now — focusing on the PC build.
+        // The WebGL pipeline and Gzip compression setup are preserved below,
+        // commented out, so the mobile target can be re-enabled later without
+        // re-deriving the settings.
+        //
+        // // Gzip so GitHub Pages serves with Content-Encoding: gzip at the CDN level,
+        // // avoiding Unity's JS Brotli decompressor which overflows the call stack on
+        // // mobile Safari/Chrome (smaller JS stack than desktop browsers).
+        // PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+        // PlayerSettings.WebGL.decompressionFallback = true;
+        //
+        // if (!Build(scenes, BuildTarget.WebGL,
+        //            "Builds/Web", "Web")) return;
 
-        if (!Build(scenes, BuildTarget.WebGL,
-                   "Builds/Web", "Web")) return;
-
-        Debug.Log("AutoBuild: both platforms built successfully.");
+        Debug.Log("AutoBuild: Windows PC build succeeded (WebGL disabled).");
         EditorApplication.Exit(0);
     }
 

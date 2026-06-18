@@ -4,8 +4,6 @@ using UnityEngine;
 
 public class CityGenerator : MonoBehaviour
 {
-    public const bool HideGroundForDebug = false;
-
     static readonly Dictionary<string, Material> _litCache      = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _groundCache   = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _emissiveCache = new Dictionary<string, Material>();
@@ -148,7 +146,6 @@ public class CityGenerator : MonoBehaviour
         go.transform.localScale = Vector3.one * (GameManager.WORLD_SIZE / 10f);
         go.GetComponent<Renderer>().sharedMaterial = MkGroundMat(COL_GROUND, 0.18f);
         // Keep MeshCollider so physics debris lands on the ground
-        if (HideGroundForDebug) go.GetComponent<Renderer>().enabled = false;
     }
 
     // ── Roads ─────────────────────────────────────────────────────────────
@@ -939,7 +936,6 @@ public class CityGenerator : MonoBehaviour
         go.transform.localScale = size;
         go.GetComponent<Renderer>().sharedMaterial = MkGroundMat(col, sm);
         Destroy(go.GetComponent<Collider>());
-        if (HideGroundForDebug) go.GetComponent<Renderer>().enabled = false;
     }
 
     // ── Consumable registration ───────────────────────────────────────────
