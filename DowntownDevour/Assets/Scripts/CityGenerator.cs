@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -23,14 +22,7 @@ public class CityGenerator : MonoBehaviour
     public static readonly List<Light>    NightOnlyLights   = new List<Light>();
 
     // Emissive materials for car headlights and taillights (shared across all cars).
-    // CarLightEmitColors stores the matching HDR colour so SetCarLights can restore
-    // it after being zeroed to black during daytime — same pattern as SetBuildingLights.
-    public static readonly List<Material>    CarLightMats       = new List<Material>();
-    public static readonly List<Color>       CarLightEmitColors = new List<Color>();
-
-    // Per-renderer WindowLight components on every window and storefront pane.
-    // GameManager calls SetNight() on each one at TOD changes.
-    public static readonly List<WindowLight> WindowLights = new List<WindowLight>();
+    public static readonly List<Material> CarLightMats      = new List<Material>();
 
     // The 4 building-wall material instances — exposed so GameManager can swap
     // base colours when cycling the time-of-day palette.
@@ -66,10 +58,7 @@ public class CityGenerator : MonoBehaviour
     private Transform _cityRoot;
 
     // ── Entry ─────────────────────────────────────────────────────────────
-    // Coroutine so city generation spreads across multiple frames. This keeps
-    // the JS call-stack depth bounded on each frame — critical for mobile
-    // browsers whose JS engines enforce smaller max call-stack limits than desktop.
-    public IEnumerator Build()
+    public void Build()
     {
         _litCache.Clear();
         _groundCache.Clear();
@@ -79,17 +68,12 @@ public class CityGenerator : MonoBehaviour
         BuildingLightNightOn.Clear();
         NightOnlyLights.Clear();
         CarLightMats.Clear();
-        CarLightEmitColors.Clear();
-        WindowLights.Clear();
         _cityRoot = new GameObject("City").transform;
         BuildGround();
         BuildBoundaryWalls();
         BuildRoads();
-        yield return null;
         BuildPuddles();
-        yield return null;
-        yield return StartCoroutine(BuildBlocksAsync());
-        yield return null;
+        BuildBlocks();
         SpawnCars(50);
 
         // Cache the 4 primary building-wall materials so GameManager can swap
@@ -99,10 +83,10 @@ public class CityGenerator : MonoBehaviour
         TrackBuildingLight(
             MkEmissiveMat(new Color(0.98f, 0.90f, 0.60f), new Color(4.5f, 3.5f, 1.2f), 0.75f),
             new Color(4.5f, 3.5f, 1.2f));
-        CarLightMats.Add(MkEmissiveMat(new Color(0.95f, 0.95f, 0.88f), new Color(2.0f,  1.95f, 1.60f), 0.80f));
-        CarLightEmitColors.Add(new Color(2.0f, 1.95f, 1.60f));
-        CarLightMats.Add(MkEmissiveMat(new Color(0.80f, 0.05f, 0.05f), new Color(1.80f, 0.08f, 0.08f), 0.70f));
-        CarLightEmitColors.Add(new Color(1.80f, 0.08f, 0.08f));
+        CarLightMats.Add(MkEmissiveMat(
+            new Color(0.95f, 0.95f, 0.88f), new Color(2.0f, 1.95f, 1.60f), 0.80f));
+        CarLightMats.Add(MkEmissiveMat(
+            new Color(0.80f, 0.05f, 0.05f), new Color(1.80f, 0.08f, 0.08f), 0.70f));
 
         BuildingMatGlass     = MkLitMat(COL_GLASS, 0.75f, 0.05f);
         BuildingMatConcrete1 = MkLitMat(COL_BLDG1, 0.12f, 0f);
@@ -202,18 +186,13 @@ public class CityGenerator : MonoBehaviour
     }
 
     // ── Blocks ────────────────────────────────────────────────────────────
-    // Yield between each column of blocks so the 7×7 grid is built over 7 frames
-    // rather than one; prevents a single-frame call-stack spike on mobile WebGL.
-    IEnumerator BuildBlocksAsync()
+    void BuildBlocks()
     {
         float block = GameManager.BLOCK, rw = GameManager.ROAD_W;
         float interior = block - rw;
         for (int bx = -3; bx <= 3; bx++)
-        {
-            for (int bz = -3; bz <= 3; bz++)
-                BuildBlock(new Vector3(bx * block, 0f, bz * block), interior);
-            yield return null;
-        }
+        for (int bz = -3; bz <= 3; bz++)
+            BuildBlock(new Vector3(bx * block, 0f, bz * block), interior);
     }
 
     void BuildBlock(Vector3 centre, float size)
@@ -320,11 +299,12 @@ public class CityGenerator : MonoBehaviour
             float ep2  = 0.06f;
             Color sgB  = new Color(0.10f, 0.13f, 0.20f);  // dark glass panel
             Color sgE  = new Color(2.0f, 1.3f, 0.45f);  // warm amber interior
-            // Each storefront panel gets its own WindowLight — all always lit at night.
-            EmissiveWindowBox(root, "StoreF", new Vector3(0f,  stH * 0.5f,  bd * 0.5f + ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, nightOn: true, 0.75f);
-            EmissiveWindowBox(root, "StoreB", new Vector3(0f,  stH * 0.5f, -bd * 0.5f - ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, nightOn: true, 0.75f);
-            EmissiveWindowBox(root, "StoreR", new Vector3( bw * 0.5f + ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, nightOn: true, 0.75f);
-            EmissiveWindowBox(root, "StoreL", new Vector3(-bw * 0.5f - ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, nightOn: true, 0.75f);
+            // Track storefront mat once (all 4 panels share the same cached material)
+            TrackBuildingLight(MkEmissiveMat(sgB, sgE, 0.75f), sgE);
+            EmissiveBox(root, "StoreF", new Vector3(0f,  stH * 0.5f,  bd * 0.5f + ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
+            EmissiveBox(root, "StoreB", new Vector3(0f,  stH * 0.5f, -bd * 0.5f - ep2), new Vector3(bw * 0.88f, stH, 0.07f), sgB, sgE, 0.75f);
+            EmissiveBox(root, "StoreR", new Vector3( bw * 0.5f + ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, 0.75f);
+            EmissiveBox(root, "StoreL", new Vector3(-bw * 0.5f - ep2, stH * 0.5f, 0f), new Vector3(0.07f, stH, bd * 0.88f), sgB, sgE, 0.75f);
         }
 
         // Window bays on all 4 faces — emissive for night glow.
@@ -350,19 +330,19 @@ public class CityGenerator : MonoBehaviour
             {
                 float x = -bw/2f + bw / (nW + 1f) * wi;
                 Color wef = WindowEmit(winEmit); Color web = WindowEmit(winEmit);
-                if (Random.value < 0.65f) EmissiveWindowBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, wef, nightOn: Random.value < litChance);
-                else                      Box(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
-                if (Random.value < 0.65f) EmissiveWindowBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, web, nightOn: Random.value < litChance);
-                else                      Box(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wef), wef, Random.value < litChance); EmissiveBox(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, wef); }
+                else                        Box(root, "WF", new Vector3(x, bayY,  bd/2f + ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, web), web, Random.value < litChance); EmissiveBox(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, web); }
+                else                        Box(root, "WB", new Vector3(x, bayY, -bd/2f - ep), new Vector3(wW, bayH, 0.07f), winBase, 0.5f);
             }
             for (int wi = 1; wi <= nD; wi++)
             {
                 float z = -bd/2f + bd / (nD + 1f) * wi;
                 Color wre = WindowEmit(winEmit); Color wle = WindowEmit(winEmit);
-                if (Random.value < 0.65f) EmissiveWindowBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre, nightOn: Random.value < litChance);
-                else                      Box(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
-                if (Random.value < 0.65f) EmissiveWindowBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wle, nightOn: Random.value < litChance);
-                else                      Box(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wre), wre, Random.value < litChance); EmissiveBox(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wre); }
+                else                        Box(root, "WR", new Vector3( bw/2f + ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
+                if (Random.value < 0.65f) { TrackBuildingLight(MkEmissiveMat(winBase, wle), wle, Random.value < litChance); EmissiveBox(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, wle); }
+                else                        Box(root, "WL", new Vector3(-bw/2f - ep, bayY, z), new Vector3(0.07f, bayH, wD), winBase, 0.5f);
             }
         }
 
@@ -658,10 +638,11 @@ public class CityGenerator : MonoBehaviour
 
         float[] yo = { 1.5f, 2.2f, 2.8f };
         float[] ro = { 1.2f, 1.0f, 0.65f };
+        // Dark night foliage — nearly black-green, only silhouette reads
         Color[] gr = {
-            new Color(0.10f, 0.25f, 0.10f),
-            new Color(0.11f, 0.28f, 0.11f),
-            new Color(0.12f, 0.30f, 0.12f),
+            new Color(0.05f, 0.12f, 0.05f),
+            new Color(0.06f, 0.14f, 0.06f),
+            new Color(0.07f, 0.16f, 0.07f),
         };
         for (int i = 0; i < 3; i++)
             Prim(PrimitiveType.Sphere, root, "Canopy",
@@ -710,9 +691,7 @@ public class CityGenerator : MonoBehaviour
         var mq = root.AddComponent<LampMosquitoes>();
         mq.Init(pt, new Vector3(0.9f, 4.72f, 0f));
 
-        // glow:false — the lamp already carries an emissive globe and a point light.
-        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f, glow: false)
-            .IsLightSource = true;
+        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f).IsLightSource = true;
     }
 
     void PlaceHydrant(Vector3 pos)
@@ -923,8 +902,7 @@ public class CityGenerator : MonoBehaviour
                 new Vector3(0.36f, 0.04f, 0.36f), rim, 0.75f, 0.55f);
         }
 
-        // glow:false — cars carry their own head/tail-light emissive materials.
-        var co     = Consumable(root, 1.1f, 3, 50f, ObjectCategory.Car, 1.0f, mass: 1.2f, glow: false);
+        var co     = Consumable(root, 1.1f, 3, 50f, ObjectCategory.Car, 1.0f, mass: 1.2f);
         var driver = root.AddComponent<CarDriver>();
         driver.DriveDir   = driveDir;
         driver.Consumable = co;
@@ -944,19 +922,11 @@ public class CityGenerator : MonoBehaviour
 
     // ── Consumable registration ───────────────────────────────────────────
     ConsumableObject Consumable(GameObject go, float size, int tier, float value, ObjectCategory cat,
-                                float footprintRadius = 0f, float mass = 0f, bool glow = true)
+                                float footprintRadius = 0f, float mass = 0f)
     {
         var co = go.AddComponent<ConsumableObject>();
         co.Init(size, tier, value, cat, footprintRadius);
         GameManager.Instance.AllObjects.Add(co);
-
-        // Night visibility: the camera sits 54 units up over a dark city, so small
-        // diffuse-lit props read as near-black and vanish.  Car tail-lights are the
-        // one thing that stays clearly visible on mobile — because they use an HDR
-        // emissive material.  Apply that exact, device-proven mechanism to every
-        // consumable: a self-illuminated version of its own colour, registered
-        // night-only so the daytime palette is untouched.
-        if (glow) { AddNightGlow(go); co.DimOnConsume = true; }
 
         // Objects with mass take part in physics: debris that slams into them
         // knocks them around, and they push back on the debris in equal
@@ -987,27 +957,6 @@ public class CityGenerator : MonoBehaviour
             rb.Sleep();
         }
         return co;
-    }
-
-    // Give each child renderer an emissive CityLit material keyed to its base colour.
-    // CityLit adds _EmissionColor unconditionally — no _EMISSION keyword, no build-time
-    // stripping risk.  Registered night-only so SetBuildingLights() dims props during day.
-    static void AddNightGlow(GameObject go)
-    {
-        foreach (var r in go.GetComponentsInChildren<Renderer>())
-        {
-            var m = r.sharedMaterial;
-            if (m == null || !m.HasProperty("_BaseColor")) continue;
-            Color bc  = m.GetColor("_BaseColor");
-            float sm  = m.HasProperty("_Smoothness") ? m.GetFloat("_Smoothness") : 0.1f;
-            float pk  = Mathf.Max(bc.r, Mathf.Max(bc.g, bc.b));
-            if (pk < 0.01f) pk = 0.01f;
-            float k   = 1.1f / pk;
-            Color emit = new Color(bc.r * k, bc.g * k, bc.b * k);
-            var em = MkEmissiveMat(bc, emit, sm);
-            r.sharedMaterial = em;
-            TrackBuildingLight(em, emit, nightOn: true);
-        }
     }
 
     // ── Primitive helpers ─────────────────────────────────────────────────
@@ -1044,7 +993,7 @@ public class CityGenerator : MonoBehaviour
         string key = $"{(int)(c.r*255)},{(int)(c.g*255)},{(int)(c.b*255)},{(int)(sm*100)},{(int)(mt*100)}";
         if (!_litCache.TryGetValue(key, out var mat))
         {
-            mat = new Material(Shader.Find("DowntownDevour/CityLit"));
+            mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
             mat.SetColor("_BaseColor", c);
             mat.SetFloat("_Smoothness", sm);
             mat.SetFloat("_Metallic",   mt);
@@ -1093,19 +1042,20 @@ public class CityGenerator : MonoBehaviour
         BuildingLightNightOn.Add(nightOn);
     }
 
-    // Emissive material — used for lit windows, lamp globes, car lights, prop glow.
-    // CityLit always adds _EmissionColor to output — no _EMISSION keyword needed.
-    // emissiveColor can be HDR (values > 1); URP bloom halos fire on those pixels.
+    // Emissive material — used for lit windows, lamp globes, car lights.
+    // emissiveColor should be the raw HDR colour (values > 1 are fine — URP bloom picks them up).
     static Material MkEmissiveMat(Color baseColor, Color emissiveColor, float sm = 0.5f)
     {
         string key = $"e{(int)(emissiveColor.r*255)},{(int)(emissiveColor.g*255)},{(int)(emissiveColor.b*255)},{(int)(emissiveColor.a*100)}";
         if (!_emissiveCache.TryGetValue(key, out var mat))
         {
-            mat = new Material(Shader.Find("DowntownDevour/CityLit"));
-            mat.SetColor("_BaseColor",     baseColor);
-            mat.SetFloat("_Smoothness",    sm);
-            mat.SetFloat("_Metallic",      0f);
+            mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat.SetColor("_BaseColor",  baseColor);
+            mat.SetFloat("_Smoothness", sm);
+            mat.SetFloat("_Metallic",   0f);
+            mat.EnableKeyword("_EMISSION");
             mat.SetColor("_EmissionColor", emissiveColor);
+            mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             _emissiveCache[key] = mat;
         }
         return mat;
@@ -1131,16 +1081,6 @@ public class CityGenerator : MonoBehaviour
                                   Color baseColor, Color emissiveColor, float sm = 0.5f)
         => EmissivePrim(PrimitiveType.Cube, parent, name, lp, Quaternion.identity, ls,
                         baseColor, emissiveColor, sm);
-
-    static void EmissiveWindowBox(GameObject parent, string name, Vector3 lp, Vector3 ls,
-                                  Color baseColor, Color emissiveColor, bool nightOn,
-                                  float sm = 0.5f)
-    {
-        var go = EmissiveBox(parent, name, lp, ls, baseColor, emissiveColor, sm);
-        var wl = go.AddComponent<WindowLight>();
-        wl.Init(emissiveColor, nightOn);
-        WindowLights.Add(wl);
-    }
 
     // ── Color + position utilities ────────────────────────────────────────
     static Color  Sc(Color c, float f)

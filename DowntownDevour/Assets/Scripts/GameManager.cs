@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -30,7 +29,7 @@ public class GameManager : MonoBehaviour
     public enum TimeOfDay  { Morning, Afternoon, Evening, Night }
 
     public GameState              State            { get; private set; }
-    public TimeOfDay              CurrentTimeOfDay { get; private set; } = TimeOfDay.Night;
+    public TimeOfDay              CurrentTimeOfDay { get; private set; } = TimeOfDay.Afternoon;
     public float                  TimeRemaining    { get; private set; }
     public PlayerHole             Player           { get; private set; }
     public List<HoleBase>         AllHoles         { get; } = new List<HoleBase>();
@@ -71,12 +70,12 @@ public class GameManager : MonoBehaviour
         SetupCamera();
     }
 
-    IEnumerator Start()
+    void Start()
     {
         Time.timeScale = 1f;
         TimeRemaining  = GAME_DURATION;
 
-        yield return StartCoroutine(_city.Build());
+        _city.Build();
         SpawnHoles();                      // creates the player lantern referenced below
         ApplyTimeOfDay(CurrentTimeOfDay);  // set initial palette, building lights, lantern
         UI.Init();                         // shows the title screen
@@ -225,23 +224,13 @@ public class GameManager : MonoBehaviour
             if (lt != null) lt.enabled = on;
     }
 
-    void SetWindowLights(bool on)
-    {
-        foreach (var wl in CityGenerator.WindowLights)
-            if (wl != null) wl.SetNight(on);
-    }
-
     // Toggle car headlight and taillight emissive mesh materials.
-    // Uses SetColor("_EmissionColor") so it works with CityLit (no keyword switch needed).
     void SetCarLights(bool on)
     {
-        var mats  = CityGenerator.CarLightMats;
-        var emits = CityGenerator.CarLightEmitColors;
-        for (int i = 0; i < mats.Count; i++)
+        foreach (var mat in CityGenerator.CarLightMats)
         {
-            if (mats[i] == null) continue;
-            mats[i].SetColor("_EmissionColor",
-                on && i < emits.Count ? emits[i] : Color.black);
+            if (on) mat.EnableKeyword("_EMISSION");
+            else    mat.DisableKeyword("_EMISSION");
         }
     }
 
@@ -271,7 +260,6 @@ public class GameManager : MonoBehaviour
             new Color(0.50f, 0.54f, 0.62f),
             new Color(0.68f, 0.52f, 0.42f));
         SetBuildingLights(false);
-        SetWindowLights(false);
         SetNightOnlyLights(false);
         SetCarLights(false);
         SetLantern(2f);
@@ -298,7 +286,6 @@ public class GameManager : MonoBehaviour
             new Color(0.46f, 0.52f, 0.62f),
             new Color(0.66f, 0.52f, 0.42f));
         SetBuildingLights(false);
-        SetWindowLights(false);
         SetNightOnlyLights(false);
         SetCarLights(false);
         SetLantern(2f);
@@ -327,7 +314,6 @@ public class GameManager : MonoBehaviour
             new Color(0.38f, 0.40f, 0.48f),
             new Color(0.50f, 0.38f, 0.30f));
         SetBuildingLights(true);
-        SetWindowLights(true);
         SetNightOnlyLights(true);
         SetCarLights(true);
         SetLantern(16f);
@@ -357,7 +343,6 @@ public class GameManager : MonoBehaviour
             new Color(0.24f, 0.28f, 0.36f),
             new Color(0.30f, 0.23f, 0.18f));
         SetBuildingLights(true);
-        SetWindowLights(true);
         SetNightOnlyLights(true);
         SetCarLights(true);
         SetLantern(24f);
@@ -498,26 +483,12 @@ public class GameManager : MonoBehaviour
         hole.Score += obj.Value;
         hole.RecalcTargetRadius();
         Audio.PlayConsume(obj.Category, obj.Size, hole.IsPlayer, hole.transform.position);
-        if (hole.IsPlayer) TriggerHaptic();
 
         // In evening/night the rim ring is a light source — eating a street lamp
         // or other light source makes the hole glow brighter.
         if (obj.IsLightSource &&
             (CurrentTimeOfDay == TimeOfDay.Evening || CurrentTimeOfDay == TimeOfDay.Night))
             hole.AddRimGlow(1.0f);
-    }
-
-    // One short vibration pulse per object devoured — gives mobile players tactile
-    // confirmation of a consume.  Uses the Web Vibration API (Android Chrome/Firefox).
-    // iOS Safari does not implement navigator.vibrate so the call is a silent no-op there;
-    // the guard keeps it from throwing a JS error when the property is absent.
-    void TriggerHaptic()
-    {
-#if UNITY_WEBGL && !UNITY_EDITOR
-#pragma warning disable CS0618
-        Application.ExternalEval("if(typeof navigator!=='undefined'&&navigator.vibrate)navigator.vibrate(30);");
-#pragma warning restore CS0618
-#endif
     }
 
     public void EatHole(HoleBase eater, HoleBase eaten)
