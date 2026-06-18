@@ -4,6 +4,11 @@ using UnityEngine;
 
 public class CityGenerator : MonoBehaviour
 {
+    // DIAGNOSTIC (v0.54): hide the ground plane + all road/sidewalk/marking surfaces
+    // (renderers only — colliders stay, so physics is unchanged) to test whether the
+    // consumable props are being depth-occluded by the ground on mobile.
+    public const bool HideGroundForDebug = true;
+
     static readonly Dictionary<string, Material> _litCache      = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _groundCache   = new Dictionary<string, Material>();
     static readonly Dictionary<string, Material> _emissiveCache = new Dictionary<string, Material>();
@@ -142,6 +147,7 @@ public class CityGenerator : MonoBehaviour
         go.transform.localScale = Vector3.one * (GameManager.WORLD_SIZE / 10f);
         go.GetComponent<Renderer>().sharedMaterial = MkGroundMat(COL_GROUND, 0.18f);
         // Keep MeshCollider so physics debris lands on the ground
+        if (HideGroundForDebug) go.GetComponent<Renderer>().enabled = false;
     }
 
     // ── Roads ─────────────────────────────────────────────────────────────
@@ -932,6 +938,7 @@ public class CityGenerator : MonoBehaviour
         go.transform.localScale = size;
         go.GetComponent<Renderer>().sharedMaterial = MkGroundMat(col, sm);
         Destroy(go.GetComponent<Collider>());
+        if (HideGroundForDebug) go.GetComponent<Renderer>().enabled = false;
     }
 
     // ── Consumable registration ───────────────────────────────────────────
