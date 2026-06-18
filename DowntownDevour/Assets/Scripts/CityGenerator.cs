@@ -632,16 +632,8 @@ public class CityGenerator : MonoBehaviour
         Color skin  = new Color(Random.Range(0.60f, 0.92f), Random.Range(0.42f, 0.72f),
                                 Random.Range(0.32f, 0.55f));
 
-        // HDR cloth glow — scale ensures peak channel exceeds bloom threshold (0.80)
-        // so a visible halo fires at night. Tracked in BuildingLightMats so
-        // ApplyAfternoon() zeroes the emission exactly like building windows.
-        float peak     = Mathf.Max(cloth.r, cloth.g, cloth.b);
-        float s        = Mathf.Max(2.0f, 0.90f / peak);
-        Color clothEmit = new Color(cloth.r * s, cloth.g * s, cloth.b * s);
-        var bodyMat = MkEmissiveMat(cloth, clothEmit, 0.08f);
-        TrackBuildingLight(bodyMat, clothEmit, nightOn: true);
-        EmissivePrim(PrimitiveType.Capsule, root, "Body", Y(0.58f), Quaternion.identity,
-            new Vector3(0.34f, 0.58f, 0.34f), cloth, clothEmit, 0.08f);
+        Prim(PrimitiveType.Capsule, root, "Body", Y(0.58f), Quaternion.identity,
+            new Vector3(0.34f, 0.58f, 0.34f), cloth, 0.08f);
         Prim(PrimitiveType.Sphere,  root, "Head", Y(1.30f), Quaternion.identity,
             Vector3.one * 0.28f, skin, 0.10f);
 
@@ -658,26 +650,15 @@ public class CityGenerator : MonoBehaviour
 
         float[] yo = { 1.5f, 2.2f, 2.8f };
         float[] ro = { 1.2f, 1.0f, 0.65f };
-        // Base greens and matching HDR emissions — unique per layer so each gets its
-        // own material in the cache (correct base colour in daytime when emission is off).
         Color[] gr = {
-            new Color(0.08f, 0.22f, 0.08f),
-            new Color(0.09f, 0.24f, 0.09f),
-            new Color(0.10f, 0.26f, 0.10f),
-        };
-        Color[] grEmit = {
-            new Color(0.10f, 1.20f, 0.15f),
-            new Color(0.11f, 1.22f, 0.16f),
-            new Color(0.12f, 1.24f, 0.17f),
+            new Color(0.10f, 0.25f, 0.10f),
+            new Color(0.11f, 0.28f, 0.11f),
+            new Color(0.12f, 0.30f, 0.12f),
         };
         for (int i = 0; i < 3; i++)
-        {
-            var canopyMat = MkEmissiveMat(gr[i], grEmit[i], 0.05f);
-            TrackBuildingLight(canopyMat, grEmit[i], nightOn: true);
-            EmissivePrim(PrimitiveType.Sphere, root, "Canopy",
+            Prim(PrimitiveType.Sphere, root, "Canopy",
                 new Vector3(Random.Range(-0.12f, 0.12f), yo[i], Random.Range(-0.12f, 0.12f)),
-                Quaternion.identity, Vector3.one * ro[i] * 2f, gr[i], grEmit[i], 0.05f);
-        }
+                Quaternion.identity, Vector3.one * ro[i] * 2f, gr[i], 0.05f);
 
         Consumable(root, 1.1f, 2, 25f, ObjectCategory.Tree, 0.9f, mass: 1.5f);
     }
@@ -721,7 +702,9 @@ public class CityGenerator : MonoBehaviour
         var mq = root.AddComponent<LampMosquitoes>();
         mq.Init(pt, new Vector3(0.9f, 4.72f, 0f));
 
-        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f).IsLightSource = true;
+        // glow:false — the lamp already carries an emissive globe and a point light.
+        Consumable(root, 0.9f, 2, 22f, ObjectCategory.Prop, 0.4f, mass: 0.8f, glow: false)
+            .IsLightSource = true;
     }
 
     void PlaceHydrant(Vector3 pos)
@@ -932,7 +915,8 @@ public class CityGenerator : MonoBehaviour
                 new Vector3(0.36f, 0.04f, 0.36f), rim, 0.75f, 0.55f);
         }
 
-        var co     = Consumable(root, 1.1f, 3, 50f, ObjectCategory.Car, 1.0f, mass: 1.2f);
+        // glow:false — cars carry their own head/tail-light emissive materials.
+        var co     = Consumable(root, 1.1f, 3, 50f, ObjectCategory.Car, 1.0f, mass: 1.2f, glow: false);
         var driver = root.AddComponent<CarDriver>();
         driver.DriveDir   = driveDir;
         driver.Consumable = co;
@@ -952,11 +936,19 @@ public class CityGenerator : MonoBehaviour
 
     // ── Consumable registration ───────────────────────────────────────────
     ConsumableObject Consumable(GameObject go, float size, int tier, float value, ObjectCategory cat,
-                                float footprintRadius = 0f, float mass = 0f)
+                                float footprintRadius = 0f, float mass = 0f, bool glow = true)
     {
         var co = go.AddComponent<ConsumableObject>();
         co.Init(size, tier, value, cat, footprintRadius);
         GameManager.Instance.AllObjects.Add(co);
+
+        // Night visibility: the camera sits 54 units up over a dark city, so small
+        // diffuse-lit props read as near-black and vanish.  Car tail-lights are the
+        // one thing that stays clearly visible on mobile — because they use an HDR
+        // emissive material.  Apply that exact, device-proven mechanism to every
+        // consumable: a self-illuminated version of its own colour, registered
+        // night-only so the daytime palette is untouched.
+        if (glow) AddNightGlow(go);
 
         // Objects with mass take part in physics: debris that slams into them
         // knocks them around, and they push back on the debris in equal
@@ -987,6 +979,30 @@ public class CityGenerator : MonoBehaviour
             rb.Sleep();
         }
         return co;
+    }
+
+    // Swap each child renderer's lit material for an emissive variant keyed to its
+    // own base colour, then register it night-only so SetBuildingLights() turns the
+    // glow on at night and off in daytime — same toggle path as the building windows.
+    // Emission peak is normalised to ~1.1 (HDR), matching the visible car tail-lights.
+    static void AddNightGlow(GameObject go)
+    {
+        foreach (var r in go.GetComponentsInChildren<Renderer>())
+        {
+            var m = r.sharedMaterial;
+            if (m == null || !m.HasProperty("_BaseColor")) continue;
+
+            Color bc  = m.GetColor("_BaseColor");
+            float sm  = m.HasProperty("_Smoothness") ? m.GetFloat("_Smoothness") : 0.1f;
+            float pk  = Mathf.Max(bc.r, Mathf.Max(bc.g, bc.b));
+            if (pk < 0.02f) pk = 0.02f;                 // guard near-black colours
+            float k   = 1.1f / pk;                       // brightest channel → ~1.1 HDR
+            Color emit = new Color(bc.r * k, bc.g * k, bc.b * k);
+
+            var em = MkEmissiveMat(bc, emit, sm);
+            r.sharedMaterial = em;
+            TrackBuildingLight(em, emit, nightOn: true);
+        }
     }
 
     // ── Primitive helpers ─────────────────────────────────────────────────
