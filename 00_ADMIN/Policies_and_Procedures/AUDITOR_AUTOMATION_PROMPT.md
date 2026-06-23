@@ -41,3 +41,5 @@ The Daily QA Audit automation must:
 ## Automation Updated
 
 The local Codex automation `daily-qa-audit` was updated on 2026-05-28 to reflect this prompt intent, including the missed-run backstop added after `QA-018`.
+
+The local Codex automation `daily-qa-audit` was updated again on 2026-06-23 after the daily QA cadence gap for 2026-06-19 through 2026-06-22. The update changed the automation execution environment from `worktree` to `local` for the governed repo path `C:\Users\KentLefner\Desktop\game-repo\Holesy`, and refreshed the automation prompt so it explicitly includes root `AGENTS.md`, the governed startup protocol, the auditor automation prompt, architecture alignment review, Team Sync usage, and local/branch/main/release/live-state separation.
