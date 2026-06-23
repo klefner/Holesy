@@ -51,7 +51,7 @@
 | Artifact governance | Effective | The missing `2026-06-19` through `2026-06-22` cadence evidence is now documented with an explicit governed missing-run note, today's dated audit report was written, and the issue log was updated. |
 | Process compliance | Effective | This run reread the full governance corpus, compared current date against governed reports plus automation memory, documented the missing dates, and wrote the required dated report. |
 | Control design effectiveness | Effective | The cadence backstop detected the four missing dates before conclusions were drawn, and the existing note/report workflow still fits the current failure pattern without process drift. |
-| Issue management | Effective | `QA-025` remains correctly resolved, and `QA-026` records the newly documented cadence gap for `2026-06-19` through `2026-06-22`. |
+| Issue management | Effective | `QA-025` remains correctly resolved, and `QA-026` now records the newly documented and branch-visible cadence gap for `2026-06-19` through `2026-06-22`. |
 | Continuous improvement | Effective | No matrix or workplan rewrite was needed because the existing controls surfaced the cadence gap and routed it into governed evidence correctly. |
 
 ## Findings
@@ -83,7 +83,8 @@
 - verified `QA-017` remains correctly resolved because the current evidence does not show a new publication-control failure for the daily-audit artifact set
 - verified `QA-025` remains correctly resolved for the published `2026-06-16` through `2026-06-17` missing-run note
 - added `QA-026` to document the `2026-06-19` through `2026-06-22` daily-audit evidence gap; cause classification is automation not running
-- unresolved material issues escalated to the Project Manager persona and the user: `QA-026` remains the current open cadence-control issue until this audit package is branch-visible
+- resolved `QA-026` in the same session after commit `5935cac` (`Document 2026-06-23 daily QA audit gap`) pushed the missing-run note, today's audit report, and the issue-log update to `origin/codex/publish-master4-structure`
+- unresolved material issues escalated to the Project Manager persona and the user: none remain open from today's daily-audit evidence set after the publish/verify pass
 
 ## Overall Outcome
 
@@ -92,7 +93,7 @@
 ## Residual Risks
 
 - local state: the governed repo still contains substantial unrelated local gameplay, release-package, and governance work in progress beyond this audit package
-- branch/GitHub state: branch head is current with `origin/codex/publish-master4-structure` before this audit package is staged and pushed, but broader local gameplay/governance changes remain unpublished
+- branch/GitHub state: commit `5935cac` makes today's daily-audit package branch-visible on `origin/codex/publish-master4-structure`, but broader local gameplay/governance changes still remain unpublished
 - `main` state: stale relative to the active branch; Team Sync reports `HEAD versus main: ahead=164 behind=0`
 - release package state: local source/release entry points match each other on `Master 16.87`, but that current local package state is separate from what is branch-visible
 - live-site state: unverified in this audit because `-VerifyLive` was not used
@@ -107,4 +108,4 @@
 
 - when the scheduler gap reappears after a successful publication recovery, treat it as a fresh cadence-control issue rather than reopening the old Git publication issue automatically
 - cadence health and publication health remain separate controls: today documents a new automation-not-running gap without claiming a new Git publication failure
-- keeping the audit package scoped to daily-QA evidence avoids blurring governance recovery with broader unpublished gameplay work
+- keeping the audit package scoped to daily-QA evidence avoids blurring branch-visible governance recovery with broader unpublished gameplay work
