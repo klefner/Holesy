@@ -107,7 +107,7 @@
 ## Residual Risks
 
 - local state: the governed repo still contains substantial unrelated gameplay/release/governance work in progress, including the dirty startup protocol and backlog files that block a clean publication of the full source-of-truth correction package
-- branch/GitHub state: today's clean audit artifacts can be published separately, but the startup protocol/backlog `Master 16.93` corrections remain local-only until a scoped governance-only package is prepared
+- branch/GitHub state: commit `98e1e85` made today's dated audit report, issue-log update, and handoff correction branch-visible on `origin/codex/publish-master4-structure`, but the startup protocol/backlog `Master 16.93` corrections remain local-only until a scoped governance-only package is prepared
 - `main` state: stale relative to the active branch; Team Sync reports `HEAD versus main: ahead=168 behind=0`
 - release package state: local source/release entry points match each other on `Master 16.93`, but the preserved GoDaddy upload/delta folders still lag at `Master 16.52`
 - live-site state: unverified in this audit because `-VerifyLive` was not used
