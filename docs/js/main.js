@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.132';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.133';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1615,6 +1615,38 @@ function makePerson(pos, bounds = null) {
 }
 
 // --- Fire hydrant ---
+const hydrantJets = [];
+const hydrantWaterMat = new THREE.MeshBasicMaterial({ color: 0x72d8ff, transparent: true, opacity: 0.82 });
+const hydrantWaterGeometry = new THREE.SphereGeometry(0.11, 6, 5);
+function spawnHydrantJet(obj) {
+  if (!obj || obj.hydrantJetTriggered) return;
+  obj.hydrantJetTriggered = true;
+  const group = new THREE.Group();
+  const droplets = [];
+  for (let i = 0; i < 18; i++) {
+    const mesh = new THREE.Mesh(hydrantWaterGeometry, hydrantWaterMat);
+    const phase = i / 18;
+    mesh.scale.set(0.65, 1.45, 0.65); group.add(mesh); droplets.push({ mesh, phase, angle: randomBetween(0, Math.PI * 2) });
+  }
+  group.position.set(obj.x, 0.15, obj.z); scene.add(group);
+  hydrantJets.push({ group, droplets, startedAt: performance.now(), durationMs: 10000 });
+}
+function updateHydrantJets() {
+  if (!running || !isGameState(GAME_STATES.PLAYING)) return;
+  const now = performance.now();
+  for (let i = hydrantJets.length - 1; i >= 0; i--) {
+    const jet = hydrantJets[i];
+    const age = now - jet.startedAt;
+    if (age >= jet.durationMs) { scene.remove(jet.group); hydrantJets.splice(i, 1); continue; }
+    const strength = Math.min(1, (jet.durationMs - age) / 1600);
+    for (const drop of jet.droplets) {
+      const cycle = ((age / 1050) + drop.phase) % 1;
+      const spread = cycle * 0.85;
+      drop.mesh.position.set(Math.cos(drop.angle) * spread, 0.25 + Math.sin(cycle * Math.PI) * 3.3 * strength, Math.sin(drop.angle) * spread);
+      drop.mesh.scale.y = 1.1 + (1 - cycle) * 1.8;
+    }
+  }
+}
 function makeHydrant(pos) {
   const g = new THREE.Group();
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 0.9, 8),
@@ -2524,6 +2556,24 @@ function yieldCityBuildFrame() {
   return new Promise(resolve => requestAnimationFrame(resolve));
 }
 
+function populateParcelDetails(bp, parcelUse, blockBounds) {
+  const spots = [[-6,0],[6,0],[0,-6],[0,6],[-7,-7],[7,7]];
+  const placeFixture = (kind, spot) => makeStreetFixture(kind, { x: bp.x + spot[0] + randomBetween(-0.45,0.45), z: bp.z + spot[1] + randomBetween(-0.45,0.45) });
+  if (parcelUse === 'restaurant') {
+    for (const spot of spots.slice(0,4)) placeFixture(Math.random() < 0.65 ? 'cafe_table' : 'hot_dog_cart', spot);
+    for (const spot of spots.slice(0,3)) makePerson({ x: bp.x + spot[0] + 1, z: bp.z + spot[1] }, blockBounds);
+  } else if (parcelUse === 'market') {
+    for (const spot of spots.slice(0,5)) placeFixture(['street_kiosk','flower_stand','newspaper_stand','hot_dog_cart'][Math.floor(Math.random()*4)], spot);
+    for (const spot of spots.slice(0,4)) makePerson({ x: bp.x + spot[0] * 0.8, z: bp.z + spot[1] * 0.8 }, blockBounds);
+  } else if (parcelUse === 'office_plaza') {
+    for (const [kind, spot] of [['park_fountain',spots[0]],['concrete_planter',spots[1]],['bike_rack',spots[2]],['cafe_table',spots[3]]]) placeFixture(kind, spot);
+  } else if (parcelUse === 'service_yard') {
+    for (const [kind, spot] of [['dumpster',spots[0]],['wood_pallet',spots[1]],['generator',spots[2]],['tool_chest',spots[3]]]) placeFixture(kind, spot);
+  } else if (parcelUse === 'neglected') {
+    for (const spot of spots.slice(0,5)) placeFixture(['shopping_cart','sandbag_stack','wood_pallet','construction_drum','recycling_bin'][Math.floor(Math.random()*5)], spot);
+  }
+}
+
 async function populateCity() {
   const economy = getEffectiveDifficultyProfile();
   const buildingBlockDensity = economy.buildingBlockDensityMult || 1;
@@ -2540,6 +2590,7 @@ async function populateCity() {
   for (const bp of blockPositions) {
     // Decide block type
     const t = Math.random();
+    let parcelUse = 'standard';
     if (bp === governmentBlock) {
       // Government building prototype: separate render and physics rules.
       makeGovernmentBuilding({ x: bp.x, z: bp.z });
@@ -2551,6 +2602,7 @@ async function populateCity() {
     } else if (t < skyscraperChance + midBuildingChance) {
       // Mid building
       makeMidBuilding({ x: bp.x, z: bp.z });
+      parcelUse = Math.random() < 0.68 ? 'office_plaza' : 'service_yard';
     } else {
       // Cluster of small buildings
       const positions = [
@@ -2562,6 +2614,8 @@ async function populateCity() {
       for (const p of positions) {
         if (Math.random() < smallBuildingChance) makeSmallBuilding(p);
       }
+      const useRoll = Math.random();
+      parcelUse = useRoll < 0.34 ? 'restaurant' : useRoll < 0.62 ? 'market' : useRoll < 0.82 ? 'neglected' : 'standard';
     }
 
     // Sidewalk props along block perimeter
@@ -10222,6 +10276,7 @@ function activateGovernmentBuildingFromPiece(obj, h) {
 
 // Helper: a hole consumes an object (triggered when it starts falling)
 function beginConsume(h, obj) {
+  if (obj.mandateKind === 'hydrant') spawnHydrantJet(obj);
   if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
     const activated = obj.stackKind === 'smallVoxel'
       ? activateSmallVoxelBuilding(obj, h)
@@ -13567,6 +13622,7 @@ function getOffensiveUnitTracerOptions(s) {
       duration: def.tracerDuration || 0.14,
       opacity: 1,
     };
+    populateParcelDetails(bp, parcelUse, blockBounds);
   }
   if (unitType === 'tank') return { color: 0xff6b2c, y: 1.55, duration: 0.22, opacity: 1 };
   if (unitType === 'mech') return { color: 0x6fd4ff, y: 1.55, duration: 0.12, opacity: 1 };
@@ -14293,6 +14349,7 @@ function animate(frameNow = performance.now()) {
     updateActiveEffectsUi();
   }
   if (running) {
+    updateHydrantJets();
     updateFirstRunAdaptiveAssistance(dt);
     // Timer only counts down in normal mode. In LMS, time is paused at 0.
     if (!lmsMode) {

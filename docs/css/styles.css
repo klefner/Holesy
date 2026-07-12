@@ -142,9 +142,9 @@
     left: 50%;
     top: 18%;
     transform: translate(-50%, -18px) scale(0.94);
-    width: max-content; max-width: calc(100vw - 48px); padding: 8px 12px; border-radius: 9px;
+    width: fit-content; max-width: min(680px, calc(100vw - 48px)); padding: 8px 12px; border-radius: 9px;
     background: rgba(0,0,0,.84); border: 2px solid rgba(255,255,255,.34); color: #fff;
-    font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 15px; white-space: normal; overflow-wrap: anywhere; line-height: 1.25;
     font-weight: 900;
     letter-spacing: 0.04em;
     text-align: center;
