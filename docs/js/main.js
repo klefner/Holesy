@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.128';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.129';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -2015,34 +2015,58 @@ function makeSmallBuilding(pos) {
   }
 
   if (propertyCondition !== 'standard') {
-    const yard = new THREE.Group();
     const lawnMat = sharedBoxMat(propertyCondition === 'polished' ? 0x4f9b45 : 0x80633f);
     const fenceMat = sharedBoxMat(propertyCondition === 'polished' ? 0xf2ead8 : 0x8a6a48);
-    const lawn = new THREE.Mesh(sharedBoxGeometry(totalW + 2.8, 0.10, totalD + 3.8), lawnMat);
-    lawn.position.set(0, 0.05, -0.55); yard.add(lawn);
+    const yardW = totalW + 2.8;
+    const yardD = totalD + 3.8;
+    const patchSize = 0.72;
+    const patchCols = Math.max(6, Math.round(yardW / patchSize));
+    const patchRows = Math.max(7, Math.round(yardD / patchSize));
+    for (let row = 0; row < patchRows; row++) {
+      for (let col = 0; col < patchCols; col++) {
+        const localX = -yardW / 2 + (col + 0.5) * (yardW / patchCols);
+        const localZ = -yardD / 2 + (row + 0.5) * (yardD / patchRows) - 0.55;
+        if (Math.abs(localX) < totalW * 0.52 && Math.abs(localZ + 0.55) < totalD * 0.52) continue;
+        const patch = new THREE.Group();
+        const tile = new THREE.Mesh(sharedBoxGeometry(yardW / patchCols - 0.025, 0.075, yardD / patchRows - 0.025), lawnMat);
+        tile.position.y = 0.0375; patch.add(tile);
+        const patchObj = makeObject(patch, 0.18, 1, 1, { x: pos.x + localX, y: 0, z: pos.z + localZ });
+        patchObj.isProp = true; patchObj.mandateKind = propertyCondition === 'polished' ? 'grass_patch' : 'dirt_patch'; patchObj.propertyCondition = propertyCondition;
+      }
+    }
+    const makeFencePiece = (mesh, x, y, z, rotation, kind) => {
+      const piece = new THREE.Group(); mesh.position.y = y; piece.add(mesh); piece.rotation.y = rotation;
+      const obj = makeObject(piece, 0.16, 1, 1, { x: pos.x + x, y: 0, z: pos.z + z });
+      obj.isProp = true; obj.mandateKind = kind; obj.propertyCondition = propertyCondition; return obj;
+    };
     const addFence = (x, z, length, rotation = 0, broken = false) => {
-      const segment = new THREE.Group();
       const postCount = Math.max(2, Math.round(length / 0.75));
       for (let i = 0; i < postCount; i++) {
         if (broken && Math.random() < 0.32) continue;
-        const post = new THREE.Mesh(sharedBoxGeometry(0.10, broken ? randomBetween(0.35, 0.8) : 0.82, 0.10), fenceMat);
-        post.position.set(-length / 2 + i * (length / Math.max(1, postCount - 1)), broken ? randomBetween(0.18, 0.4) : 0.41, 0);
+        const height = broken ? randomBetween(0.35, 0.8) : 0.82;
+        const offset = -length / 2 + i * (length / Math.max(1, postCount - 1));
+        const post = new THREE.Mesh(sharedBoxGeometry(0.10, height, 0.10), fenceMat);
         if (broken) post.rotation.z = randomBetween(-0.35, 0.35);
-        segment.add(post);
+        const px = x + Math.cos(rotation) * offset; const pz = z - Math.sin(rotation) * offset;
+        makeFencePiece(post, px, height / 2 + 0.08, pz, rotation, 'fence_post');
       }
       for (const y of [0.28, 0.62]) {
         if (broken && Math.random() < 0.45) continue;
-        const rail = new THREE.Mesh(sharedBoxGeometry(length, 0.10, 0.08), fenceMat);
-        rail.position.y = y; if (broken) rail.rotation.z = randomBetween(-0.18, 0.18); segment.add(rail);
+        const railCount = Math.max(2, Math.ceil(length / 0.8));
+        const railLength = length / railCount;
+        for (let i = 0; i < railCount; i++) {
+          if (broken && Math.random() < 0.24) continue;
+          const offset = -length / 2 + railLength * (i + 0.5);
+          const rail = new THREE.Mesh(sharedBoxGeometry(railLength - 0.035, 0.10, 0.08), fenceMat);
+          if (broken) rail.rotation.z = randomBetween(-0.18, 0.18);
+          const rx = x + Math.cos(rotation) * offset; const rz = z - Math.sin(rotation) * offset;
+          makeFencePiece(rail, rx, y + 0.08, rz, rotation, 'fence_rail');
+        }
       }
-      segment.position.set(x, 0.08, z); segment.rotation.y = rotation; yard.add(segment);
     };
     addFence(-(totalW + 2.4) / 2, -0.5, totalD + 3.2, Math.PI / 2, propertyCondition === 'rundown');
     addFence((totalW + 2.4) / 2, -0.5, totalD + 3.2, Math.PI / 2, propertyCondition === 'rundown');
     addFence(0, -(totalD + 2.6) / 2, totalW + 2.4, 0, propertyCondition === 'rundown');
-    yard.children.forEach(child => child.traverse?.(mesh => { if (mesh.isMesh) mesh.castShadow = true; }));
-    const yardObj = makeObject(yard, Math.max(totalW, totalD) * 0.72, 1, 8, { x: pos.x, y: 0, z: pos.z });
-    yardObj.isProp = true; yardObj.mandateKind = 'yard'; yardObj.propertyCondition = propertyCondition;
     if (propertyCondition === 'rundown') {
       const backZ = pos.z - totalD / 2 - 1.0;
       for (let i = 0; i < 3; i++) makeStreetFixture(STREET_FIXTURE_KINDS[Math.floor(Math.random() * STREET_FIXTURE_KINDS.length)], { x: pos.x + randomBetween(-totalW * 0.45, totalW * 0.45), z: backZ + randomBetween(-0.55, 0.55) });
