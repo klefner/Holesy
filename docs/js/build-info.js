@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 145;
+export const BUILD_SUB = 146;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.146',
+    title: 'Holesy icon, earned cosmetic, MegaKit parcels, and rival hunts',
+    notes: [
+      'Adds the approved Holesy home-screen icon and install metadata.',
+      'Requires all Run Goals and the Mandate in one wave to permanently unlock Prism Orbit.',
+      'Reserves real parcels for MegaKit buildings, adds collapse motion, and strengthens larger-rival hunts.',
+    ],
+  },
   {
     label: 'Master 16.145',
     title: 'Authentic MegaKit section spawn repair',

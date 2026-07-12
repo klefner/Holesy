@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.145';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.146';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1236,10 +1236,20 @@ async function addMegakitBuildingSkinTest(generation) {
     const scale = 8.5 / footprint;
     const scaledHeight = THREE.MathUtils.clamp(dimensions.y * scale, 6.4, 10.4);
     const center = bounds.getCenter(new THREE.Vector3());
-    const testSites = [
-      [-48, -48, 0], [48, -48, Math.PI / 2], [-48, 48, -Math.PI / 2],
-      [48, 48, Math.PI], [0, 48, Math.PI],
-    ];
+    const eligibleParcels = blockPositions.filter(bp => Math.abs(bp.x) < currentArenaHalf - 10 && Math.abs(bp.z) < currentArenaHalf - 10);
+    const parcelIndexes = [0, Math.floor(eligibleParcels.length * 0.24), Math.floor(eligibleParcels.length * 0.5), Math.floor(eligibleParcels.length * 0.74), eligibleParcels.length - 1];
+    const testSites = [...new Set(parcelIndexes)].map((index, order) => {
+      const bp = eligibleParcels[Math.max(0, Math.min(eligibleParcels.length - 1, index))];
+      return [bp.x, bp.z, (order % 4) * Math.PI / 2];
+    });
+    for (const [x, z] of testSites) {
+      for (const object of [...objects]) {
+        const building = object.isBuilding || object.isVoxelBuildingCube || object.isSkyscraperChunk || object.isGovernmentBuildingPiece || object.physicsStackPiece;
+        if (!building || Math.hypot(object.x - x, object.z - z) > 9.5) continue;
+        if (object.mesh?.parent) scene.remove(object.mesh);
+        removeObjectFromActiveLists(object);
+      }
+    }
 
     // Each edible chunk renders the real model geometry and UV-mapped materials,
     // clipped to one structural region. Together the chunks form one seamless,
@@ -1252,6 +1262,7 @@ async function addMegakitBuildingSkinTest(generation) {
     const pieceH = scaledHeight / floors;
 
     for (const [x, z, rotation] of testSites) {
+      const stackId = nextPhysicsStackId++;
       for (let floor = 0; floor < floors; floor++) {
         for (let row = 0; row < rows; row++) {
           for (let col = 0; col < cols; col++) {
@@ -1303,11 +1314,27 @@ async function addMegakitBuildingSkinTest(generation) {
               y: chunkCenterY,
             });
             object.isBuilding = true;
-            object.buildingSize = 'small';
-            object.mandateKind = 'shop';
+            object.buildingSize = 'large';
+            object.mandateKind = 'tower';
             object.isMegakitAsset = true;
-            object.isVoxelBuildingCube = true;
+            object.isSkyscraperChunk = true;
+            object.physicsStackPiece = true;
+            object.stackId = stackId;
+            object.stackActive = false;
+            object.stackSettled = false;
+            object.stackRestTimer = 0;
+            object.stackIndex = floor;
+            object.stackFloorCount = floors;
+            object.stackPieceCount = cols * rows;
+            object.stackCollapseSize = 4.25;
+            object.stackCenterX = x; object.stackCenterZ = z;
+            object.stackLocalX = rotatedX; object.stackLocalZ = rotatedZ;
+            object.stackFloorY = pieceH / 2; object.stackHeight = pieceH;
+            object.stackPieceW = pieceW; object.stackPieceD = pieceD;
+            object.vx = 0; object.vy = 0; object.vz = 0;
+            object.avx = 0; object.avy = 0; object.avz = 0;
             object.megakitAssetName = 'Clipped authentic MegaKit Small Building 1 section';
+            physicsStackPieces.push(object);
           }
         }
       }
@@ -5433,6 +5460,10 @@ function loadObjectMastery() {
     if (!parsed || typeof parsed !== 'object') return createEmptyObjectMastery();
     if (!parsed.families || typeof parsed.families !== 'object') parsed.families = {};
     if (!parsed.cosmetics || typeof parsed.cosmetics !== 'object') parsed.cosmetics = {};
+    if (parsed.cosmetics.prismOrbit && parsed.cosmetics.prismOrbit.source !== 'wave_goal_mandate_sweep') {
+      delete parsed.cosmetics.prismOrbit;
+      try { localStorage.setItem(OBJECT_MASTERY_STORAGE_KEY, JSON.stringify(parsed)); } catch {}
+    }
     parsed.schemaVersion = 1;
     return parsed;
   } catch {
@@ -5569,22 +5600,18 @@ function recordPlayerFamilyProgress(familyId, amount, hole, sourceObj = null) {
       objective.celebrateUntil = performance.now() + 900;
       mastery.goalsCompleted += 1;
       if (hole && hole.isPlayer) {
-        const unlockedPrismOrbit = !objectMastery.cosmetics.prismOrbit;
-        if (unlockedPrismOrbit) {
-          objectMastery.cosmetics.prismOrbit = { unlockedAt: new Date().toISOString(), source: 'run_goal' };
-          hole.prismOrbitUnlocked = true;
-        }
         playRunGoalChime();
         triggerHaptic('runGoal');
         const pos = sourceObj
           ? new THREE.Vector3(sourceObj.x || hole.x, 0, sourceObj.z || hole.z)
           : new THREE.Vector3(hole.x, 0, hole.z);
         flashConsumed('GOAL COMPLETE', pos);
-        showEventBanner(unlockedPrismOrbit ? 'COSMETIC UNLOCKED: PRISM ORBIT' : `GOAL: ${objective.label} · MASTERY +1`, 2400);
+        showEventBanner(`GOAL: ${objective.label} · MASTERY +1`, 2400);
       }
     }
   }
   maybeAwardRunObjectiveSetReward(hole);
+  maybeUnlockPrismOrbit(hole);
 
   if (nextTier > previousTier && nextTier > 1) {
     const def = getObjectiveDef(familyId);
@@ -5608,9 +5635,22 @@ function maybeAwardRunObjectiveSetReward(hole) {
   triggerUnitClearVisuals(hole);
   playUnitClearStinger();
   triggerHaptic('goalSweep');
-  showEventBanner('GOAL SWEEP · SPEED + COSMETIC', 2800);
+  showEventBanner('GOAL SWEEP · SPEED + MASTERY', 2800);
   flashConsumed('GOAL SWEEP', new THREE.Vector3(hole.x, 0, hole.z));
   updateActiveEffectsUi();
+}
+
+function maybeUnlockPrismOrbit(hole) {
+  if (!hole?.isPlayer || objectMastery.cosmetics.prismOrbit) return false;
+  if (!mandateComplete || !activeRunObjectives.length || !activeRunObjectives.every(objective => objective.complete)) return false;
+  objectMastery.cosmetics.prismOrbit = { unlockedAt: new Date().toISOString(), source: 'wave_goal_mandate_sweep', wave: currentWave };
+  hole.prismOrbitUnlocked = true;
+  scheduleObjectMasterySave();
+  playUnitClearStinger();
+  showEventBanner('COSMETIC UNLOCKED: PRISM ORBIT', 3000);
+  flashConsumed('PRISM ORBIT', new THREE.Vector3(hole.x, 0, hole.z));
+  markRunObjectivesUiDirty();
+  return true;
 }
 
 function runObjectiveInstruction(objective) {
@@ -5624,7 +5664,7 @@ function runObjectiveInstruction(objective) {
     soldiers: `Devour ${target} soldiers.`,
     manholes: `Devour ${target} road manhole covers in MegaKit Downtown.`,
   };
-  const cosmeticCopy = objectMastery.cosmetics.prismOrbit ? 'Prism Orbit equipped.' : 'First completed goal unlocks Prism Orbit.';
+  const cosmeticCopy = objectMastery.cosmetics.prismOrbit ? 'Prism Orbit equipped.' : 'Complete all goals and the Mandate in one wave to unlock Prism Orbit.';
   return `${instructions[objective.id] || `Devour ${target} matching objects.`} Reward: buff and mastery. ${cosmeticCopy}`;
 }
 
@@ -5646,7 +5686,7 @@ function updateRunObjectivesUi() {
         <span class="objective-count">${objective.progress}/${objective.target}</span>
       </div>
       <div class="objective-progress"><span style="width:${pct.toFixed(1)}%"></span></div>
-      <div class="objective-meta">L${tier} mastery &middot; ${objectMastery.cosmetics.prismOrbit ? 'Prism Orbit equipped' : 'Prism Orbit unlock'}</div>
+      <div class="objective-meta">L${tier} mastery &middot; ${objectMastery.cosmetics.prismOrbit ? 'Prism Orbit equipped' : 'Prism Orbit challenge'}</div>
     </div>`;
   }).join('');
   const rewardState = activeRunObjectiveSetRewarded ? 'claimed' : 'available';
@@ -5905,6 +5945,7 @@ function applyMandateCompletionReward(h) {
   triggerHaptic('mandateComplete');
   showEventBanner('MANDATE PASSED', 2400);
   flashConsumed('MANDATE PASSED', new THREE.Vector3(h.x, 0, h.z));
+  maybeUnlockPrismOrbit(h);
 }
 
 function recordMandateProgress(h, source, action = 'eat') {
@@ -11659,10 +11700,10 @@ function updateAI(h, dt) {
     let minPreyDist = Infinity;
     for (const other of holes) {
       if (other === h || !other.alive) continue;
-      if (other.radius < h.radius * 0.9) {
+      if (other.radius < h.radius * 0.98) {
         const d = Math.hypot(other.x - h.x, other.z - h.z);
         // Prey must be within vision AND within aggression-scaled hunt range
-        const huntRange = Math.min(p.visionRange, 30 * (p.aggression + (p.chaseBonus || 0)));
+        const huntRange = Math.min(p.visionRange * (other.isPlayer ? 1.25 : 1), (other.isPlayer ? 44 : 34) * (p.aggression + (p.chaseBonus || 0) + currentWave * 0.025));
         if (d < huntRange && d < minPreyDist) {
           prey = other;
           minPreyDist = d;
@@ -11711,7 +11752,7 @@ function updateAI(h, dt) {
       h.wanderZ = collapseObjective.target.z;
       h.aiTargetObj = null;
       h.aiTimer = Math.min(h.aiTimer, 0.55 + Math.random() * 0.35);
-    } else if (prey && Math.random() < Math.min(0.98, 0.4 + p.aggression * 0.3 + (p.chaseBonus || 0))) {
+    } else if (prey && (prey.isPlayer || Math.random() < Math.min(0.98, 0.55 + p.aggression * 0.3 + (p.chaseBonus || 0)))) {
       h.aiState = 'hunt_hole';
       h.aiTargetObj = prey;
     } else if (Math.random() < p.wanderBias) {
@@ -11831,11 +11872,8 @@ function moveHole(h, dt) {
   if (!h.alive) return;
   // Constant speed regardless of radius — no "big hole moves like snail"
   // Fleeing AI moves nearly as fast as the player so chases are real contests
-  let speed;
-  if (h.isPlayer) speed = 14;
-  else if (h.aiState === 'flee') speed = 13.5; // fleeing AI — nearly player speed
-  if (h.aiState === 'hunt_hole') speed *= Math.min(1.45, 1 + Math.max(0, currentWave - 1) * 0.035);
-  else speed = 12;
+  let speed = h.isPlayer ? 14 : (h.aiState === 'flee' ? 13.5 : 12);
+  if (!h.isPlayer && h.aiState === 'hunt_hole') speed *= Math.min(1.55, 1.08 + Math.max(0, currentWave - 1) * 0.04);
   if (!h.isPlayer && h.personality && h.personality.speedMult) speed *= h.personality.speedMult;
   speed *= getHoleSpeedMultiplier(h);
   const dx = h.targetX - h.x;
