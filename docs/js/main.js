@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.129';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.130';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -2019,7 +2019,7 @@ function makeSmallBuilding(pos) {
     const fenceMat = sharedBoxMat(propertyCondition === 'polished' ? 0xf2ead8 : 0x8a6a48);
     const yardW = totalW + 2.8;
     const yardD = totalD + 3.8;
-    const patchSize = 0.72;
+    const patchSize = 1.05;
     const patchCols = Math.max(6, Math.round(yardW / patchSize));
     const patchRows = Math.max(7, Math.round(yardD / patchSize));
     for (let row = 0; row < patchRows; row++) {
@@ -2040,7 +2040,7 @@ function makeSmallBuilding(pos) {
       obj.isProp = true; obj.mandateKind = kind; obj.propertyCondition = propertyCondition; return obj;
     };
     const addFence = (x, z, length, rotation = 0, broken = false) => {
-      const postCount = Math.max(2, Math.round(length / 0.75));
+      const postCount = Math.max(2, Math.round(length / 1.15));
       for (let i = 0; i < postCount; i++) {
         if (broken && Math.random() < 0.32) continue;
         const height = broken ? randomBetween(0.35, 0.8) : 0.82;
@@ -2052,7 +2052,7 @@ function makeSmallBuilding(pos) {
       }
       for (const y of [0.28, 0.62]) {
         if (broken && Math.random() < 0.45) continue;
-        const railCount = Math.max(2, Math.ceil(length / 0.8));
+        const railCount = Math.max(2, Math.ceil(length / 1.25));
         const railLength = length / railCount;
         for (let i = 0; i < railCount; i++) {
           if (broken && Math.random() < 0.24) continue;
@@ -14037,11 +14037,6 @@ function consumeSoldiersByHoles() {
     for (const h of holes) {
       if (!h.alive) continue;
       const d = Math.hypot(s.x - h.x, s.z - h.z);
-      if (h.radius > getSoldierEatRadius(s) + 0.45 && d < Math.min(p.visionRange, 34) && d < edibleSoldierDist) {
-        edibleSoldier = s;
-        edibleSoldierDist = d;
-        continue;
-      }
       const eatRadius = getSoldierEatRadius(s);
       const isTrueBoss = !!s.isArmyBoss;
       const edgeInset = isTrueBoss ? Math.max(0.9, h.radius * 0.24) : (getUnitType(s) !== UNIT_TYPE_SOLDIER ? 0.45 : 0.2);
@@ -14074,7 +14069,7 @@ function ensureWaveHud() {
     z-index: 25;
     background: linear-gradient(180deg, #b71c1c 0%, #7f0000 100%);
     color: #ffffff;
-    font-family: "Impact", "Arial Black", sans-serif;
+    font-family: var(--font-ui);
     font-size: ${HOLESY_CONFIG.hud.waveHudFontSize}px;
     font-weight: 900;
     letter-spacing: 0.08em;
@@ -14102,7 +14097,7 @@ function ensureWaveEndWarning() {
     transform: translate(-50%, -100%);
     z-index: 26;
     color: #ffe082;
-    font-family: "Impact", "Arial Black", sans-serif;
+    font-family: var(--font-ui);
     font-size: clamp(22px, 2.4vw, 34px);
     font-weight: 900;
     letter-spacing: 0.08em;
