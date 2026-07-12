@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.133';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.134';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -6413,6 +6413,17 @@ async function decodeSample(b64, bank, idx) {
   } catch (err) { console.warn('Audio load failed:', err); }
 }
 
+function awardEndlessWaveLoreDrop() {
+  if (!endlessMode || !roundLoreState) return false;
+  const nextDoc = pickNextLoreDrop();
+  if (!nextDoc) return false;
+  roundLoreState.endlessLorePity = (roundLoreState.endlessLorePity || 0) + 1;
+  const chance = Math.min(0.72, 0.28 + (roundLoreState.endlessLorePity - 1) * 0.16);
+  if (roundLoreState.endlessLorePity < 3 && Math.random() > chance) return false;
+  roundLoreState.endlessLorePity = 0;
+  return unlockLoreDoc(nextDoc, `Endless Wave ${currentWave}`);
+}
+
 // Load all banks — called from initMusicContext
 let audioBanksLoaded = false;
 let audioBankWarmupTimer = null;
@@ -9153,6 +9164,7 @@ function onWaveTimerExpired() {
     endGame();
     return;
   }
+  if (endlessMode) awardEndlessWaveLoreDrop();
   enterWaveTransition(currentWave + 1);
 }
 
@@ -11660,7 +11672,14 @@ function resolveHoleCollisions() {
       const smaller = bigger === a ? b : a;
       // If smaller hole's center is inside bigger hole, AND bigger is at least slightly larger
       if (d < bigger.radius - 0.2 && bigger.radius > smaller.radius * 1.02) {
-        holeEatsHole(bigger, smaller);
+        const now = performance.now();
+        if (smaller.pendingPredator !== bigger) {
+          smaller.pendingPredator = bigger; smaller.predatorContactSince = now; smaller.predatorContactFrames = 1; continue;
+        }
+        smaller.predatorContactFrames = (smaller.predatorContactFrames || 0) + 1;
+        if (smaller.predatorContactFrames >= 3 && now - (smaller.predatorContactSince || now) >= 140) holeEatsHole(bigger, smaller);
+      } else if (smaller.pendingPredator === bigger) {
+        smaller.pendingPredator = null; smaller.predatorContactSince = 0; smaller.predatorContactFrames = 0;
       }
     }
   }
