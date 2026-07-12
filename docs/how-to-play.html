@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Holesy Field Manual</title>
+<style>
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: #0d1320;
+    color: #f8fafc;
+    font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+  }
+  .manual-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(180px, 230px) minmax(0, 1fr);
+  }
+  .manual-index {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: auto;
+    padding: 18px 14px;
+    background: rgba(5, 8, 16, 0.78);
+    border-right: 1px solid rgba(255,255,255,0.12);
+  }
+  .manual-kicker {
+    margin-bottom: 6px;
+    color: #80fff5;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .manual-title {
+    margin: 0 0 14px 0;
+    color: #fff;
+    font-size: 18px;
+    line-height: 1.05;
+    font-weight: 950;
+  }
+  .manual-build {
+    margin-bottom: 18px;
+    color: rgba(255,255,255,0.58);
+    font-size: 11px;
+  }
+  .manual-index a {
+    display: block;
+    margin: 6px 0;
+    padding: 9px 10px;
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.84);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 850;
+  }
+  .manual-index a:hover {
+    border-color: rgba(128,255,245,0.44);
+    color: #fff;
+    background: rgba(128,255,245,0.08);
+  }
+  .manual-reader {
+    padding: 26px;
+    overflow: auto;
+  }
+  .manual-frame {
+    max-width: 860px;
+    min-height: calc(100vh - 52px);
+    padding: 18px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.035));
+    box-shadow: 0 18px 50px rgba(0,0,0,0.34);
+  }
+  .manual-intro {
+    margin: 0 0 18px 0;
+    color: rgba(255,255,255,0.74);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .help-section {
+    scroll-margin-top: 18px;
+    padding: 14px 0;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .help-section:first-of-type { border-top: 0; }
+  .help-section h2 {
+    margin: 0 0 8px 0;
+    color: #ffdd59;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .help-section p {
+    margin: 6px 0;
+    color: rgba(255,255,255,0.86);
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .summary-graphic-wrap {
+    margin: 0;
+    padding: 0;
+  }
+  .summary-graphic {
+    display: block;
+    width: min(100%, 760px);
+    height: auto;
+    margin: 0 auto;
+    border-radius: 8px;
+    box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+  }
+  @media (max-width: 720px) {
+    .manual-shell { display: block; }
+    .manual-index {
+      position: static;
+      height: auto;
+      max-height: 42vh;
+      border-right: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+    }
+    .manual-index a {
+      display: inline-block;
+      margin-right: 5px;
+    }
+    .manual-reader { padding: 14px; }
+    .manual-frame { min-height: auto; }
+  }
+</style>
+</head>
+<body>
+  <div class="manual-shell">
+    <nav class="manual-index" aria-label="How to Play topics">
+      <div class="manual-kicker">Aldine Field Manual</div>
+      <h1 class="manual-title">How to Play</h1>
+      <div class="manual-build">Master 16.125</div>
+      <a href="#summary">Game Summary</a>
+      <a href="#hunger">The Hunger</a>
+      <a href="#controls">Controls</a>
+      <a href="#feeding">Eating and Growing</a>
+      <a href="#hazards">Hazards and Aid</a>
+      <a href="#goals">Mandates and Run Goals</a>
+      <a href="#modes">Game Modes</a>
+      <a href="#difficulty">Difficulty</a>
+      <a href="#winning">Winning</a>
+      <a href="#archives">Archives</a>
+      <a href="#buffs">Field Patterns</a>
+      <a href="#save-load">Save and Load</a>
+      <a href="#stats">Stats</a>
+      <a href="#survival">Survival Notes</a>
+    </nav>
+    <main class="manual-reader">
+      <div class="manual-frame">
+        <p class="manual-intro">The city calls it a game because that sounds safer than an incident report. Learn the rules, then eat the evidence.</p>
+
+        <section id="summary" class="help-section">
+          <h2>Game Summary</h2>
+          <figure class="summary-graphic-wrap">
+            <img class="summary-graphic" src="assets/images/how-to-play-game-summary.svg?v=16.55" alt="How to Play Downtown Devour: move as a hole, eat objects, grow bigger, and avoid enemies." />
+          </figure>
+        </section>
+
+        <section id="hunger" class="help-section">
+          <h2>The Hunger</h2>
+          <p>You are a Hunger under downtown Aldine. Move, swallow, grow.</p>
+          <p>Anything smaller than your mouth can be recorded. Anything bigger can record you.</p>
+        </section>
+
+        <section id="controls" class="help-section">
+          <h2>Controls</h2>
+          <p>Desktop: steer with the mouse, WASD, or arrow keys.</p>
+          <p>Mobile: drag toward what you want to consume. Release to stop drifting.</p>
+        </section>
+
+        <section id="feeding" class="help-section">
+          <h2>Eating and Growing</h2>
+          <p>Eat people, cars, trees, buildings, debris, aid, and smaller rival holes.</p>
+          <p>Score and size usually rise together. Your tier rises as the city forgets more of itself.</p>
+          <p>Bigger rivals can eat you. Smaller rivals can be swallowed, but Endless records them elsewhere and sends them back smaller.</p>
+        </section>
+
+        <section id="hazards" class="help-section">
+          <h2>Hazards and Aid</h2>
+          <p>Soldiers arrive as containment escalates. Their fire can shrink you, and enough damage can kill you.</p>
+          <p>Parallax aid drops are bright, useful, and suspicious. Blue means speed, gold means instant mass, and green means bullet protection.</p>
+          <p>Cars can panic, skid, crash, and burn. Skyscrapers only fall when enough of them is inside the Hunger.</p>
+        </section>
+
+        <section id="goals" class="help-section">
+          <h2>Mandates and Run Goals</h2>
+          <p>Mandates are required in Waves and Endless. Finish every listed count before the wave timer closes, or the run ends.</p>
+          <p>Completing a Mandate gives the score bonus and triggers a Mandate Surge: speed and protection that last until the end of the wave.</p>
+          <p>Run Goals are optional side objectives. Finish them for extra rewards and buffs, but missing them does not end the run.</p>
+        </section>
+
+        <section id="modes" class="help-section">
+          <h2>Game Modes</h2>
+          <p>Timed: two minutes. Highest score wins when the records close.</p>
+          <p>When Timed ends, you may lock the score or risk continuing into Last Man Standing.</p>
+          <p>Last Man Standing: no timer. Score is noise. Survive until one Hunger remains.</p>
+          <p>Waves: four districts. Each wave is meaner. Score carries forward, but a missed Mandate ends the run.</p>
+          <p>Endless Waves: the lockdown never closes. Every district returns harder. Complete each Mandate to survive into the next wave.</p>
+        </section>
+
+        <section id="difficulty" class="help-section">
+          <h2>Difficulty</h2>
+          <p>Normal is baseline pressure. Hard makes containment faster, scarcer, and sharper.</p>
+          <p>Ultra starts closer to full lockdown: earlier troops, less easy food, rarer towers, and less forgiving rivals.</p>
+          <p>Higher difficulty can improve rare recovery odds, but it also gives the city better teeth.</p>
+        </section>
+
+        <section id="winning" class="help-section">
+          <h2>Winning</h2>
+          <p>Timed: finish first on score and stay uneaten.</p>
+          <p>Waves: complete each Mandate, stay alive, and finish ahead on score.</p>
+          <p>Last Man Standing: be the last Hunger alive.</p>
+          <p>Endless Waves: there is no final win. Survive, save, withdraw from Pause, or get consumed.</p>
+        </section>
+
+        <section id="archives" class="help-section">
+          <h2>Archives</h2>
+          <p>Click Archive to read recovered documents and starter field patterns.</p>
+          <p>Win, or safely withdraw from Endless while leading, for a rare chance to recover one document.</p>
+          <p>If you lose, the file is gone. No document drops on losses.</p>
+          <p>Some documents hint at secret buffs and achievements. Read the strange details, then try them in the city.</p>
+        </section>
+
+        <section id="buffs" class="help-section">
+          <h2>Field Patterns</h2>
+          <p>Buffs are short powers. Eat the right things in the right pattern to wake one up.</p>
+          <p>Active buff cards show the name, effect, and timer.</p>
+          <p>Starter pattern: swallow the cyan Parallax beacon for x2 speed.</p>
+          <p>Starter pattern: swallow the gold Parallax cache for instant growth.</p>
+          <p>Starter pattern: eat 10 people within 15 seconds to pull nearby objects toward you.</p>
+          <p>Green Parallax aid gives temporary bullet protection when you find it.</p>
+          <p>There are more buffs and achievements hidden in the Archive. The documents give clues, not exact answers.</p>
+          <p>When a timed buff ends, it has a short cooldown before it can happen again.</p>
+        </section>
+
+        <section id="save-load" class="help-section">
+          <h2>Save and Load</h2>
+          <p>Endless Waves can be saved from Pause.</p>
+          <p>Load Endless appears on the menu when a saved breach exists. It restores the wave, holes, timers, buffs, and board state.</p>
+        </section>
+
+        <section id="stats" class="help-section">
+          <h2>Stats</h2>
+          <p>Stats opens your ledger: wins, losses, best scores, best waves, recent runs, and end reasons.</p>
+          <p>The Archive remembers the story. Stats remembers what you did.</p>
+          <p>Click the build label in the corner to read the latest recovered patch notes.</p>
+        </section>
+
+        <section id="survival" class="help-section">
+          <h2>Survival Notes</h2>
+          <p>Do not chew skyscrapers until they fit. Warning text means the city is not ready to fall.</p>
+          <p>Aid can save you. Cars panic, skid, and crash because the street knows.</p>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
+
+
+

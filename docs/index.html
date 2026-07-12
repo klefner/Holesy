@@ -1,133 +1,232 @@
 <!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity Web Player | DowntownDevour</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-  </head>
-  <body>
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
-        </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-logo-title-footer"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">DowntownDevour</div>
-      </div>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>Downtown Devour</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="css/styles.css?v=16.127" />
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud" class="hidden">
+  <div class="hud-left">
+    <div class="panel panel-status">
+      <div class="label">Tier: <span id="stage-num">Pothole</span></div>
+      <div id="stage-bar"><div id="stage-fill" style="width:0%"></div></div>
     </div>
-    <script>
-      var canvas = document.querySelector("#unity-canvas");
+    <div class="panel panel-objectives" id="run-objectives-panel">
+      <div class="label">Run Goals</div>
+      <div id="run-objectives"></div>
+    </div>
+  </div>
+  <div class="hud-right">
+    <div class="hud-timer-row">
+      <div class="panel panel-timer" style="text-align:right;">
+        <div class="label"><span id="wave-label" class="hidden"><span id="wave-label-text">Wave</span> <span id="wave-num">1</span><span id="wave-total">/4</span> · </span>Timer</div>
+        <div class="value" id="timer">2:00</div>
+      </div>
+      <button id="adaptive-assist-indicator" type="button" hidden aria-label="Adaptive assistance active. Download adjustment log." title="Adaptive assistance active"></button>
+    </div>
+    <div class="panel" id="mandate-panel" style="display:none;">
+      <div class="mandate-head">
+        <div class="label">Mandate</div>
+        <div class="label" id="mandate-label">5 left</div>
+      </div>
+      <div id="mandate-instruction">Finish every target or the run ends.</div>
+      <div id="mandate-dots"></div>
+    </div>
+  </div>
+</div>
+<div id="mini-lb" class="hidden"></div>
+<button id="mobile-hud-toggle" class="hidden" type="button" aria-pressed="false">HUD</button>
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        var warningBanner = document.querySelector("#unity-warning");
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
-      }
+<div id="stage-pop"></div>
+<div id="event-banner-backdrop"></div>
+<div id="event-banner"></div>
+<div id="consumed-flash"></div>
+<div id="spectator-fade"></div>
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/Web.loader.js";
-      var config = {
-        arguments: [],
-        dataUrl: buildUrl + "/Web.data.unityweb",
-        frameworkUrl: buildUrl + "/Web.framework.js.unityweb",
-        codeUrl: buildUrl + "/Web.wasm.unityweb",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "DowntownDevour",
-        productVersion: "0.1.0",
-        showBanner: unityShowBanner,
-        // errorHandler: function(err, url, line) {
-        //    alert("error " + err + " occurred at line " + line);
-        //    // Return 'true' if you handled this error and don't want Unity
-        //    // to process it further, 'false' otherwise.
-        //    return true;
-        // },
-      };
+  <div id="overlay">
+    <h1 id="title">Downtown Devour</h1>
+  <div class="sub" id="subtitle">You are a Hunger in downtown Aldine. Eat what the city remembers. Grow before the rivals do.</div>
+    <div id="final-wrap" class="hidden">
+      <div id="leaderboard"></div>
+    </div>
+      <button id="build-version" type="button" aria-label="Show build notes">Master 16.127</button>
 
-      // By default, Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
+  <!-- Mode picker — always shown on the first screen across platforms -->
+<div id="mode-picker-wrap">
+  <div id="mode-picker-title">Choose Game Mode</div>
+  <div id="difficulty-wrap">
+    <label id="difficulty-label" for="difficulty-select">Difficulty</label>
+    <select id="difficulty-select" aria-label="Difficulty">
+      <option value="normal">Normal</option>
+      <option value="hard">Hard</option>
+      <option value="ultra">Ultra</option>
+    </select>
+    <p id="difficulty-desc"></p>
+  </div>
+  <div id="environment-wrap">
+    <label id="environment-label" for="environment-select">Environment</label>
+    <select id="environment-select" aria-label="Environment">
+      <option value="classic">Classic Aldine</option>
+      <option value="megakitDowntown">MegaKit Downtown</option>
+    </select>
+    <p id="environment-desc"></p>
+  </div>
+  <div id="mode-picker">
+      <button class="mode-option selected flagship" type="button" data-mode="endless" aria-pressed="true">
+        <span class="mode-label">∞ Endless Waves</span>
+        <span class="mode-desc">Flagship survival run. The lockdown never closes and every district comes back meaner.</span>
+      </button>
+      <button class="mode-option" type="button" data-mode="timed" aria-pressed="false">
+        <span class="mode-label">⏱️ Timed</span>
+        <span class="mode-desc">Two-minute feeding event. Score wins before the records close.</span>
+      </button>
+      <button class="mode-option" type="button" data-mode="lms" aria-pressed="false">
+        <span class="mode-label">⚔️ Last Man Standing</span>
+        <span class="mode-desc">No timer. No scoring pressure. Survive until only one hole remains.</span>
+      </button>
+      <button class="mode-option" type="button" data-mode="waves" aria-pressed="false">
+        <span class="mode-label">🌊 Waves</span>
+        <span class="mode-desc">Four progressively brutal waves. Smaller boards, deadlier soldiers. Score accumulates.</span>
+      </button>
+    </div>
+  </div>
 
-      // If you would like all file writes inside Unity Application.persistentDataPath
-      // directory to automatically persist so that the contents are remembered when
-      // the user revisits the site the next time, uncomment the following line:
-      // config.autoSyncPersistentDataPath = true;
-      // This autosyncing is currently not the default behavior to avoid regressing
-      // existing user projects that might rely on the earlier manual
-      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
-      // expected to change.
+  <div id="menu-action-row">
+    <button class="menu-action-btn" id="stats-window-btn" type="button">Stats</button>
+    <button class="menu-action-btn" id="lore-archive-btn" type="button">Archive</button>
+    <button class="menu-action-btn" id="beta-feedback-btn" type="button">Beta Feedback</button>
+    <button class="menu-action-btn" id="how-to-play-btn" type="button">How to Play</button>
+    <button class="menu-action-btn" id="haptic-test-btn" type="button">Haptics</button>
+    <button class="menu-action-btn" id="load-endless-save-btn" type="button" disabled>Load Endless</button>
+  </div>
+  <div id="haptic-status" aria-live="polite"></div>
 
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
+  <button class="play" id="play-btn">Begin</button>
+  <div class="tips">
+    Desktop: move your mouse OR use W/A/S/D (or arrow keys) to steer.<br>
+    Mobile: drag in the direction you want to go (joystick-style).<br>
+    Avoid bigger holes — they'll eat you. Hunt smaller ones.
+  </div>
+  <div class="credits" id="music-credit" style="margin-top:14px;font-size:10px;opacity:0.4;max-width:360px;">
+    Music: procedurally generated orchestral theme in D minor, 128 BPM
+  </div>
+</div>
 
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        document.querySelector("#unity-container").className = "unity-mobile";
-        canvas.className = "unity-mobile";
+<!-- End-of-timer choice: end now with current score, or enter Last Man Standing mode -->
+<div id="lms-choice" class="hidden">
+  <h2>Time's Up!</h2>
+  <div class="lms-sub">You can cash in your score now — or stay in the arena until only one hole remains.</div>
+  <div class="lms-score">Your score: <span id="lms-current-score">0</span></div>
+  <div class="lms-btns">
+    <button class="lms-accept" id="lms-enter-btn">
+      <span class="lms-btn-label">⚔️ Last Man Standing</span>
+      <span class="lms-btn-desc">Keep playing until one hole is left. Scoring stays active, but survival still decides the winner.</span>
+    </button>
+    <button class="lms-decline" id="lms-cashout-btn">
+      <span class="lms-btn-label">🏁 End Now</span>
+      <span class="lms-btn-desc">Lock in your score and see the final leaderboard.</span>
+    </button>
+  </div>
+</div>
 
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
+<div id="game-controls" class="hidden">
+  <button id="time-cycle-btn" type="button" aria-label="Cycle time of day">Time: Mid Day</button>
+  <button id="pause-btn" type="button">Pause</button>
+</div>
 
+<div id="pause-overlay" class="hidden">
+  <h2>Paused</h2>
+  <div class="pause-sub">Take a breather, then jump back in or return to the game mode selector.</div>
+    <div class="pause-version" id="pause-version-label">Master 16.127</div>
+  <div class="pause-status" id="pause-status-message" role="status" aria-live="polite"></div>
+  <div class="pause-btns">
+    <button class="pause-resume" id="pause-resume-btn" type="button">Resume</button>
+    <button class="pause-save" id="pause-save-btn" type="button">Save Endless</button>
+    <button class="pause-menu" id="pause-exit-btn" type="button">Game Modes</button>
+  </div>
+</div>
 
-      } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-        canvas.style.width = "960px";
-        canvas.style.height = "600px";
-      }
+<div id="lore-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="lore-modal-title">
+  <div id="lore-shell">
+    <div id="lore-list-panel">
+      <div class="lore-panel-head">
+        <div>
+          <div class="lore-eyebrow">Recovered Archive</div>
+          <h2 id="lore-modal-title">Found Documents</h2>
+        </div>
+        <button id="lore-close-btn" type="button" aria-label="Close archive">Close</button>
+      </div>
+      <div id="lore-progress"></div>
+      <div id="lore-starter-patterns"></div>
+      <div id="lore-doc-list"></div>
+    </div>
+    <article id="lore-reader-panel">
+      <div id="lore-thread"></div>
+      <h3 id="lore-doc-title"></h3>
+      <div id="lore-doc-meta"></div>
+      <div id="lore-doc-body"></div>
+    </article>
+  </div>
+</div>
 
-      document.querySelector("#unity-loading-bar").style.display = "block";
+<div id="build-notes-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="build-notes-title">
+  <div id="build-notes-shell">
+    <div class="build-notes-head">
+      <div>
+        <div class="build-notes-eyebrow">Recovered Build Notes</div>
+        <h2 id="build-notes-title">Patch Notes</h2>
+      </div>
+      <button id="build-notes-close-btn" type="button" aria-label="Close build notes">Close</button>
+    </div>
+    <div id="build-notes-list"></div>
+  </div>
+</div>
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
-                document.querySelector("#unity-loading-bar").style.display = "none";
-                document.querySelector("#unity-fullscreen-button").onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
+<div id="feedback-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
+  <form id="feedback-shell">
+    <div class="feedback-head"><div><div class="feedback-eyebrow">Quick Beta Report</div><h2 id="feedback-title">Help improve Holesy</h2></div><button id="feedback-close-btn" type="button">Close</button></div>
+    <div id="feedback-device"></div>
+    <fieldset class="feedback-stars"><legend>Rate the game</legend><div><input id="star5" name="rating" value="5" type="radio" checked><label for="star5">★</label><input id="star4" name="rating" value="4" type="radio"><label for="star4">★</label><input id="star3" name="rating" value="3" type="radio"><label for="star3">★</label><input id="star2" name="rating" value="2" type="radio"><label for="star2">★</label><input id="star1" name="rating" value="1" type="radio"><label for="star1">★</label></div></fieldset>
+    <label>What should we add?<textarea id="feedback-add" maxlength="400" placeholder="One idea"></textarea></label>
+    <label>What should we keep or change?<textarea id="feedback-comment" maxlength="600" placeholder="One quick thought is enough"></textarea></label>
+    <label class="feedback-check"><input id="feedback-again" type="checkbox" checked> I would play again</label>
+    <button class="feedback-send" type="submit">Send Feedback</button>
+    <p class="feedback-note">Device, browser, build, mode and difficulty are included automatically.</p>
+    <div id="feedback-thanks" class="hidden"><h3>Thanks for helping improve Holesy!</h3><button id="feedback-ok-btn" type="button">OK</button></div>
+  </form>
+</div>
 
-              }).catch((message) => {
-                alert(message);
-              });
-            };
+<div id="stats-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="stats-modal-title">
+  <div id="stats-shell">
+    <div class="stats-modal-head">
+      <div>
+        <div class="stats-modal-eyebrow">Run Records</div>
+        <h2 id="stats-modal-title">Game Stats</h2>
+      </div>
+      <button id="stats-close-btn" type="button" aria-label="Close stats">Close</button>
+    </div>
+    <div id="stats-modal-body"></div>
+  </div>
+</div>
 
-      document.body.appendChild(script);
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js"
+  }
+}
+</script>
 
-    </script>
-  </body>
+<script type="module" src="js/main.js?v=16.127"></script>
+</body>
 </html>
+
+
+
+
+
