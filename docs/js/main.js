@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.137';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.138';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -5851,6 +5851,7 @@ function updateMandateHUD() {
   const warnActive = remaining > 0 && gameTime > 0 && gameTime <= 15 && !mandateComplete;
   if (warnActive && !mandateWarningWasActive) {
     playMandateDeadlineWarning();
+    document.body.classList.add('mandate-screen-warning');
     mandatePanelEl.classList.remove('mandate-warn-start');
     void mandatePanelEl.offsetWidth;
     mandatePanelEl.classList.add('mandate-warn-start');
@@ -7514,6 +7515,7 @@ function applyWaveConfig(cfg) {
 }
 
 async function enterWaveTransition(nextWave) {
+  document.body.classList.remove('mandate-screen-warning');
   wavesTransitioning = true;
   running = false;
   freezeGameplayTime();
@@ -9155,6 +9157,7 @@ function resetHoleSizesForEndlessWorldShift() {
 // Starts or advances a wave. waveNum is 1-based. Called from startGame (wave 1)
 // and from the wave-end path for 2+.
 function startWave(waveNum) {
+  document.body.classList.remove('mandate-screen-warning');
   unfreezeGameplayTime();
   currentWave = waveNum;
   setEndlessPressureForWave(waveNum);
