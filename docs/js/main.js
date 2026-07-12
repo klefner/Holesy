@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.130';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.131';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -2020,17 +2020,19 @@ function makeSmallBuilding(pos) {
     const yardW = totalW + 2.8;
     const yardD = totalD + 3.8;
     const patchSize = 1.05;
-    const patchCols = Math.max(6, Math.round(yardW / patchSize));
-    const patchRows = Math.max(7, Math.round(yardD / patchSize));
+    const patchCols = Math.max(5, Math.round(yardW / patchSize));
+    const patchRows = Math.max(6, Math.round(yardD / patchSize));
     for (let row = 0; row < patchRows; row++) {
       for (let col = 0; col < patchCols; col++) {
         const localX = -yardW / 2 + (col + 0.5) * (yardW / patchCols);
         const localZ = -yardD / 2 + (row + 0.5) * (yardD / patchRows) - 0.55;
         if (Math.abs(localX) < totalW * 0.52 && Math.abs(localZ + 0.55) < totalD * 0.52) continue;
         const patch = new THREE.Group();
-        const tile = new THREE.Mesh(sharedBoxGeometry(yardW / patchCols - 0.025, 0.075, yardD / patchRows - 0.025), lawnMat);
-        tile.position.y = 0.0375; patch.add(tile);
-        const patchObj = makeObject(patch, 0.18, 1, 1, { x: pos.x + localX, y: 0, z: pos.z + localZ });
+        const clumpW = Math.min(0.34, yardW / patchCols * 0.42);
+        const clumpD = Math.min(0.34, yardD / patchRows * 0.42);
+        const tile = new THREE.Mesh(sharedBoxGeometry(clumpW, randomBetween(0.07, 0.13), clumpD), lawnMat);
+        tile.position.y = 0.055; tile.rotation.y = randomBetween(-0.35, 0.35); patch.add(tile);
+        const patchObj = makeObject(patch, 0.11, 1, 1, { x: pos.x + localX + randomBetween(-0.12, 0.12), y: 0, z: pos.z + localZ + randomBetween(-0.12, 0.12) });
         patchObj.isProp = true; patchObj.mandateKind = propertyCondition === 'polished' ? 'grass_patch' : 'dirt_patch'; patchObj.propertyCondition = propertyCondition;
       }
     }
