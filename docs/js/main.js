@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.135';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.136';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1930,9 +1930,9 @@ function makeCar(pos) {
 // --- Small building (shop) ---
 function makeSmallBuilding(pos) {
   const stackId = nextPhysicsStackId++;
-  const pieceW = 1.72;
+  const pieceW = 2.236;
   const pieceH = 1.22;
-  const pieceD = 1.72;
+  const pieceD = 2.236;
   const gap = 0.045;
   const colsX = Math.random() < 0.28 ? 3 : 2;
   const rowsZ = Math.random() < 0.22 ? 3 : 2;
@@ -2051,8 +2051,8 @@ function makeSmallBuilding(pos) {
   if (propertyCondition !== 'standard') {
     const lawnMat = sharedBoxMat(propertyCondition === 'polished' ? 0x4f9b45 : 0x80633f);
     const fenceMat = sharedBoxMat(propertyCondition === 'polished' ? 0xf2ead8 : 0x8a6a48);
-    const yardW = totalW + 2.8;
-    const yardD = totalD + 3.8;
+    const yardW = totalW + 3.64;
+    const yardD = totalD + 4.94;
     const patchSize = 1.05;
     const patchCols = Math.max(5, Math.round(yardW / patchSize));
     const patchRows = Math.max(6, Math.round(yardD / patchSize));
@@ -2606,10 +2606,10 @@ async function populateCity() {
     } else {
       // Cluster of small buildings
       const positions = [
-        { x: bp.x - 5, z: bp.z - 5 },
-        { x: bp.x + 5, z: bp.z - 5 },
-        { x: bp.x - 5, z: bp.z + 5 },
-        { x: bp.x + 5, z: bp.z + 5 },
+        { x: bp.x - 5.7, z: bp.z - 5.7 },
+        { x: bp.x + 5.7, z: bp.z - 5.7 },
+        { x: bp.x - 5.7, z: bp.z + 5.7 },
+        { x: bp.x + 5.7, z: bp.z + 5.7 },
       ];
       for (const p of positions) {
         if (Math.random() < smallBuildingChance) makeSmallBuilding(p);
