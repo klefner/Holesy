@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.143';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.144';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -971,6 +971,7 @@ const renderer = new THREE.WebGLRenderer({
   antialias: HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.antialias,
   powerPreference: HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.powerPreference,
 });
+renderer.localClippingEnabled = true;
 const configuredMaxPixelRatio = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.maxPixelRatio;
 let adaptivePixelRatio = Math.min(window.devicePixelRatio, configuredMaxPixelRatio);
 let adaptiveFrameTimeTotal = 0;
@@ -1234,34 +1235,21 @@ async function addMegakitBuildingSkinTest(generation) {
     const footprint = Math.max(dimensions.x, dimensions.z) || 1;
     const scale = 8.5 / footprint;
     const scaledHeight = THREE.MathUtils.clamp(dimensions.y * scale, 6.4, 10.4);
-    const sourceMaterials = [];
-    source.traverse((child) => {
-      if (!child.isMesh) return;
-      const materials = Array.isArray(child.material) ? child.material : [child.material];
-      for (const material of materials) {
-        if (material && !sourceMaterials.includes(material)) sourceMaterials.push(material);
-      }
-    });
-    const findMaterial = (...terms) => sourceMaterials.find(material => {
-      const name = String(material.name || '').toLowerCase();
-      return terms.some(term => name.includes(term));
-    });
-    const brickMaterial = findMaterial('redbrick', 'brick') || sourceMaterials[0] || sharedBoxMat(0x9f5f48);
-    const trimMaterial = findMaterial('trim', 'metalconcrete', 'concrete') || brickMaterial;
-    const roofMaterial = findMaterial('roof', 'slate') || trimMaterial;
-    const windowMaterial = findMaterial('lit_interior', 'lit interior', 'interior') || new THREE.MeshBasicMaterial({ color: 0x8ed8ff });
+    const center = bounds.getCenter(new THREE.Vector3());
     const testSites = [
       [-48, -48, 0], [48, -48, Math.PI / 2], [-48, 48, -Math.PI / 2],
       [48, 48, Math.PI], [0, 48, Math.PI],
     ];
 
-    const cols = 3;
-    const rows = 3;
-    const floors = 4;
-    const gap = 0.06;
-    const pieceW = (8.5 - gap * (cols - 1)) / cols;
-    const pieceD = (8.5 - gap * (rows - 1)) / rows;
-    const pieceH = (scaledHeight - gap * (floors - 1)) / floors;
+    // Each edible chunk renders the real model geometry and UV-mapped materials,
+    // clipped to one structural region. Together the chunks form one seamless,
+    // authentic kit building; eating a chunk removes only that visible section.
+    const cols = 2;
+    const rows = 2;
+    const floors = 3;
+    const pieceW = 8.5 / cols;
+    const pieceD = 8.5 / rows;
+    const pieceH = scaledHeight / floors;
 
     for (const [x, z, rotation] of testSites) {
       for (let floor = 0; floor < floors; floor++) {
@@ -1271,40 +1259,55 @@ async function addMegakitBuildingSkinTest(generation) {
             const localZ = (row - (rows - 1) / 2) * (pieceD + gap);
             const rotatedX = localX * Math.cos(rotation) - localZ * Math.sin(rotation);
             const rotatedZ = localX * Math.sin(rotation) + localZ * Math.cos(rotation);
+            const chunkCenterY = pieceH / 2 + floor * pieceH;
+            const minX = x + rotatedX - pieceW / 2;
+            const maxX = x + rotatedX + pieceW / 2;
+            const minZ = z + rotatedZ - pieceD / 2;
+            const maxZ = z + rotatedZ + pieceD / 2;
+            const minY = floor * pieceH;
+            const maxY = (floor + 1) * pieceH;
+            const clippingPlanes = [
+              new THREE.Plane(new THREE.Vector3(1, 0, 0), -minX),
+              new THREE.Plane(new THREE.Vector3(-1, 0, 0), maxX),
+              new THREE.Plane(new THREE.Vector3(0, 0, 1), -minZ),
+              new THREE.Plane(new THREE.Vector3(0, 0, -1), maxZ),
+              new THREE.Plane(new THREE.Vector3(0, 1, 0), -minY),
+              new THREE.Plane(new THREE.Vector3(0, -1, 0), maxY),
+            ];
+            const skin = source.clone(true);
+            skin.position.set(-center.x, -bounds.min.y, -center.z);
+            skin.traverse((child) => {
+              if (!child.isMesh) return;
+              const materials = Array.isArray(child.material) ? child.material : [child.material];
+              const clipped = materials.map(material => {
+                const clone = material.clone();
+                clone.clippingPlanes = clippingPlanes;
+                clone.clipShadows = true;
+                clone.needsUpdate = true;
+                return clone;
+              });
+              child.material = Array.isArray(child.material) ? clipped : clipped[0];
+              child.castShadow = true;
+              child.receiveShadow = true;
+            });
+            const modelRoot = new THREE.Group();
+            modelRoot.add(skin);
+            modelRoot.scale.setScalar(scale);
+            modelRoot.rotation.y = rotation;
+            modelRoot.position.set(-rotatedX, -chunkCenterY, -rotatedZ);
             const piece = new THREE.Group();
-            const isRoof = floor === floors - 1;
-            const core = new THREE.Mesh(
-              sharedBoxGeometry(pieceW, pieceH, pieceD),
-              isRoof ? roofMaterial : (floor === 0 && (col + row) % 2 ? trimMaterial : brickMaterial)
-            );
-            core.castShadow = true;
-            core.receiveShadow = true;
-            piece.add(core);
-
-            if (!isRoof) {
-              const addWindow = (px, pz, width, depth) => {
-                const pane = new THREE.Mesh(sharedBoxGeometry(width, pieceH * 0.46, depth), windowMaterial);
-                pane.position.set(px, 0.06, pz);
-                pane.userData.holesyUnshadowed = true;
-                piece.add(pane);
-              };
-              if (row === rows - 1) addWindow(0, pieceD / 2 + 0.025, pieceW * 0.48, 0.035);
-              if (row === 0) addWindow(0, -pieceD / 2 - 0.025, pieceW * 0.48, 0.035);
-              if (col === 0) addWindow(-pieceW / 2 - 0.025, 0, 0.035, pieceD * 0.48);
-              if (col === cols - 1) addWindow(pieceW / 2 + 0.025, 0, 0.035, pieceD * 0.48);
-            }
-            piece.rotation.y = rotation;
+            piece.add(modelRoot);
             const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
               x: x + rotatedX,
               z: z + rotatedZ,
-              y: pieceH / 2 + floor * (pieceH + gap),
+              y: chunkCenterY,
             });
             object.isBuilding = true;
             object.buildingSize = 'small';
             object.mandateKind = 'shop';
             object.isMegakitAsset = true;
             object.isVoxelBuildingCube = true;
-            object.megakitAssetName = 'Objectified MegaKit Small Building 1 chunk';
+            object.megakitAssetName = 'Clipped authentic MegaKit Small Building 1 section';
           }
         }
       }

@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 143;
+export const BUILD_SUB = 144;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.144',
+    title: 'Authentic break-apart MegaKit model',
+    notes: [
+      'Replaces approximated brown boxes with clipped sections of the actual Building_Small_1 mesh, preserving its genuine UV-mapped brickwork, windows, doors, trim, roof, and silhouette.',
+      'Divides each authentic model into twelve independently consumable visible sections while sharing the original model geometry and textures.',
+    ],
+  },
   {
     label: 'Master 16.143',
     title: 'Objectified MegaKit building skin',
