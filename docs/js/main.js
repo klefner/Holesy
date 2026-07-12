@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.141';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.142';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -2911,6 +2911,21 @@ function createHole(isPlayer, name, rimColor, startPos) {
   rim.position.y = 0.06;
   group.add(rim);
 
+  // Earned cosmetic prototype: colored motes orbit visibly inside the player hole.
+  const prismOrbit = new THREE.Group();
+  prismOrbit.position.y = 0.09;
+  prismOrbit.visible = false;
+  const prismColors = [0xff4d6d, 0xffc857, 0x7ae582, 0x4cc9f0, 0x9b5de5, 0xff70a6, 0xf8f32b];
+  for (let i = 0; i < prismColors.length; i++) {
+    const mote = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 10, 8),
+      new THREE.MeshBasicMaterial({ color: prismColors[i], transparent: true, opacity: 0.92, depthWrite: false })
+    );
+    mote.userData.prismPhase = (i / prismColors.length) * Math.PI * 2;
+    prismOrbit.add(mote);
+  }
+  group.add(prismOrbit);
+
   const vortexArcGroup = new THREE.Group();
   vortexArcGroup.rotation.x = -Math.PI / 2;
   vortexArcGroup.position.y = 0.08;
@@ -2983,7 +2998,8 @@ function createHole(isPlayer, name, rimColor, startPos) {
     loreBuffs: {},
     loreBuffCooldowns: {},
     loreFirstBiteActive: false,
-    group, disc, rim, vortexArcGroup, vortexArcs, labelSprite,
+    group, disc, rim, prismOrbit, vortexArcGroup, vortexArcs, labelSprite,
+    prismOrbitUnlocked: false,
     // AI state
     aiState: 'wander', aiTargetObj: null, aiTimer: 0,
     wanderX: startPos.x, wanderZ: startPos.z
@@ -3044,6 +3060,20 @@ function updateHoleVisual(h) {
     h.rim.scale.set(1, 1, 1);
   }
   h.group.position.set(h.x, 0, h.z);
+  if (h.prismOrbit) {
+    h.prismOrbit.visible = h.isPlayer && !!h.prismOrbitUnlocked;
+    if (h.prismOrbit.visible) {
+      const orbitRadius = Math.max(0.7, h.radius * 0.58);
+      const moteSize = Math.min(0.42, Math.max(0.13, h.radius * 0.075));
+      h.prismOrbit.rotation.y = now * 0.00105;
+      h.prismOrbit.children.forEach((mote, index) => {
+        const phase = mote.userData.prismPhase + Math.sin(now * 0.0017 + index) * 0.12;
+        mote.position.set(Math.cos(phase) * orbitRadius, 0.03 + Math.sin(now * 0.004 + index) * 0.04, Math.sin(phase) * orbitRadius);
+        const pulse = moteSize * (0.86 + Math.sin(now * 0.006 + index * 0.8) * 0.14);
+        mote.scale.setScalar(pulse);
+      });
+    }
+  }
   // Label size and height scale with hole
   const s = Math.max(3, h.radius * 2.2);
   h.labelSprite.scale.set(s, s / 4, 1);
@@ -5333,11 +5363,12 @@ let activeRunObjectiveFamilies = new Set();
 let activeRunObjectiveSetRewarded = false;
 let runObjectivesUiDirty = true;
 let objectMastery = loadObjectMastery();
+player.prismOrbitUnlocked = !!objectMastery.cosmetics?.prismOrbit;
 let objectMasterySaveTimer = null;
 let objectMasterySavePending = false;
 
 function createEmptyObjectMastery() {
-  return { schemaVersion: 1, families: {} };
+  return { schemaVersion: 1, families: {}, cosmetics: {} };
 }
 
 function loadObjectMastery() {
@@ -5347,6 +5378,7 @@ function loadObjectMastery() {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== 'object') return createEmptyObjectMastery();
     if (!parsed.families || typeof parsed.families !== 'object') parsed.families = {};
+    if (!parsed.cosmetics || typeof parsed.cosmetics !== 'object') parsed.cosmetics = {};
     parsed.schemaVersion = 1;
     return parsed;
   } catch {
@@ -5483,13 +5515,18 @@ function recordPlayerFamilyProgress(familyId, amount, hole, sourceObj = null) {
       objective.celebrateUntil = performance.now() + 900;
       mastery.goalsCompleted += 1;
       if (hole && hole.isPlayer) {
+        const unlockedPrismOrbit = !objectMastery.cosmetics.prismOrbit;
+        if (unlockedPrismOrbit) {
+          objectMastery.cosmetics.prismOrbit = { unlockedAt: new Date().toISOString(), source: 'run_goal' };
+          hole.prismOrbitUnlocked = true;
+        }
         playRunGoalChime();
         triggerHaptic('runGoal');
         const pos = sourceObj
           ? new THREE.Vector3(sourceObj.x || hole.x, 0, sourceObj.z || hole.z)
           : new THREE.Vector3(hole.x, 0, hole.z);
         flashConsumed('GOAL COMPLETE', pos);
-        showEventBanner(`GOAL: ${objective.label} · COSMETIC PROGRESS`, 2200);
+        showEventBanner(unlockedPrismOrbit ? 'COSMETIC UNLOCKED: PRISM ORBIT' : `GOAL: ${objective.label} · MASTERY +1`, 2400);
       }
     }
   }
@@ -5533,7 +5570,8 @@ function runObjectiveInstruction(objective) {
     soldiers: `Devour ${target} soldiers.`,
     manholes: `Devour ${target} road manhole covers in MegaKit Downtown.`,
   };
-  return `${instructions[objective.id] || `Devour ${target} matching objects.`} Reward: buff and cosmetic progress.`;
+  const cosmeticCopy = objectMastery.cosmetics.prismOrbit ? 'Prism Orbit equipped.' : 'First completed goal unlocks Prism Orbit.';
+  return `${instructions[objective.id] || `Devour ${target} matching objects.`} Reward: buff and mastery. ${cosmeticCopy}`;
 }
 
 function updateRunObjectivesUi() {
@@ -5554,14 +5592,14 @@ function updateRunObjectivesUi() {
         <span class="objective-count">${objective.progress}/${objective.target}</span>
       </div>
       <div class="objective-progress"><span style="width:${pct.toFixed(1)}%"></span></div>
-      <div class="objective-meta">L${tier} mastery &middot; cosmetic progress</div>
+      <div class="objective-meta">L${tier} mastery &middot; ${objectMastery.cosmetics.prismOrbit ? 'Prism Orbit equipped' : 'Prism Orbit unlock'}</div>
     </div>`;
   }).join('');
   const rewardState = activeRunObjectiveSetRewarded ? 'claimed' : 'available';
   runObjectivesEl.innerHTML = `${objectiveHtml}
     <div class="objective-set-reward ${rewardState}">
       <span>All goals</span>
-      <strong>${RUN_OBJECTIVE_SET_SPEED_SECONDS}s speed + cosmetic</strong>
+      <strong>${RUN_OBJECTIVE_SET_SPEED_SECONDS}s speed + mastery</strong>
     </div>`;
 }
 
