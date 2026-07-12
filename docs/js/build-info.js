@@ -1,8 +1,15 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 144;
+export const BUILD_SUB = 145;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.145',
+    title: 'Authentic MegaKit section spawn repair',
+    notes: [
+      'Removes a stale box-grid gap reference that blocked the new clipped authentic model sections from spawning in Master 16.144.',
+    ],
+  },
   {
     label: 'Master 16.144',
     title: 'Authentic break-apart MegaKit model',

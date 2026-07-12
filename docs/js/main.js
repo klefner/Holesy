@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.144';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.145';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1255,8 +1255,8 @@ async function addMegakitBuildingSkinTest(generation) {
       for (let floor = 0; floor < floors; floor++) {
         for (let row = 0; row < rows; row++) {
           for (let col = 0; col < cols; col++) {
-            const localX = (col - (cols - 1) / 2) * (pieceW + gap);
-            const localZ = (row - (rows - 1) / 2) * (pieceD + gap);
+            const localX = (col - (cols - 1) / 2) * pieceW;
+            const localZ = (row - (rows - 1) / 2) * pieceD;
             const rotatedX = localX * Math.cos(rotation) - localZ * Math.sin(rotation);
             const rotatedZ = localX * Math.sin(rotation) + localZ * Math.cos(rotation);
             const chunkCenterY = pieceH / 2 + floor * pieceH;
