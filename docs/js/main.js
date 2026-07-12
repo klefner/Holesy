@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.127';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.128';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1912,6 +1912,7 @@ function makeSmallBuilding(pos) {
   const totalW = colsX * pieceW + (colsX - 1) * gap;
   const totalD = rowsZ * pieceD + (rowsZ - 1) * gap;
   let firstPiece = null;
+  const propertyCondition = Math.random() < 0.34 ? 'polished' : Math.random() < 0.52 ? 'rundown' : 'standard';
 
   for (let floor = 0; floor < floorsY; floor++) {
     for (let row = 0; row < rowsZ; row++) {
@@ -2013,6 +2014,41 @@ function makeSmallBuilding(pos) {
     }
   }
 
+  if (propertyCondition !== 'standard') {
+    const yard = new THREE.Group();
+    const lawnMat = sharedBoxMat(propertyCondition === 'polished' ? 0x4f9b45 : 0x80633f);
+    const fenceMat = sharedBoxMat(propertyCondition === 'polished' ? 0xf2ead8 : 0x8a6a48);
+    const lawn = new THREE.Mesh(sharedBoxGeometry(totalW + 2.8, 0.10, totalD + 3.8), lawnMat);
+    lawn.position.set(0, 0.05, -0.55); yard.add(lawn);
+    const addFence = (x, z, length, rotation = 0, broken = false) => {
+      const segment = new THREE.Group();
+      const postCount = Math.max(2, Math.round(length / 0.75));
+      for (let i = 0; i < postCount; i++) {
+        if (broken && Math.random() < 0.32) continue;
+        const post = new THREE.Mesh(sharedBoxGeometry(0.10, broken ? randomBetween(0.35, 0.8) : 0.82, 0.10), fenceMat);
+        post.position.set(-length / 2 + i * (length / Math.max(1, postCount - 1)), broken ? randomBetween(0.18, 0.4) : 0.41, 0);
+        if (broken) post.rotation.z = randomBetween(-0.35, 0.35);
+        segment.add(post);
+      }
+      for (const y of [0.28, 0.62]) {
+        if (broken && Math.random() < 0.45) continue;
+        const rail = new THREE.Mesh(sharedBoxGeometry(length, 0.10, 0.08), fenceMat);
+        rail.position.y = y; if (broken) rail.rotation.z = randomBetween(-0.18, 0.18); segment.add(rail);
+      }
+      segment.position.set(x, 0.08, z); segment.rotation.y = rotation; yard.add(segment);
+    };
+    addFence(-(totalW + 2.4) / 2, -0.5, totalD + 3.2, Math.PI / 2, propertyCondition === 'rundown');
+    addFence((totalW + 2.4) / 2, -0.5, totalD + 3.2, Math.PI / 2, propertyCondition === 'rundown');
+    addFence(0, -(totalD + 2.6) / 2, totalW + 2.4, 0, propertyCondition === 'rundown');
+    yard.children.forEach(child => child.traverse?.(mesh => { if (mesh.isMesh) mesh.castShadow = true; }));
+    const yardObj = makeObject(yard, Math.max(totalW, totalD) * 0.72, 1, 8, { x: pos.x, y: 0, z: pos.z });
+    yardObj.isProp = true; yardObj.mandateKind = 'yard'; yardObj.propertyCondition = propertyCondition;
+    if (propertyCondition === 'rundown') {
+      const backZ = pos.z - totalD / 2 - 1.0;
+      for (let i = 0; i < 3; i++) makeStreetFixture(STREET_FIXTURE_KINDS[Math.floor(Math.random() * STREET_FIXTURE_KINDS.length)], { x: pos.x + randomBetween(-totalW * 0.45, totalW * 0.45), z: backZ + randomBetween(-0.55, 0.55) });
+    }
+  }
+  if (firstPiece) firstPiece.propertyCondition = propertyCondition;
   return firstPiece;
 }
 
@@ -4775,17 +4811,18 @@ function isMusicAudibleAllowed() {
 }
 
 function isGameplayAudioAllowed() {
-  return !music.muted && running && isGameState(GAME_STATES.PLAYING);
+  return !music.muted && !music.focusSuspended && isMusicAllowedByFocus() && running && isGameState(GAME_STATES.PLAYING);
 }
 
 function handleMusicFocusChange() {
   music.focusSuspended = !isMusicAllowedByFocus();
   if (music.focusSuspended) {
-    if (music.playing) stopMusic(160);
-    if (music.archivePlaying) stopArchiveMusic(160);
+    if (music.ctx && music.ctx.state === 'running') music.ctx.suspend().catch(() => {});
     return;
   }
-  syncTitleAudioToGameState();
+  if (music.ctx && music.ctx.state === 'suspended') {
+    music.ctx.resume().then(() => syncTitleAudioToGameState()).catch(() => syncTitleAudioToGameState());
+  } else syncTitleAudioToGameState();
 }
 
 function toggleMusic() {
