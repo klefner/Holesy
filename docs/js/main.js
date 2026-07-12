@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.139';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.140';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1061,7 +1061,7 @@ const megakitTextureCache = new Map();
 const megakitMaterialCache = new Map();
 const megakitEnvironmentMeshes = [];
 let megakitEnvironmentGeneration = 0;
-const MEGAKIT_ASSET_BASE = '../assets/environments/downtown-city-megakit/source-gltf/';
+const MEGAKIT_ASSET_BASE = 'assets/environments/downtown-city-megakit/source-gltf/';
 
 function normalizeEnvironmentKey(key) {
   return key === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN ? key : ENVIRONMENT_KEYS.CLASSIC;

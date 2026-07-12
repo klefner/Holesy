@@ -1,8 +1,15 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 139;
+export const BUILD_SUB = 140;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.140',
+    title: 'GitHub Pages MegaKit asset-path repair',
+    notes: [
+      'Keeps the Master 16.139 preview and corrects MegaKit model and texture requests so they remain inside the deployed /Holesy/ package.',
+    ],
+  },
   {
     label: 'Master 16.139',
     title: 'MegaKit building preview and louder Mandate pressure',
