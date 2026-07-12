@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 138;
+export const BUILD_SUB = 139;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.139',
+    title: 'MegaKit building preview and louder Mandate pressure',
+    notes: [
+      'Loads one authentic MegaKit small-building model five times in MegaKit Downtown so its real materials and silhouette are easy to evaluate.',
+      'Enlarges the five-flash Mandate arrow and gives every flash a short comic wobble-horn alert.',
+    ],
+  },
   {
     label: 'Master 16.125',
     title: 'Plain-language objectives and ten more street objects',

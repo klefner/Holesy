@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.138';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.139';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1055,6 +1056,7 @@ const ENVIRONMENT_KEYS = Object.freeze({
 });
 let selectedEnvironment = ENVIRONMENT_KEYS.CLASSIC;
 const megakitTextureLoader = new THREE.TextureLoader();
+const megakitGltfLoader = new GLTFLoader();
 const megakitTextureCache = new Map();
 const megakitMaterialCache = new Map();
 const megakitEnvironmentMeshes = [];
@@ -1217,6 +1219,49 @@ function populateMegakitDowntownTest() {
   addMegakitConsumableBox('MegaKit planter', -21, 28, 2.0, 0.75, 2.0, planterMat, 1.25, 35);
   addMegakitConsumableBox('MegaKit planter', 21, -28, 2.0, 0.75, 2.0, planterMat, 1.25, 35);
   [-11, -7, 7, 11].forEach((x, i) => addMegakitConsumableBox('MegaKit bollard', x, i < 2 ? -13 : 13, 0.35, 1.2, 0.35, metalMat, 0.45, 12));
+  addMegakitBuildingSkinTest(megakitEnvironmentGeneration);
+}
+
+async function addMegakitBuildingSkinTest(generation) {
+  try {
+    const gltf = await megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}Building_Small_1.gltf`);
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN || generation !== megakitEnvironmentGeneration) return;
+
+    const source = gltf.scene;
+    source.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(source);
+    const dimensions = bounds.getSize(new THREE.Vector3());
+    const center = bounds.getCenter(new THREE.Vector3());
+    const footprint = Math.max(dimensions.x, dimensions.z) || 1;
+    const scale = 8.5 / footprint;
+    const testSites = [
+      [-48, -48, 0], [48, -48, Math.PI / 2], [-48, 48, -Math.PI / 2],
+      [48, 48, Math.PI], [0, 48, Math.PI],
+    ];
+
+    for (const [x, z, rotation] of testSites) {
+      const skin = source.clone(true);
+      skin.position.set(-center.x, -bounds.min.y, -center.z);
+      skin.traverse((child) => {
+        if (!child.isMesh) return;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      });
+      const wrapper = new THREE.Group();
+      wrapper.add(skin);
+      wrapper.scale.setScalar(scale);
+      wrapper.rotation.y = rotation;
+      const object = makeObject(wrapper, 4.25, 1, 180, { x, z, y: 0 });
+      object.isBuilding = true;
+      object.buildingSize = 'small';
+      object.mandateKind = 'shop';
+      object.isMegakitAsset = true;
+      object.megakitAssetName = 'MegaKit Small Building 1 visual test';
+    }
+    wakeRenderLoop();
+  } catch (error) {
+    console.warn('MegaKit building visual test could not load.', error);
+  }
 }
 
 // Ground
@@ -5851,6 +5896,7 @@ function updateMandateHUD() {
   const warnActive = remaining > 0 && gameTime > 0 && gameTime <= 15 && !mandateComplete;
   if (warnActive && !mandateWarningWasActive) {
     playMandateDeadlineWarning();
+    playMandateArrowFlashAlerts();
     document.body.classList.add('mandate-screen-warning');
     mandatePanelEl.classList.remove('mandate-warn-start');
     void mandatePanelEl.offsetWidth;
@@ -7077,6 +7123,32 @@ function playMandateDeadlineWarning() {
     gain.gain.setValueAtTime(0.0001, start); gain.gain.exponentialRampToValueAtTime(0.19, start + 0.015); gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
     osc.connect(gain); gain.connect(output); osc.start(start); osc.stop(start + 0.2);
   });
+}
+
+function playMandateArrowFlashAlerts() {
+  initMusicContext();
+  if (!music.ctx || !isGameplayAudioAllowed()) return;
+  if (music.ctx.state === 'suspended') music.ctx.resume().catch(() => {});
+  const ctx = music.ctx;
+  for (let flash = 0; flash < 5; flash++) {
+    const start = ctx.currentTime + flash * 0.64;
+    const osc = ctx.createOscillator();
+    const wobble = ctx.createOscillator();
+    const wobbleDepth = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    osc.type = flash % 2 ? 'square' : 'sawtooth';
+    osc.frequency.setValueAtTime(215 + flash * 13, start);
+    osc.frequency.exponentialRampToValueAtTime(118 + flash * 7, start + 0.16);
+    wobble.type = 'sine'; wobble.frequency.setValueAtTime(19, start); wobbleDepth.gain.setValueAtTime(28, start);
+    wobble.connect(wobbleDepth); wobbleDepth.connect(osc.frequency);
+    filter.type = 'bandpass'; filter.frequency.setValueAtTime(620, start); filter.Q.value = 2.6;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.14, start + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+    osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+    osc.start(start); wobble.start(start); osc.stop(start + 0.24); wobble.stop(start + 0.24);
+  }
 }
 
 function playBossVictoryFanfare() {
