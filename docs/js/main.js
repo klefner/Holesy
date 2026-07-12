@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.131';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.132';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1748,6 +1748,7 @@ const STREET_FIXTURE_KINDS = Object.freeze([
   'street_clock', 'flower_stand', 'mail_drop_box', 'traffic_signal', 'portable_toilet',
   'tool_chest', 'ice_machine', 'newspaper_stand', 'ticket_machine', 'water_cooler',
   'generator', 'sandbag_stack', 'luggage_cart', 'dog_house', 'chess_table',
+  'public_payphone',
 ]);
 
 function makeStreetFixture(kind, pos) {
@@ -1769,6 +1770,7 @@ function makeStreetFixture(kind, pos) {
   else if (kind === 'bus_stop') { addBox(0.1, 2.3, 0.1, 0, 1.15, 0, dark); addBox(0.86, 0.62, 0.08, 0, 1.95, 0, mat); }
   else if (kind === 'dumpster') { addBox(1.65, 1.05, 1.05); addBox(1.7, 0.12, 1.1, 0, 1.1, 0, dark); }
   else if (kind === 'phone_booth') { addBox(0.9, 2.15, 0.9); addBox(0.64, 1.28, 0.05, 0, 1.0, 0.48, dark); }
+  else if (kind === 'public_payphone') { addBox(0.14, 1.75, 0.14, 0, 0.875, 0, dark); addBox(0.62, 0.78, 0.32, 0, 1.62, 0); addBox(0.14, 0.52, 0.12, 0.2, 1.66, 0.2, dark); addBox(0.42, 0.12, 0.08, 0, 1.82, 0.2, dark); }
   else if (kind === 'road_barrier') { addBox(1.85, 0.35, 0.18, 0, 0.82, 0); addBox(0.12, 0.82, 0.12, -0.65, 0.41, 0, dark); addBox(0.12, 0.82, 0.12, 0.65, 0.41, 0, dark); }
   else if (kind === 'picnic_table') { addBox(1.5, 0.18, 0.85, 0, 0.72, 0); addBox(0.16, 0.68, 0.16, -0.52, 0.34, 0, dark); addBox(0.16, 0.68, 0.16, 0.52, 0.34, 0, dark); }
   else if (kind === 'street_kiosk') { addBox(1.2, 2.0, 0.85); addBox(1.34, 0.16, 1.0, 0, 2.08, 0, dark); }
@@ -2028,11 +2030,15 @@ function makeSmallBuilding(pos) {
         const localZ = -yardD / 2 + (row + 0.5) * (yardD / patchRows) - 0.55;
         if (Math.abs(localX) < totalW * 0.52 && Math.abs(localZ + 0.55) < totalD * 0.52) continue;
         const patch = new THREE.Group();
-        const clumpW = Math.min(0.34, yardW / patchCols * 0.42);
-        const clumpD = Math.min(0.34, yardD / patchRows * 0.42);
-        const tile = new THREE.Mesh(sharedBoxGeometry(clumpW, randomBetween(0.07, 0.13), clumpD), lawnMat);
-        tile.position.y = 0.055; tile.rotation.y = randomBetween(-0.35, 0.35); patch.add(tile);
-        const patchObj = makeObject(patch, 0.11, 1, 1, { x: pos.x + localX + randomBetween(-0.12, 0.12), y: 0, z: pos.z + localZ + randomBetween(-0.12, 0.12) });
+        const cellW = yardW / patchCols;
+        const cellD = yardD / patchRows;
+        const clumpW = cellW * 0.97;
+        const clumpD = cellD * 0.97;
+        const soil = new THREE.Mesh(sharedBoxGeometry(clumpW, 0.16, clumpD), sharedBoxMat(0x5a3d26));
+        soil.position.y = 0.08; patch.add(soil);
+        const top = new THREE.Mesh(sharedBoxGeometry(clumpW * 0.98, 0.045, clumpD * 0.98), lawnMat);
+        top.position.y = 0.1825; patch.add(top);
+        const patchObj = makeObject(patch, 0.11, 1, 1, { x: pos.x + localX, y: 0, z: pos.z + localZ });
         patchObj.isProp = true; patchObj.mandateKind = propertyCondition === 'polished' ? 'grass_patch' : 'dirt_patch'; patchObj.propertyCondition = propertyCondition;
       }
     }
@@ -5412,7 +5418,6 @@ function maybeAwardRunObjectiveSetReward(hole) {
   triggerUnitClearVisuals(hole);
   playUnitClearStinger();
   triggerHaptic('goalSweep');
-  showStagePop('GOAL SWEEP', 1400);
   showEventBanner('GOAL SWEEP · SPEED + COSMETIC', 2800);
   flashConsumed('GOAL SWEEP', new THREE.Vector3(hole.x, 0, hole.z));
   updateActiveEffectsUi();
@@ -5707,7 +5712,6 @@ function applyMandateCompletionReward(h) {
   mandateComplete = true;
   playUnitClearStinger();
   triggerHaptic('mandateComplete');
-  showStagePop('MANDATE PASSED!', 1800);
   showEventBanner('MANDATE PASSED', 2400);
   flashConsumed('MANDATE PASSED', new THREE.Vector3(h.x, 0, h.z));
 }
@@ -5806,7 +5810,6 @@ function triggerMandateFailureGameOver() {
   markMandateFailureRows();
   pendingPlayerEndReason = 'mandate_failed';
   triggerHaptic('mandateFail');
-  showStagePop('MANDATE FAILED', 1800);
   showEventBanner('MANDATE FAILED: THE LOCKDOWN CLOSES.', 4200);
   endGame();
   return true;
@@ -5945,7 +5948,6 @@ function unlockAchievement(id, announce = true) {
   }
   if (announce && isNew) {
     const headline = def.active ? `BUFF: ${def.playerName}` : `ACHIEVEMENT: ${def.playerName}`;
-    showStagePop(def.active ? 'BUFF ACTIVE' : 'ACHIEVEMENT', 2600);
     showEventBanner(`${headline} - ${def.effectText}`, 6200);
   }
   return isNew;
@@ -9523,7 +9525,6 @@ function applyPowerupToHole(h, powerupId) {
   }
   if (h.isPlayer) {
     triggerHaptic('powerup');
-    showStagePop(powerup.pickupText);
     if (powerup.id === 'growth_cache') {
       flashConsumed('BONUS MASS', new THREE.Vector3(h.x, 0, h.z));
     }
@@ -14014,7 +14015,6 @@ function applyUnitClearReward(h, roster) {
     triggerHaptic('unitClear');
     playUnitClearStinger();
     triggerUnitClearVisuals(h);
-    showStagePop('UNIT WIPED! +' + breakdown.bonus.toLocaleString(), UNIT_CLEAR_STAGE_POP_DURATION_MS);
     flashConsumed('CLUTCH CLEAR · +' + breakdown.bonus + ' · GROWTH +' + breakdown.restoreRadius.toFixed(2) + ' · SPEED x' + speedBoost.boostMultiplier.toFixed(2), new THREE.Vector3(h.x, 0, h.z));
     showEventBanner('FULL UNIT CLEAR! MASS SURGED. BULLET DAMAGE SUPPRESSED. SPEED BOOST ACTIVE.', UNIT_CLEAR_BANNER_DURATION_MS);
   }
