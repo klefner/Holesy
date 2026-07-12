@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.136';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.137';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -5806,6 +5806,7 @@ function recordMandateSoldierConsume(h, soldier) {
 }
 
 let mandateWarningWasActive = false;
+let mandateWarningArrowTimer = null;
 function updateMandateHUD() {
   if (!mandatePanelEl || !mandateDotsEl || !mandateLabelEl) return;
   mandatePanelEl.style.display = isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION) ? '' : 'none';
@@ -5848,7 +5849,14 @@ function updateMandateHUD() {
   const remaining = Math.max(0, mandateTargets.length - mandateCollected);
   mandateLabelEl.textContent = remaining === 0 && mandateTargets.length > 0 ? 'Complete!' : `${remaining || MANDATE_COUNT} left`;
   const warnActive = remaining > 0 && gameTime > 0 && gameTime <= 15 && !mandateComplete;
-  if (warnActive && !mandateWarningWasActive) playMandateDeadlineWarning();
+  if (warnActive && !mandateWarningWasActive) {
+    playMandateDeadlineWarning();
+    mandatePanelEl.classList.remove('mandate-warn-start');
+    void mandatePanelEl.offsetWidth;
+    mandatePanelEl.classList.add('mandate-warn-start');
+    if (mandateWarningArrowTimer) clearTimeout(mandateWarningArrowTimer);
+    mandateWarningArrowTimer = setTimeout(() => { mandatePanelEl.classList.remove('mandate-warn-start'); mandateWarningArrowTimer = null; }, 3400);
+  }
   mandateWarningWasActive = warnActive;
   mandatePanelEl.classList.toggle('mandate-warn', warnActive);
 }
@@ -7059,13 +7067,14 @@ function playMandateDeadlineWarning() {
   initMusicContext();
   if (!music.ctx || !isGameplayAudioAllowed()) return;
   const ctx = music.ctx;
-  const output = getCelebrationDestination();
-  [196, 146.83].forEach((freq, index) => {
-    const start = ctx.currentTime + index * 0.24;
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  const output = ctx.destination;
+  [246.94, 185, 138.59].forEach((freq, index) => {
+    const start = ctx.currentTime + index * 0.22;
     const osc = ctx.createOscillator(); const gain = ctx.createGain();
-    osc.type = 'square'; osc.frequency.setValueAtTime(freq, start);
-    gain.gain.setValueAtTime(0.0001, start); gain.gain.exponentialRampToValueAtTime(0.085, start + 0.015); gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.19);
-    osc.connect(gain); gain.connect(output); osc.start(start); osc.stop(start + 0.21);
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start); gain.gain.exponentialRampToValueAtTime(0.19, start + 0.015); gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
+    osc.connect(gain); gain.connect(output); osc.start(start); osc.stop(start + 0.2);
   });
 }
 
