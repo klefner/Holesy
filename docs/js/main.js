@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.142';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.143';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1231,32 +1231,83 @@ async function addMegakitBuildingSkinTest(generation) {
     source.updateMatrixWorld(true);
     const bounds = new THREE.Box3().setFromObject(source);
     const dimensions = bounds.getSize(new THREE.Vector3());
-    const center = bounds.getCenter(new THREE.Vector3());
     const footprint = Math.max(dimensions.x, dimensions.z) || 1;
     const scale = 8.5 / footprint;
+    const scaledHeight = THREE.MathUtils.clamp(dimensions.y * scale, 6.4, 10.4);
+    const sourceMaterials = [];
+    source.traverse((child) => {
+      if (!child.isMesh) return;
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      for (const material of materials) {
+        if (material && !sourceMaterials.includes(material)) sourceMaterials.push(material);
+      }
+    });
+    const findMaterial = (...terms) => sourceMaterials.find(material => {
+      const name = String(material.name || '').toLowerCase();
+      return terms.some(term => name.includes(term));
+    });
+    const brickMaterial = findMaterial('redbrick', 'brick') || sourceMaterials[0] || sharedBoxMat(0x9f5f48);
+    const trimMaterial = findMaterial('trim', 'metalconcrete', 'concrete') || brickMaterial;
+    const roofMaterial = findMaterial('roof', 'slate') || trimMaterial;
+    const windowMaterial = findMaterial('lit_interior', 'lit interior', 'interior') || new THREE.MeshBasicMaterial({ color: 0x8ed8ff });
     const testSites = [
       [-48, -48, 0], [48, -48, Math.PI / 2], [-48, 48, -Math.PI / 2],
       [48, 48, Math.PI], [0, 48, Math.PI],
     ];
 
+    const cols = 3;
+    const rows = 3;
+    const floors = 4;
+    const gap = 0.06;
+    const pieceW = (8.5 - gap * (cols - 1)) / cols;
+    const pieceD = (8.5 - gap * (rows - 1)) / rows;
+    const pieceH = (scaledHeight - gap * (floors - 1)) / floors;
+
     for (const [x, z, rotation] of testSites) {
-      const skin = source.clone(true);
-      skin.position.set(-center.x, -bounds.min.y, -center.z);
-      skin.traverse((child) => {
-        if (!child.isMesh) return;
-        child.castShadow = true;
-        child.receiveShadow = true;
-      });
-      const wrapper = new THREE.Group();
-      wrapper.add(skin);
-      wrapper.scale.setScalar(scale);
-      wrapper.rotation.y = rotation;
-      const object = makeObject(wrapper, 4.25, 1, 180, { x, z, y: 0 });
-      object.isBuilding = true;
-      object.buildingSize = 'small';
-      object.mandateKind = 'shop';
-      object.isMegakitAsset = true;
-      object.megakitAssetName = 'MegaKit Small Building 1 visual test';
+      for (let floor = 0; floor < floors; floor++) {
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            const localX = (col - (cols - 1) / 2) * (pieceW + gap);
+            const localZ = (row - (rows - 1) / 2) * (pieceD + gap);
+            const rotatedX = localX * Math.cos(rotation) - localZ * Math.sin(rotation);
+            const rotatedZ = localX * Math.sin(rotation) + localZ * Math.cos(rotation);
+            const piece = new THREE.Group();
+            const isRoof = floor === floors - 1;
+            const core = new THREE.Mesh(
+              sharedBoxGeometry(pieceW, pieceH, pieceD),
+              isRoof ? roofMaterial : (floor === 0 && (col + row) % 2 ? trimMaterial : brickMaterial)
+            );
+            core.castShadow = true;
+            core.receiveShadow = true;
+            piece.add(core);
+
+            if (!isRoof) {
+              const addWindow = (px, pz, width, depth) => {
+                const pane = new THREE.Mesh(sharedBoxGeometry(width, pieceH * 0.46, depth), windowMaterial);
+                pane.position.set(px, 0.06, pz);
+                pane.userData.holesyUnshadowed = true;
+                piece.add(pane);
+              };
+              if (row === rows - 1) addWindow(0, pieceD / 2 + 0.025, pieceW * 0.48, 0.035);
+              if (row === 0) addWindow(0, -pieceD / 2 - 0.025, pieceW * 0.48, 0.035);
+              if (col === 0) addWindow(-pieceW / 2 - 0.025, 0, 0.035, pieceD * 0.48);
+              if (col === cols - 1) addWindow(pieceW / 2 + 0.025, 0, 0.035, pieceD * 0.48);
+            }
+            piece.rotation.y = rotation;
+            const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
+              x: x + rotatedX,
+              z: z + rotatedZ,
+              y: pieceH / 2 + floor * (pieceH + gap),
+            });
+            object.isBuilding = true;
+            object.buildingSize = 'small';
+            object.mandateKind = 'shop';
+            object.isMegakitAsset = true;
+            object.isVoxelBuildingCube = true;
+            object.megakitAssetName = 'Objectified MegaKit Small Building 1 chunk';
+          }
+        }
+      }
     }
     wakeRenderLoop();
   } catch (error) {

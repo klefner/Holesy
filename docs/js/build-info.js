@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 142;
+export const BUILD_SUB = 143;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.143',
+    title: 'Objectified MegaKit building skin',
+    notes: [
+      'Rebuilds each MegaKit preview from 36 individually consumable structural chunks instead of one monolithic object.',
+      'Reuses the source kit brick, trim, concrete, roof, and illuminated-interior materials across the breakable pieces.',
+    ],
+  },
   {
     label: 'Master 16.142',
     title: 'First earnable hole cosmetic',
