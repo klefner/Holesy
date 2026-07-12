@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.140';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.141';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -5902,7 +5902,7 @@ function updateMandateHUD() {
     void mandatePanelEl.offsetWidth;
     mandatePanelEl.classList.add('mandate-warn-start');
     if (mandateWarningArrowTimer) clearTimeout(mandateWarningArrowTimer);
-    mandateWarningArrowTimer = setTimeout(() => { mandatePanelEl.classList.remove('mandate-warn-start'); mandateWarningArrowTimer = null; }, 3400);
+    mandateWarningArrowTimer = setTimeout(() => { mandatePanelEl.classList.remove('mandate-warn-start'); mandateWarningArrowTimer = null; }, 5800);
   }
   mandateWarningWasActive = warnActive;
   mandatePanelEl.classList.toggle('mandate-warn', warnActive);
@@ -7131,7 +7131,7 @@ function playMandateArrowFlashAlerts() {
   if (music.ctx.state === 'suspended') music.ctx.resume().catch(() => {});
   const ctx = music.ctx;
   for (let flash = 0; flash < 5; flash++) {
-    const start = ctx.currentTime + flash * 0.64;
+    const start = ctx.currentTime + flash * 1.1;
     const osc = ctx.createOscillator();
     const wobble = ctx.createOscillator();
     const wobbleDepth = ctx.createGain();

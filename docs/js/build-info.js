@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 140;
+export const BUILD_SUB = 141;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.141',
+    title: 'Longer, larger Mandate attention warning',
+    notes: [
+      'Doubles the warning arrow to 184px and stretches its five flashes across 5.5 seconds so players have time to notice it.',
+      'Keeps the comic alert synchronized with each slower flash.',
+    ],
+  },
   {
     label: 'Master 16.140',
     title: 'GitHub Pages MegaKit asset-path repair',
