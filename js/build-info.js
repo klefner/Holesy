@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 169;
+export const BUILD_SUB = 170;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.170',
+    title: 'Frame pacing and city workload pass',
+    notes: [
+      'Dormant imported-building debris is detached until destruction, and fully settled piles no longer repeat thousands of useless collision checks each frame.',
+      'MegaKit loading is spread across browser frames while inactive collapse detection and ordinary debris contacts use bounded spatial checks.',
+      'Park turf uses fewer independently consumable tiles, shared ball geometry, and staggered nearby animation updates while frightened visitors remain fully responsive.',
+    ],
+  },
   {
     label: 'Master 16.169',
     title: 'Solid facade blocks and right-sized parks',
