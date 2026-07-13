@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.157';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.158';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1273,6 +1273,9 @@ async function addMegakitBuildingSkinTest(generation) {
         material: renderedMesh.material,
         position: worldPosition,
         scale: worldScale,
+        blockWidth: child.userData.blockWidth || worldScale.x,
+        blockHeight: child.userData.blockHeight || worldScale.y,
+        blockDepth: child.userData.blockDepth || worldScale.z,
         floor: child.userData.floor || 0,
         row: child.userData.row || 0,
         col: child.userData.col || 0,
@@ -1299,9 +1302,9 @@ async function addMegakitBuildingSkinTest(generation) {
       for (const template of blockTemplates) {
         const rotatedX = template.position.x * Math.cos(rotation) - template.position.z * Math.sin(rotation);
         const rotatedZ = template.position.x * Math.sin(rotation) + template.position.z * Math.cos(rotation);
-        const pieceW = template.scale.x;
-        const pieceH = template.scale.y;
-        const pieceD = template.scale.z;
+        const pieceW = template.blockWidth;
+        const pieceH = template.blockHeight;
+        const pieceD = template.blockDepth;
         const piece = new THREE.Mesh(template.geometry, template.material);
         piece.scale.copy(template.scale);
         piece.rotation.y = rotation;
@@ -2655,7 +2658,7 @@ const PARK_VARIANTS = Object.freeze(['normal', 'rundown', 'fancy']);
 
 function makeParkBox(name, bp, dx, dz, w, h, d, color, value = 18, y = h / 2) {
   const mesh = new THREE.Mesh(sharedBoxGeometry(w, h, d), sharedBoxMat(color));
-  const obj = makeObject(mesh, Math.max(0.2, Math.min(w, d) * 0.52), 0, value, { x: bp.x + dx, z: bp.z + dz, y });
+  const obj = makeObject(mesh, Math.max(0.2, Math.min(w, d) * 0.52), 0, Math.max(1, Math.round(value * 0.2)), { x: bp.x + dx, z: bp.z + dz, y });
   obj.parkAssetName = name;
   obj.mandateKind = 'park';
   return obj;
@@ -2663,6 +2666,7 @@ function makeParkBox(name, bp, dx, dz, w, h, d, color, value = 18, y = h / 2) {
 
 function makeParkPerson(bp, dx, dz, color = 0x4f7ed6, motion = null) {
   const person = makePerson({ x: bp.x + dx, z: bp.z + dz });
+  person.value = 3;
   person.parkAssetName = 'park visitor';
   if (motion) animatedParkObjects.push({ obj: person, motion, originX: person.x, originZ: person.z, phase: Math.random() * Math.PI * 2 });
   return person;
@@ -2670,7 +2674,7 @@ function makeParkPerson(bp, dx, dz, color = 0x4f7ed6, motion = null) {
 
 function makeParkBall(bp, dx, dz, color, motion = 'bounce') {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), sharedBoxMat(color));
-  const obj = makeObject(mesh, 0.28, 0, 20, { x: bp.x + dx, z: bp.z + dz, y: 0.32 });
+  const obj = makeObject(mesh, 0.28, 0, 4, { x: bp.x + dx, z: bp.z + dz, y: 0.32 });
   obj.parkAssetName = `${motion} ball`;
   animatedParkObjects.push({ obj, motion, originX: obj.x, originZ: obj.z, phase: Math.random() * Math.PI * 2 });
   return obj;
@@ -5877,7 +5881,9 @@ function runObjectiveInstruction(objective) {
 
 function updateRunObjectivesUi() {
   if (!runObjectivesEl) return;
+  const runObjectivesPanel = document.getElementById('run-objectives-panel');
   if (!activeRunObjectives.length) {
+    runObjectivesPanel?.classList.remove('all-goals-complete');
     runObjectivesEl.innerHTML = '<div class="objective-empty">New goals on next run</div>';
     return;
   }
@@ -5897,6 +5903,7 @@ function updateRunObjectivesUi() {
     </div>`;
   }).join('');
   const rewardState = activeRunObjectiveSetRewarded ? 'claimed' : 'available';
+  runObjectivesPanel?.classList.toggle('all-goals-complete', activeRunObjectives.every(objective => objective.complete));
   runObjectivesEl.innerHTML = `${objectiveHtml}
     <div class="objective-set-reward ${rewardState}">
       <span>All goals</span>
@@ -6211,7 +6218,7 @@ function showMandateWarningArrow() {
   arrow.style.setProperty('--mandate-arrow-y', `${Math.min(window.innerHeight - 92, rect.bottom + 70)}px`);
   arrow.innerHTML = '<span>↗</span>';
   document.body.appendChild(arrow);
-  mandateWarningArrowTimer = setTimeout(removeMandateWarningArrow, 6800);
+  mandateWarningArrowTimer = setTimeout(removeMandateWarningArrow, 7200);
 }
 
 function startMandateSuccessPulse() {
@@ -6231,6 +6238,7 @@ function startMandateSuccessPulse() {
 function updateMandateHUD() {
   if (!mandatePanelEl || !mandateDotsEl || !mandateLabelEl) return;
   mandatePanelEl.style.display = isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION) ? '' : 'none';
+  const deadlineWarningWasVisible = mandateWarningWasActive || document.body.classList.contains('mandate-screen-warning') || mandatePanelEl.classList.contains('mandate-warn');
 
   if (mandateDotsEl.children.length !== mandateTargets.length) {
     mandateDotsEl.innerHTML = '';
@@ -6267,11 +6275,14 @@ function updateMandateHUD() {
     progress.textContent = `${objective.progress}/${objective.required}`;
   });
 
-  const remaining = Math.max(0, mandateTargets.length - mandateCollected);
+  const completedTargetCount = mandateTargets.filter(objective => objective.progress >= objective.required && !objective.failed).length;
+  mandateCollected = completedTargetCount;
+  const remaining = Math.max(0, mandateTargets.length - completedTargetCount);
   const isComplete = remaining === 0 && mandateTargets.length > 0;
+  if (isComplete) mandateComplete = true;
   mandateLabelEl.textContent = remaining === 0 && mandateTargets.length > 0 ? 'Complete!' : `${remaining || MANDATE_COUNT} left`;
   mandatePanelEl.classList.toggle('mandate-complete', isComplete);
-  if (isComplete && !mandateHudWasComplete && mandateWarningWasActive) startMandateSuccessPulse();
+  if (isComplete && !mandateHudWasComplete && deadlineWarningWasVisible) startMandateSuccessPulse();
   if (!isComplete && mandateHudWasComplete) {
     document.body.classList.remove('mandate-screen-success');
     mandatePanelEl.classList.remove('mandate-success-pulse');
@@ -6280,7 +6291,7 @@ function updateMandateHUD() {
   const warnActive = remaining > 0 && gameTime > 0 && gameTime <= 15 && !mandateComplete;
   if (warnActive && !mandateWarningWasActive) {
     playMandateDeadlineWarning();
-    playMandateArrowFlashAlerts(1.1);
+    playMandateArrowFlashAlerts(1.45);
     document.body.classList.add('mandate-screen-warning');
     showMandateWarningArrow();
   }
@@ -13242,18 +13253,18 @@ function addArmyBossNameLabel(root, unitType) {
   const name = BOSS_PERMANENT_NAMES[unitType];
   if (!root || !name || root.userData.bossNameLabel) return;
   const canvas = document.createElement('canvas');
-  canvas.width = 512;
-  canvas.height = 96;
+  canvas.width = 1024;
+  canvas.height = 192;
   const ctx = canvas.getContext('2d');
-  ctx.font = '700 38px Arial, sans-serif';
+  ctx.font = '700 76px Arial, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round';
-  ctx.lineWidth = 10;
+  ctx.lineWidth = 20;
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.95)';
-  ctx.strokeText(name, 256, 48);
+  ctx.strokeText(name, 512, 96);
   ctx.fillStyle = '#fff4c2';
-  ctx.fillText(name, 256, 48);
+  ctx.fillText(name, 512, 96);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
@@ -13262,7 +13273,7 @@ function addArmyBossNameLabel(root, unitType) {
   const bounds = new THREE.Box3().setFromObject(root);
   const visibleHeight = Math.max(1.8, bounds.max.y - bounds.min.y);
   label.position.y = (visibleHeight + 1.15) / rootScale;
-  label.scale.set(6.2 / rootScale, 1.16 / rootScale, 1);
+  label.scale.set(18.6 / rootScale, 3.48 / rootScale, 1);
   label.renderOrder = 50;
   label.userData.holesyUnshadowed = true;
   label.userData.isBossNameLabel = true;

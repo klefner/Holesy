@@ -5,15 +5,16 @@
   "eachBlockClosedFaces": 6,
   "collisionProxyCount": 96,
   "materialsPreserved": 13,
-  "outputBytes": 840,
+  "authenticTrianglesAssigned": 18344,
+  "outputBytes": 1981992,
   "checks": [
     "source hash recorded",
-    "96 named solid blocks",
+    "96 named hybrid blocks",
+    "all original triangles assigned once",
+    "original UVs and materials preserved",
+    "closed cube core per block",
     "outward face winding verified",
     "two-sided materials enforced",
-    "six faces per block",
-    "roof material assigned",
-    "interior underside assigned",
     "box collision metadata assigned"
   ]
 }

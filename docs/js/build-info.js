@@ -1,8 +1,20 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 157;
+export const BUILD_SUB = 158;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.158',
+    title: 'Authoritative Mandate success, giant arrow, readable boss names',
+    notes: [
+      'Recalculates Mandate completion directly from target progress so early and late success always turn the card green immediately.',
+      'Runs exactly four bright green card-and-screen border pulses across four seconds after a red-warning completion.',
+      'Makes the warning arrow explode into view at 360px in the center, travel and shrink to its HUD pointer size, then flash with synchronized sounds.',
+      'Triples boss-name label dimensions and doubles its texture resolution.',
+      'Rebuilds the MegaKit conversion as authentic UV-preserved surface fragments over 96 closed physical cores.',
+      'Reduces park-object growth value by 80 percent and gives completed Goals and the full Goals panel green success states.',
+    ],
+  },
   {
     label: 'Master 16.157',
     title: 'Dense closed kit blocks with skyscraper collapse',
