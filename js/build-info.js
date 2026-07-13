@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 159;
+export const BUILD_SUB = 160;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.160',
+    title: 'Authentic MegaKit shell and granular park showcase',
+    notes: [
+      'Displays the complete authored MegaKit building with its real windows, doors, trim, brickwork, roof, UVs, and materials until the first breach.',
+      'Swaps the intact shell for the aligned 96-piece solid physics stack at impact so the existing collapse and consumption behavior remains intact.',
+      'Breaks the baseball diamond into individually consumable turf, dirt, bases, mound, and backstop sections.',
+      'Adds a guaranteed parcel showcasing five compact park designs: baseball, basketball, playground, fountain, and skate park.',
+    ],
+  },
   {
     label: 'Master 16.159',
     title: 'MegaKit building lattice blocker repair',

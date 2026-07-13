@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.159';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.160';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1089,6 +1089,7 @@ const megakitGltfLoader = new GLTFLoader();
 const megakitTextureCache = new Map();
 const megakitMaterialCache = new Map();
 const megakitEnvironmentMeshes = [];
+const megakitIntactShellsByStack = new Map();
 let megakitEnvironmentGeneration = 0;
 const MEGAKIT_ASSET_BASE = 'assets/environments/downtown-city-megakit/source-gltf/';
 
@@ -1114,6 +1115,7 @@ function clearMegakitEnvironmentMeshes() {
     if (mesh && mesh.parent) scene.remove(mesh);
   }
   megakitEnvironmentMeshes.length = 0;
+  megakitIntactShellsByStack.clear();
 }
 
 function loadMegakitTexture(fileName, repeat = [1, 1]) {
@@ -1254,7 +1256,11 @@ function populateMegakitDowntownTest() {
 async function addMegakitBuildingSkinTest(generation) {
   try {
     const convertedAsset = 'assets/environments/downtown-city-megakit/converted/megakit-building-small-1/Building_Small_1_destructible.gltf';
-    const gltf = await megakitGltfLoader.loadAsync(convertedAsset);
+    const authoredAsset = `${MEGAKIT_ASSET_BASE}Building_Small_1.gltf`;
+    const [gltf, authoredGltf] = await Promise.all([
+      megakitGltfLoader.loadAsync(convertedAsset),
+      megakitGltfLoader.loadAsync(authoredAsset),
+    ]);
     if (selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN || generation !== megakitEnvironmentGeneration) return;
 
     const source = gltf.scene;
@@ -1284,6 +1290,13 @@ async function addMegakitBuildingSkinTest(generation) {
       });
     });
     if (blockTemplates.length !== 96) throw new Error(`Converted MegaKit asset expected 96 blocks; received ${blockTemplates.length}.`);
+    const authoredSource = authoredGltf.scene;
+    authoredSource.updateMatrixWorld(true);
+    const authoredBounds = new THREE.Box3().setFromObject(authoredSource);
+    const authoredDimensions = authoredBounds.getSize(new THREE.Vector3());
+    const authoredCenter = authoredBounds.getCenter(new THREE.Vector3());
+    const authoredFootprint = Math.max(authoredDimensions.x, authoredDimensions.z) || 1;
+    const authoredScale = 8.5 / authoredFootprint;
     const eligibleParcels = blockPositions.filter(bp => Math.abs(bp.x) < currentArenaHalf - 10 && Math.abs(bp.z) < currentArenaHalf - 10);
     const parcelIndexes = [0, Math.floor(eligibleParcels.length * 0.24), Math.floor(eligibleParcels.length * 0.5), Math.floor(eligibleParcels.length * 0.74), eligibleParcels.length - 1];
     const testSites = [...new Set(parcelIndexes)].map((index, order) => {
@@ -1301,6 +1314,24 @@ async function addMegakitBuildingSkinTest(generation) {
 
     for (const [x, z, rotation] of testSites) {
       const stackId = nextPhysicsStackId++;
+      // Preserve the authored kit model exactly while the building is intact.
+      // The solid converted blocks remain present as physics proxies, but stay
+      // hidden until the first breach transfers presentation to destruction.
+      const intactShell = new THREE.Group();
+      const authoredVisual = authoredSource.clone(true);
+      authoredVisual.position.set(-authoredCenter.x, -authoredBounds.min.y, -authoredCenter.z);
+      authoredVisual.traverse(descendant => {
+        if (!descendant.isMesh) return;
+        descendant.castShadow = true;
+        descendant.receiveShadow = true;
+      });
+      intactShell.add(authoredVisual);
+      intactShell.scale.setScalar(authoredScale);
+      intactShell.rotation.y = rotation;
+      intactShell.position.set(x, 0, z);
+      scene.add(intactShell);
+      megakitEnvironmentMeshes.push(intactShell);
+      megakitIntactShellsByStack.set(stackId, intactShell);
       for (const template of blockTemplates) {
         const rotatedX = template.position.x * Math.cos(rotation) - template.position.z * Math.sin(rotation);
         const rotatedZ = template.position.x * Math.sin(rotation) + template.position.z * Math.cos(rotation);
@@ -1308,6 +1339,7 @@ async function addMegakitBuildingSkinTest(generation) {
         const pieceH = template.blockHeight;
         const pieceD = template.blockDepth;
         const piece = template.visual.clone(true);
+        piece.visible = false;
         piece.scale.copy(template.scale);
         piece.rotation.y = rotation;
         piece.traverse(descendant => {
@@ -2710,9 +2742,70 @@ function addParkFence(bp, variant, radius = 9.2) {
   }
 }
 
+function addBaseballDiamondPieces(bp, scale = 1, centerX = 0, centerZ = 1, prefix = 'baseball') {
+  const tile = 1.05 * scale;
+  const diamondRadius = 5 * scale;
+  for (let dx = -diamondRadius; dx <= diamondRadius + 0.001; dx += tile) {
+    for (let dz = -diamondRadius; dz <= diamondRadius + 0.001; dz += tile) {
+      if (Math.abs(dx) + Math.abs(dz) > diamondRadius + tile * 0.35) continue;
+      makeParkBox(`${prefix} infield dirt`, bp, centerX + dx, centerZ + dz,
+        tile * 0.96, 0.13, tile * 0.96, 0xb98755, 4, 0.17);
+    }
+  }
+  const baseOffset = 5 * scale;
+  const baseSize = Math.max(0.28, 0.65 * scale);
+  for (const [dx, dz, label] of [[0,-baseOffset,'home'],[-baseOffset,0,'third'],[0,baseOffset,'second'],[baseOffset,0,'first']]) {
+    makeParkBox(`${prefix} ${label} base`, bp, centerX + dx, centerZ + dz,
+      baseSize, 0.12, baseSize, 0xffffff, 12, 0.24);
+  }
+  makeParkBox(`${prefix} pitcher mound`, bp, centerX, centerZ, Math.max(0.45, 1.1 * scale), 0.2,
+    Math.max(0.45, 1.1 * scale), 0xc89a67, 8, 0.25);
+
+  // The backstop is deliberately made from short independent sections so it
+  // breaks and falls into the hole like the surrounding lawn and dirt tiles.
+  const fenceRadius = 6.3 * scale;
+  const fenceSections = 11;
+  for (let i = 0; i < fenceSections; i++) {
+    const a = Math.PI * (0.12 + (i / (fenceSections - 1)) * 0.76);
+    const fence = makeParkBox(`${prefix} backstop fence section`, bp,
+      centerX + Math.cos(a) * fenceRadius, centerZ - Math.sin(a) * fenceRadius,
+      Math.max(0.4, 1.15 * scale), Math.max(0.5, 1.15 * scale), 0.1,
+      0x8b969e, 9, Math.max(0.25, 0.575 * scale));
+    fence.mesh.rotation.y = -a;
+  }
+}
+
+function populateParkShowcaseParcel(bp, variant) {
+  // Five compact samples make the current park vocabulary visible together on
+  // one guaranteed parcel without turning any sample into a monolithic prop.
+  addBaseballDiamondPieces(bp, 0.32, -5.2, -4.8, 'mini baseball');
+
+  addParkTiledSurface('mini basketball court section', { x: bp.x + 4.8, z: bp.z - 4.8 }, 6, 3.8, 1.15, 0xb66a3c, 5);
+  for (const x of [-2.5, 2.5]) {
+    makeParkBox('mini basketball hoop', bp, 4.8 + x, -4.8, 0.12, 1.45, 0.12, 0xb9c4cc, 10, 0.73);
+  }
+
+  makeParkBox('mini playground slide', bp, -5.3, 4.7, 1.25, 0.25, 2.6, 0xe65842, 14, 0.7).mesh.rotation.x = -0.28;
+  for (const x of [-6.7, -5.9]) makeParkBox('mini swing frame', bp, x, 3.6, 0.1, 1.6, 0.1, 0xb9c4cc, 8, 0.8);
+
+  makeParkBox('mini fountain basin section', bp, 0, 0.8, 3.2, 0.35, 3.2, 0xe4e0d4, 18, 0.2);
+  makeParkBox('mini fountain statue', bp, 0, 0.8, 0.65, 2.1, 0.65, 0xd8d8d2, 20, 1.05);
+  for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; makeParkBall(bp, Math.cos(a) * 1.1, 0.8 + Math.sin(a) * 1.1, 0x64d7ff, 'water'); }
+
+  for (const [x,z,w,d] of [[3.7,4.3,2.5,1],[6.2,4.3,2.5,1],[4.9,6,1,2.2]]) {
+    const ramp = makeParkBox('mini skate ramp', bp, x, z, w, 0.3, d, 0xa9adb0, 14, 0.3);
+    ramp.mesh.rotation.z = (x > 5 ? 0.16 : -0.16);
+  }
+  if (variant === 'fancy') for (const [x,z] of [[-8,-8],[8,-8],[-8,8],[8,8]]) makeParkBox('showcase planter',bp,x,z,1,.6,1,0xe6d69a,10,.3);
+}
+
 function populateParkParcel(bp, archetype, variant) {
   addParkSurface(bp, variant, ['basketball','tennis','running_track','skate_park'].includes(archetype) ? 0x63827a : 0x4f8b45);
   addParkFence(bp, variant);
+  if (archetype === 'showcase') {
+    populateParkShowcaseParcel(bp, variant);
+    return;
+  }
   const metal = variant === 'rundown' ? 0x695b4d : variant === 'fancy' ? 0xf1d36c : 0xb9c4cc;
   const accent = variant === 'rundown' ? 0x8b4c35 : variant === 'fancy' ? 0x42bfe8 : 0xe65842;
   if (archetype === 'playground') {
@@ -2726,8 +2819,7 @@ function populateParkParcel(bp, archetype, variant) {
     for (let i=0;i<8;i++) makeParkPerson(bp, randomBetween(-5,5), randomBetween(-3.5,3.5), i%2?0x2864dc:0xe23b32, 'court');
     makeParkBall(bp,0,0,0xd96d1f,'basketball');
   } else if (archetype === 'baseball') {
-    makeParkBox('baseball infield',bp,0,1,10,0.14,10,0xb98755,28,0.15).mesh.rotation.y=Math.PI/4;
-    for (const [x,z] of [[0,-5],[-5,0],[0,5],[5,0]]) makeParkBox('baseball base',bp,x,z,0.65,0.12,0.65,0xffffff,12,0.2);
+    addBaseballDiamondPieces(bp);
     for(let i=0;i<8;i++) makeParkBox('stadium stand',bp,-8+i*2.2,7.5,1.8,1.2,2.2,metal,25,0.6);
     for(let i=0;i<18;i++) makeParkPerson(bp,-7.5+(i%9)*1.8,6.8+Math.floor(i/9)*0.8,0xffd166,'cheer');
     for(const x of [-8,8]) makeParkBox('stadium light',bp,x,-7,0.3,6,0.3,metal,35,3);
@@ -2860,7 +2952,13 @@ async function populateCity() {
   const parkParcels = new Map();
   const shuffledParkCandidates = blockPositions.filter(bp => bp !== governmentBlock).sort(() => Math.random() - 0.5);
   const shuffledArchetypes = [...PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < parkCount; i++) {
+  if (shuffledParkCandidates[0]) {
+    parkParcels.set(shuffledParkCandidates[0], {
+      archetype: 'showcase',
+      variant: 'fancy',
+    });
+  }
+  for (let i = 1; i < parkCount; i++) {
     parkParcels.set(shuffledParkCandidates[i], {
       archetype: shuffledArchetypes[i % shuffledArchetypes.length],
       variant: PARK_VARIANTS[Math.floor(Math.random() * PARK_VARIANTS.length)],
@@ -11370,6 +11468,14 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
   const firstActivation = !activePhysicsStackIds.has(stackId);
   if (firstActivation) {
     activePhysicsStackIds.add(stackId);
+    const intactShell = megakitIntactShellsByStack.get(stackId);
+    if (intactShell) {
+      if (intactShell.parent) intactShell.parent.remove(intactShell);
+      megakitIntactShellsByStack.delete(stackId);
+    }
+    for (const piece of physicsStackPieces) {
+      if (piece.stackId === stackId && piece.mesh) piece.mesh.visible = true;
+    }
     extinguishStackLights(stackId);
     if (!music.muted) {
       const sourceX = sourceHole?.x ?? player.x;
