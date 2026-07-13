@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 165;
+export const BUILD_SUB = 166;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.166',
+    title: 'Truly immutable MegaKit asset revision',
+    notes: [
+      'Publishes corrected model and texture paths under new v2.3.1 URLs instead of overwriting cached v2.3.0 files.',
+      'Keeps the exclusive imported-building parcel cleanup from Master 16.164.',
+    ],
+  },
   {
     label: 'Master 16.165',
     title: 'Versioned MegaKit texture-path repair',

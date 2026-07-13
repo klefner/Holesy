@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.165';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.166';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1257,7 +1257,7 @@ async function addMegakitBuildingSkinTest(generation) {
   try {
     // Keep converted revisions at immutable URLs. GitHub Pages/CDN and browser
     // caches can otherwise retain an older .gltf/.bin pair after a deployment.
-    const convertedAsset = 'assets/environments/downtown-city-megakit/converted/megakit-building-small-1/v2.3.0/Building_Small_1_destructible.gltf';
+    const convertedAsset = 'assets/environments/downtown-city-megakit/converted/megakit-building-small-1/v2.3.1/Building_Small_1_destructible.gltf';
     const authoredAsset = `${MEGAKIT_ASSET_BASE}Building_Small_1.gltf`;
     const [gltf, authoredGltf] = await Promise.all([
       megakitGltfLoader.loadAsync(convertedAsset),
