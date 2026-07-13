@@ -1,0 +1,31 @@
+{
+  "assetId": "megakit-building-small-1",
+  "source": "../../source-gltf/Building_Small_1.gltf",
+  "sourceSha256": "8e1235397ee3905d0bfbbe8f64a5197246a9be1af700983920c4f1a691c95c18",
+  "pipeline": "holesy-offline-destructible",
+  "pipelineVersion": "2.0.0",
+  "seed": 16159,
+  "subdivision": {
+    "shape": "hybrid-authentic-surface-plus-closed-cube",
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
+    "gapRatio": 0.02
+  },
+  "dimensions": {
+    "width": 8.5,
+    "depth": 8.5,
+    "height": 9.956016845622598
+  },
+  "materials": {
+    "authenticSurface": "all 13 original materials and UVs",
+    "interiorCore": "MI_InteriorWall",
+    "coreVisualScale": 0.98
+  },
+  "physics": {
+    "collider": "box",
+    "fallPreset": "standard-building-block",
+    "settlePreset": "grounded-sleep"
+  }
+}
