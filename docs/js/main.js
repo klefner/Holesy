@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.156';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.157';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1278,7 +1278,7 @@ async function addMegakitBuildingSkinTest(generation) {
         col: child.userData.col || 0,
       });
     });
-    if (blockTemplates.length !== 12) throw new Error(`Converted MegaKit asset expected 12 blocks; received ${blockTemplates.length}.`);
+    if (blockTemplates.length !== 96) throw new Error(`Converted MegaKit asset expected 96 blocks; received ${blockTemplates.length}.`);
     const eligibleParcels = blockPositions.filter(bp => Math.abs(bp.x) < currentArenaHalf - 10 && Math.abs(bp.z) < currentArenaHalf - 10);
     const parcelIndexes = [0, Math.floor(eligibleParcels.length * 0.24), Math.floor(eligibleParcels.length * 0.5), Math.floor(eligibleParcels.length * 0.74), eligibleParcels.length - 1];
     const testSites = [...new Set(parcelIndexes)].map((index, order) => {
@@ -1326,8 +1326,8 @@ async function addMegakitBuildingSkinTest(generation) {
         object.stackSettled = false;
         object.stackRestTimer = 0;
         object.stackIndex = template.floor;
-        object.stackFloorCount = 3;
-        object.stackPieceCount = 4;
+        object.stackFloorCount = 6;
+        object.stackPieceCount = 16;
         object.stackCollapseSize = 4.25;
         object.stackCenterX = x; object.stackCenterZ = z;
         object.stackLocalX = rotatedX; object.stackLocalZ = rotatedZ;

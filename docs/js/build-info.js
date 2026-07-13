@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 156;
+export const BUILD_SUB = 157;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.157',
+    title: 'Dense closed kit blocks with skyscraper collapse',
+    notes: [
+      'Re-converts Building_Small_1 from 12 large blocks into 96 smaller closed cubes arranged across six floors.',
+      'Corrects outward triangle winding and forces all retained kit materials two-sided so exposed faces cannot disappear.',
+      'Runs the cubes through the same topple, pancake, split, and twist collapse planner used by skyscrapers.',
+    ],
+  },
   {
     label: 'Master 16.156',
     title: 'Longer centered wave briefing',

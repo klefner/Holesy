@@ -1,7 +1,7 @@
 {
   "asset": {
     "version": "2.0",
-    "generator": "Holesy Offline Destructible Converter 1.0.0",
+    "generator": "Holesy Offline Destructible Converter 1.1.0",
     "extras": {
       "sourceAsset": "Building_Small_1.gltf",
       "sourceSha256": "8e1235397ee3905d0bfbbe8f64a5197246a9be1af700983920c4f1a691c95c18"
@@ -12,7 +12,7 @@
     {
       "name": "Holesy Destructible Building",
       "nodes": [
-        12
+        96
       ]
     }
   ],
@@ -21,14 +21,14 @@
       "name": "block_f0_r0_c0",
       "mesh": 0,
       "translation": [
-        -2.125,
-        1.6593361409370997,
-        -2.125
+        -3.1875,
+        0.8296680704685498,
+        -3.1875
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -43,14 +43,14 @@
       "name": "block_f0_r0_c1",
       "mesh": 0,
       "translation": [
-        2.125,
-        1.6593361409370997,
-        -2.125
+        -1.0625,
+        0.8296680704685498,
+        -3.1875
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -62,17 +62,61 @@
       }
     },
     {
+      "name": "block_f0_r0_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        0.8296680704685498,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 0,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r0_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        0.8296680704685498,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 0,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
       "name": "block_f0_r1_c0",
       "mesh": 0,
       "translation": [
-        -2.125,
-        1.6593361409370997,
-        2.125
+        -3.1875,
+        0.8296680704685498,
+        -1.0625
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -87,14 +131,14 @@
       "name": "block_f0_r1_c1",
       "mesh": 0,
       "translation": [
-        2.125,
-        1.6593361409370997,
-        2.125
+        -1.0625,
+        0.8296680704685498,
+        -1.0625
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -106,17 +150,237 @@
       }
     },
     {
+      "name": "block_f0_r1_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        0.8296680704685498,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 1,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r1_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        0.8296680704685498,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 1,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r2_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        0.8296680704685498,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 2,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r2_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        0.8296680704685498,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 2,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r2_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        0.8296680704685498,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 2,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r2_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        0.8296680704685498,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 2,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r3_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        0.8296680704685498,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 3,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r3_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        0.8296680704685498,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 3,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r3_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        0.8296680704685498,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 3,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f0_r3_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        0.8296680704685498,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 0,
+        "row": 3,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
       "name": "block_f1_r0_c0",
       "mesh": 0,
       "translation": [
-        -2.125,
-        4.978008422811299,
-        -2.125
+        -3.1875,
+        2.4890042114056494,
+        -3.1875
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -131,14 +395,14 @@
       "name": "block_f1_r0_c1",
       "mesh": 0,
       "translation": [
-        2.125,
-        4.978008422811299,
-        -2.125
+        -1.0625,
+        2.4890042114056494,
+        -3.1875
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -150,17 +414,61 @@
       }
     },
     {
+      "name": "block_f1_r0_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        2.4890042114056494,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 0,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r0_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        2.4890042114056494,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 0,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
       "name": "block_f1_r1_c0",
       "mesh": 0,
       "translation": [
-        -2.125,
-        4.978008422811299,
-        2.125
+        -3.1875,
+        2.4890042114056494,
+        -1.0625
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -175,14 +483,14 @@
       "name": "block_f1_r1_c1",
       "mesh": 0,
       "translation": [
-        2.125,
-        4.978008422811299,
-        2.125
+        -1.0625,
+        2.4890042114056494,
+        -1.0625
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -194,17 +502,237 @@
       }
     },
     {
+      "name": "block_f1_r1_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        2.4890042114056494,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 1,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r1_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        2.4890042114056494,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 1,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r2_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        2.4890042114056494,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 2,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r2_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        2.4890042114056494,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 2,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r2_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        2.4890042114056494,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 2,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r2_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        2.4890042114056494,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 2,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r3_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        2.4890042114056494,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 3,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r3_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        2.4890042114056494,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 3,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r3_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        2.4890042114056494,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 3,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f1_r3_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        2.4890042114056494,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 1,
+        "row": 3,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
       "name": "block_f2_r0_c0",
       "mesh": 0,
       "translation": [
-        -2.125,
-        8.296680704685498,
-        -2.125
+        -3.1875,
+        4.148340352342749,
+        -3.1875
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -219,14 +747,14 @@
       "name": "block_f2_r0_c1",
       "mesh": 0,
       "translation": [
-        2.125,
-        8.296680704685498,
-        -2.125
+        -1.0625,
+        4.148340352342749,
+        -3.1875
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -238,17 +766,61 @@
       }
     },
     {
+      "name": "block_f2_r0_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        4.148340352342749,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 0,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r0_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        4.148340352342749,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 0,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
       "name": "block_f2_r1_c0",
       "mesh": 0,
       "translation": [
-        -2.125,
-        8.296680704685498,
-        2.125
+        -3.1875,
+        4.148340352342749,
+        -1.0625
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
@@ -263,20 +835,1296 @@
       "name": "block_f2_r1_c1",
       "mesh": 0,
       "translation": [
-        2.125,
-        8.296680704685498,
-        2.125
+        -1.0625,
+        4.148340352342749,
+        -1.0625
       ],
       "scale": [
-        4.165,
-        3.252298836236715,
-        4.165
+        2.0825,
+        1.6261494181183576,
+        2.0825
       ],
       "extras": {
         "holesyBlock": true,
         "floor": 2,
         "row": 1,
         "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r1_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        4.148340352342749,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 1,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r1_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        4.148340352342749,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 1,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r2_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        4.148340352342749,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 2,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r2_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        4.148340352342749,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 2,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r2_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        4.148340352342749,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 2,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r2_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        4.148340352342749,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 2,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r3_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        4.148340352342749,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 3,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r3_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        4.148340352342749,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 3,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r3_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        4.148340352342749,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 3,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f2_r3_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        4.148340352342749,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 2,
+        "row": 3,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r0_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        5.807676493279849,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 0,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r0_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        5.807676493279849,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 0,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r0_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        5.807676493279849,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 0,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r0_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        5.807676493279849,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 0,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r1_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        5.807676493279849,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 1,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r1_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        5.807676493279849,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 1,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r1_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        5.807676493279849,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 1,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r1_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        5.807676493279849,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 1,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r2_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        5.807676493279849,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 2,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r2_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        5.807676493279849,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 2,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r2_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        5.807676493279849,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 2,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r2_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        5.807676493279849,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 2,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r3_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        5.807676493279849,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 3,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r3_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        5.807676493279849,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 3,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r3_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        5.807676493279849,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 3,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f3_r3_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        5.807676493279849,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 3,
+        "row": 3,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r0_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        7.467012634216949,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 0,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r0_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        7.467012634216949,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 0,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r0_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        7.467012634216949,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 0,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r0_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        7.467012634216949,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 0,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r1_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        7.467012634216949,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 1,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r1_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        7.467012634216949,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 1,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r1_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        7.467012634216949,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 1,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r1_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        7.467012634216949,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 1,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r2_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        7.467012634216949,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 2,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r2_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        7.467012634216949,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 2,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r2_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        7.467012634216949,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 2,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r2_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        7.467012634216949,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 2,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r3_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        7.467012634216949,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 3,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r3_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        7.467012634216949,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 3,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r3_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        7.467012634216949,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 3,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f4_r3_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        7.467012634216949,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 4,
+        "row": 3,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r0_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        9.126348775154048,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 0,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r0_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        9.126348775154048,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 0,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r0_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        9.126348775154048,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 0,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r0_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        9.126348775154048,
+        -3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 0,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r1_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        9.126348775154048,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 1,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r1_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        9.126348775154048,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 1,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r1_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        9.126348775154048,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 1,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r1_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        9.126348775154048,
+        -1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 1,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r2_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        9.126348775154048,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 2,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r2_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        9.126348775154048,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 2,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r2_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        9.126348775154048,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 2,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r2_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        9.126348775154048,
+        1.0625
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 2,
+        "col": 3,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r3_c0",
+      "mesh": 0,
+      "translation": [
+        -3.1875,
+        9.126348775154048,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 3,
+        "col": 0,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r3_c1",
+      "mesh": 0,
+      "translation": [
+        -1.0625,
+        9.126348775154048,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 3,
+        "col": 1,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r3_c2",
+      "mesh": 0,
+      "translation": [
+        1.0625,
+        9.126348775154048,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 3,
+        "col": 2,
+        "closedFaces": 6,
+        "collision": "box"
+      }
+    },
+    {
+      "name": "block_f5_r3_c3",
+      "mesh": 0,
+      "translation": [
+        3.1875,
+        9.126348775154048,
+        3.1875
+      ],
+      "scale": [
+        2.0825,
+        1.6261494181183576,
+        2.0825
+      ],
+      "extras": {
+        "holesyBlock": true,
+        "floor": 5,
+        "row": 3,
+        "col": 3,
         "closedFaces": 6,
         "collision": "box"
       }
@@ -295,11 +2143,95 @@
         8,
         9,
         10,
-        11
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95
       ],
       "extras": {
         "holesyDestructible": true,
-        "recipeVersion": "1.0.0"
+        "recipeVersion": "1.1.0"
       }
     }
   ],
