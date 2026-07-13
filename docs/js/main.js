@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.146';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.147';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -24,6 +24,31 @@ const STORAGE_KEY = 'holesyGameStatsV1';
 const ENDLESS_SAVE_KEY = 'holesy.endless.save.v1';
 const ENDLESS_SAVE_SCHEMA = 1;
 const MAX_RECENT_RUNS = 12;
+const COSMETIC_STORAGE_KEY = 'holesy.cosmetics.v1';
+const COSMETIC_REWARDS = Object.freeze({
+  tin_foil_halo: { name: 'Tin-Foil Halo', achievement: 'forum_user', lifetime: 'permanent', description: 'Silver conspiracy shimmer. Earn The Forum User.' },
+  bellmar_seal: { name: 'Bellmar Seal', achievement: 'bellmar', lifetime: 'permanent', description: 'Cold archive-blue prestige. Earn Bellmar.' },
+  condemned_chic: { name: 'Condemned Chic', achievement: 'linden_street', lifetime: 'permanent', description: 'Animated caution-stripe rim. Earn Linden Street.' },
+  prism_orbit: { name: 'Prism Orbit', achievement: 'wave_goal_mandate_sweep', lifetime: 'permanent', description: 'Complete every Run Goal and the Mandate in one wave.' },
+});
+function loadCosmeticState() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(COSMETIC_STORAGE_KEY) || '{}');
+    return { unlocked: Array.isArray(parsed.unlocked) ? parsed.unlocked : [], equipped: parsed.equipped || 'none' };
+  } catch { return { unlocked: [], equipped: 'none' }; }
+}
+let cosmeticState = loadCosmeticState();
+function saveCosmeticState() { try { localStorage.setItem(COSMETIC_STORAGE_KEY, JSON.stringify(cosmeticState)); } catch {} }
+function grantCosmetic(id, announce = true) {
+  if (!COSMETIC_REWARDS[id] || cosmeticState.unlocked.includes(id)) return false;
+  cosmeticState.unlocked.push(id);
+  if (cosmeticState.equipped === 'none') cosmeticState.equipped = id;
+  saveCosmeticState();
+  if (typeof player !== 'undefined' && player) player.equippedCosmeticId = cosmeticState.equipped;
+  if (announce) showEventBanner(`COSMETIC UNLOCKED: ${COSMETIC_REWARDS[id].name.toUpperCase()}`, 3000);
+  if (typeof refreshCosmeticPicker === 'function') refreshCosmeticPicker();
+  return true;
+}
 
 function createEmptyGameStats() {
   return {
@@ -1225,7 +1250,9 @@ function populateMegakitDowntownTest() {
 
 async function addMegakitBuildingSkinTest(generation) {
   try {
-    const gltf = await megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}Building_Small_1.gltf`);
+    const buildingDeck = ['Building_Small_1.gltf', 'Building_Medium_2_001.gltf', 'Building_Large_2.gltf'];
+    const buildingFile = buildingDeck[Math.max(0, currentWave - 1) % buildingDeck.length];
+    const gltf = await megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}${buildingFile}`);
     if (selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN || generation !== megakitEnvironmentGeneration) return;
 
     const source = gltf.scene;
@@ -1333,7 +1360,7 @@ async function addMegakitBuildingSkinTest(generation) {
             object.stackPieceW = pieceW; object.stackPieceD = pieceD;
             object.vx = 0; object.vy = 0; object.vz = 0;
             object.avx = 0; object.avy = 0; object.avz = 0;
-            object.megakitAssetName = 'Clipped authentic MegaKit Small Building 1 section';
+            object.megakitAssetName = `Clipped authentic MegaKit ${buildingFile.replace('.gltf', '')} section`;
             physicsStackPieces.push(object);
           }
         }
@@ -2740,6 +2767,12 @@ async function populateCity() {
       for (const p of positions) {
         if (Math.random() < smallBuildingChance) makeSmallBuilding(p);
       }
+      // Residential parcels carry noticeably more canopy and green breathing room
+      // than offices, towers, markets, or service yards.
+      const residentialTrees = [[-8.2,0],[8.2,0],[0,-8.2],[0,8.2],[-8,8],[8,-8]];
+      for (const [dx, dz] of residentialTrees) {
+        if (Math.random() < 0.82) makeTree({ x: bp.x + dx + randomBetween(-0.45, 0.45), z: bp.z + dz + randomBetween(-0.45, 0.45) });
+      }
       const useRoll = Math.random();
       parcelUse = useRoll < 0.34 ? 'restaurant' : useRoll < 0.62 ? 'market' : useRoll < 0.82 ? 'neglected' : 'standard';
     }
@@ -3081,6 +3114,7 @@ function createHole(isPlayer, name, rimColor, startPos) {
     loreFirstBiteActive: false,
     group, disc, rim, prismOrbit, vortexArcGroup, vortexArcs, labelSprite,
     prismOrbitUnlocked: false,
+    equippedCosmeticId: 'none',
     // AI state
     aiState: 'wander', aiTargetObj: null, aiTimer: 0,
     wanderX: startPos.x, wanderZ: startPos.z
@@ -3136,13 +3170,17 @@ function updateHoleVisual(h) {
     const pulseScale = 1 + Math.sin(now / 65) * 0.05 * pulseStrength;
     h.rim.scale.set(pulseScale, pulseScale, 1);
   } else {
-    h.rim.material.color.setHex(h.rimColor);
+    const cosmetic = h.isPlayer ? h.equippedCosmeticId : 'none';
+    if (cosmetic === 'tin_foil_halo') h.rim.material.color.setHex(Math.sin(now / 110) > 0 ? 0xf4f4f6 : 0x9aa0aa);
+    else if (cosmetic === 'bellmar_seal') h.rim.material.color.setHex(Math.sin(now / 260) > 0 ? 0xb8e6ff : 0x5d7fa8);
+    else if (cosmetic === 'condemned_chic') h.rim.material.color.setHex(Math.sin(now / 95) > 0 ? 0xffd400 : 0x171717);
+    else h.rim.material.color.setHex(h.rimColor);
     h.rim.material.opacity = 0.85;
     h.rim.scale.set(1, 1, 1);
   }
   h.group.position.set(h.x, 0, h.z);
   if (h.prismOrbit) {
-    h.prismOrbit.visible = h.isPlayer && !!h.prismOrbitUnlocked;
+    h.prismOrbit.visible = h.isPlayer && !!h.prismOrbitUnlocked && h.equippedCosmeticId === 'prism_orbit';
     if (h.prismOrbit.visible) {
       const orbitRadius = Math.max(0.7, h.radius * 0.58);
       const moteSize = Math.min(0.42, Math.max(0.13, h.radius * 0.075));
@@ -3268,6 +3306,7 @@ for (let i = 0; i < 3; i++) {
 }
 
 const player = holes[0];
+player.equippedCosmeticId = cosmeticState.equipped;
 
 // Global reservation: maps object → hole that claimed it this round
 const objectReservations = new WeakMap();
@@ -3825,6 +3864,27 @@ const modePicker = document.getElementById('mode-picker');
 const difficultySelect = document.getElementById('difficulty-select');
 const difficultyDesc = document.getElementById('difficulty-desc');
 const environmentSelect = document.getElementById('environment-select');
+const cosmeticSelect = document.getElementById('cosmetic-select');
+const cosmeticDesc = document.getElementById('cosmetic-desc');
+function refreshCosmeticPicker() {
+  if (!cosmeticSelect) return;
+  const choices = ['<option value="none">Classic Hole</option>'];
+  for (const id of cosmeticState.unlocked) {
+    const reward = COSMETIC_REWARDS[id];
+    if (reward) choices.push(`<option value="${id}">${reward.name}</option>`);
+  }
+  cosmeticSelect.innerHTML = choices.join('');
+  if (![...cosmeticSelect.options].some(option => option.value === cosmeticState.equipped)) cosmeticState.equipped = 'none';
+  cosmeticSelect.value = cosmeticState.equipped;
+  cosmeticDesc.textContent = cosmeticState.equipped === 'none' ? 'Earn permanent cosmetics from selected achievements.' : COSMETIC_REWARDS[cosmeticState.equipped].description;
+}
+cosmeticSelect?.addEventListener('change', () => {
+  cosmeticState.equipped = cosmeticSelect.value;
+  player.equippedCosmeticId = cosmeticState.equipped;
+  saveCosmeticState();
+  refreshCosmeticPicker();
+});
+refreshCosmeticPicker();
 const environmentDesc = document.getElementById('environment-desc');
 const statsWindowBtn = document.getElementById('stats-window-btn');
 const loreArchiveBtn = document.getElementById('lore-archive-btn');
@@ -5645,6 +5705,8 @@ function maybeUnlockPrismOrbit(hole) {
   if (!mandateComplete || !activeRunObjectives.length || !activeRunObjectives.every(objective => objective.complete)) return false;
   objectMastery.cosmetics.prismOrbit = { unlockedAt: new Date().toISOString(), source: 'wave_goal_mandate_sweep', wave: currentWave };
   hole.prismOrbitUnlocked = true;
+  grantCosmetic('prism_orbit', false);
+  hole.equippedCosmeticId = cosmeticState.equipped;
   scheduleObjectMasterySave();
   playUnitClearStinger();
   showEventBanner('COSMETIC UNLOCKED: PRISM ORBIT', 3000);
@@ -6117,6 +6179,9 @@ const STARTER_BUFF_PATTERNS = Object.freeze([
 
 let loreUnlocked = loadIdSet(LORE_STORAGE_KEY, LORE_STARTING_UNLOCKS);
 let achievementUnlocked = loadIdSet(ACHIEVEMENT_STORAGE_KEY, []);
+for (const [cosmeticId, reward] of Object.entries(COSMETIC_REWARDS)) {
+  if (achievementUnlocked.has(reward.achievement)) grantCosmetic(cosmeticId, false);
+}
 let selectedLoreDocId = LORE_STARTING_UNLOCKS[0];
 let pendingLoreDropId = '';
 let roundLoreState = null;
@@ -6648,6 +6713,8 @@ async function loadAudioBanks() {
       await new Promise(resolve => setTimeout(resolve, 0));
     }
   }
+  const cosmeticId = Object.keys(COSMETIC_REWARDS).find(key => COSMETIC_REWARDS[key].achievement === id);
+  if (cosmeticId) grantCosmetic(cosmeticId, isNew);
 }
 
 // Generate a voice profile for a person (gender + panic + sample + pitch wobble)

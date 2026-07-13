@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 146;
+export const BUILD_SUB = 147;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.147',
+    title: 'Parcel exhibition deck and selectable achievement cosmetics',
+    notes: [
+      'Adds extra residential trees and cycles MegaKit small, medium, and large models without mixing archetypes on a test parcel.',
+      'Adds permanent selectable Tin-Foil Halo, Bellmar Seal, and Condemned Chic rewards for The Forum User, Bellmar, and Linden Street achievements.',
+      'Adds a persistent cosmetic registry and menu selector while preserving Prism Orbit as the all-goals-plus-Mandate reward.',
+    ],
+  },
   {
     label: 'Master 16.146',
     title: 'Holesy icon, earned cosmetic, MegaKit parcels, and rival hunts',

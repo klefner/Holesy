@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/holesy-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/holesy-180.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/styles.css?v=16.146" />
+  <link rel="stylesheet" href="css/styles.css?v=16.147" />
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -59,7 +59,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-      <button id="build-version" type="button" aria-label="Show build notes">Master 16.146</button>
+      <button id="build-version" type="button" aria-label="Show build notes">Master 16.147</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -110,6 +110,11 @@
     <button class="menu-action-btn" id="load-endless-save-btn" type="button" disabled>Load Endless</button>
   </div>
   <div id="haptic-status" aria-live="polite"></div>
+  <div class="cosmetic-picker-row">
+    <label for="cosmetic-select">Hole Cosmetic</label>
+    <select id="cosmetic-select" aria-label="Equipped hole cosmetic"><option value="none">Classic Hole</option></select>
+    <p id="cosmetic-desc">Earn permanent cosmetics from selected achievements.</p>
+  </div>
 
   <button class="play" id="play-btn">Begin</button>
   <div class="tips">
@@ -147,7 +152,7 @@
 <div id="pause-overlay" class="hidden">
   <h2>Paused</h2>
   <div class="pause-sub">Take a breather, then jump back in or return to the game mode selector.</div>
-    <div class="pause-version" id="pause-version-label">Master 16.146</div>
+    <div class="pause-version" id="pause-version-label">Master 16.147</div>
   <div class="pause-status" id="pause-status-message" role="status" aria-live="polite"></div>
   <div class="pause-btns">
     <button class="pause-resume" id="pause-resume-btn" type="button">Resume</button>
@@ -227,7 +232,7 @@
 }
 </script>
 
-<script type="module" src="js/main.js?v=16.146"></script>
+<script type="module" src="js/main.js?v=16.147"></script>
 </body>
 </html>
 
