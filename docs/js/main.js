@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.166';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.167';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1255,50 +1255,47 @@ function populateMegakitDowntownTest() {
 
 async function addMegakitBuildingSkinTest(generation) {
   try {
-    // Keep converted revisions at immutable URLs. GitHub Pages/CDN and browser
-    // caches can otherwise retain an older .gltf/.bin pair after a deployment.
-    const convertedAsset = 'assets/environments/downtown-city-megakit/converted/megakit-building-small-1/v2.3.1/Building_Small_1_destructible.gltf';
-    const authoredAsset = `${MEGAKIT_ASSET_BASE}Building_Small_1.gltf`;
-    const [gltf, authoredGltf] = await Promise.all([
-      megakitGltfLoader.loadAsync(convertedAsset),
-      megakitGltfLoader.loadAsync(authoredAsset),
-    ]);
+    const definitions = [
+      { assetId: 'megakit-building-small-1', sourceBase: 'Building_Small_1', footprint: 8.5, collapseSize: 4.25 },
+      { assetId: 'megakit-building-medium-2-001', sourceBase: 'Building_Medium_2_001', footprint: 10.5, collapseSize: 5.25 },
+      { assetId: 'megakit-building-large-2', sourceBase: 'Building_Large_2', footprint: 12, collapseSize: 6 },
+    ];
+    const loaded = await Promise.all(definitions.map(async definition => {
+      const convertedAsset = `assets/environments/downtown-city-megakit/converted/${definition.assetId}/v2.3.1/${definition.sourceBase}_destructible.gltf`;
+      const [gltf, authoredGltf] = await Promise.all([
+        megakitGltfLoader.loadAsync(convertedAsset),
+        megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}${definition.sourceBase}.gltf`),
+      ]);
+      return { definition, gltf, authoredGltf };
+    }));
     if (selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN || generation !== megakitEnvironmentGeneration) return;
-
-    const source = gltf.scene;
-    source.updateMatrixWorld(true);
-    const blockTemplates = [];
-    source.traverse((child) => {
-      if (!child.userData?.holesyBlock) return;
-      let hasRenderedMesh = false;
-      child.traverse(descendant => { if (descendant.isMesh) hasRenderedMesh = true; });
-      if (!hasRenderedMesh) return;
-      const worldPosition = child.getWorldPosition(new THREE.Vector3());
-      const worldScale = child.getWorldScale(new THREE.Vector3());
-      const visual = child.clone(true);
-      visual.position.set(0, 0, 0);
-      visual.quaternion.identity();
-      blockTemplates.push({
-        name: child.name,
-        visual,
-        position: worldPosition,
-        scale: worldScale,
-        blockWidth: child.userData.blockWidth || worldScale.x,
-        blockHeight: child.userData.blockHeight || worldScale.y,
-        blockDepth: child.userData.blockDepth || worldScale.z,
-        floor: child.userData.floor || 0,
-        row: child.userData.row || 0,
-        col: child.userData.col || 0,
+    const kits = loaded.map(({ definition, gltf, authoredGltf }) => {
+      const source = gltf.scene;
+      source.updateMatrixWorld(true);
+      const blockTemplates = [];
+      source.traverse(child => {
+        if (!child.userData?.holesyBlock) return;
+        let hasRenderedMesh = false;
+        child.traverse(descendant => { if (descendant.isMesh) hasRenderedMesh = true; });
+        if (!hasRenderedMesh) return;
+        const worldPosition = child.getWorldPosition(new THREE.Vector3());
+        const worldScale = child.getWorldScale(new THREE.Vector3());
+        const visual = child.clone(true);
+        visual.position.set(0, 0, 0);
+        visual.quaternion.identity();
+        blockTemplates.push({ name: child.name, visual, position: worldPosition, scale: worldScale,
+          blockWidth: child.userData.blockWidth || worldScale.x, blockHeight: child.userData.blockHeight || worldScale.y,
+          blockDepth: child.userData.blockDepth || worldScale.z, floor: child.userData.floor || 0 });
       });
+      if (blockTemplates.length !== 96) throw new Error(`${definition.sourceBase} expected 96 blocks; received ${blockTemplates.length}.`);
+      const authoredSource = authoredGltf.scene;
+      authoredSource.updateMatrixWorld(true);
+      const authoredBounds = new THREE.Box3().setFromObject(authoredSource);
+      const authoredDimensions = authoredBounds.getSize(new THREE.Vector3());
+      return { definition, blockTemplates, authoredSource, authoredBounds,
+        authoredCenter: authoredBounds.getCenter(new THREE.Vector3()),
+        authoredScale: definition.footprint / (Math.max(authoredDimensions.x, authoredDimensions.z) || 1) };
     });
-    if (blockTemplates.length !== 96) throw new Error(`Converted MegaKit asset expected 96 blocks; received ${blockTemplates.length}.`);
-    const authoredSource = authoredGltf.scene;
-    authoredSource.updateMatrixWorld(true);
-    const authoredBounds = new THREE.Box3().setFromObject(authoredSource);
-    const authoredDimensions = authoredBounds.getSize(new THREE.Vector3());
-    const authoredCenter = authoredBounds.getCenter(new THREE.Vector3());
-    const authoredFootprint = Math.max(authoredDimensions.x, authoredDimensions.z) || 1;
-    const authoredScale = 8.5 / authoredFootprint;
     const eligibleParcels = blockPositions.filter(bp =>
       Math.abs(bp.x) < currentArenaHalf - 10 &&
       Math.abs(bp.z) < currentArenaHalf - 10 &&
@@ -1307,9 +1304,10 @@ async function addMegakitBuildingSkinTest(generation) {
     const parcelIndexes = [0, Math.floor(eligibleParcels.length * 0.24), Math.floor(eligibleParcels.length * 0.5), Math.floor(eligibleParcels.length * 0.74), eligibleParcels.length - 1];
     const testSites = [...new Set(parcelIndexes)].map((index, order) => {
       const bp = eligibleParcels[Math.max(0, Math.min(eligibleParcels.length - 1, index))];
-      return [bp.x, bp.z, (order % 4) * Math.PI / 2];
+      const rotation = Math.atan2(player.x - bp.x, player.z - bp.z);
+      return { x: bp.x, z: bp.z, rotation, kit: kits[order % kits.length] };
     });
-    for (const [x, z] of testSites) {
+    for (const { x, z } of testSites) {
       for (const object of [...objects]) {
         // This imported building owns its entire parcel. Remove every existing
         // consumable there (including park tiles, pools and fixtures), not only
@@ -1320,7 +1318,8 @@ async function addMegakitBuildingSkinTest(generation) {
       }
     }
 
-    for (const [x, z, rotation] of testSites) {
+    for (const { x, z, rotation, kit } of testSites) {
+      const { definition, blockTemplates, authoredSource, authoredBounds, authoredCenter, authoredScale } = kit;
       const stackId = nextPhysicsStackId++;
       // Preserve the authored kit model exactly while the building is intact.
       // The solid converted blocks remain present as physics proxies, but stay
@@ -1379,7 +1378,7 @@ async function addMegakitBuildingSkinTest(generation) {
         object.mandateKind = 'tower';
         object.isMegakitAsset = true;
         object.isOfflineConvertedAsset = true;
-        object.convertedAssetId = 'megakit-building-small-1';
+        object.convertedAssetId = definition.assetId;
         object.convertedBlockName = template.name;
         object.isSkyscraperChunk = false;
         object.physicsStackPiece = true;
@@ -1390,14 +1389,14 @@ async function addMegakitBuildingSkinTest(generation) {
         object.stackIndex = template.floor;
         object.stackFloorCount = 6;
         object.stackPieceCount = 16;
-        object.stackCollapseSize = 4.25;
+        object.stackCollapseSize = definition.collapseSize;
         object.stackCenterX = x; object.stackCenterZ = z;
         object.stackLocalX = rotatedX; object.stackLocalZ = rotatedZ;
         object.stackFloorY = pieceH / 2; object.stackHeight = pieceH;
         object.stackPieceW = pieceW; object.stackPieceD = pieceD;
         object.vx = 0; object.vy = 0; object.vz = 0;
         object.avx = 0; object.avy = 0; object.avz = 0;
-        object.megakitAssetName = 'Offline-converted solid MegaKit Building_Small_1 block';
+        object.megakitAssetName = `Offline-converted solid MegaKit ${definition.sourceBase} block`;
         physicsStackPieces.push(object);
       }
     }

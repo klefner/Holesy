@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 166;
+export const BUILD_SUB = 167;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.167',
+    title: 'Complete MegaKit building roster',
+    notes: [
+      'Adds destructible conversions for the remaining medium and large MegaKit buildings alongside the validated small building.',
+      'Rotates every imported building front toward the player spawn and cycles all three authored models across the five test parcels.',
+    ],
+  },
   {
     label: 'Master 16.166',
     title: 'Truly immutable MegaKit asset revision',
