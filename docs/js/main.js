@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.152';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.153';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -2659,6 +2659,142 @@ function randInBlock(bp, margin = 2) {
 // simulation — it gets populated on each call.
 const movingCars = [];
 const carCrashEffects = [];
+const animatedParkObjects = [];
+const PARK_ARCHETYPES = Object.freeze([
+  'playground', 'basketball', 'baseball', 'tennis', 'running_track',
+  'swimming_pool', 'picnic_bbq', 'fountain_garden', 'dog_park', 'skate_park',
+]);
+const PARK_VARIANTS = Object.freeze(['normal', 'rundown', 'fancy']);
+
+function makeParkBox(name, bp, dx, dz, w, h, d, color, value = 18, y = h / 2) {
+  const mesh = new THREE.Mesh(sharedBoxGeometry(w, h, d), sharedBoxMat(color));
+  const obj = makeObject(mesh, Math.max(0.2, Math.min(w, d) * 0.52), 0, value, { x: bp.x + dx, z: bp.z + dz, y });
+  obj.parkAssetName = name;
+  obj.mandateKind = 'park';
+  return obj;
+}
+
+function makeParkPerson(bp, dx, dz, color = 0x4f7ed6, motion = null) {
+  const person = makePerson({ x: bp.x + dx, z: bp.z + dz });
+  person.parkAssetName = 'park visitor';
+  if (motion) animatedParkObjects.push({ obj: person, motion, originX: person.x, originZ: person.z, phase: Math.random() * Math.PI * 2 });
+  return person;
+}
+
+function makeParkBall(bp, dx, dz, color, motion = 'bounce') {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), sharedBoxMat(color));
+  const obj = makeObject(mesh, 0.28, 0, 20, { x: bp.x + dx, z: bp.z + dz, y: 0.32 });
+  obj.parkAssetName = `${motion} ball`;
+  animatedParkObjects.push({ obj, motion, originX: obj.x, originZ: obj.z, phase: Math.random() * Math.PI * 2 });
+  return obj;
+}
+
+function addParkSurface(bp, variant, color = 0x4f8b45) {
+  const surfaceColor = variant === 'rundown' ? 0x796b43 : variant === 'fancy' ? 0x31935a : color;
+  for (let x = -8; x <= 8; x += 2) {
+    for (let z = -8; z <= 8; z += 2) makeParkBox('park turf', bp, x, z, 1.92, 0.16, 1.92, surfaceColor, 4, 0.08);
+  }
+}
+
+function addParkTiledSurface(name, bp, width, depth, tileSize, color, value = 5) {
+  for (let x = -width / 2 + tileSize / 2; x < width / 2; x += tileSize) {
+    for (let z = -depth / 2 + tileSize / 2; z < depth / 2; z += tileSize) {
+      makeParkBox(name, bp, x, z, Math.min(tileSize - 0.05, width), 0.14, Math.min(tileSize - 0.05, depth), color, value, 0.16);
+    }
+  }
+}
+
+function addParkFence(bp, variant, radius = 9.2) {
+  const color = variant === 'rundown' ? 0x6d5237 : variant === 'fancy' ? 0xf3ead0 : 0xb7bdc3;
+  const gaps = variant === 'rundown' ? new Set([2, 7, 13, 18]) : new Set();
+  let index = 0;
+  for (const side of [-1, 1]) for (let n = -8; n <= 8; n += 2, index++) {
+    if (!gaps.has(index)) makeParkBox('park fence section', bp, n, side * radius, 1.8, 0.85, 0.12, color, 12, 0.425);
+    if (!gaps.has(index + 24)) makeParkBox('park fence section', bp, side * radius, n, 0.12, 0.85, 1.8, color, 12, 0.425);
+  }
+}
+
+function populateParkParcel(bp, archetype, variant) {
+  addParkSurface(bp, variant, ['basketball','tennis','running_track','skate_park'].includes(archetype) ? 0x63827a : 0x4f8b45);
+  addParkFence(bp, variant);
+  const metal = variant === 'rundown' ? 0x695b4d : variant === 'fancy' ? 0xf1d36c : 0xb9c4cc;
+  const accent = variant === 'rundown' ? 0x8b4c35 : variant === 'fancy' ? 0x42bfe8 : 0xe65842;
+  if (archetype === 'playground') {
+    for (const x of [-5, -3.4]) { makeParkBox('swing seat', bp, x, 0, 1.1, 0.12, 0.42, 0x4c3828); makeParkBox('swing frame', bp, x, 0, 0.12, 3, 0.12, metal, 15, 1.5); }
+    makeParkBox('playground slide', bp, 3, -1, 2.2, 0.35, 5.2, accent, 32, 1.25).mesh.rotation.x = -0.35;
+    for (const [x,z] of [[2,4],[4,4],[2,2],[4,2]]) makeParkBox('jungle gym', bp, x, z, 0.25, 2.8, 0.25, metal, 18, 1.4);
+    for (let i=0;i<5;i++) makeParkPerson(bp, -5+i*2.2, randomBetween(-5,5), 0xffc857, 'wander');
+  } else if (archetype === 'basketball') {
+    addParkTiledSurface('basketball court section', bp, 15.5, 9, 2.2, 0xb66a3c, 7);
+    for (const x of [-6.8,6.8]) { makeParkBox('basketball hoop post', bp,x,0,0.18,3.2,0.18,metal,22,1.6); makeParkBox('basketball backboard',bp,x,0,0.18,1.4,2.2,0xffffff,20,3); }
+    for (let i=0;i<8;i++) makeParkPerson(bp, randomBetween(-5,5), randomBetween(-3.5,3.5), i%2?0x2864dc:0xe23b32, 'court');
+    makeParkBall(bp,0,0,0xd96d1f,'basketball');
+  } else if (archetype === 'baseball') {
+    makeParkBox('baseball infield',bp,0,1,10,0.14,10,0xb98755,28,0.15).mesh.rotation.y=Math.PI/4;
+    for (const [x,z] of [[0,-5],[-5,0],[0,5],[5,0]]) makeParkBox('baseball base',bp,x,z,0.65,0.12,0.65,0xffffff,12,0.2);
+    for(let i=0;i<8;i++) makeParkBox('stadium stand',bp,-8+i*2.2,7.5,1.8,1.2,2.2,metal,25,0.6);
+    for(let i=0;i<18;i++) makeParkPerson(bp,-7.5+(i%9)*1.8,6.8+Math.floor(i/9)*0.8,0xffd166,'cheer');
+    for(const x of [-8,8]) makeParkBox('stadium light',bp,x,-7,0.3,6,0.3,metal,35,3);
+    makeParkBall(bp,0,-4,0xffffff,'baseball');
+  } else if (archetype === 'tennis') {
+    addParkTiledSurface('tennis court section', bp, 15, 9, 2.2, 0x3b8e62, 7);
+    for(let x=-6;x<=6;x+=1.5) makeParkBox('tennis net',bp,x,0,1.35,0.65,0.08,0xf4f4f4,8,0.4);
+    for(const [x,z] of [[-4,-2],[-4,2],[4,-2],[4,2]]) makeParkPerson(bp,x,z,0xffffff,'tennis');
+    makeParkBall(bp,0,0,0xdfff32,'tennisBall');
+  } else if (archetype === 'running_track') {
+    for(let a=0;a<Math.PI*2;a+=Math.PI/18) makeParkBox('running track section',bp,Math.cos(a)*7.2,Math.sin(a)*4.6,1.3,0.12,1.3,0xb64b3d,10,0.16).mesh.rotation.y=-a;
+    for(let i=0;i<8;i++){ const a=i*Math.PI/4; makeParkPerson(bp,Math.cos(a)*7.2,Math.sin(a)*4.6,0x47a3ff,'runner'); }
+  } else if (archetype === 'swimming_pool') {
+    addParkTiledSurface('pool water section', bp, 14, 8, 2, 0x29a9e8, 8);
+    for(let i=0;i<6;i++) makeParkPerson(bp,-5+i*2,randomBetween(-2.5,2.5),0xffd19a,'swim');
+    for(const x of [-6,6]) makeParkBox('diving board',bp,x,0,2.2,0.18,0.6,0xffffff,18,0.55);
+    makeParkBox('park maintenance building',bp,0,7,5,2.6,2.5,variant==='rundown'?0x715445:0xd9d1b8,45,1.3);
+  } else if (archetype === 'picnic_bbq') {
+    for(const [x,z] of [[-5,-4],[0,-4],[5,-4],[-5,3],[0,3],[5,3]]) { makeParkBox('picnic table',bp,x,z,3,0.25,1.4,0x7b4e2d,20,0.8); makeParkBox('BBQ grill',bp,x+1.8,z,0.8,1,0.65,0x292929,24,0.5); makeParkPerson(bp,x,z+1.2,0x58a86b,'cook'); const fire=makeParkBall(bp,x+1.8,z,0xff6b1a,'fire'); fire.mesh.scale.set(.7,1.4,.7); const smoke=makeParkBall(bp,x+1.8,z,0x777777,'smoke'); smoke.mesh.material=smoke.mesh.material.clone(); smoke.mesh.material.transparent=true; smoke.mesh.material.opacity=.5; }
+  } else if (archetype === 'fountain_garden') {
+    makeParkBox('fountain basin',bp,0,0,6,0.55,6,0xe4e0d4,42,0.3);
+    makeParkBox('fountain statue',bp,0,0,1.2,4.2,1.2,0xd8d8d2,55,2.1);
+    for(let i=0;i<8;i++){ const a=i*Math.PI/4; makeParkBall(bp,Math.cos(a)*2,Math.sin(a)*2,0x64d7ff,'water'); }
+    for(const [x,z] of [[-6,-5],[0,-6],[6,-5],[-6,5],[0,6],[6,5]]) makeParkBox('valet parked car',bp,x,z,2.4,0.8,1.2,0x222c45,55,0.4);
+  } else if (archetype === 'dog_park') {
+    for(let i=0;i<10;i++){ const dog=makeParkBox('park dog',bp,randomBetween(-7,7),randomBetween(-7,7),0.65,0.6,1.0,[0x9b6a3c,0x333333,0xd9c2a1][i%3],22,0.3); animatedParkObjects.push({obj:dog,motion:'dog',originX:dog.x,originZ:dog.z,phase:Math.random()*6}); }
+    for(let i=0;i<6;i++) makeParkPerson(bp,randomBetween(-6,6),randomBetween(-6,6),0x6a8caf,'wander');
+    makeParkBox('dog agility ramp',bp,0,0,4,0.3,1.2,accent,22,0.7).mesh.rotation.z=.28;
+  } else {
+    for(const [x,z,w,h,d] of [[-4,0,5,.5,2],[4,0,5,.5,2],[0,-4,2,.5,5],[0,4,2,.5,5]]) makeParkBox('skate ramp',bp,x,z,w,h,d,0xa9adb0,25,0.45).mesh.rotation.z=(x+z>0?.18:-.18);
+    for(let i=0;i<7;i++) makeParkPerson(bp,randomBetween(-6,6),randomBetween(-6,6),0x9c5de5,'skate');
+  }
+  if (variant === 'rundown') for(let i=0;i<8;i++) makeParkBox('park litter',bp,randomBetween(-8,8),randomBetween(-8,8),.35,.18,.45,0x6d5643,5,.1);
+  if (variant === 'fancy' && archetype !== 'fountain_garden') {
+    for(const [x,z] of [[-7,-7],[7,-7],[-7,7],[7,7]]) makeParkBox('fancy park planter',bp,x,z,1.5,.8,1.5,0xe6d69a,18,.4);
+    makeParkBox('fancy water statue',bp,0,7,1.1,3.2,1.1,0xe5e0d4,40,1.6);
+    for(let i=0;i<4;i++){ const a=i*Math.PI/2; makeParkBall(bp,Math.cos(a)*1.2,7+Math.sin(a)*1.2,0x64d7ff,'water'); }
+    for(const x of [-5,-1.7,1.7,5]) makeParkBox('valet parked car',bp,x,-7.4,2.4,.8,1.2,0x27324d,50,.4);
+  }
+}
+
+function updateParkAnimations(dt) {
+  const now = getGameplayNow() / 1000;
+  for (let i = animatedParkObjects.length - 1; i >= 0; i--) {
+    const actor = animatedParkObjects[i];
+    if (!actor.obj || actor.obj.consumed || actor.obj.falling) { animatedParkObjects.splice(i,1); continue; }
+    const t = now + actor.phase;
+    const mesh = actor.obj.mesh;
+    if (['bounce','basketball','baseball','tennisBall','cheer','smoke','water','fire'].includes(actor.motion)) {
+      if (actor.originY === undefined) actor.originY = mesh.position.y;
+      const amplitude = actor.motion === 'cheer' ? .22 : actor.motion === 'smoke' ? 1.8 : actor.motion === 'water' ? 1.3 : .75;
+      mesh.position.y = actor.originY + Math.abs(Math.sin(t * (actor.motion === 'cheer' ? 7 : 4))) * amplitude;
+      if (actor.motion === 'smoke') mesh.material.opacity = 0.2 + (Math.sin(t * 2) + 1) * .15;
+      if (actor.motion === 'fire') mesh.scale.y = 1 + Math.abs(Math.sin(t * 11)) * 0.8;
+    }
+    if (['court','tennis','runner','swim','wander','dog','skate'].includes(actor.motion)) {
+      const range = actor.motion === 'runner' ? 1.8 : actor.motion === 'swim' ? 2.5 : 1.1;
+      actor.obj.x = actor.originX + Math.cos(t * (actor.motion === 'dog' ? 1.8 : 1.1)) * range;
+      actor.obj.z = actor.originZ + Math.sin(t * (actor.motion === 'swim' ? .7 : 1.3)) * range;
+      mesh.position.x = actor.obj.x; mesh.position.z = actor.obj.z;
+    }
+  }
+}
 
 function getCarForwardVector(car) {
   if (car.axis === 'vertical') return { x: 0, z: car.direction === 'S' ? 1 : -1 };
@@ -2724,6 +2860,16 @@ async function populateCity() {
   const parkAssetCount = Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
   const personChance = economy.personChanceMult || 1;
   const governmentBlock = blockPositions[Math.floor(Math.random() * blockPositions.length)];
+  const parkCount = 4 + Math.floor(Math.random() * 3);
+  const parkParcels = new Map();
+  const shuffledParkCandidates = blockPositions.filter(bp => bp !== governmentBlock).sort(() => Math.random() - 0.5);
+  const shuffledArchetypes = [...PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < parkCount; i++) {
+    parkParcels.set(shuffledParkCandidates[i], {
+      archetype: shuffledArchetypes[i % shuffledArchetypes.length],
+      variant: PARK_VARIANTS[Math.floor(Math.random() * PARK_VARIANTS.length)],
+    });
+  }
   // Place buildings on block corners/edges, small stuff around perimeter
   let populatedBlockCount = 0;
   for (const bp of blockPositions) {
@@ -2733,6 +2879,10 @@ async function populateCity() {
     if (bp === governmentBlock) {
       // Government building prototype: separate render and physics rules.
       makeGovernmentBuilding({ x: bp.x, z: bp.z });
+    } else if (parkParcels.has(bp)) {
+      const park = parkParcels.get(bp);
+      parcelUse = `park_${park.archetype}_${park.variant}`;
+      populateParkParcel(bp, park.archetype, park.variant);
     } else if (Math.random() > buildingBlockDensity) {
       // Scarcer difficulties leave more blocks lightly populated.
     } else if (t < skyscraperChance) {
@@ -9182,6 +9332,7 @@ function tearDownWorld() {
   governmentPhysics.clear();
   movingCars.length = 0;
   movingPeople.length = 0;
+  animatedParkObjects.length = 0;
   nightWindowVisuals.length = 0;
   streetLightVisuals.length = 0;
   vehicleLightVisuals.length = 0;
@@ -14800,6 +14951,7 @@ function animate(frameNow = performance.now()) {
     updateTrafficLights(dt);
     updateMovingCars(dt);
     updateMovingPeople(dt);
+    updateParkAnimations(dt);
 
     // --- Military simulation ---
     updateWaves(dt);

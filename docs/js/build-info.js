@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 152;
+export const BUILD_SUB = 153;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.153',
+    title: 'Ten animated full-parcel parks',
+    notes: [
+      'Randomly reserves four to six complete parcels for ten park archetypes instead of placing buildings there.',
+      'Adds playground, basketball, baseball, tennis, running, swimming, picnic, fountain, dog, and skate parks.',
+      'Adds normal, rundown, and fancy park variants plus animated players, balls, fans, swimmers, runners, dogs, smoke, and water.',
+      'Builds park surfaces, fences, equipment, people, maintenance structures, stands, lights, and props as individually consumable objects.',
+    ],
+  },
   {
     label: 'Master 16.152',
     title: 'Solid kit blocks and permanent boss names',
