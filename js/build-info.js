@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 163;
+export const BUILD_SUB = 164;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.164',
+    title: 'Immutable MegaKit building deployment',
+    notes: [
+      'Moves the converted MegaKit building to a versioned asset URL so GitHub Pages cannot reuse an older brown-lattice model.',
+      'Makes each imported test building own its full parcel, removing park, pool, and fixture overlap before placement.',
+    ],
+  },
   {
     label: 'Master 16.163',
     title: 'Wave briefing shows only unfinished work',

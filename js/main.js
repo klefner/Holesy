@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.163';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.164';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1255,7 +1255,9 @@ function populateMegakitDowntownTest() {
 
 async function addMegakitBuildingSkinTest(generation) {
   try {
-    const convertedAsset = 'assets/environments/downtown-city-megakit/converted/megakit-building-small-1/Building_Small_1_destructible.gltf';
+    // Keep converted revisions at immutable URLs. GitHub Pages/CDN and browser
+    // caches can otherwise retain an older .gltf/.bin pair after a deployment.
+    const convertedAsset = 'assets/environments/downtown-city-megakit/converted/megakit-building-small-1/v2.3.0/Building_Small_1_destructible.gltf';
     const authoredAsset = `${MEGAKIT_ASSET_BASE}Building_Small_1.gltf`;
     const [gltf, authoredGltf] = await Promise.all([
       megakitGltfLoader.loadAsync(convertedAsset),
@@ -1309,8 +1311,10 @@ async function addMegakitBuildingSkinTest(generation) {
     });
     for (const [x, z] of testSites) {
       for (const object of [...objects]) {
-        const building = object.isBuilding || object.isVoxelBuildingCube || object.isSkyscraperChunk || object.isGovernmentBuildingPiece || object.physicsStackPiece;
-        if (!building || Math.hypot(object.x - x, object.z - z) > 9.5) continue;
+        // This imported building owns its entire parcel. Remove every existing
+        // consumable there (including park tiles, pools and fixtures), not only
+        // buildings, so asynchronous asset loading cannot create mixed parcels.
+        if (Math.hypot(object.x - x, object.z - z) > 10.25) continue;
         if (object.mesh?.parent) scene.remove(object.mesh);
         removeObjectFromActiveLists(object);
       }
