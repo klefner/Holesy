@@ -1,0 +1,4 @@
+Holesy Player Performance Adjustment Log
+Purpose: governed local record of rules that visibly adjust gameplay based on measured player performance.
+
+2026-07-10T12:55:00-05:00 | Master 16.119 | Added bounded first-run movement assistance | In Endless Wave 1, after 20 active gameplay seconds, a player with under 250 points and zero Mandate/Run Goal progress receives a 10% movement boost for 10 seconds. The red square appears beside the timer while the adjustment is disclosed. Runtime occurrences are stored in browser localStorage and exported to holesy-player-performance-adjustments.txt when the square is clicked.
