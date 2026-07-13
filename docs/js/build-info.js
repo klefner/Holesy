@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 151;
+export const BUILD_SUB = 152;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.152',
+    title: 'Solid kit blocks and permanent boss names',
+    notes: [
+      'Rebuilds imported MegaKit buildings from closed, roofed cubic pieces using materials from the original kit model.',
+      'Keeps unusual collapse panels exclusive to skyscrapers unless a future building is explicitly exempted.',
+      'Adds a permanent skin-linked name above every boss and includes that name in its incoming announcement.',
+    ],
+  },
   {
     label: 'Master 16.151',
     title: 'Debris sleep and starting-hole precision',

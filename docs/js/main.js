@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.151';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.152';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1281,9 +1281,19 @@ async function addMegakitBuildingSkinTest(generation) {
       }
     }
 
-    // Each edible chunk renders the real model geometry and UV-mapped materials,
-    // clipped to one structural region. Together the chunks form one seamless,
-    // authentic kit building; eating a chunk removes only that visible section.
+    // Convert the kit facade into closed, solid building blocks. The original
+    // model supplies the real mapped materials; BoxGeometry supplies six capped
+    // faces so destruction never reveals a hollow shell.
+    const sourceMaterials = [];
+    source.traverse((child) => {
+      if (!child.isMesh) return;
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      for (const material of materials) {
+        if (material && !sourceMaterials.includes(material)) sourceMaterials.push(material);
+      }
+    });
+    const fallbackMaterial = megakitMaterial('T_MetalConcrete_BaseColor.png', [1, 1], 0xffffff);
+    const blockMaterials = sourceMaterials.length ? sourceMaterials : [fallbackMaterial];
     const cols = 2;
     const rows = 2;
     const floors = 3;
@@ -1301,43 +1311,16 @@ async function addMegakitBuildingSkinTest(generation) {
             const rotatedX = localX * Math.cos(rotation) - localZ * Math.sin(rotation);
             const rotatedZ = localX * Math.sin(rotation) + localZ * Math.cos(rotation);
             const chunkCenterY = pieceH / 2 + floor * pieceH;
-            const minX = x + rotatedX - pieceW / 2;
-            const maxX = x + rotatedX + pieceW / 2;
-            const minZ = z + rotatedZ - pieceD / 2;
-            const maxZ = z + rotatedZ + pieceD / 2;
-            const minY = floor * pieceH;
-            const maxY = (floor + 1) * pieceH;
-            const clippingPlanes = [
-              new THREE.Plane(new THREE.Vector3(1, 0, 0), -minX),
-              new THREE.Plane(new THREE.Vector3(-1, 0, 0), maxX),
-              new THREE.Plane(new THREE.Vector3(0, 0, 1), -minZ),
-              new THREE.Plane(new THREE.Vector3(0, 0, -1), maxZ),
-              new THREE.Plane(new THREE.Vector3(0, 1, 0), -minY),
-              new THREE.Plane(new THREE.Vector3(0, -1, 0), maxY),
-            ];
-            const skin = source.clone(true);
-            skin.position.set(-center.x, -bounds.min.y, -center.z);
-            skin.traverse((child) => {
-              if (!child.isMesh) return;
-              const materials = Array.isArray(child.material) ? child.material : [child.material];
-              const clipped = materials.map(material => {
-                const clone = material.clone();
-                clone.clippingPlanes = clippingPlanes;
-                clone.clipShadows = true;
-                clone.needsUpdate = true;
-                return clone;
-              });
-              child.material = Array.isArray(child.material) ? clipped : clipped[0];
-              child.castShadow = true;
-              child.receiveShadow = true;
-            });
-            const modelRoot = new THREE.Group();
-            modelRoot.add(skin);
-            modelRoot.scale.setScalar(scale);
-            modelRoot.rotation.y = rotation;
-            modelRoot.position.set(-rotatedX, -chunkCenterY, -rotatedZ);
-            const piece = new THREE.Group();
-            piece.add(modelRoot);
+            const facadeA = blockMaterials[(col + row + floor) % blockMaterials.length];
+            const facadeB = blockMaterials[(col + row + floor + 1) % blockMaterials.length];
+            const roof = blockMaterials[(blockMaterials.length - 1 + floor) % blockMaterials.length];
+            const piece = new THREE.Mesh(
+              new THREE.BoxGeometry(pieceW * 0.98, pieceH * 0.98, pieceD * 0.98),
+              [facadeA, facadeA, roof, facadeB, facadeB, facadeA]
+            );
+            piece.rotation.y = rotation;
+            piece.castShadow = true;
+            piece.receiveShadow = true;
             const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
               x: x + rotatedX,
               z: z + rotatedZ,
@@ -1347,7 +1330,7 @@ async function addMegakitBuildingSkinTest(generation) {
             object.buildingSize = 'large';
             object.mandateKind = 'tower';
             object.isMegakitAsset = true;
-            object.isSkyscraperChunk = true;
+            object.isSkyscraperChunk = false;
             object.physicsStackPiece = true;
             object.stackId = stackId;
             object.stackActive = false;
@@ -1363,7 +1346,7 @@ async function addMegakitBuildingSkinTest(generation) {
             object.stackPieceW = pieceW; object.stackPieceD = pieceD;
             object.vx = 0; object.vy = 0; object.vz = 0;
             object.avx = 0; object.avy = 0; object.avz = 0;
-            object.megakitAssetName = `Clipped authentic MegaKit ${buildingFile.replace('.gltf', '')} section`;
+            object.megakitAssetName = `Solid textured MegaKit ${buildingFile.replace('.gltf', '')} block`;
             physicsStackPieces.push(object);
           }
         }
@@ -9415,7 +9398,8 @@ function getRandomPostBossDropUnitType() {
 }
 
 function getBossBanner(unitType) {
-  return getUnitDefinition(unitType).banner || 'BOSS INBOUND!';
+  const name = BOSS_PERMANENT_NAMES[unitType] || 'Unknown Menace';
+  return `${name} — ${getUnitDefinition(unitType).banner || 'BOSS INBOUND!'}`;
 }
 
 function isFinalConfiguredWave() {
@@ -12610,6 +12594,12 @@ const SOLDIER_BASE_SCORE_VALUE = 30;
 const SOLDIER_BASE_PROGRESS_VALUE = 1;
 const UNIT_TYPE_SOLDIER = 'soldier';
 const BOSS_UNIT_TYPES = Object.freeze(['tank', 'mech', 'heavy', 'mortar', 'sniper', 'drone', 'grenadier', 'flamer', 'railgun', 'shock']);
+const BOSS_PERMANENT_NAMES = Object.freeze({
+  tank: 'General Treadwell', mech: 'Major Overkill', heavy: 'Commander Bulkhead',
+  mortar: 'Colonel Crater', sniper: 'Deadeye Dolores', drone: 'Marshal Buzzkill',
+  grenadier: 'Captain Kaboom', flamer: 'Baron Burnside', railgun: 'Doctor Longshot',
+  shock: 'Sergeant Static',
+});
 const OFFENSIVE_UNIT_DEFS = Object.freeze({
   soldier: Object.freeze({
     id: 'soldier',
@@ -13063,6 +13053,39 @@ function removeWaveUnitObject(root) {
 
 const ARMY_BOSS_VISUAL_SCALE_MULTIPLIER = 1.4;
 
+function addArmyBossNameLabel(root, unitType) {
+  const name = BOSS_PERMANENT_NAMES[unitType];
+  if (!root || !name || root.userData.bossNameLabel) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 96;
+  const ctx = canvas.getContext('2d');
+  ctx.font = '700 38px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 10;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.95)';
+  ctx.strokeText(name, 256, 48);
+  ctx.fillStyle = '#fff4c2';
+  ctx.fillText(name, 256, 48);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
+  const label = new THREE.Sprite(material);
+  const rootScale = Math.max(0.01, root.scale.y || 1);
+  const bounds = new THREE.Box3().setFromObject(root);
+  const visibleHeight = Math.max(1.8, bounds.max.y - bounds.min.y);
+  label.position.y = (visibleHeight + 1.15) / rootScale;
+  label.scale.set(6.2 / rootScale, 1.16 / rootScale, 1);
+  label.renderOrder = 50;
+  label.userData.holesyUnshadowed = true;
+  label.userData.isBossNameLabel = true;
+  root.add(label);
+  root.userData.bossNameLabel = label;
+  root.userData.bossPermanentName = name;
+}
+
 function addArmyBossNeonGlow(g, radius = 1.8, height = 1.5) {
   const glowMat = new THREE.MeshBasicMaterial({
     color: 0xff1744,
@@ -13356,10 +13379,15 @@ function makeAdvancedBossMesh(unitType, isBoss = false) {
 function makeSoldierMesh(options = {}) {
   const isArmyBoss = !!options.isArmyBoss || !!options.boss;
   const unitType = getUnitType(options);
-  if (unitType === 'tank') return makeArmyBossTankMesh(isArmyBoss);
-  if (unitType === 'mech') return makeMechUnitMesh(isArmyBoss);
-  if (unitType === 'heavy') return makeHeavyCommanderMesh(isArmyBoss);
-  if (unitType !== UNIT_TYPE_SOLDIER) return makeAdvancedBossMesh(unitType, isArmyBoss);
+  let bossMesh = null;
+  if (unitType === 'tank') bossMesh = makeArmyBossTankMesh(isArmyBoss);
+  else if (unitType === 'mech') bossMesh = makeMechUnitMesh(isArmyBoss);
+  else if (unitType === 'heavy') bossMesh = makeHeavyCommanderMesh(isArmyBoss);
+  else if (unitType !== UNIT_TYPE_SOLDIER) bossMesh = makeAdvancedBossMesh(unitType, isArmyBoss);
+  if (bossMesh) {
+    if (isArmyBoss) addArmyBossNameLabel(bossMesh, unitType);
+    return bossMesh;
+  }
   const g = new THREE.Group();
   const uniformColor = 0x4d5c3a;
   const legsColor = 0x3d4a2d;
