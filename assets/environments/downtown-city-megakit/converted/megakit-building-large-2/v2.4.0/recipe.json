@@ -1,0 +1,33 @@
+{
+  "assetId": "megakit-building-large-2",
+  "source": "../../../source-gltf/Building_Large_2.gltf",
+  "sourceSha256": "d0a6018cb838b4f10d97b3def3d0cc9a34aef3bd48387fac343892e8a8c21289",
+  "pipeline": "holesy-offline-destructible",
+  "pipelineVersion": "2.4.0",
+  "seed": 16159,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 12,
+    "depth": 12,
+    "height": 10.4
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "MI_RedBrick",
+    "topFaces": "MI_Asphalt",
+    "cutFaces": "MI_InteriorWall",
+    "coreVisualScale": 0.96
+  },
+  "physics": {
+    "collider": "box",
+    "fallPreset": "standard-building-block",
+    "settlePreset": "grounded-sleep"
+  }
+}

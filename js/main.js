@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.168';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.169';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1261,7 +1261,7 @@ async function addMegakitBuildingSkinTest(generation) {
       { assetId: 'megakit-building-large-2', sourceBase: 'Building_Large_2', footprint: 12, collapseSize: 6 },
     ];
     const loaded = await Promise.all(definitions.map(async definition => {
-      const convertedAsset = `assets/environments/downtown-city-megakit/converted/${definition.assetId}/v2.3.1/${definition.sourceBase}_destructible.gltf`;
+      const convertedAsset = `assets/environments/downtown-city-megakit/converted/${definition.assetId}/v2.4.0/${definition.sourceBase}_destructible.gltf`;
       const [gltf, authoredGltf] = await Promise.all([
         megakitGltfLoader.loadAsync(convertedAsset),
         megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}${definition.sourceBase}.gltf`),
@@ -1378,6 +1378,10 @@ async function addMegakitBuildingSkinTest(generation) {
         object.mandateKind = 'tower';
         object.isMegakitAsset = true;
         object.isOfflineConvertedAsset = true;
+        // Imported kit pieces are closed rectangular solids. Keep their
+        // existing whole-stack activation, but resolve debris contact with the
+        // same box-overlap path used by the proven voxel-building blocks.
+        object.usesBoxStackContacts = true;
         object.convertedAssetId = definition.assetId;
         object.convertedBlockName = template.name;
         object.isSkyscraperChunk = false;
@@ -2710,10 +2714,17 @@ const carCrashEffects = [];
 const animatedParkObjects = [];
 const reservedParcelKeys = new Set();
 const parcelKey = (bp) => `${bp.x.toFixed(3)},${bp.z.toFixed(3)}`;
-const PARK_ARCHETYPES = Object.freeze([
-  'playground', 'basketball', 'baseball', 'tennis', 'running_track',
-  'swimming_pool', 'picnic_bbq', 'fountain_garden', 'dog_park', 'skate_park',
+// Full-parcel attractions need most of a city parcel to read clearly. Compact
+// attractions can either headline a parcel occasionally or share a mixed park.
+const FULL_PARCEL_PARK_ARCHETYPES = Object.freeze([
+  'basketball', 'baseball', 'tennis', 'running_track', 'swimming_pool',
+  'four_hole_golf', 'amusement_park',
 ]);
+const COMPACT_PARK_ARCHETYPES = Object.freeze([
+  'playground', 'picnic_bbq', 'fountain_garden', 'dog_park', 'skate_park',
+  'volleyball', 'miniature_golf', 'seesaw_park',
+]);
+const PARK_ARCHETYPES = Object.freeze([...FULL_PARCEL_PARK_ARCHETYPES, ...COMPACT_PARK_ARCHETYPES]);
 const PARK_VARIANTS = Object.freeze(['normal', 'rundown', 'fancy']);
 
 function makeParkBox(name, bp, dx, dz, w, h, d, color, value = 18, y = h / 2) {
@@ -2825,11 +2836,62 @@ function populateParkShowcaseParcel(bp, variant) {
   if (variant === 'fancy') for (const [x,z] of [[-8,-8],[8,-8],[-8,8],[8,8]]) makeParkBox('showcase planter',bp,x,z,1,.6,1,0xe6d69a,10,.3);
 }
 
+function populateCompactParkAttraction(bp, archetype, centerX, centerZ, scale = 1) {
+  const metal = 0xb9c4cc;
+  if (archetype === 'volleyball') {
+    addParkTiledSurface('volleyball sand section', { x: bp.x + centerX, z: bp.z + centerZ }, 6 * scale, 4.4 * scale, 1.05 * scale, 0xd9bd78, 4);
+    for (let n = -2.4 * scale; n <= 2.4 * scale; n += 0.8 * scale) makeParkBox('volleyball net section', bp, centerX + n, centerZ, 0.72 * scale, 1.25 * scale, 0.06, 0xf4f4f4, 7, 0.65 * scale);
+    makeParkBall(bp, centerX + 1.1 * scale, centerZ - 1.1 * scale, 0xffffff, 'volleyball');
+  } else if (archetype === 'miniature_golf') {
+    for (let lane = -1; lane <= 1; lane++) {
+      const z = centerZ + lane * 1.35 * scale;
+      addParkTiledSurface('mini golf green section', { x: bp.x + centerX, z: bp.z + z }, 5.2 * scale, 0.9 * scale, 0.8 * scale, 0x3f9a54, 5);
+      makeParkBox('mini golf obstacle', bp, centerX + (lane % 2 ? -0.4 : 0.5) * scale, z, 0.35 * scale, 0.75 * scale, 0.35 * scale, 0xe65842, 9, 0.38 * scale);
+      makeParkBox('mini golf flag', bp, centerX + 2 * scale, z, 0.08, 1.1 * scale, 0.08, 0xf3d34a, 8, 0.55 * scale);
+      makeParkBall(bp, centerX - 2 * scale, z, 0xffffff, 'golfBall');
+    }
+  } else if (archetype === 'seesaw_park') {
+    for (const zOffset of [-1.35, 1.35]) {
+      makeParkBox('seesaw pivot', bp, centerX, centerZ + zOffset * scale, 0.45 * scale, 0.8 * scale, 0.45 * scale, metal, 9, 0.4 * scale);
+      const beam = makeParkBox('seesaw beam', bp, centerX, centerZ + zOffset * scale, 4.2 * scale, 0.18 * scale, 0.5 * scale, 0xf1b733, 15, 0.88 * scale);
+      beam.mesh.rotation.z = zOffset > 0 ? 0.12 : -0.12;
+    }
+  } else if (archetype === 'playground') {
+    const slide = makeParkBox('compact playground slide', bp, centerX - 1.1 * scale, centerZ, 1.15 * scale, 0.24 * scale, 2.8 * scale, 0xe65842, 14, 0.72 * scale);
+    slide.mesh.rotation.x = -0.28;
+    makeParkBox('compact swing frame', bp, centerX + 1.4 * scale, centerZ, 0.12, 1.6 * scale, 1.8 * scale, metal, 10, 0.8 * scale);
+  } else if (archetype === 'fountain_garden') {
+    makeParkBox('compact fountain basin', bp, centerX, centerZ, 3.2 * scale, 0.35, 3.2 * scale, 0xe4e0d4, 18, 0.2);
+    makeParkBox('compact fountain statue', bp, centerX, centerZ, 0.6 * scale, 1.8 * scale, 0.6 * scale, 0xd8d8d2, 20, 0.9 * scale);
+  } else if (archetype === 'skate_park') {
+    for (const xOffset of [-1.5, 1.5]) {
+      const ramp = makeParkBox('compact skate ramp', bp, centerX + xOffset * scale, centerZ, 2.3 * scale, 0.3, 1.1 * scale, 0xa9adb0, 14, 0.3);
+      ramp.mesh.rotation.z = xOffset > 0 ? 0.16 : -0.16;
+    }
+  } else if (archetype === 'dog_park') {
+    makeParkBox('compact dog agility ramp', bp, centerX, centerZ, 3.6 * scale, 0.3, 1.1 * scale, 0xe65842, 16, 0.65);
+    for (const xOffset of [-1.3, 1.3]) makeParkBox('compact park dog', bp, centerX + xOffset * scale, centerZ + 1.2 * scale, 0.6, 0.55, 0.9, 0x9b6a3c, 12, 0.28);
+  } else {
+    for (const xOffset of [-1.3, 1.3]) makeParkBox('compact picnic table', bp, centerX + xOffset * scale, centerZ, 2.1 * scale, 0.24, 1.1 * scale, 0x7b4e2d, 14, 0.7);
+  }
+}
+
+function populateMixedCompactPark(bp, variant) {
+  const choices = [...COMPACT_PARK_ARCHETYPES].sort(() => Math.random() - 0.5).slice(0, 4);
+  const sites = [[-4.6,-4.6],[4.6,-4.6],[-4.6,4.6],[4.6,4.6]];
+  choices.forEach((archetype, index) => populateCompactParkAttraction(bp, archetype, sites[index][0], sites[index][1], 0.82));
+  if (variant === 'fancy') makeParkBox('mixed park directory', bp, 0, 0, 1.3, 2.2, 0.25, 0x315b82, 18, 1.1);
+}
+
 function populateParkParcel(bp, archetype, variant) {
   addParkSurface(bp, variant, ['basketball','tennis','running_track','skate_park'].includes(archetype) ? 0x63827a : 0x4f8b45);
   addParkFence(bp, variant);
   if (archetype === 'showcase') {
     populateParkShowcaseParcel(bp, variant);
+    return;
+  }
+  if (archetype === 'mixed_compact') {
+    populateMixedCompactPark(bp, variant);
     return;
   }
   const metal = variant === 'rundown' ? 0x695b4d : variant === 'fancy' ? 0xf1d36c : 0xb9c4cc;
@@ -2874,6 +2936,28 @@ function populateParkParcel(bp, archetype, variant) {
     for(let i=0;i<10;i++){ const dog=makeParkBox('park dog',bp,randomBetween(-7,7),randomBetween(-7,7),0.65,0.6,1.0,[0x9b6a3c,0x333333,0xd9c2a1][i%3],22,0.3); animatedParkObjects.push({obj:dog,motion:'dog',originX:dog.x,originZ:dog.z,phase:Math.random()*6}); }
     for(let i=0;i<6;i++) makeParkPerson(bp,randomBetween(-6,6),randomBetween(-6,6),0x6a8caf,'wander');
     makeParkBox('dog agility ramp',bp,0,0,4,0.3,1.2,accent,22,0.7).mesh.rotation.z=.28;
+  } else if (archetype === 'volleyball' || archetype === 'miniature_golf' || archetype === 'seesaw_park') {
+    // Compact attractions occasionally get the whole parcel as a showcase.
+    populateCompactParkAttraction(bp, archetype, 0, 0, archetype === 'miniature_golf' ? 1.55 : 1.6);
+    for (let i=0;i<5;i++) makeParkPerson(bp,randomBetween(-6,6),randomBetween(-5,5),0xffd166,'wander');
+  } else if (archetype === 'four_hole_golf') {
+    const holes = [[-4.8,-4.8],[4.8,-4.8],[-4.8,4.8],[4.8,4.8]];
+    for (const [x,z] of holes) {
+      addParkTiledSurface('golf green section', { x: bp.x + x, z: bp.z + z }, 5.6, 4.2, 1.35, 0x4a9b4f, 5);
+      makeParkBox('golf flag pin',bp,x+1.4,z,0.09,1.7,0.09,0xf5e451,10,.85);
+      makeParkBall(bp,x-1.25,z,0xffffff,'golfBall');
+    }
+    const cart = makeParkBox('golf cart',bp,0,0,2.5,1.25,1.5,0xf4f1db,32,.63);
+    makeParkBox('golf cart roof',bp,0,0,2.7,.12,1.7,0xeeeeee,10,1.65);
+    cart.mesh.rotation.y = Math.PI / 7;
+  } else if (archetype === 'amusement_park') {
+    // Readable low-poly midway: a carousel, small wheel, booths and riders.
+    makeParkBox('carousel platform',bp,-3.8,0,5.2,.45,5.2,0xf1c95b,35,.24);
+    makeParkBox('carousel canopy',bp,-3.8,0,5.6,.28,5.6,0xe94f55,28,2.7);
+    for(let i=0;i<6;i++){ const a=i*Math.PI/3; makeParkBox('carousel horse',bp,-3.8+Math.cos(a)*1.8,Math.sin(a)*1.8,.65,1.1,.35,0xffffff,18,.65); }
+    makeParkBox('ferris wheel axle',bp,4.2,0,.45,4.8,.45,metal,30,2.4);
+    for(let i=0;i<8;i++){ const a=i*Math.PI/4; makeParkBox('ferris wheel gondola',bp,4.2+Math.cos(a)*3.1,Math.sin(a)*.8,1,.65,.8,[0xe65842,0x42bfe8,0xf1d36c][i%3],18,2.7+Math.sin(a)*2.7); }
+    for(const z of [-6.5,6.5]) for(const x of [-5,0,5]) makeParkBox('midway booth',bp,x,z,2.3,2.2,1.7,0x6b4fa1,24,1.1);
   } else {
     for(const [x,z,w,h,d] of [[-4,0,5,.5,2],[4,0,5,.5,2],[0,-4,2,.5,5],[0,4,2,.5,5]]) makeParkBox('skate ramp',bp,x,z,w,h,d,0xa9adb0,25,0.45).mesh.rotation.z=(x+z>0?.18:-.18);
     for(let i=0;i<7;i++) makeParkPerson(bp,randomBetween(-6,6),randomBetween(-6,6),0x9c5de5,'skate');
@@ -2915,7 +2999,7 @@ function updateParkAnimations(dt) {
         continue;
       }
     }
-    if (['bounce','basketball','baseball','tennisBall','cheer','smoke','water','fire'].includes(actor.motion)) {
+    if (['bounce','basketball','baseball','tennisBall','volleyball','cheer','smoke','water','fire'].includes(actor.motion)) {
       if (actor.originY === undefined) actor.originY = mesh.position.y;
       const amplitude = actor.motion === 'cheer' ? .22 : actor.motion === 'smoke' ? 1.8 : actor.motion === 'water' ? 1.3 : .75;
       mesh.position.y = actor.originY + Math.abs(Math.sin(t * (actor.motion === 'cheer' ? 7 : 4))) * amplitude;
@@ -3008,21 +3092,27 @@ async function populateCity() {
   const parkAssetCount = Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
   const personChance = economy.personChanceMult || 1;
   const governmentBlock = blockPositions[Math.floor(Math.random() * blockPositions.length)];
-  const parkCount = 4 + Math.floor(Math.random() * 3);
+  // Keep parks special and legible: every regenerated town gets exactly one
+  // or two park parcels, never the previous four-to-six-parcel flood.
+  const parkCount = Math.random() < 0.5 ? 1 : 2;
   const parkParcels = new Map();
   const shuffledParkCandidates = blockPositions.filter(bp => bp !== governmentBlock).sort(() => Math.random() - 0.5);
-  const shuffledArchetypes = [...PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
+  const shuffledFullParcel = [...FULL_PARCEL_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
+  const shuffledCompact = [...COMPACT_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
   reservedParcelKeys.clear();
   if (governmentBlock) reservedParcelKeys.add(parcelKey(governmentBlock));
-  if (shuffledParkCandidates[0]) {
-    parkParcels.set(shuffledParkCandidates[0], {
-      archetype: 'showcase',
-      variant: 'fancy',
-    });
-  }
-  for (let i = 1; i < parkCount; i++) {
+  for (let i = 0; i < parkCount; i++) {
+    // Most parks present one full-parcel attraction. Mixed parks combine four
+    // compact attractions; a smaller chance lets one compact attraction enjoy
+    // a spacious showcase parcel of its own.
+    const roll = Math.random();
+    const archetype = roll < 0.25
+      ? 'mixed_compact'
+      : roll < 0.42
+        ? shuffledCompact[i % shuffledCompact.length]
+        : shuffledFullParcel[i % shuffledFullParcel.length];
     parkParcels.set(shuffledParkCandidates[i], {
-      archetype: shuffledArchetypes[i % shuffledArchetypes.length],
+      archetype,
       variant: PARK_VARIANTS[Math.floor(Math.random() * PARK_VARIANTS.length)],
     });
   }
@@ -11728,7 +11818,7 @@ function resolvePhysicsStackContacts(dt) {
   contactVoxelPieces.length = 0;
   for (const piece of physicsStackPieces) {
     if (!piece.stackActive || piece.consumed || piece.falling || piece.jammedInHole) continue;
-    if (piece.isVoxelBuildingCube) contactVoxelPieces.push(piece);
+    if (piece.isVoxelBuildingCube || piece.usesBoxStackContacts) contactVoxelPieces.push(piece);
     else if (!piece.stackSettled) contactNonVoxelPieces.push(piece);
   }
   const nonVoxelPieces = contactNonVoxelPieces;

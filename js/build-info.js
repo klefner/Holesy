@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 168;
+export const BUILD_SUB = 169;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.169',
+    title: 'Solid facade blocks and right-sized parks',
+    notes: [
+      'Imported MegaKit buildings now break into closed six-faced structural blocks with exterior facade, roof, and newly exposed interior faces assigned deliberately.',
+      'Imported debris now uses box-based block contact physics, and each wave contains only one or two parks selected from full-parcel, mixed compact, or spacious showcase layouts.',
+      'Adds volleyball, miniature golf, seesaws, four-hole golf with carts, and an amusement park to the park rotation.',
+    ],
+  },
   {
     label: 'Master 16.168',
     title: 'Park-wide fear response',
