@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 160;
+export const BUILD_SUB = 161;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.161',
+    title: 'Authentic rigid MegaKit fragments',
+    notes: [
+      'Clips every authentic model triangle to its owning destruction cell while interpolating original UVs and normals, preserving the kit artwork without folding facade sheets.',
+      'Validates all 96 solid chunks against their colliders with zero overhanging primitives or vertices.',
+      'Reserves government and park parcels so imported buildings cannot overlap park equipment or civic buildings.',
+    ],
+  },
   {
     label: 'Master 16.160',
     title: 'Authentic MegaKit shell and granular park showcase',

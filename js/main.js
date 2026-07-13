@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.160';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.161';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1297,7 +1297,11 @@ async function addMegakitBuildingSkinTest(generation) {
     const authoredCenter = authoredBounds.getCenter(new THREE.Vector3());
     const authoredFootprint = Math.max(authoredDimensions.x, authoredDimensions.z) || 1;
     const authoredScale = 8.5 / authoredFootprint;
-    const eligibleParcels = blockPositions.filter(bp => Math.abs(bp.x) < currentArenaHalf - 10 && Math.abs(bp.z) < currentArenaHalf - 10);
+    const eligibleParcels = blockPositions.filter(bp =>
+      Math.abs(bp.x) < currentArenaHalf - 10 &&
+      Math.abs(bp.z) < currentArenaHalf - 10 &&
+      !reservedParcelKeys.has(parcelKey(bp))
+    );
     const parcelIndexes = [0, Math.floor(eligibleParcels.length * 0.24), Math.floor(eligibleParcels.length * 0.5), Math.floor(eligibleParcels.length * 0.74), eligibleParcels.length - 1];
     const testSites = [...new Set(parcelIndexes)].map((index, order) => {
       const bp = eligibleParcels[Math.max(0, Math.min(eligibleParcels.length - 1, index))];
@@ -2687,6 +2691,8 @@ function randInBlock(bp, margin = 2) {
 const movingCars = [];
 const carCrashEffects = [];
 const animatedParkObjects = [];
+const reservedParcelKeys = new Set();
+const parcelKey = (bp) => `${bp.x.toFixed(3)},${bp.z.toFixed(3)}`;
 const PARK_ARCHETYPES = Object.freeze([
   'playground', 'basketball', 'baseball', 'tennis', 'running_track',
   'swimming_pool', 'picnic_bbq', 'fountain_garden', 'dog_park', 'skate_park',
@@ -2952,6 +2958,8 @@ async function populateCity() {
   const parkParcels = new Map();
   const shuffledParkCandidates = blockPositions.filter(bp => bp !== governmentBlock).sort(() => Math.random() - 0.5);
   const shuffledArchetypes = [...PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
+  reservedParcelKeys.clear();
+  if (governmentBlock) reservedParcelKeys.add(parcelKey(governmentBlock));
   if (shuffledParkCandidates[0]) {
     parkParcels.set(shuffledParkCandidates[0], {
       archetype: 'showcase',
@@ -2964,6 +2972,7 @@ async function populateCity() {
       variant: PARK_VARIANTS[Math.floor(Math.random() * PARK_VARIANTS.length)],
     });
   }
+  for (const bp of parkParcels.keys()) reservedParcelKeys.add(parcelKey(bp));
   // Place buildings on block corners/edges, small stuff around perimeter
   let populatedBlockCount = 0;
   for (const bp of blockPositions) {

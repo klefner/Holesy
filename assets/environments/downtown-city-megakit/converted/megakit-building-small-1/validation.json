@@ -5,16 +5,18 @@
   "eachBlockClosedFaces": 6,
   "collisionProxyCount": 96,
   "materialsPreserved": 13,
-  "authenticTrianglesAssigned": 18344,
-  "outputBytes": 1981992,
+  "sourceTriangleCount": 18344,
+  "clippedTriangleCount": 26339,
+  "authenticTrianglesAssigned": 26339,
+  "outputBytes": 2845452,
   "checks": [
     "source hash recorded",
     "96 named hybrid blocks",
-    "all original triangles assigned once",
-    "original UVs and materials preserved",
+    "source triangles clipped to every intersected AABB cell",
+    "clipped UVs and normals interpolated",
     "closed cube core per block",
     "outward face winding verified",
     "two-sided materials enforced",
-    "box collision metadata assigned"
+    "render and collider envelopes match"
   ]
 }
