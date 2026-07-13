@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.147';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.148';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -6260,6 +6260,8 @@ function unlockAchievement(id, announce = true) {
     const headline = def.active ? `BUFF: ${def.playerName}` : `ACHIEVEMENT: ${def.playerName}`;
     showEventBanner(`${headline} - ${def.effectText}`, 6200);
   }
+  const cosmeticId = Object.keys(COSMETIC_REWARDS).find(key => COSMETIC_REWARDS[key].achievement === id);
+  if (cosmeticId) grantCosmetic(cosmeticId, isNew);
   return isNew;
 }
 
@@ -6713,8 +6715,6 @@ async function loadAudioBanks() {
       await new Promise(resolve => setTimeout(resolve, 0));
     }
   }
-  const cosmeticId = Object.keys(COSMETIC_REWARDS).find(key => COSMETIC_REWARDS[key].achievement === id);
-  if (cosmeticId) grantCosmetic(cosmeticId, isNew);
 }
 
 // Generate a voice profile for a person (gender + panic + sample + pitch wobble)
