@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 161;
+export const BUILD_SUB = 162;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.162',
+    title: 'Post-breach MegaKit skin visibility repair',
+    notes: [
+      'Separates authentic facade fragments from the opaque structural backing so the real windows, doors, trim, roof, and brickwork remain visible after breach.',
+      'Insets the watertight backing to 96 percent and renders the authentic clipped surfaces ahead of it, eliminating the coplanar brown-lattice masking defect.',
+    ],
+  },
   {
     label: 'Master 16.161',
     title: 'Authentic rigid MegaKit fragments',

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.161';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.162';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1350,6 +1350,20 @@ async function addMegakitBuildingSkinTest(generation) {
           if (!descendant.isMesh) return;
           descendant.castShadow = true;
           descendant.receiveShadow = true;
+          // GLTFLoader attaches primitive-level `extras` to BufferGeometry.
+          // Also accept mesh userData for compatibility with preprocessed GLBs.
+          if (descendant.geometry?.userData?.holesyAuthenticSurface || descendant.userData?.holesyAuthenticSurface) {
+            const materials = Array.isArray(descendant.material) ? descendant.material : [descendant.material];
+            const raisedMaterials = materials.map(material => {
+              const raised = material.clone();
+              raised.polygonOffset = true;
+              raised.polygonOffsetFactor = -2;
+              raised.polygonOffsetUnits = -2;
+              return raised;
+            });
+            descendant.material = Array.isArray(descendant.material) ? raisedMaterials : raisedMaterials[0];
+            descendant.renderOrder = 2;
+          }
         });
         const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
           x: x + rotatedX,

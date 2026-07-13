@@ -14,9 +14,9 @@
     "96 named hybrid blocks",
     "source triangles clipped to every intersected AABB cell",
     "clipped UVs and normals interpolated",
-    "closed cube core per block",
+    "closed cube core inset to prevent shell z-fighting",
     "outward face winding verified",
     "two-sided materials enforced",
-    "render and collider envelopes match"
+    "authentic shell remains inside collider envelope"
   ]
 }
