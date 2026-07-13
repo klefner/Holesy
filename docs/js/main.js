@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.167';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.168';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -2720,6 +2720,7 @@ function makeParkBox(name, bp, dx, dz, w, h, d, color, value = 18, y = h / 2) {
   const mesh = new THREE.Mesh(sharedBoxGeometry(w, h, d), sharedBoxMat(color));
   const obj = makeObject(mesh, Math.max(0.2, Math.min(w, d) * 0.52), 0, Math.max(1, Math.round(value * 0.2)), { x: bp.x + dx, z: bp.z + dz, y });
   obj.parkAssetName = name;
+  obj.parkParcelKey = parcelKey(bp);
   obj.mandateKind = 'park';
   return obj;
 }
@@ -2728,6 +2729,7 @@ function makeParkPerson(bp, dx, dz, color = 0x4f7ed6, motion = null) {
   const person = makePerson({ x: bp.x + dx, z: bp.z + dz });
   person.value = 3;
   person.parkAssetName = 'park visitor';
+  person.parkParcelKey = parcelKey(bp);
   if (motion) animatedParkObjects.push({ obj: person, motion, originX: person.x, originZ: person.z, phase: Math.random() * Math.PI * 2 });
   return person;
 }
@@ -2736,6 +2738,7 @@ function makeParkBall(bp, dx, dz, color, motion = 'bounce') {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), sharedBoxMat(color));
   const obj = makeObject(mesh, 0.28, 0, 4, { x: bp.x + dx, z: bp.z + dz, y: 0.32 });
   obj.parkAssetName = `${motion} ball`;
+  obj.parkParcelKey = parcelKey(bp);
   animatedParkObjects.push({ obj, motion, originX: obj.x, originZ: obj.z, phase: Math.random() * Math.PI * 2 });
   return obj;
 }
@@ -2891,6 +2894,27 @@ function updateParkAnimations(dt) {
     if (!actor.obj || actor.obj.consumed || actor.obj.falling) { animatedParkObjects.splice(i,1); continue; }
     const t = now + actor.phase;
     const mesh = actor.obj.mesh;
+    if (actor.obj.parkPanicActive) {
+      const threat = actor.obj.parkPanicHole;
+      const safeDistance = Math.max(14, (threat?.radius || 0) + 9);
+      const distance = threat?.alive ? Math.hypot(actor.obj.x - threat.x, actor.obj.z - threat.z) : Infinity;
+      if (!threat?.alive || distance >= safeDistance) {
+        actor.obj.parkPanicActive = false;
+        actor.obj.parkPanicHole = null;
+        actor.originX = actor.obj.x;
+        actor.originZ = actor.obj.z;
+        actor.phase = Math.random() * Math.PI * 2;
+        actor.motion = 'wander';
+      } else {
+        const speed = actor.obj.panicSpeed || 4.2;
+        actor.obj.x += Math.cos(actor.obj.parkPanicDir) * speed * dt;
+        actor.obj.z += Math.sin(actor.obj.parkPanicDir) * speed * dt;
+        mesh.position.x = actor.obj.x;
+        mesh.position.z = actor.obj.z;
+        mesh.rotation.y = -actor.obj.parkPanicDir + Math.PI / 2;
+        continue;
+      }
+    }
     if (['bounce','basketball','baseball','tennisBall','cheer','smoke','water','fire'].includes(actor.motion)) {
       if (actor.originY === undefined) actor.originY = mesh.position.y;
       const amplitude = actor.motion === 'cheer' ? .22 : actor.motion === 'smoke' ? 1.8 : actor.motion === 'water' ? 1.3 : .75;
@@ -2904,6 +2928,19 @@ function updateParkAnimations(dt) {
       actor.obj.z = actor.originZ + Math.sin(t * (actor.motion === 'swim' ? .7 : 1.3)) * range;
       mesh.position.x = actor.obj.x; mesh.position.z = actor.obj.z;
     }
+  }
+}
+
+function triggerParkVisitorPanic(parkParcelKey, attackingHole) {
+  if (!parkParcelKey || !attackingHole) return;
+  for (const actor of animatedParkObjects) {
+    const person = actor.obj;
+    if (!person?.isPerson || person.parkParcelKey !== parkParcelKey || person.consumed || person.falling || person.parkPanicActive) continue;
+    // Commit to the direction the visitor was facing at the first strike.
+    person.parkPanicDir = Math.PI / 2 - person.mesh.rotation.y;
+    person.parkPanicHole = attackingHole;
+    person.parkPanicActive = true;
+    person.panicSpeed = Math.max(3.8, person.panicSpeed || 0);
   }
 }
 
@@ -10955,6 +10992,7 @@ function activateGovernmentBuildingFromPiece(obj, h) {
 
 // Helper: a hole consumes an object (triggered when it starts falling)
 function beginConsume(h, obj) {
+  if (obj.parkParcelKey && !obj.isPerson) triggerParkVisitorPanic(obj.parkParcelKey, h);
   if (obj.mandateKind === 'hydrant') spawnHydrantJet(obj);
   if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
     const activated = obj.stackKind === 'smallVoxel'

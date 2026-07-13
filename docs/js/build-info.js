@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 167;
+export const BUILD_SUB = 168;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.168',
+    title: 'Park-wide fear response',
+    notes: [
+      'When a hole first consumes part of a park, every visitor in that parcel sprints in the direction they were already facing.',
+      'Visitors keep that committed escape direction until they clear the attacking hole, then resume their normal park activity.',
+    ],
+  },
   {
     label: 'Master 16.167',
     title: 'Complete MegaKit building roster',
