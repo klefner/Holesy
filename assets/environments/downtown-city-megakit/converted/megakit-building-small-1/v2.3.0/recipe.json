@@ -1,6 +1,6 @@
 {
   "assetId": "megakit-building-small-1",
-  "source": "../../source-gltf/Building_Small_1.gltf",
+  "source": "../../../source-gltf/Building_Small_1.gltf",
   "sourceSha256": "8e1235397ee3905d0bfbbe8f64a5197246a9be1af700983920c4f1a691c95c18",
   "pipeline": "holesy-offline-destructible",
   "pipelineVersion": "2.3.0",

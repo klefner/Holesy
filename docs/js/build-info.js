@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 164;
+export const BUILD_SUB = 165;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.165',
+    title: 'Versioned MegaKit texture-path repair',
+    notes: [
+      'Regenerates the immutable v2.3.0 model with texture paths relative to its versioned directory.',
+      'Restores the authentic brick, window, door, trim, roof, and interior materials in the deployed building.',
+    ],
+  },
   {
     label: 'Master 16.164',
     title: 'Immutable MegaKit building deployment',

@@ -11099,97 +11099,97 @@
     {
       "mimeType": "image/png",
       "name": "T_RedBrick_Normal",
-      "uri": "../../source-gltf/T_RedBrick_Normal.png"
+      "uri": "../../../source-gltf/T_RedBrick_Normal.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_RedBrick_BaseColor",
-      "uri": "../../source-gltf/T_RedBrick_BaseColor.png"
+      "uri": "../../../source-gltf/T_RedBrick_BaseColor.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_RedBrick_ORM",
-      "uri": "../../source-gltf/T_RedBrick_ORM.png"
+      "uri": "../../../source-gltf/T_RedBrick_ORM.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_Trim_Normal",
-      "uri": "../../source-gltf/T_Trim_Normal.png"
+      "uri": "../../../source-gltf/T_Trim_Normal.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_Trim_BaseColor",
-      "uri": "../../source-gltf/T_Trim_BaseColor.png"
+      "uri": "../../../source-gltf/T_Trim_BaseColor.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_Trim_ORM",
-      "uri": "../../source-gltf/T_Trim_ORM.png"
+      "uri": "../../../source-gltf/T_Trim_ORM.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_MetalConcrete_Normal",
-      "uri": "../../source-gltf/T_MetalConcrete_Normal.png"
+      "uri": "../../../source-gltf/T_MetalConcrete_Normal.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_MetalConcrete_BaseColor",
-      "uri": "../../source-gltf/T_MetalConcrete_BaseColor.png"
+      "uri": "../../../source-gltf/T_MetalConcrete_BaseColor.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_MetalConcrete_ORM",
-      "uri": "../../source-gltf/T_MetalConcrete_ORM.png"
+      "uri": "../../../source-gltf/T_MetalConcrete_ORM.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_lit_interior_2",
-      "uri": "../../source-gltf/T_lit_interior_2.png"
+      "uri": "../../../source-gltf/T_lit_interior_2.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_lit_interior_1",
-      "uri": "../../source-gltf/T_lit_interior_1.png"
+      "uri": "../../../source-gltf/T_lit_interior_1.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_Concrete_Normal",
-      "uri": "../../source-gltf/T_Concrete_Normal.png"
+      "uri": "../../../source-gltf/T_Concrete_Normal.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_Concrete_BaseColor",
-      "uri": "../../source-gltf/T_Concrete_BaseColor.png"
+      "uri": "../../../source-gltf/T_Concrete_BaseColor.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_Concrete_ORM",
-      "uri": "../../source-gltf/T_Concrete_ORM.png"
+      "uri": "../../../source-gltf/T_Concrete_ORM.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_dark_interior",
-      "uri": "../../source-gltf/T_dark_interior.png"
+      "uri": "../../../source-gltf/T_dark_interior.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_Concrete_Asphalt_BaseColor",
-      "uri": "../../source-gltf/T_Concrete_Asphalt_BaseColor.png"
+      "uri": "../../../source-gltf/T_Concrete_Asphalt_BaseColor.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_MarbleFloor_Normal",
-      "uri": "../../source-gltf/T_MarbleFloor_Normal.png"
+      "uri": "../../../source-gltf/T_MarbleFloor_Normal.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_MarbleFloor_BaseColor",
-      "uri": "../../source-gltf/T_MarbleFloor_BaseColor.png"
+      "uri": "../../../source-gltf/T_MarbleFloor_BaseColor.png"
     },
     {
       "mimeType": "image/png",
       "name": "T_MarbleFloor_ORM",
-      "uri": "../../source-gltf/T_MarbleFloor_ORM.png"
+      "uri": "../../../source-gltf/T_MarbleFloor_ORM.png"
     }
   ],
   "samplers": [
