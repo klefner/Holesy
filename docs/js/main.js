@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.154';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.155';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1253,19 +1253,32 @@ function populateMegakitDowntownTest() {
 
 async function addMegakitBuildingSkinTest(generation) {
   try {
-    const buildingDeck = ['Building_Small_1.gltf', 'Building_Medium_2_001.gltf', 'Building_Large_2.gltf'];
-    const buildingFile = buildingDeck[Math.max(0, currentWave - 1) % buildingDeck.length];
-    const gltf = await megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}${buildingFile}`);
+    const convertedAsset = 'assets/environments/downtown-city-megakit/converted/megakit-building-small-1/Building_Small_1_destructible.gltf';
+    const gltf = await megakitGltfLoader.loadAsync(convertedAsset);
     if (selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN || generation !== megakitEnvironmentGeneration) return;
 
     const source = gltf.scene;
     source.updateMatrixWorld(true);
-    const bounds = new THREE.Box3().setFromObject(source);
-    const dimensions = bounds.getSize(new THREE.Vector3());
-    const footprint = Math.max(dimensions.x, dimensions.z) || 1;
-    const scale = 8.5 / footprint;
-    const scaledHeight = THREE.MathUtils.clamp(dimensions.y * scale, 6.4, 10.4);
-    const center = bounds.getCenter(new THREE.Vector3());
+    const blockTemplates = [];
+    source.traverse((child) => {
+      if (!child.userData?.holesyBlock) return;
+      let renderedMesh = child.isMesh ? child : null;
+      if (!renderedMesh) child.traverse(descendant => { if (!renderedMesh && descendant.isMesh) renderedMesh = descendant; });
+      if (!renderedMesh) return;
+      const worldPosition = child.getWorldPosition(new THREE.Vector3());
+      const worldScale = child.getWorldScale(new THREE.Vector3());
+      blockTemplates.push({
+        name: child.name,
+        geometry: renderedMesh.geometry,
+        material: renderedMesh.material,
+        position: worldPosition,
+        scale: worldScale,
+        floor: child.userData.floor || 0,
+        row: child.userData.row || 0,
+        col: child.userData.col || 0,
+      });
+    });
+    if (blockTemplates.length !== 12) throw new Error(`Converted MegaKit asset expected 12 blocks; received ${blockTemplates.length}.`);
     const eligibleParcels = blockPositions.filter(bp => Math.abs(bp.x) < currentArenaHalf - 10 && Math.abs(bp.z) < currentArenaHalf - 10);
     const parcelIndexes = [0, Math.floor(eligibleParcels.length * 0.24), Math.floor(eligibleParcels.length * 0.5), Math.floor(eligibleParcels.length * 0.74), eligibleParcels.length - 1];
     const testSites = [...new Set(parcelIndexes)].map((index, order) => {
@@ -1281,75 +1294,49 @@ async function addMegakitBuildingSkinTest(generation) {
       }
     }
 
-    // Convert the kit facade into closed, solid building blocks. The original
-    // model supplies the real mapped materials; BoxGeometry supplies six capped
-    // faces so destruction never reveals a hollow shell.
-    const sourceMaterials = [];
-    source.traverse((child) => {
-      if (!child.isMesh) return;
-      const materials = Array.isArray(child.material) ? child.material : [child.material];
-      for (const material of materials) {
-        if (material && !sourceMaterials.includes(material)) sourceMaterials.push(material);
-      }
-    });
-    const fallbackMaterial = megakitMaterial('T_MetalConcrete_BaseColor.png', [1, 1], 0xffffff);
-    const blockMaterials = sourceMaterials.length ? sourceMaterials : [fallbackMaterial];
-    const cols = 2;
-    const rows = 2;
-    const floors = 3;
-    const pieceW = 8.5 / cols;
-    const pieceD = 8.5 / rows;
-    const pieceH = scaledHeight / floors;
-
     for (const [x, z, rotation] of testSites) {
       const stackId = nextPhysicsStackId++;
-      for (let floor = 0; floor < floors; floor++) {
-        for (let row = 0; row < rows; row++) {
-          for (let col = 0; col < cols; col++) {
-            const localX = (col - (cols - 1) / 2) * pieceW;
-            const localZ = (row - (rows - 1) / 2) * pieceD;
-            const rotatedX = localX * Math.cos(rotation) - localZ * Math.sin(rotation);
-            const rotatedZ = localX * Math.sin(rotation) + localZ * Math.cos(rotation);
-            const chunkCenterY = pieceH / 2 + floor * pieceH;
-            const facadeA = blockMaterials[(col + row + floor) % blockMaterials.length];
-            const facadeB = blockMaterials[(col + row + floor + 1) % blockMaterials.length];
-            const roof = blockMaterials[(blockMaterials.length - 1 + floor) % blockMaterials.length];
-            const piece = new THREE.Mesh(
-              new THREE.BoxGeometry(pieceW * 0.98, pieceH * 0.98, pieceD * 0.98),
-              [facadeA, facadeA, roof, facadeB, facadeB, facadeA]
-            );
-            piece.rotation.y = rotation;
-            piece.castShadow = true;
-            piece.receiveShadow = true;
-            const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
-              x: x + rotatedX,
-              z: z + rotatedZ,
-              y: chunkCenterY,
-            });
-            object.isBuilding = true;
-            object.buildingSize = 'large';
-            object.mandateKind = 'tower';
-            object.isMegakitAsset = true;
-            object.isSkyscraperChunk = false;
-            object.physicsStackPiece = true;
-            object.stackId = stackId;
-            object.stackActive = false;
-            object.stackSettled = false;
-            object.stackRestTimer = 0;
-            object.stackIndex = floor;
-            object.stackFloorCount = floors;
-            object.stackPieceCount = cols * rows;
-            object.stackCollapseSize = 4.25;
-            object.stackCenterX = x; object.stackCenterZ = z;
-            object.stackLocalX = rotatedX; object.stackLocalZ = rotatedZ;
-            object.stackFloorY = pieceH / 2; object.stackHeight = pieceH;
-            object.stackPieceW = pieceW; object.stackPieceD = pieceD;
-            object.vx = 0; object.vy = 0; object.vz = 0;
-            object.avx = 0; object.avy = 0; object.avz = 0;
-            object.megakitAssetName = `Solid textured MegaKit ${buildingFile.replace('.gltf', '')} block`;
-            physicsStackPieces.push(object);
-          }
-        }
+      for (const template of blockTemplates) {
+        const rotatedX = template.position.x * Math.cos(rotation) - template.position.z * Math.sin(rotation);
+        const rotatedZ = template.position.x * Math.sin(rotation) + template.position.z * Math.cos(rotation);
+        const pieceW = template.scale.x;
+        const pieceH = template.scale.y;
+        const pieceD = template.scale.z;
+        const piece = new THREE.Mesh(template.geometry, template.material);
+        piece.scale.copy(template.scale);
+        piece.rotation.y = rotation;
+        piece.castShadow = true;
+        piece.receiveShadow = true;
+        const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
+          x: x + rotatedX,
+          z: z + rotatedZ,
+          y: template.position.y,
+        });
+        object.isBuilding = true;
+        object.buildingSize = 'large';
+        object.mandateKind = 'tower';
+        object.isMegakitAsset = true;
+        object.isOfflineConvertedAsset = true;
+        object.convertedAssetId = 'megakit-building-small-1';
+        object.convertedBlockName = template.name;
+        object.isSkyscraperChunk = false;
+        object.physicsStackPiece = true;
+        object.stackId = stackId;
+        object.stackActive = false;
+        object.stackSettled = false;
+        object.stackRestTimer = 0;
+        object.stackIndex = template.floor;
+        object.stackFloorCount = 3;
+        object.stackPieceCount = 4;
+        object.stackCollapseSize = 4.25;
+        object.stackCenterX = x; object.stackCenterZ = z;
+        object.stackLocalX = rotatedX; object.stackLocalZ = rotatedZ;
+        object.stackFloorY = pieceH / 2; object.stackHeight = pieceH;
+        object.stackPieceW = pieceW; object.stackPieceD = pieceD;
+        object.vx = 0; object.vy = 0; object.vz = 0;
+        object.avx = 0; object.avy = 0; object.avz = 0;
+        object.megakitAssetName = 'Offline-converted solid MegaKit Building_Small_1 block';
+        physicsStackPieces.push(object);
       }
     }
     wakeRenderLoop();

@@ -1,0 +1,17 @@
+{
+  "valid": true,
+  "sourceSha256": "8e1235397ee3905d0bfbbe8f64a5197246a9be1af700983920c4f1a691c95c18",
+  "blockCount": 12,
+  "eachBlockClosedFaces": 6,
+  "collisionProxyCount": 12,
+  "materialsPreserved": 13,
+  "outputBytes": 840,
+  "checks": [
+    "source hash recorded",
+    "12 named solid blocks",
+    "six faces per block",
+    "roof material assigned",
+    "interior underside assigned",
+    "box collision metadata assigned"
+  ]
+}

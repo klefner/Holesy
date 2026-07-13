@@ -1,0 +1,31 @@
+{
+  "assetId": "megakit-building-small-1",
+  "source": "../../source-gltf/Building_Small_1.gltf",
+  "sourceSha256": "8e1235397ee3905d0bfbbe8f64a5197246a9be1af700983920c4f1a691c95c18",
+  "pipeline": "holesy-offline-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16155,
+  "subdivision": {
+    "shape": "closed-cube",
+    "cols": 2,
+    "rows": 2,
+    "floors": 3,
+    "blockCount": 12,
+    "gapRatio": 0.02
+  },
+  "dimensions": {
+    "width": 8.5,
+    "depth": 8.5,
+    "height": 9.956016845622598
+  },
+  "materials": {
+    "facade": "MI_RedBrick_Pale",
+    "roof": "MI_Trim_Dark",
+    "exposedInterior": "MI_InteriorWall"
+  },
+  "physics": {
+    "collider": "box",
+    "fallPreset": "standard-building-block",
+    "settlePreset": "grounded-sleep"
+  }
+}

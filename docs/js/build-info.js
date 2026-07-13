@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 154;
+export const BUILD_SUB = 155;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.155',
+    title: 'First offline-converted destructible kit building',
+    notes: [
+      'Ships Building_Small_1 as a preconverted 12-block glTF instead of rebuilding its destruction geometry in the browser.',
+      'Each converted block is a closed six-face cube with brick facade, roof cap, exposed-interior underside, and box-collision metadata.',
+      'Adds a deterministic converter, source hash, fixed recipe, validation record, and strict runtime block-count check.',
+      'Duplicates the converted building across five test parcels for destruction and settling review.',
+    ],
+  },
   {
     label: 'Master 16.154',
     title: 'Mandate success state and staged warning arrow',
