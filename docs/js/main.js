@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.150';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.151';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -418,9 +418,12 @@ const HOLESY_CONFIG = Object.freeze({
   },
   input: {
     keyboardReach: 4,
-    touchDeadzone: 8,
+    touchDeadzone: 10,
     touchMaxMagnitude: 120,
     touchReach: 40,
+    precisionReach: 16,
+    precisionFullRadius: 4,
+    touchResponseExponent: 1.35,
     aiMouseReach: 35,
   },
     hud: {
@@ -3705,25 +3708,39 @@ function releaseKeyboardControl() {
 }
 
 function applyMouseControl() {
+  const reach = getPlayerPrecisionReach();
   if (input.mouseCarryActive) {
-    const reach = HOLESY_CONFIG.input.touchReach;
     player.targetX = clampToArena(player.x + input.mouseCarryDx * reach, 2);
     player.targetZ = clampToArena(player.z + input.mouseCarryDz * reach, 2);
     return;
   }
   const target = getMouseGround();
-  player.targetX = clampToArena(target.x, 2);
-  player.targetZ = clampToArena(target.z, 2);
+  const dx = target.x - player.x;
+  const dz = target.z - player.z;
+  const distance = Math.hypot(dx, dz);
+  const scale = distance > reach ? reach / distance : 1;
+  player.targetX = clampToArena(player.x + dx * scale, 2);
+  player.targetZ = clampToArena(player.z + dz * scale, 2);
+}
+
+function getPlayerPrecisionReach() {
+  const config = HOLESY_CONFIG.input;
+  const growth = THREE.MathUtils.clamp(
+    (player.radius - MIN_RADIUS) / Math.max(0.01, config.precisionFullRadius - MIN_RADIUS),
+    0,
+    1
+  );
+  return THREE.MathUtils.lerp(config.precisionReach, config.touchReach, growth);
 }
 
 function applyTouchControl() {
   const mag = Math.hypot(input.dragDx, input.dragDy);
   if (mag <= HOLESY_CONFIG.input.touchDeadzone) return;
   const maxMag = HOLESY_CONFIG.input.touchMaxMagnitude;
-  const scale = Math.min(1, mag / maxMag);
+  const scale = Math.pow(Math.min(1, mag / maxMag), HOLESY_CONFIG.input.touchResponseExponent);
   const nx = (input.dragDx / mag) * scale;
   const ny = (input.dragDy / mag) * scale;
-  const reach = HOLESY_CONFIG.input.touchReach;
+  const reach = getPlayerPrecisionReach();
   player.targetX = clampToArena(player.x + nx * reach, 2);
   player.targetZ = clampToArena(player.z + ny * reach, 2);
 }
@@ -11400,6 +11417,7 @@ function resolvePhysicsStackContacts(dt) {
       const reachY = (a.stackHeight || a.size * 2 || 1) * 2.25;
       for (let j = i + 1; j < pieces.length && checkedPairs < maxPairs; j++) {
         const b = pieces[j];
+        if (a.stackSettled && b.stackSettled) continue;
         const dy = b.mesh.position.y - a.mesh.position.y;
         if (dy > reachY + (b.stackHeight || b.size * 2 || 1)) break;
         const dx = b.x - a.x;
@@ -11474,10 +11492,14 @@ function resolvePhysicsStackContacts(dt) {
           a.avy += randomBetween(-0.1, 0.1) * impulse;
           b.avy += randomBetween(-0.1, 0.1) * impulse;
         }
-        a.stackSettled = false;
-        b.stackSettled = false;
-        a.stackRestTimer = 0;
-        b.stackRestTimer = 0;
+        if (impact >= 0.35) {
+          a.stackSettled = false;
+          b.stackSettled = false;
+          a.stackRestTimer = 0;
+          b.stackRestTimer = 0;
+          a.groundedSpinTimer = 0;
+          b.groundedSpinTimer = 0;
+        }
         clampVoxelMotion(a);
         clampVoxelMotion(b);
         a.mesh.position.x = a.x;
@@ -11561,6 +11583,19 @@ const INACTIVE_STACK_SCAN_STRIDE = ACTIVE_PERFORMANCE_PROFILE_NAME === 'low'
   : ACTIVE_PERFORMANCE_PROFILE_NAME === 'medium' ? 6 : 4;
 let inactiveStackScanFrame = 0;
 
+function sleepPhysicsStackPiece(piece) {
+  piece.stackSettled = true;
+  piece.stackRestTimer = 0;
+  piece.groundedSpinTimer = 0;
+  piece.vx = 0;
+  piece.vy = 0;
+  piece.vz = 0;
+  piece.avx = 0;
+  piece.avy = 0;
+  piece.avz = 0;
+  if (piece.isVoxelBuildingCube) snapVoxelCubeToGroundFace(piece);
+}
+
 function updatePhysicsStackPieces(dt) {
   const inactiveScanBucket = inactiveStackScanFrame++ % INACTIVE_STACK_SCAN_STRIDE;
   for (let pieceIndex = 0; pieceIndex < physicsStackPieces.length; pieceIndex++) {
@@ -11628,7 +11663,8 @@ function updatePhysicsStackPieces(dt) {
     piece.avz *= 0.986;
     clampVoxelMotion(piece);
 
-    if (piece.mesh.position.y <= piece.stackFloorY) {
+    const onGround = piece.mesh.position.y <= piece.stackFloorY;
+    if (onGround) {
       const impactSpeed = Math.abs(piece.vy || 0);
       piece.mesh.position.y = piece.stackFloorY;
       if (Math.abs(piece.vy) > 2.2) {
@@ -11664,30 +11700,26 @@ function updatePhysicsStackPieces(dt) {
 
     const speed = Math.hypot(piece.vx, piece.vy, piece.vz);
     const angularSpeed = Math.hypot(piece.avx, piece.avy, piece.avz);
+    if (onGround && speed < 0.5) {
+      piece.groundedSpinTimer = (piece.groundedSpinTimer || 0) + dt;
+    } else {
+      piece.groundedSpinTimer = 0;
+    }
+    const forceGroundSleep = piece.groundedSpinTimer >= 0.75;
     const groundedIdle = piece.mesh.position.y <= piece.stackFloorY + 0.001 &&
       speed < STACK_PHYSICS_CONFIG.groundedSpeedCutoff &&
       angularSpeed < STACK_PHYSICS_CONFIG.groundedSpinCutoff;
-    if (piece.mesh.position.y <= piece.stackFloorY + 0.001 && speed < STACK_PHYSICS_CONFIG.restSpeed && angularSpeed < STACK_PHYSICS_CONFIG.restAngularSpeed) {
+    if (forceGroundSleep) {
+      sleepPhysicsStackPiece(piece);
+    } else if (piece.mesh.position.y <= piece.stackFloorY + 0.001 && speed < STACK_PHYSICS_CONFIG.restSpeed && angularSpeed < STACK_PHYSICS_CONFIG.restAngularSpeed) {
       piece.stackRestTimer += dt;
       if (piece.stackRestTimer >= STACK_PHYSICS_CONFIG.settleAfterSeconds) {
-        piece.stackSettled = true;
-        if (piece.isVoxelBuildingCube) {
-          snapVoxelCubeToGroundFace(piece);
-        } else {
-          piece.vx = 0; piece.vy = 0; piece.vz = 0;
-          piece.avx = 0; piece.avy = 0; piece.avz = 0;
-        }
+        sleepPhysicsStackPiece(piece);
       }
     } else if (groundedIdle) {
       piece.stackRestTimer += dt;
       if (piece.stackRestTimer >= STACK_PHYSICS_CONFIG.groundedIdleSettleSeconds) {
-        piece.stackSettled = true;
-        if (piece.isVoxelBuildingCube) {
-          snapVoxelCubeToGroundFace(piece);
-        } else {
-          piece.vx = 0; piece.vy = 0; piece.vz = 0;
-          piece.avx = 0; piece.avy = 0; piece.avz = 0;
-        }
+        sleepPhysicsStackPiece(piece);
       }
     } else {
       piece.stackRestTimer = 0;

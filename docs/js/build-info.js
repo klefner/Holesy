@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 150;
+export const BUILD_SUB = 151;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.151',
+    title: 'Debris sleep and starting-hole precision',
+    notes: [
+      'Stops grounded building pieces from spinning indefinitely and prevents tiny settled contacts from repeatedly waking debris.',
+      'Shortens the small starting hole steering target and softens short touch gestures without changing movement speed.',
+    ],
+  },
   { label: 'Master 16.150', title: 'HUD+ mobile default', notes: ['Starts mobile players with the expanded HUD and saves their explicit HUD+/HUD- preference locally.'] },
   {
     label: 'Master 16.149',
