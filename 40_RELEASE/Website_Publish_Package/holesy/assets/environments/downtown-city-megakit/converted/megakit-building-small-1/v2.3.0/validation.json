@@ -1,0 +1,22 @@
+{
+  "valid": true,
+  "sourceSha256": "8e1235397ee3905d0bfbbe8f64a5197246a9be1af700983920c4f1a691c95c18",
+  "blockCount": 96,
+  "eachBlockClosedFaces": 6,
+  "collisionProxyCount": 96,
+  "materialsPreserved": 13,
+  "sourceTriangleCount": 18344,
+  "clippedTriangleCount": 26339,
+  "authenticTrianglesAssigned": 26339,
+  "outputBytes": 2845452,
+  "checks": [
+    "source hash recorded",
+    "96 named hybrid blocks",
+    "source triangles clipped to every intersected AABB cell",
+    "clipped UVs and normals interpolated",
+    "closed cube core inset to prevent shell z-fighting",
+    "outward face winding verified",
+    "two-sided materials enforced",
+    "authentic shell remains inside collider envelope"
+  ]
+}

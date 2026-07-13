@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.169';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -23,6 +24,31 @@ const STORAGE_KEY = 'holesyGameStatsV1';
 const ENDLESS_SAVE_KEY = 'holesy.endless.save.v1';
 const ENDLESS_SAVE_SCHEMA = 1;
 const MAX_RECENT_RUNS = 12;
+const COSMETIC_STORAGE_KEY = 'holesy.cosmetics.v1';
+const COSMETIC_REWARDS = Object.freeze({
+  tin_foil_halo: { name: 'Tin-Foil Halo', achievement: 'forum_user', lifetime: 'permanent', description: 'Silver conspiracy shimmer. Earn The Forum User.' },
+  bellmar_seal: { name: 'Bellmar Seal', achievement: 'bellmar', lifetime: 'permanent', description: 'Cold archive-blue prestige. Earn Bellmar.' },
+  condemned_chic: { name: 'Condemned Chic', achievement: 'linden_street', lifetime: 'permanent', description: 'Animated caution-stripe rim. Earn Linden Street.' },
+  prism_orbit: { name: 'Prism Orbit', achievement: 'wave_goal_mandate_sweep', lifetime: 'permanent', description: 'Complete every Run Goal and the Mandate in one wave.' },
+});
+function loadCosmeticState() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(COSMETIC_STORAGE_KEY) || '{}');
+    return { unlocked: Array.isArray(parsed.unlocked) ? parsed.unlocked : [], equipped: parsed.equipped || 'none' };
+  } catch { return { unlocked: [], equipped: 'none' }; }
+}
+let cosmeticState = loadCosmeticState();
+function saveCosmeticState() { try { localStorage.setItem(COSMETIC_STORAGE_KEY, JSON.stringify(cosmeticState)); } catch {} }
+function grantCosmetic(id, announce = true) {
+  if (!COSMETIC_REWARDS[id] || cosmeticState.unlocked.includes(id)) return false;
+  cosmeticState.unlocked.push(id);
+  if (cosmeticState.equipped === 'none') cosmeticState.equipped = id;
+  saveCosmeticState();
+  if (typeof player !== 'undefined' && player) player.equippedCosmeticId = cosmeticState.equipped;
+  if (announce) showEventBanner(`COSMETIC UNLOCKED: ${COSMETIC_REWARDS[id].name.toUpperCase()}`, 3000);
+  if (typeof refreshCosmeticPicker === 'function') refreshCosmeticPicker();
+  return true;
+}
 
 function createEmptyGameStats() {
   return {
@@ -219,7 +245,7 @@ const PERFORMANCE_PROFILES = Object.freeze({
     military: { soldierBurstCount: 22, soldierShotsPerSecond: 8, planeSpeed: 22, tracerDuration: 0.08, maxHearRadius: 44, maxConcurrentPlanes: 1, planeEngineAudioHz: 8 },
   }),
   medium: Object.freeze({
-    renderer: { antialias: true, powerPreference: 'high-performance', maxPixelRatio: 1.5, shadowsEnabled: true, shadowMapSize: 1024, fogFar: 240 },
+    renderer: { antialias: true, powerPreference: 'high-performance', maxPixelRatio: 1.25, shadowsEnabled: true, shadowMapSize: 1024, fogFar: 240 },
     traffic: { greenDuration: 5.0, yellowMargin: 0.6, wrapLimitPadding: 5, stopDistanceBeforeIntersection: 3.5, followDistance: 5.5 },
     people: { panicRadius: 10, panicCooldownDistance: 14, boundsInset: 0.4 },
     music: { schedulerIntervalMs: 32, minGunshotSpacing: 0.04 },
@@ -235,7 +261,7 @@ const PERFORMANCE_PROFILES = Object.freeze({
     military: { soldierBurstCount: 26, soldierShotsPerSecond: 9, planeSpeed: 22, tracerDuration: 0.09, maxHearRadius: 48, maxConcurrentPlanes: 2, planeEngineAudioHz: 10 },
   }),
   high: Object.freeze({
-    renderer: { antialias: true, powerPreference: 'high-performance', maxPixelRatio: 2, shadowsEnabled: true, shadowMapSize: 2048, fogFar: 260 },
+    renderer: { antialias: true, powerPreference: 'high-performance', maxPixelRatio: 1.5, shadowsEnabled: true, shadowMapSize: 1024, fogFar: 260 },
     traffic: { greenDuration: 5.0, yellowMargin: 0.6, wrapLimitPadding: 5, stopDistanceBeforeIntersection: 3.5, followDistance: 5.5 },
     people: { panicRadius: 10, panicCooldownDistance: 14, boundsInset: 0.4 },
     music: { schedulerIntervalMs: 25, minGunshotSpacing: 0.035 },
@@ -251,7 +277,7 @@ const PERFORMANCE_PROFILES = Object.freeze({
     military: { soldierBurstCount: 30, soldierShotsPerSecond: 10, planeSpeed: 22, tracerDuration: 0.10, maxHearRadius: 50, maxConcurrentPlanes: 3, planeEngineAudioHz: 10 },
   }),
   ultra: Object.freeze({
-    renderer: { antialias: true, powerPreference: 'high-performance', maxPixelRatio: 2, shadowsEnabled: true, shadowMapSize: 2048, fogFar: 280 },
+    renderer: { antialias: true, powerPreference: 'high-performance', maxPixelRatio: 1.75, shadowsEnabled: true, shadowMapSize: 2048, fogFar: 280 },
     traffic: { greenDuration: 5.0, yellowMargin: 0.6, wrapLimitPadding: 5, stopDistanceBeforeIntersection: 3.5, followDistance: 5.5 },
     people: { panicRadius: 10, panicCooldownDistance: 14, boundsInset: 0.4 },
     music: { schedulerIntervalMs: 25, minGunshotSpacing: 0.03 },
@@ -282,7 +308,7 @@ function selectPerformanceProfileName() {
 
   if (coarsePointer || mobileViewport || deviceScore <= 8) return 'low';
   if (deviceScore <= 12) return 'medium';
-  if (cores >= 8 && memory >= 12) return 'ultra';
+  if (cores >= 12 && memory >= 16) return 'ultra';
   return 'high';
 }
 
@@ -392,9 +418,12 @@ const HOLESY_CONFIG = Object.freeze({
   },
   input: {
     keyboardReach: 4,
-    touchDeadzone: 8,
+    touchDeadzone: 10,
     touchMaxMagnitude: 120,
     touchReach: 40,
+    precisionReach: 16,
+    precisionFullRadius: 4,
+    touchResponseExponent: 1.35,
     aiMouseReach: 35,
   },
     hud: {
@@ -494,10 +523,25 @@ const HOLESY_CONFIG = Object.freeze({
     unitClearShieldDamageMultiplier: 0.5,
     unitClearStagePopDurationMs: 2800,
     unitClearBannerDurationMs: 4200,
-    unitClearSpeedBoostMinSeconds: 3.75,
-    unitClearSpeedBoostMaxSeconds: 6,
-    unitClearSpeedBoostMinMultiplier: 1.3,
-    unitClearSpeedBoostMaxMultiplier: 1.55,
+    unitClearSpeedBoostMinSeconds: 2,
+    unitClearSpeedBoostMaxSeconds: 3.5,
+    unitClearSpeedBoostMinMultiplier: 1.12,
+    unitClearSpeedBoostMaxMultiplier: 1.22,
+    armyBossWaveInterval: 5,
+    bossEveryWaveTest: true,
+    armyBossScale: 4,
+    armyBossDamageMultiplier: 3,
+    armyBossEatRadius: 3.2,
+    armyBossScoreValue: 120,
+    armyBossProgressValue: 4,
+    armyBossTimedWarningSeconds: 30,
+    armyBossWaveWarningSeconds: 30,
+    armyBossTankPushRadius: 3.35,
+    armyBossTankBuildingCrushRadius: 4.4,
+    armyBossTankPushStrength: 7.5,
+    armyBossTankCollapseDepthStep: 1.8,
+    armyBossTankCrushCooldownMs: 260,
+    bossDropDamageScale: 0.5,
   },
 });
 
@@ -524,6 +568,7 @@ const ENDLESS_WAVE_TUNING = Object.freeze({
 });
 
 let activeEndlessPressureProfile = null;
+let activeAiDifficultyProfiles = null;
 
 function clamp01(value) {
   return Math.max(0, Math.min(1, value));
@@ -539,6 +584,33 @@ function lerpRound(a, b, t) {
 
 function getEffectiveDifficultyProfile() {
   return activeEndlessPressureProfile || activeDifficultyProfile;
+}
+
+function cloneDifficultyProfile(profile) {
+  return { ...(profile || DIFFICULTY_PROFILES.normal) };
+}
+
+function rollAiDifficultyProfilesForRun(baseProfile = activeDifficultyProfile) {
+  const base = baseProfile || DIFFICULTY_PROFILES.normal;
+  const range = selectedDifficultyName === 'ultra' ? 0.16 : selectedDifficultyName === 'hard' ? 0.20 : 0.24;
+  activeAiDifficultyProfiles = AI_PERSONALITIES.map((_, index) => {
+    const skill = randomBetween(1 - range, 1 + range);
+    const caution = randomBetween(0.88, 1.14);
+    const aggression = randomBetween(0.9, 1.16);
+    return Object.freeze({
+      ...base,
+      label: `${base.label} Rival ${index + 1}`,
+      aiScanMult: Math.max(0.7, base.aiScanMult * skill),
+      aiDecisionMult: Math.max(0.28, base.aiDecisionMult / skill),
+      aiAidBonus: Math.max(0, Math.min(0.65, base.aiAidBonus * skill + randomBetween(-0.04, 0.06))),
+      aiVisionBonus: Math.max(0, Math.round(base.aiVisionBonus * skill + randomBetween(-4, 6))),
+      aiSpeedMult: Math.max(0.92, base.aiSpeedMult * randomBetween(0.96, 1.08)),
+      aiWanderBiasMult: Math.max(0.06, base.aiWanderBiasMult * (2 - skill) * caution),
+      aiRouteLookahead: Math.max(0, base.aiRouteLookahead * skill + randomBetween(0, 0.22)),
+      aiReservationBreakMult: Math.max(0.75, base.aiReservationBreakMult * skill),
+      aiChaseBonus: Math.max(0, Math.min(0.65, base.aiChaseBonus * aggression + randomBetween(-0.02, 0.06))),
+    });
+  });
 }
 
 function isEndlessMode() {
@@ -731,6 +803,10 @@ if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;
 const nightWindowVisuals = [];
 const streetLightVisuals = [];
 const vehicleLightVisuals = [];
+const activeBuildingPowerCuts = new Set();
+const activeStreetLightPowerCuts = new Set();
+const nightWindowByMesh = new WeakMap();
+const streetLightByHead = new WeakMap();
 const litWindowMat = new THREE.MeshBasicMaterial({ color: 0xffd978 });
 const dimWindowMat = new THREE.MeshLambertMaterial({ color: 0x101723 });
 const streetLampLitMat = new THREE.MeshBasicMaterial({ color: 0xfff0a8 });
@@ -745,6 +821,7 @@ const carHeadlightMat = new THREE.MeshBasicMaterial({ color: 0xfff8cf });
 const carTaillightMat = new THREE.MeshBasicMaterial({ color: 0xff2838 });
 
 function registerNightWindow(mesh, litChance = 0.34) {
+  mesh.userData.holesyUnshadowed = true;
   const entry = {
     mesh,
     baseMaterial: mesh.material,
@@ -756,11 +833,13 @@ function registerNightWindow(mesh, litChance = 0.34) {
     flickerOn: false,
   };
   nightWindowVisuals.push(entry);
+  nightWindowByMesh.set(mesh, entry);
   const active = activeTimeOfDayLook?.id === 'evening' || activeTimeOfDayLook?.id === 'night';
   if (active) mesh.material = entry.lit ? litWindowMat : dimWindowMat;
 }
 
 function registerStreetLight(head, glow = null) {
+  if (glow) glow.userData.holesyUnshadowed = true;
   const entry = {
     head,
     glow,
@@ -771,21 +850,16 @@ function registerStreetLight(head, glow = null) {
     flickerSeed: 0,
   };
   streetLightVisuals.push(entry);
+  streetLightByHead.set(head, entry);
   const active = activeTimeOfDayLook?.id === 'evening' || activeTimeOfDayLook?.id === 'night';
   head.material = active ? streetLampLitMat : entry.baseMaterial;
   if (glow) glow.visible = active;
 }
 
 function registerVehicleLight(mesh) {
+  mesh.userData.holesyUnshadowed = true;
   vehicleLightVisuals.push(mesh);
   mesh.visible = activeTimeOfDayLook?.id === 'evening' || activeTimeOfDayLook?.id === 'night';
-}
-
-function isMeshDescendantOf(mesh, root) {
-  for (let node = mesh; node; node = node.parent) {
-    if (node === root) return true;
-  }
-  return false;
 }
 
 function updateBuildingLightPowerCut(pane, now = performance.now()) {
@@ -806,21 +880,26 @@ function updateBuildingLightPowerCut(pane, now = performance.now()) {
 }
 
 function updateBuildingLightPowerCuts(now = performance.now()) {
-  for (const pane of nightWindowVisuals) updateBuildingLightPowerCut(pane, now);
+  for (const pane of activeBuildingPowerCuts) {
+    updateBuildingLightPowerCut(pane, now);
+    if (pane.extinguished) activeBuildingPowerCuts.delete(pane);
+  }
 }
 
 function extinguishBuildingLights(obj, flicker = true) {
   if (!obj?.mesh) return;
   const now = performance.now();
-  for (const pane of nightWindowVisuals) {
-    if (!pane.mesh || !isMeshDescendantOf(pane.mesh, obj.mesh)) continue;
+  obj.mesh.traverse((node) => {
+    const pane = nightWindowByMesh.get(node);
+    if (!pane?.mesh) return;
     pane.powerCut = true;
     pane.extinguished = false;
     pane.flickerFlashesRemaining = flicker && pane.lit ? 1 + Math.floor(Math.random() * 3) : 0;
     pane.nextFlickerAt = now + 25 + Math.random() * 45;
     pane.flickerOn = false;
+    activeBuildingPowerCuts.add(pane);
     updateBuildingLightPowerCut(pane, now);
-  }
+  });
 }
 
 function updateStreetLightPowerCut(lamp, now = performance.now()) {
@@ -839,20 +918,25 @@ function updateStreetLightPowerCut(lamp, now = performance.now()) {
 }
 
 function updateStreetLightPowerCuts(now = performance.now()) {
-  for (const lamp of streetLightVisuals) updateStreetLightPowerCut(lamp, now);
+  for (const lamp of activeStreetLightPowerCuts) {
+    updateStreetLightPowerCut(lamp, now);
+    if (lamp.extinguished) activeStreetLightPowerCuts.delete(lamp);
+  }
 }
 
 function cutStreetLightPower(obj, flicker = true) {
   if (!obj?.mesh) return;
   const now = performance.now();
-  for (const lamp of streetLightVisuals) {
-    if (!lamp.head || !isMeshDescendantOf(lamp.head, obj.mesh)) continue;
+  obj.mesh.traverse((node) => {
+    const lamp = streetLightByHead.get(node);
+    if (!lamp?.head) return;
     lamp.powerCut = true;
     lamp.extinguished = false;
     lamp.flickerUntil = flicker ? now + 360 + Math.random() * 220 : now;
     lamp.flickerSeed = Math.random() * 1000;
+    activeStreetLightPowerCuts.add(lamp);
     updateStreetLightPowerCut(lamp, now);
-  }
+  });
 }
 
 function extinguishStackLights(stackId) {
@@ -915,12 +999,48 @@ const renderer = new THREE.WebGLRenderer({
   antialias: HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.antialias,
   powerPreference: HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.powerPreference,
 });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.maxPixelRatio));
+renderer.localClippingEnabled = true;
+const configuredMaxPixelRatio = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.maxPixelRatio;
+let adaptivePixelRatio = Math.min(window.devicePixelRatio, configuredMaxPixelRatio);
+let adaptiveFrameTimeTotal = 0;
+let adaptiveFrameCount = 0;
+let adaptiveSlowWindows = 0;
+let adaptiveLastCheckAt = performance.now();
+renderer.setPixelRatio(adaptivePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.shadowsEnabled;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = ACTIVE_PERFORMANCE_PROFILE_NAME === 'ultra'
+  ? THREE.PCFSoftShadowMap
+  : THREE.PCFShadowMap;
 renderer.setClearColor(0x87ceeb);
 markBootStep('after-renderer');
+
+function updateAdaptiveRenderer(now, frameDeltaMs) {
+  if (!running || document.hidden) {
+    adaptiveFrameTimeTotal = 0;
+    adaptiveFrameCount = 0;
+    adaptiveSlowWindows = 0;
+    adaptiveLastCheckAt = now;
+    return;
+  }
+  adaptiveFrameTimeTotal += Math.min(100, Math.max(0, frameDeltaMs));
+  adaptiveFrameCount++;
+  if (now - adaptiveLastCheckAt < 2000) return;
+  const averageFrameMs = adaptiveFrameCount ? adaptiveFrameTimeTotal / adaptiveFrameCount : 0;
+  adaptiveFrameTimeTotal = 0;
+  adaptiveFrameCount = 0;
+  adaptiveLastCheckAt = now;
+  adaptiveSlowWindows = averageFrameMs > 27 ? adaptiveSlowWindows + 1 : 0;
+  if (adaptiveSlowWindows < 3) return;
+  adaptiveSlowWindows = 0;
+  if (adaptivePixelRatio > 1) {
+    adaptivePixelRatio = Math.max(1, adaptivePixelRatio - 0.25);
+    renderer.setPixelRatio(adaptivePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+  } else if (renderer.shadowMap.enabled) {
+    renderer.shadowMap.enabled = false;
+  }
+}
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(0x9ec7e8, 80, HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.fogFar);
@@ -958,6 +1078,337 @@ let currentArenaScale = 1.0;
 let currentArenaHalf = HALF;
 const BLOCK = HOLESY_CONFIG.world.block;            // city block size
 const ROAD_W = HOLESY_CONFIG.world.roadWidth;
+
+const ENVIRONMENT_KEYS = Object.freeze({
+  CLASSIC: 'classic',
+  MEGAKIT_DOWNTOWN: 'megakitDowntown',
+});
+let selectedEnvironment = ENVIRONMENT_KEYS.CLASSIC;
+const megakitTextureLoader = new THREE.TextureLoader();
+const megakitGltfLoader = new GLTFLoader();
+const megakitTextureCache = new Map();
+const megakitMaterialCache = new Map();
+const megakitEnvironmentMeshes = [];
+const megakitIntactShellsByStack = new Map();
+let megakitEnvironmentGeneration = 0;
+const MEGAKIT_ASSET_BASE = 'assets/environments/downtown-city-megakit/source-gltf/';
+
+function normalizeEnvironmentKey(key) {
+  return key === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN ? key : ENVIRONMENT_KEYS.CLASSIC;
+}
+
+function setEnvironment(key) {
+  selectedEnvironment = normalizeEnvironmentKey(key);
+  if (environmentSelect && environmentSelect.value !== selectedEnvironment) {
+    environmentSelect.value = selectedEnvironment;
+  }
+  if (environmentDesc) {
+    environmentDesc.textContent = selectedEnvironment === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN
+      ? 'Test district: MegaKit-styled readable ground detail and small props only; validated Holesy roads, blocks, and destruction stay authoritative.'
+      : 'Stable Aldine downtown: the current procedural city and validated destruction baseline.';
+  }
+}
+
+function clearMegakitEnvironmentMeshes() {
+  megakitEnvironmentGeneration++;
+  for (const mesh of megakitEnvironmentMeshes) {
+    if (mesh && mesh.parent) scene.remove(mesh);
+  }
+  megakitEnvironmentMeshes.length = 0;
+  megakitIntactShellsByStack.clear();
+}
+
+function loadMegakitTexture(fileName, repeat = [1, 1]) {
+  const key = `${fileName}|${repeat[0]}x${repeat[1]}`;
+  if (!megakitTextureCache.has(key)) {
+    const texture = megakitTextureLoader.load(`${MEGAKIT_ASSET_BASE}${fileName}`, () => wakeRenderLoop());
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(repeat[0], repeat[1]);
+    megakitTextureCache.set(key, texture);
+  }
+  return megakitTextureCache.get(key);
+}
+
+function megakitMaterial(fileName, repeat = [1, 1], color = 0xffffff) {
+  const key = `${fileName}|${repeat[0]}x${repeat[1]}|${color}`;
+  if (!megakitMaterialCache.has(key)) {
+    megakitMaterialCache.set(key, new THREE.MeshLambertMaterial({
+      color,
+      map: loadMegakitTexture(fileName, repeat),
+    }));
+  }
+  return megakitMaterialCache.get(key);
+}
+
+function makeMegakitTexturedBox(w, h, d, material) {
+  const mesh = new THREE.Mesh(sharedBoxGeometry(w, h, d), material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function addMegakitConsumableBox(name, x, z, w, h, d, material, size, value) {
+  const mesh = new THREE.Group();
+  const core = makeMegakitTexturedBox(w, h, d, material);
+  core.position.y = h / 2;
+  mesh.add(core);
+  const obj = makeObject(mesh, size, 0, value, { x, z, y: 0 });
+  obj.isMegakitAsset = true;
+  obj.megakitAssetName = name;
+  return obj;
+}
+
+function addMegakitTrimPlane(x, z, w, d, color, opacity = 1) {
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, d),
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: opacity < 1,
+      opacity,
+      depthWrite: true,
+    })
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(x, 0.032, z);
+  scene.add(mesh);
+  megakitEnvironmentMeshes.push(mesh);
+  return mesh;
+}
+
+function addMegakitBlockEdgeDetail() {
+  const padSize = BLOCK - ROAD_W + 0.5;
+  const edge = padSize / 2;
+  const curbStrip = 0.62;
+  const seamStrip = 0.16;
+  const cornerSize = 1.05;
+  const curbColor = 0xffe8a8;
+  const seamColor = 0x4d4038;
+  const cornerColor = 0xf7c94a;
+  for (const bp of blockPositions) {
+    addMegakitTrimPlane(bp.x, bp.z - edge, padSize, curbStrip, curbColor);
+    addMegakitTrimPlane(bp.x, bp.z + edge, padSize, curbStrip, curbColor);
+    addMegakitTrimPlane(bp.x - edge, bp.z, curbStrip, padSize, curbColor);
+    addMegakitTrimPlane(bp.x + edge, bp.z, curbStrip, padSize, curbColor);
+
+    addMegakitTrimPlane(bp.x, bp.z - edge + curbStrip, padSize * 0.82, seamStrip, seamColor);
+    addMegakitTrimPlane(bp.x, bp.z + edge - curbStrip, padSize * 0.82, seamStrip, seamColor);
+    addMegakitTrimPlane(bp.x - edge + curbStrip, bp.z, seamStrip, padSize * 0.82, seamColor);
+    addMegakitTrimPlane(bp.x + edge - curbStrip, bp.z, seamStrip, padSize * 0.82, seamColor);
+
+    addMegakitTrimPlane(bp.x - edge, bp.z - edge, cornerSize, cornerSize, cornerColor);
+    addMegakitTrimPlane(bp.x + edge, bp.z - edge, cornerSize, cornerSize, cornerColor);
+    addMegakitTrimPlane(bp.x - edge, bp.z + edge, cornerSize, cornerSize, cornerColor);
+    addMegakitTrimPlane(bp.x + edge, bp.z + edge, cornerSize, cornerSize, cornerColor);
+  }
+}
+
+function addMegakitManhole(x, z) {
+  const mesh = new THREE.Group();
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.65, 1.65, 0.14, 36),
+    new THREE.MeshLambertMaterial({ color: 0x1b1f21 })
+  );
+  base.position.y = 0.07;
+  base.castShadow = true;
+  base.receiveShadow = true;
+  mesh.add(base);
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(1.12, 0.12, 10, 36),
+    new THREE.MeshLambertMaterial({ color: 0xf3cf65 })
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.165;
+  mesh.add(ring);
+
+  const slotMat = new THREE.MeshLambertMaterial({ color: 0xd6dde0 });
+  [-0.55, 0, 0.55].forEach((offset) => {
+    const slot = new THREE.Mesh(sharedBoxGeometry(0.14, 0.03, 1.65), slotMat);
+    slot.position.set(offset, 0.19, 0);
+    mesh.add(slot);
+  });
+
+  const obj = makeObject(mesh, 1.7, 0, 35, { x, z, y: 0 });
+  obj.isMegakitAsset = true;
+  obj.megakitAssetName = 'MegaKit manhole';
+  return obj;
+}
+
+function populateMegakitDowntownTest() {
+  clearMegakitEnvironmentMeshes();
+  showEventBanner('ENVIRONMENT: MegaKit Downtown detail test', 2200);
+
+  const acMat = megakitMaterial('T_MetalConcrete_BaseColor.png', [1, 1], 0xd6d9dc);
+  const planterMat = megakitMaterial('T_Dirt_BaseColor.png', [1, 1], 0x8f6d45);
+  const metalMat = megakitMaterial('T_MetalConcrete_BaseColor.png', [1, 1], 0xaeb5ba);
+  addMegakitBlockEdgeDetail();
+  [[0, 0], [-32, 0], [32, 0], [0, -32], [0, 32], [-64, 32], [64, -32]].forEach(([x, z]) => addMegakitManhole(x, z));
+  addMegakitConsumableBox('MegaKit AC unit', -31, -22, 1.7, 0.9, 0.9, acMat, 0.9, 25);
+  addMegakitConsumableBox('MegaKit AC unit', 31, 22, 1.7, 0.9, 0.9, acMat, 0.9, 25);
+  addMegakitConsumableBox('MegaKit planter', -21, 28, 2.0, 0.75, 2.0, planterMat, 1.25, 35);
+  addMegakitConsumableBox('MegaKit planter', 21, -28, 2.0, 0.75, 2.0, planterMat, 1.25, 35);
+  [-11, -7, 7, 11].forEach((x, i) => addMegakitConsumableBox('MegaKit bollard', x, i < 2 ? -13 : 13, 0.35, 1.2, 0.35, metalMat, 0.45, 12));
+  addMegakitBuildingSkinTest(megakitEnvironmentGeneration);
+}
+
+async function addMegakitBuildingSkinTest(generation) {
+  try {
+    const definitions = [
+      { assetId: 'megakit-building-small-1', sourceBase: 'Building_Small_1', footprint: 8.5, collapseSize: 4.25 },
+      { assetId: 'megakit-building-medium-2-001', sourceBase: 'Building_Medium_2_001', footprint: 10.5, collapseSize: 5.25 },
+      { assetId: 'megakit-building-large-2', sourceBase: 'Building_Large_2', footprint: 12, collapseSize: 6 },
+    ];
+    const loaded = await Promise.all(definitions.map(async definition => {
+      const convertedAsset = `assets/environments/downtown-city-megakit/converted/${definition.assetId}/v2.4.0/${definition.sourceBase}_destructible.gltf`;
+      const [gltf, authoredGltf] = await Promise.all([
+        megakitGltfLoader.loadAsync(convertedAsset),
+        megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}${definition.sourceBase}.gltf`),
+      ]);
+      return { definition, gltf, authoredGltf };
+    }));
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN || generation !== megakitEnvironmentGeneration) return;
+    const kits = loaded.map(({ definition, gltf, authoredGltf }) => {
+      const source = gltf.scene;
+      source.updateMatrixWorld(true);
+      const blockTemplates = [];
+      source.traverse(child => {
+        if (!child.userData?.holesyBlock) return;
+        let hasRenderedMesh = false;
+        child.traverse(descendant => { if (descendant.isMesh) hasRenderedMesh = true; });
+        if (!hasRenderedMesh) return;
+        const worldPosition = child.getWorldPosition(new THREE.Vector3());
+        const worldScale = child.getWorldScale(new THREE.Vector3());
+        const visual = child.clone(true);
+        visual.position.set(0, 0, 0);
+        visual.quaternion.identity();
+        blockTemplates.push({ name: child.name, visual, position: worldPosition, scale: worldScale,
+          blockWidth: child.userData.blockWidth || worldScale.x, blockHeight: child.userData.blockHeight || worldScale.y,
+          blockDepth: child.userData.blockDepth || worldScale.z, floor: child.userData.floor || 0 });
+      });
+      if (blockTemplates.length !== 96) throw new Error(`${definition.sourceBase} expected 96 blocks; received ${blockTemplates.length}.`);
+      const authoredSource = authoredGltf.scene;
+      authoredSource.updateMatrixWorld(true);
+      const authoredBounds = new THREE.Box3().setFromObject(authoredSource);
+      const authoredDimensions = authoredBounds.getSize(new THREE.Vector3());
+      return { definition, blockTemplates, authoredSource, authoredBounds,
+        authoredCenter: authoredBounds.getCenter(new THREE.Vector3()),
+        authoredScale: definition.footprint / (Math.max(authoredDimensions.x, authoredDimensions.z) || 1) };
+    });
+    const eligibleParcels = blockPositions.filter(bp =>
+      Math.abs(bp.x) < currentArenaHalf - 10 &&
+      Math.abs(bp.z) < currentArenaHalf - 10 &&
+      !reservedParcelKeys.has(parcelKey(bp))
+    );
+    const parcelIndexes = [0, Math.floor(eligibleParcels.length * 0.24), Math.floor(eligibleParcels.length * 0.5), Math.floor(eligibleParcels.length * 0.74), eligibleParcels.length - 1];
+    const testSites = [...new Set(parcelIndexes)].map((index, order) => {
+      const bp = eligibleParcels[Math.max(0, Math.min(eligibleParcels.length - 1, index))];
+      const rotation = Math.atan2(player.x - bp.x, player.z - bp.z);
+      return { x: bp.x, z: bp.z, rotation, kit: kits[order % kits.length] };
+    });
+    for (const { x, z } of testSites) {
+      for (const object of [...objects]) {
+        // This imported building owns its entire parcel. Remove every existing
+        // consumable there (including park tiles, pools and fixtures), not only
+        // buildings, so asynchronous asset loading cannot create mixed parcels.
+        if (Math.hypot(object.x - x, object.z - z) > 10.25) continue;
+        if (object.mesh?.parent) scene.remove(object.mesh);
+        removeObjectFromActiveLists(object);
+      }
+    }
+
+    for (const { x, z, rotation, kit } of testSites) {
+      const { definition, blockTemplates, authoredSource, authoredBounds, authoredCenter, authoredScale } = kit;
+      const stackId = nextPhysicsStackId++;
+      // Preserve the authored kit model exactly while the building is intact.
+      // The solid converted blocks remain present as physics proxies, but stay
+      // hidden until the first breach transfers presentation to destruction.
+      const intactShell = new THREE.Group();
+      const authoredVisual = authoredSource.clone(true);
+      authoredVisual.position.set(-authoredCenter.x, -authoredBounds.min.y, -authoredCenter.z);
+      authoredVisual.traverse(descendant => {
+        if (!descendant.isMesh) return;
+        descendant.castShadow = true;
+        descendant.receiveShadow = true;
+      });
+      intactShell.add(authoredVisual);
+      intactShell.scale.setScalar(authoredScale);
+      intactShell.rotation.y = rotation;
+      intactShell.position.set(x, 0, z);
+      scene.add(intactShell);
+      megakitEnvironmentMeshes.push(intactShell);
+      megakitIntactShellsByStack.set(stackId, intactShell);
+      for (const template of blockTemplates) {
+        const rotatedX = template.position.x * Math.cos(rotation) - template.position.z * Math.sin(rotation);
+        const rotatedZ = template.position.x * Math.sin(rotation) + template.position.z * Math.cos(rotation);
+        const pieceW = template.blockWidth;
+        const pieceH = template.blockHeight;
+        const pieceD = template.blockDepth;
+        const piece = template.visual.clone(true);
+        piece.visible = false;
+        piece.scale.copy(template.scale);
+        piece.rotation.y = rotation;
+        piece.traverse(descendant => {
+          if (!descendant.isMesh) return;
+          descendant.castShadow = true;
+          descendant.receiveShadow = true;
+          // GLTFLoader attaches primitive-level `extras` to BufferGeometry.
+          // Also accept mesh userData for compatibility with preprocessed GLBs.
+          if (descendant.geometry?.userData?.holesyAuthenticSurface || descendant.userData?.holesyAuthenticSurface) {
+            const materials = Array.isArray(descendant.material) ? descendant.material : [descendant.material];
+            const raisedMaterials = materials.map(material => {
+              const raised = material.clone();
+              raised.polygonOffset = true;
+              raised.polygonOffsetFactor = -2;
+              raised.polygonOffsetUnits = -2;
+              return raised;
+            });
+            descendant.material = Array.isArray(descendant.material) ? raisedMaterials : raisedMaterials[0];
+            descendant.renderOrder = 2;
+          }
+        });
+        const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
+          x: x + rotatedX,
+          z: z + rotatedZ,
+          y: template.position.y,
+        });
+        object.isBuilding = true;
+        object.buildingSize = 'large';
+        object.mandateKind = 'tower';
+        object.isMegakitAsset = true;
+        object.isOfflineConvertedAsset = true;
+        // Imported kit pieces are closed rectangular solids. Keep their
+        // existing whole-stack activation, but resolve debris contact with the
+        // same box-overlap path used by the proven voxel-building blocks.
+        object.usesBoxStackContacts = true;
+        object.convertedAssetId = definition.assetId;
+        object.convertedBlockName = template.name;
+        object.isSkyscraperChunk = false;
+        object.physicsStackPiece = true;
+        object.stackId = stackId;
+        object.stackActive = false;
+        object.stackSettled = false;
+        object.stackRestTimer = 0;
+        object.stackIndex = template.floor;
+        object.stackFloorCount = 6;
+        object.stackPieceCount = 16;
+        object.stackCollapseSize = definition.collapseSize;
+        object.stackCenterX = x; object.stackCenterZ = z;
+        object.stackLocalX = rotatedX; object.stackLocalZ = rotatedZ;
+        object.stackFloorY = pieceH / 2; object.stackHeight = pieceH;
+        object.stackPieceW = pieceW; object.stackPieceD = pieceD;
+        object.vx = 0; object.vy = 0; object.vz = 0;
+        object.avx = 0; object.avy = 0; object.avz = 0;
+        object.megakitAssetName = `Offline-converted solid MegaKit ${definition.sourceBase} block`;
+        physicsStackPieces.push(object);
+      }
+    }
+    wakeRenderLoop();
+  } catch (error) {
+    console.warn('MegaKit building visual test could not load.', error);
+  }
+}
 
 // Ground
 const groundGeom = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE);
@@ -1157,19 +1608,19 @@ const governmentPhysics = new GovernmentPhysicsWorld();
 let nextGovernmentBuildingId = 1;
 
 const STACK_PHYSICS_CONFIG = Object.freeze({
-  gravity: 25,
-  voxelGravity: 7.2,
-  voxelGravityJitter: 1.55,
-  voxelTerminalVelocity: 22,
+  gravity: 34,
+  voxelGravity: 13.6,
+  voxelGravityJitter: 2.4,
+  voxelTerminalVelocity: 34,
   triggerPadding: 5.2,
   voxelTriggerPadding: 0.34,
   voxelColumnSpread: 7.2,
-  voxelImpactHopMin: 0.12,
-  voxelImpactHopMax: 0.34,
+  voxelImpactHopMin: 0.04,
+  voxelImpactHopMax: 0.14,
   voxelImpactOutMin: 0.9,
   voxelImpactOutMax: 2.2,
-  voxelImpactUpMin: 0.65,
-  voxelImpactUpMax: 1.55,
+  voxelImpactUpMin: 0.12,
+  voxelImpactUpMax: 0.42,
   voxelJarRadiusColumns: 2.35,
   voxelJarOffsetMin: 0.06,
   voxelJarOffsetMax: 0.38,
@@ -1181,26 +1632,26 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   voxelBreakImpulseMin: 0.68,
   voxelBreakImpulseMax: 1.55,
   voxelPreReleaseDriftScale: 0.58,
-  voxelPreReleaseGravityScale: 0.34,
+  voxelPreReleaseGravityScale: 0.92,
   voxelPreReleaseDamping: 0.982,
   voxelPreReleaseAngularDamping: 0.988,
   voxelSettleFaceSnapRadians: Math.PI / 2,
   voxelCollisionElasticity: 0.72,
   voxelCollisionSpinScale: 0.24,
-  voxelGroundBounceDampingMin: 0.18,
-  voxelGroundBounceDampingMax: 0.28,
+  voxelGroundBounceDampingMin: 0.08,
+  voxelGroundBounceDampingMax: 0.16,
   voxelSupportDropFraction: 0.38,
   voxelReleaseDelayMin: 0.04,
-  voxelReleaseDelayMax: 0.26,
-  voxelTeeterSecondsMin: 0.18,
-  voxelTeeterSecondsMax: 0.68,
+  voxelReleaseDelayMax: 0.14,
+  voxelTeeterSecondsMin: 0.08,
+  voxelTeeterSecondsMax: 0.32,
   voxelTeeterAngleMin: 0.16,
   voxelTeeterAngleMax: 0.48,
   voxelTeeterFailureChance: 1,
   voxelLeanVelocityMin: 0.55,
   voxelLeanVelocityMax: 2.1,
-  voxelGroundRollRetentionMin: 0.78,
-  voxelGroundRollRetentionMax: 0.94,
+  voxelGroundRollRetentionMin: 0.62,
+  voxelGroundRollRetentionMax: 0.82,
   voxelObjectImpactRange: 0.42,
   voxelObjectImpactImpulse: 0.42,
   voxelContactMaxPairsPerFrame: 340,
@@ -1212,24 +1663,24 @@ const STACK_PHYSICS_CONFIG = Object.freeze({
   horizontalDamping: 0.956,
   maxHorizontalSpeed: 10.8,
   maxCollapseSpread: 16.5,
-  bounceDamping: 0.2,
+  bounceDamping: 0.12,
   contactRadiusScale: 0.94,
   contactImpulse: 26,
   obstacleInfluenceRange: 7.5,
   restSpeed: 0.18,
   restAngularSpeed: 0.22,
-  settleAfterSeconds: 0.45,
+  settleAfterSeconds: 0.32,
   groundedAngularDamping: 0.78,
   groundedSpinCutoff: 0.7,
   groundedSpeedCutoff: 0.16,
-  groundedIdleSettleSeconds: 0.28,
+  groundedIdleSettleSeconds: 0.18,
   voxelAudioMaxVoicesPerStack: 1,
   voxelAudioMinIntervalMs: 650,
   voxelAudioMaxDuration: 0.18,
   skyscraperAudioMaxVoicesPerStack: 1,
   skyscraperAudioMinIntervalMs: 520,
   skyscraperAudioMaxDuration: 0.24,
-  voxelConsumeGravity: 15,
+  voxelConsumeGravity: 22,
 });
 
 const HOLE_JAM_CONFIG = Object.freeze({
@@ -1255,21 +1706,58 @@ function makeObject(mesh, size, tier, value, pos) {
   return obj;
 }
 
+function removeArrayItemUnordered(items, item) {
+  const index = items.indexOf(item);
+  if (index < 0) return false;
+  const last = items.pop();
+  if (index < items.length) items[index] = last;
+  return true;
+}
+
 function removeObjectFromActiveLists(obj) {
-  extinguishBuildingLights(obj);
+  if (
+    obj.isBuilding ||
+    obj.isVoxelBuildingCube ||
+    obj.isSkyscraperChunk ||
+    obj.isGovernmentBuildingPiece ||
+    obj.physicsStackPiece
+  ) {
+    extinguishBuildingLights(obj);
+  }
   if (obj.isGovernmentBuildingPiece) governmentPhysics.removeObject(obj);
-  const objectIndex = objects.indexOf(obj);
-  if (objectIndex >= 0) objects.splice(objectIndex, 1);
-  const stackIndex = physicsStackPieces.indexOf(obj);
-  if (stackIndex >= 0) physicsStackPieces.splice(stackIndex, 1);
+  removeArrayItemUnordered(objects, obj);
+  removeArrayItemUnordered(physicsStackPieces, obj);
   if (obj.stackId && !physicsStackPieces.some(piece => piece.stackId === obj.stackId)) {
     activePhysicsStackIds.delete(obj.stackId);
     stackCollapsePlans.delete(obj.stackId);
   }
 }
 
-// Simple primitive builders
-function sharedBoxMat(color) { return new THREE.MeshLambertMaterial({ color }); }
+// Simple primitive builders. District objects reuse immutable GPU resources;
+// geometry caches are cleared between rebuilt worlds after their meshes leave the scene.
+const sharedBoxMaterialCache = new Map();
+const sharedBoxGeometryCache = new Map();
+
+function sharedBoxMat(color) {
+  const key = Number(color);
+  if (!sharedBoxMaterialCache.has(key)) {
+    sharedBoxMaterialCache.set(key, new THREE.MeshLambertMaterial({ color }));
+  }
+  return sharedBoxMaterialCache.get(key);
+}
+
+function sharedBoxGeometry(width, height, depth) {
+  const key = `${width}|${height}|${depth}`;
+  if (!sharedBoxGeometryCache.has(key)) {
+    sharedBoxGeometryCache.set(key, new THREE.BoxGeometry(width, height, depth));
+  }
+  return sharedBoxGeometryCache.get(key);
+}
+
+function clearSharedBoxGeometryCache() {
+  for (const geometry of sharedBoxGeometryCache.values()) geometry.dispose();
+  sharedBoxGeometryCache.clear();
+}
 
 // --- People ---
 // People can be moving (wandering within their block, panic-flee when holes approach)
@@ -1280,22 +1768,23 @@ function makePerson(pos, bounds = null) {
   const g = new THREE.Group();
   const shirtColors = [0xff6b6b, 0x4ecdc4, 0xffe66d, 0x6c5ce7, 0xfd79a8, 0x00b894];
   const pantsColor = [0x2d3436, 0x34495e, 0x5d4037, 0x1e3a5f];
-  const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.8, 0.4),
+  const body = new THREE.Mesh(sharedBoxGeometry(0.6, 0.8, 0.4),
     sharedBoxMat(shirtColors[Math.floor(Math.random()*shirtColors.length)]));
   body.position.y = 0.8;
   g.add(body);
-  const legs = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.7, 0.38),
+  const legs = new THREE.Mesh(sharedBoxGeometry(0.55, 0.7, 0.38),
     sharedBoxMat(pantsColor[Math.floor(Math.random()*pantsColor.length)]));
   legs.position.y = 0.3;
   g.add(legs);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.45, 0.45),
+  const head = new THREE.Mesh(sharedBoxGeometry(0.45, 0.45, 0.45),
     sharedBoxMat(0xf4c2a1));
   head.position.y = 1.45;
   g.add(head);
   g.rotation.y = Math.random() * Math.PI * 2;
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 0.5, 1, 10, pos);
   obj.isPerson = true;
+  obj.mandateKind = 'person';
   // Each person gets a unique voice profile (gender, panic, sample, pitch, gain)
   obj.voice = makeVoiceProfile();
 
@@ -1317,6 +1806,38 @@ function makePerson(pos, bounds = null) {
 }
 
 // --- Fire hydrant ---
+const hydrantJets = [];
+const hydrantWaterMat = new THREE.MeshBasicMaterial({ color: 0x72d8ff, transparent: true, opacity: 0.82 });
+const hydrantWaterGeometry = new THREE.SphereGeometry(0.11, 6, 5);
+function spawnHydrantJet(obj) {
+  if (!obj || obj.hydrantJetTriggered) return;
+  obj.hydrantJetTriggered = true;
+  const group = new THREE.Group();
+  const droplets = [];
+  for (let i = 0; i < 18; i++) {
+    const mesh = new THREE.Mesh(hydrantWaterGeometry, hydrantWaterMat);
+    const phase = i / 18;
+    mesh.scale.set(0.65, 1.45, 0.65); group.add(mesh); droplets.push({ mesh, phase, angle: randomBetween(0, Math.PI * 2) });
+  }
+  group.position.set(obj.x, 0.15, obj.z); scene.add(group);
+  hydrantJets.push({ group, droplets, startedAt: performance.now(), durationMs: 10000 });
+}
+function updateHydrantJets() {
+  if (!running || !isGameState(GAME_STATES.PLAYING)) return;
+  const now = performance.now();
+  for (let i = hydrantJets.length - 1; i >= 0; i--) {
+    const jet = hydrantJets[i];
+    const age = now - jet.startedAt;
+    if (age >= jet.durationMs) { scene.remove(jet.group); hydrantJets.splice(i, 1); continue; }
+    const strength = Math.min(1, (jet.durationMs - age) / 1600);
+    for (const drop of jet.droplets) {
+      const cycle = ((age / 1050) + drop.phase) % 1;
+      const spread = cycle * 0.85;
+      drop.mesh.position.set(Math.cos(drop.angle) * spread, 0.25 + Math.sin(cycle * Math.PI) * 3.3 * strength, Math.sin(drop.angle) * spread);
+      drop.mesh.scale.y = 1.1 + (1 - cycle) * 1.8;
+    }
+  }
+}
 function makeHydrant(pos) {
   const g = new THREE.Group();
   const base = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 0.9, 8),
@@ -1332,9 +1853,10 @@ function makeHydrant(pos) {
   nozzle.rotation.z = Math.PI / 2;
   nozzle.position.set(0.35, 0.6, 0);
   g.add(nozzle);
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 0.5, 1, 15, pos);
   obj.isProp = true;
+  obj.mandateKind = 'hydrant';
   return obj;
 }
 
@@ -1350,9 +1872,10 @@ function makeCone(pos) {
   ring.rotation.x = Math.PI / 2;
   ring.position.y = 0.55;
   g.add(ring);
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 0.4, 1, 8, pos);
   obj.isProp = true;
+  obj.mandateKind = 'cone';
   return obj;
 }
 
@@ -1367,9 +1890,10 @@ function makeTrash(pos) {
     sharedBoxMat(0x555a5f));
   lid.position.y = 1.05;
   g.add(lid);
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 0.55, 1, 12, pos);
   obj.isProp = true;
+  obj.mandateKind = 'trash';
   return obj;
 }
 
@@ -1384,54 +1908,130 @@ function makeExtinguisher(pos) {
     sharedBoxMat(0x222222));
   top.position.y = 0.78;
   g.add(top);
-  const handle = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.3),
+  const handle = new THREE.Mesh(sharedBoxGeometry(0.1, 0.12, 0.3),
     sharedBoxMat(0x111111));
   handle.position.set(0, 0.88, 0.1);
   g.add(handle);
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 0.35, 1, 10, pos);
   obj.isProp = true;
+  obj.mandateKind = 'extinguisher';
   return obj;
 }
 
 // --- Mailbox ---
 function makeMailbox(pos) {
   const g = new THREE.Group();
-  const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.9, 0.12),
+  const post = new THREE.Mesh(sharedBoxGeometry(0.12, 0.9, 0.12),
     sharedBoxMat(0x2d3436));
   post.position.y = 0.45;
   g.add(post);
-  const box = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.4),
+  const box = new THREE.Mesh(sharedBoxGeometry(0.55, 0.4, 0.4),
     sharedBoxMat(0x1565c0));
   box.position.y = 1.05;
   g.add(box);
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 0.45, 1, 10, pos);
   obj.isProp = true;
+  obj.mandateKind = 'mailbox';
   return obj;
 }
 
 // --- Bench ---
 function makeBench(pos) {
   const g = new THREE.Group();
-  const seat = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 0.6),
+  const seat = new THREE.Mesh(sharedBoxGeometry(2.2, 0.12, 0.6),
     sharedBoxMat(0x6d4c41));
   seat.position.y = 0.45;
   g.add(seat);
-  const back = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.5, 0.12),
+  const back = new THREE.Mesh(sharedBoxGeometry(2.2, 0.5, 0.12),
     sharedBoxMat(0x6d4c41));
   back.position.set(0, 0.75, -0.24);
   g.add(back);
   for (const dx of [-0.9, 0.9]) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.45, 0.55),
+    const leg = new THREE.Mesh(sharedBoxGeometry(0.12, 0.45, 0.55),
       sharedBoxMat(0x3e2723));
     leg.position.set(dx, 0.22, 0);
     g.add(leg);
   }
   g.rotation.y = Math.random() * Math.PI * 2;
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 1.0, 2, 20, pos);
   obj.isProp = true;
+  obj.mandateKind = 'bench';
+  return obj;
+}
+
+const STREET_FIXTURE_KINDS = Object.freeze([
+  'parking_meter', 'newspaper_box', 'vending_machine', 'utility_box', 'bike_rack',
+  'bus_stop', 'dumpster', 'phone_booth', 'road_barrier', 'picnic_table',
+  'street_kiosk', 'bollard', 'concrete_planter', 'wood_pallet', 'shopping_cart',
+  'alarm_box', 'scooter', 'cafe_table', 'construction_drum', 'parcel_locker',
+  'firewood_stack', 'hot_dog_cart', 'park_fountain', 'information_map', 'recycling_bin',
+  'street_clock', 'flower_stand', 'mail_drop_box', 'traffic_signal', 'portable_toilet',
+  'tool_chest', 'ice_machine', 'newspaper_stand', 'ticket_machine', 'water_cooler',
+  'generator', 'sandbag_stack', 'luggage_cart', 'dog_house', 'chess_table',
+  'public_payphone',
+]);
+
+function makeStreetFixture(kind, pos) {
+  const index = Math.max(0, STREET_FIXTURE_KINDS.indexOf(kind));
+  const g = new THREE.Group();
+  const palette = [0x5d6d7e,0x1f618d,0xc0392b,0x7f8c8d,0x566573,0xf4d03f,0x1e8449,0xe67e22,0x8e6e53,0x2471a3,0xd35400,0x839192,0x9a7d0a,0x7d3c98,0xb03a2e,0x2e86c1,0x784212,0xf39c12];
+  const color = palette[index % palette.length];
+  const mat = new THREE.MeshLambertMaterial({ color });
+  const dark = new THREE.MeshLambertMaterial({ color: 0x252a2e });
+  const addBox = (w, h, d, x = 0, y = h / 2, z = 0, material = mat) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+    mesh.position.set(x, y, z); g.add(mesh); return mesh;
+  };
+  if (kind === 'parking_meter') { addBox(0.12, 1.1, 0.12, 0, 0.55, 0, dark); addBox(0.38, 0.42, 0.28, 0, 1.25); }
+  else if (kind === 'newspaper_box') { addBox(0.72, 0.9, 0.58); addBox(0.58, 0.18, 0.06, 0, 0.68, 0.32, dark); }
+  else if (kind === 'vending_machine') { addBox(0.95, 1.8, 0.72); addBox(0.62, 0.92, 0.05, 0, 1.18, 0.39, dark); }
+  else if (kind === 'utility_box') { addBox(1.05, 1.25, 0.72); addBox(0.08, 0.35, 0.05, 0.28, 0.7, 0.39, dark); }
+  else if (kind === 'bike_rack') { for (const x of [-0.55, 0, 0.55]) { addBox(0.08, 0.72, 0.08, x, 0.36, 0, dark); addBox(0.08, 0.08, 0.75, x, 0.72, 0, dark); } }
+  else if (kind === 'bus_stop') { addBox(0.1, 2.3, 0.1, 0, 1.15, 0, dark); addBox(0.86, 0.62, 0.08, 0, 1.95, 0, mat); }
+  else if (kind === 'dumpster') { addBox(1.65, 1.05, 1.05); addBox(1.7, 0.12, 1.1, 0, 1.1, 0, dark); }
+  else if (kind === 'phone_booth') { addBox(0.9, 2.15, 0.9); addBox(0.64, 1.28, 0.05, 0, 1.0, 0.48, dark); }
+  else if (kind === 'public_payphone') { addBox(0.14, 1.75, 0.14, 0, 0.875, 0, dark); addBox(0.62, 0.78, 0.32, 0, 1.62, 0); addBox(0.14, 0.52, 0.12, 0.2, 1.66, 0.2, dark); addBox(0.42, 0.12, 0.08, 0, 1.82, 0.2, dark); }
+  else if (kind === 'road_barrier') { addBox(1.85, 0.35, 0.18, 0, 0.82, 0); addBox(0.12, 0.82, 0.12, -0.65, 0.41, 0, dark); addBox(0.12, 0.82, 0.12, 0.65, 0.41, 0, dark); }
+  else if (kind === 'picnic_table') { addBox(1.5, 0.18, 0.85, 0, 0.72, 0); addBox(0.16, 0.68, 0.16, -0.52, 0.34, 0, dark); addBox(0.16, 0.68, 0.16, 0.52, 0.34, 0, dark); }
+  else if (kind === 'street_kiosk') { addBox(1.2, 2.0, 0.85); addBox(1.34, 0.16, 1.0, 0, 2.08, 0, dark); }
+  else if (kind === 'bollard') { addBox(0.32, 1.05, 0.32, 0, 0.525, 0); addBox(0.42, 0.12, 0.42, 0, 1.06, 0, dark); }
+  else if (kind === 'concrete_planter') { addBox(1.15, 0.72, 1.15); addBox(0.88, 0.18, 0.88, 0, 0.72, 0, dark); }
+  else if (kind === 'wood_pallet') { for (const z of [-0.42, 0, 0.42]) addBox(1.35, 0.12, 0.22, 0, 0.18, z); }
+  else if (kind === 'shopping_cart') { addBox(1.05, 0.65, 0.72, 0, 0.75, 0); addBox(0.1, 0.85, 0.1, -0.5, 0.9, -0.35, dark); }
+  else if (kind === 'alarm_box') { addBox(0.48, 0.72, 0.3); addBox(0.22, 0.18, 0.05, 0, 0.42, 0.18, dark); }
+  else if (kind === 'scooter') { addBox(1.1, 0.12, 0.3, 0, 0.24, 0); addBox(0.08, 1.05, 0.08, 0.45, 0.75, 0, dark); addBox(0.55, 0.08, 0.08, 0.45, 1.25, 0, dark); }
+  else if (kind === 'cafe_table') { addBox(0.95, 0.12, 0.95, 0, 0.82, 0); addBox(0.14, 0.8, 0.14, 0, 0.4, 0, dark); }
+  else if (kind === 'construction_drum') { addBox(0.72, 1.0, 0.72); addBox(0.86, 0.12, 0.86, 0, 0.12, 0, dark); }
+  else if (kind === 'parcel_locker') { addBox(1.35, 1.7, 0.72); for (const y of [0.45, 0.9, 1.35]) addBox(1.05, 0.06, 0.05, 0, y, 0.39, dark); }
+  else if (kind === 'firewood_stack') { for (const y of [0.18,0.48,0.78]) for (const x of [-0.45,0,0.45]) addBox(.36,.25,.9,x,y,0); }
+  else if (kind === 'hot_dog_cart') { addBox(1.35,.7,.75,0,.75,0); addBox(1.5,.12,.9,0,1.18,0,dark); addBox(.08,1.5,.08,-.6,1.5,0,dark); }
+  else if (kind === 'park_fountain') { addBox(1.5,.3,1.5,0,.15,0); addBox(.45,1.1,.45,0,.7,0,dark); addBox(.9,.16,.9,0,1.1,0); }
+  else if (kind === 'information_map') { addBox(.12,2,.12,-.55,1,0,dark); addBox(.12,2,.12,.55,1,0,dark); addBox(1.4,1,.12,0,1.45,0); }
+  else if (kind === 'recycling_bin') { addBox(.8,1,.8); addBox(.65,.08,.32,0,1.02,0,dark); }
+  else if (kind === 'street_clock') { addBox(.14,2.3,.14,0,1.15,0,dark); addBox(.85,.85,.18,0,2.35,0); }
+  else if (kind === 'flower_stand') { addBox(1.4,.7,.8,0,.45,0); for (const x of [-.45,0,.45]) addBox(.3,.55,.3,x,1,0,dark); }
+  else if (kind === 'mail_drop_box') { addBox(.75,1.2,.65); addBox(.82,.22,.7,0,1.22,0,dark); }
+  else if (kind === 'traffic_signal') { addBox(.12,2.5,.12,0,1.25,0,dark); addBox(.42,1.05,.35,0,2.15,0); }
+  else if (kind === 'portable_toilet') { addBox(1.1,2.2,1.1); addBox(.65,1.35,.05,0,1.05,.58,dark); }
+  else if (kind === 'tool_chest') { addBox(1.25,.95,.65); for (const y of [.35,.6,.85]) addBox(.9,.06,.05,0,y,.35,dark); }
+  else if (kind === 'ice_machine') { addBox(1.2,1.8,.85); addBox(.75,.65,.05,0,1.05,.45,dark); }
+  else if (kind === 'newspaper_stand') { addBox(1.25,1.55,.7); addBox(1.05,.18,.06,0,1.2,.38,dark); }
+  else if (kind === 'ticket_machine') { addBox(.72,1.65,.62); addBox(.42,.34,.05,0,1.2,.34,dark); }
+  else if (kind === 'water_cooler') { addBox(.65,1.05,.65); addBox(.45,.75,.45,0,1.45,0,dark); }
+  else if (kind === 'generator') { addBox(1.35,.85,.8); addBox(.9,.15,.15,0,1,0,dark); }
+  else if (kind === 'sandbag_stack') { for (const y of [.16,.42,.68]) for (const x of [-.45,0,.45]) addBox(.42,.22,.65,x,y,0); }
+  else if (kind === 'luggage_cart') { addBox(1.2,.12,.75,0,.25,0); addBox(.1,1.5,.1,-.52,.9,0,dark); addBox(1.1,.1,.1,0,1.62,0,dark); }
+  else if (kind === 'dog_house') { addBox(1.15,.85,1.1); addBox(1.35,.18,1.35,0,1.05,0,dark); addBox(.45,.65,.06,0,.45,.58,dark); }
+  else { addBox(1.05,.72,1.05,0,.72,0); addBox(.14,.7,.14,0,.35,0,dark); }
+  g.children.forEach(c => c.castShadow = true);
+  const size = ['phone_booth','dumpster','street_kiosk','parcel_locker','portable_toilet','hot_dog_cart'].includes(kind) ? 1.15 : 0.72;
+  const obj = makeObject(g, size, size > 1 ? 2 : 1, 12 + index * 2, pos);
+  obj.isProp = true;
+  obj.mandateKind = kind;
+  obj.streetFixtureKind = kind;
   return obj;
 }
 
@@ -1446,9 +2046,10 @@ function makeTree(pos) {
     sharedBoxMat(0x2e7d32));
   leaves.position.y = 2.2;
   g.add(leaves);
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 1.1, 2, 25, pos);
   obj.isTree = true;
+  obj.mandateKind = 'tree';
   return obj;
 }
 
@@ -1459,11 +2060,11 @@ function makeLamp(pos) {
     sharedBoxMat(0x1a1a1a));
   post.position.y = 1.5;
   g.add(post);
-  const arm = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.1),
+  const arm = new THREE.Mesh(sharedBoxGeometry(0.8, 0.1, 0.1),
     sharedBoxMat(0x1a1a1a));
   arm.position.set(0.4, 2.95, 0);
   g.add(arm);
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.3, 0.4),
+  const head = new THREE.Mesh(sharedBoxGeometry(0.4, 0.3, 0.4),
     sharedBoxMat(0xfff176));
   head.position.set(0.7, 2.85, 0);
   g.add(head);
@@ -1471,9 +2072,10 @@ function makeLamp(pos) {
   glow.position.copy(head.position);
   g.add(glow);
   registerStreetLight(head, glow);
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 0.9, 2, 22, pos);
   obj.isProp = true;
+  obj.mandateKind = 'lamp';
   return obj;
 }
 
@@ -1482,11 +2084,11 @@ function makeCar(pos) {
   const g = new THREE.Group();
   const colors = [0xe74c3c, 0x3498db, 0xf39c12, 0x2ecc71, 0x9b59b6, 0xecf0f1, 0x34495e, 0x1abc9c];
   const color = colors[Math.floor(Math.random() * colors.length)];
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.55, 3.2),
+  const body = new THREE.Mesh(sharedBoxGeometry(1.6, 0.55, 3.2),
     sharedBoxMat(color));
   body.position.y = 0.55;
   g.add(body);
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.5, 1.8),
+  const cabin = new THREE.Mesh(sharedBoxGeometry(1.4, 0.5, 1.8),
     sharedBoxMat(0x222831));
   cabin.position.set(0, 1.05, -0.2);
   g.add(cabin);
@@ -1499,57 +2101,210 @@ function makeCar(pos) {
     g.add(wheel);
   }
   for (const x of [-0.45, 0.45]) {
-    const headlight = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.05), carHeadlightMat);
+    const headlight = new THREE.Mesh(sharedBoxGeometry(0.24, 0.12, 0.05), carHeadlightMat);
     headlight.position.set(x, 0.64, -1.63);
     g.add(headlight);
     registerVehicleLight(headlight);
-    const taillight = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 0.05), carTaillightMat);
+    const taillight = new THREE.Mesh(sharedBoxGeometry(0.24, 0.12, 0.05), carTaillightMat);
     taillight.position.set(x, 0.64, 1.63);
     g.add(taillight);
     registerVehicleLight(taillight);
   }
   g.rotation.y = Math.random() < 0.5 ? 0 : Math.PI / 2;
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, 1.8, 3, 50, pos);
   obj.isCar = true;
+  obj.mandateKind = 'car';
   return obj;
 }
 
 // --- Small building (shop) ---
 function makeSmallBuilding(pos) {
-  const g = new THREE.Group();
-  const w = 4 + Math.random() * 2;
-  const d = 4 + Math.random() * 2;
-  const h = 3 + Math.random() * 2;
-  const colors = [0xd1a77a, 0xc9b59d, 0xb89968, 0xa57d52, 0xe6cfa7];
-  const base = new THREE.Mesh(new THREE.BoxGeometry(w, h, d),
-    sharedBoxMat(colors[Math.floor(Math.random()*colors.length)]));
-  base.position.y = h / 2;
-  g.add(base);
-  const roof = new THREE.Mesh(new THREE.BoxGeometry(w + 0.3, 0.3, d + 0.3),
-    sharedBoxMat(0x6d4c41));
-  roof.position.y = h + 0.15;
-  g.add(roof);
-  // windows
+  const stackId = nextPhysicsStackId++;
+  const pieceW = 2.236;
+  const pieceH = 1.22;
+  const pieceD = 2.236;
+  const gap = 0.045;
+  const colsX = Math.random() < 0.28 ? 3 : 2;
+  const rowsZ = Math.random() < 0.22 ? 3 : 2;
+  const floorsY = 2;
+  const totalValue = 120;
+  const wallColors = [0xd1a77a, 0xc9b59d, 0xb89968, 0xa57d52, 0xe6cfa7];
+  const wallMat = sharedBoxMat(wallColors[Math.floor(Math.random() * wallColors.length)]);
+  const roofMat = sharedBoxMat(0x6d4c41);
+  const trimMat = sharedBoxMat(0x5d4037);
   const winMat = sharedBoxMat(0x74b9ff);
-  for (let fy = 1; fy < h - 0.5; fy += 1.3) {
-    for (let fx = -w/2 + 0.7; fx < w/2 - 0.5; fx += 1.3) {
-      const win = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.05), winMat);
-      win.position.set(fx, fy, d/2 + 0.01);
-      g.add(win);
-      registerNightWindow(win, 0.38);
+  const totalW = colsX * pieceW + (colsX - 1) * gap;
+  const totalD = rowsZ * pieceD + (rowsZ - 1) * gap;
+  let firstPiece = null;
+  const propertyCondition = Math.random() < 0.34 ? 'polished' : Math.random() < 0.52 ? 'rundown' : 'standard';
+
+  for (let floor = 0; floor < floorsY; floor++) {
+    for (let row = 0; row < rowsZ; row++) {
+      for (let col = 0; col < colsX; col++) {
+        const localX = -totalW / 2 + pieceW / 2 + col * (pieceW + gap);
+        const localZ = -totalD / 2 + pieceD / 2 + row * (pieceD + gap);
+        const y = pieceH / 2 + floor * (pieceH + gap);
+        const isTop = floor === floorsY - 1;
+        const isFront = row === rowsZ - 1;
+        const isBack = row === 0;
+        const isLeft = col === 0;
+        const isRight = col === colsX - 1;
+        const piece = new THREE.Group();
+        const core = new THREE.Mesh(sharedBoxGeometry(pieceW, pieceH, pieceD), isTop ? roofMat : wallMat);
+        core.position.y = 0;
+        piece.add(core);
+
+        if (!isTop) {
+          const addPane = (geometry, x, y, z) => {
+            const pane = new THREE.Mesh(geometry, winMat);
+            pane.position.set(x, y, z);
+            piece.add(pane);
+            registerNightWindow(pane, 0.38);
+          };
+          if (isFront) addPane(sharedBoxGeometry(pieceW * 0.46, pieceH * 0.42, 0.032), 0, 0.08, pieceD / 2 + 0.02);
+          if (isBack) addPane(sharedBoxGeometry(pieceW * 0.46, pieceH * 0.42, 0.032), 0, 0.08, -pieceD / 2 - 0.02);
+          if (isLeft) addPane(sharedBoxGeometry(0.032, pieceH * 0.42, pieceD * 0.46), -pieceW / 2 - 0.02, 0.08, 0);
+          if (isRight) addPane(sharedBoxGeometry(0.032, pieceH * 0.42, pieceD * 0.46), pieceW / 2 + 0.02, 0.08, 0);
+          if (isFront && col === Math.floor(colsX / 2)) {
+            const door = new THREE.Mesh(sharedBoxGeometry(pieceW * 0.36, pieceH * 0.82, 0.04), trimMat);
+            door.position.set(0, -pieceH * 0.08, pieceD / 2 + 0.045);
+            piece.add(door);
+          }
+        } else {
+          const cap = new THREE.Mesh(sharedBoxGeometry(pieceW * 1.08, 0.16, pieceD * 1.08), roofMat);
+          cap.position.y = pieceH / 2 + 0.08;
+          piece.add(cap);
+        }
+
+        piece.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
+        const x = pos.x + localX;
+        const z = pos.z + localZ;
+        const obj = makeObject(piece, Math.max(pieceW, pieceD) * 0.48, 1, Math.max(2, Math.round(totalValue / (colsX * rowsZ * floorsY))), { x, y, z });
+        obj.isBuilding = true;
+        obj.buildingSize = 'small';
+        obj.mandateKind = 'shop';
+        obj.isVoxelBuildingCube = true;
+        obj.physicsStackPiece = true;
+        obj.stackKind = 'smallVoxel';
+        obj.stackId = stackId;
+        obj.stackActive = false;
+        obj.stackSettled = false;
+        obj.stackRestTimer = 0;
+        obj.stackIndex = floor;
+        obj.stackFloorCount = floorsY;
+        obj.stackPieceCount = colsX * rowsZ;
+        obj.stackCollapseSize = 0;
+        obj.stackCenterX = pos.x;
+        obj.stackCenterZ = pos.z;
+        obj.stackLocalX = localX;
+        obj.stackLocalZ = localZ;
+        obj.stackFloorY = pieceH / 2;
+        obj.stackHeight = pieceH;
+        obj.stackPieceW = pieceW;
+        obj.stackPieceD = pieceD;
+        obj.voxelColX = col;
+        obj.voxelColZ = row;
+        obj.voxelColsX = colsX;
+        obj.voxelRowsZ = rowsZ;
+        obj.voxelFloorsY = floorsY;
+        obj.vx = 0;
+        obj.vy = 0;
+        obj.vz = 0;
+        obj.avx = 0;
+        obj.avy = 0;
+        obj.avz = 0;
+        obj.stackReleased = false;
+        obj.stackSupportLostAt = 0;
+        obj.stackSupportDelaySeconds = randomBetween(0.03, 0.16);
+        obj.stackMaxSpread = 5.8;
+        obj.voxelBaseX = x;
+        obj.voxelBaseY = y;
+        obj.voxelBaseZ = z;
+        obj.voxelGravity = randomBetween(
+          STACK_PHYSICS_CONFIG.voxelGravity - 0.8,
+          STACK_PHYSICS_CONFIG.voxelGravity + 1.2
+        );
+        obj.voxelTerminalVelocity = STACK_PHYSICS_CONFIG.voxelTerminalVelocity * 0.82;
+        obj.voxelLeanDirX = 0;
+        obj.voxelLeanDirZ = 0;
+        obj.voxelLeanAngle = 0;
+        obj.voxelTeeterSeconds = 0;
+        obj.voxelTeeterReleasedAt = 0;
+        obj.x = x;
+        obj.z = z;
+        physicsStackPieces.push(obj);
+        if (!firstPiece) firstPiece = obj;
+      }
     }
   }
-  // door
-  const door = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.6, 0.05),
-    sharedBoxMat(0x5d4037));
-  door.position.set(0, 0.8, d/2 + 0.01);
-  g.add(door);
-  g.children.forEach(c => c.castShadow = true);
-  const obj = makeObject(g, Math.max(w, d) / 2, 4, 120, pos);
-  obj.isBuilding = true;
-  obj.buildingSize = 'small';
-  return obj;
+
+  if (propertyCondition !== 'standard') {
+    const lawnMat = sharedBoxMat(propertyCondition === 'polished' ? 0x4f9b45 : 0x80633f);
+    const fenceMat = sharedBoxMat(propertyCondition === 'polished' ? 0xf2ead8 : 0x8a6a48);
+    const yardW = totalW + 3.64;
+    const yardD = totalD + 4.94;
+    const patchSize = 1.05;
+    const patchCols = Math.max(5, Math.round(yardW / patchSize));
+    const patchRows = Math.max(6, Math.round(yardD / patchSize));
+    for (let row = 0; row < patchRows; row++) {
+      for (let col = 0; col < patchCols; col++) {
+        const localX = -yardW / 2 + (col + 0.5) * (yardW / patchCols);
+        const localZ = -yardD / 2 + (row + 0.5) * (yardD / patchRows) - 0.55;
+        if (Math.abs(localX) < totalW * 0.52 && Math.abs(localZ + 0.55) < totalD * 0.52) continue;
+        const patch = new THREE.Group();
+        const cellW = yardW / patchCols;
+        const cellD = yardD / patchRows;
+        const clumpW = cellW * 0.97;
+        const clumpD = cellD * 0.97;
+        const soil = new THREE.Mesh(sharedBoxGeometry(clumpW, 0.16, clumpD), sharedBoxMat(0x5a3d26));
+        soil.position.y = 0.08; patch.add(soil);
+        const top = new THREE.Mesh(sharedBoxGeometry(clumpW * 0.98, 0.045, clumpD * 0.98), lawnMat);
+        top.position.y = 0.1825; patch.add(top);
+        const patchObj = makeObject(patch, 0.11, 1, 1, { x: pos.x + localX, y: 0, z: pos.z + localZ });
+        patchObj.isProp = true; patchObj.mandateKind = propertyCondition === 'polished' ? 'grass_patch' : 'dirt_patch'; patchObj.propertyCondition = propertyCondition;
+      }
+    }
+    const makeFencePiece = (mesh, x, y, z, rotation, kind) => {
+      const piece = new THREE.Group(); mesh.position.y = y; piece.add(mesh); piece.rotation.y = rotation;
+      const obj = makeObject(piece, 0.16, 1, 1, { x: pos.x + x, y: 0, z: pos.z + z });
+      obj.isProp = true; obj.mandateKind = kind; obj.propertyCondition = propertyCondition; return obj;
+    };
+    const addFence = (x, z, length, rotation = 0, broken = false) => {
+      const postCount = Math.max(2, Math.round(length / 1.15));
+      for (let i = 0; i < postCount; i++) {
+        if (broken && Math.random() < 0.32) continue;
+        const height = broken ? randomBetween(0.35, 0.8) : 0.82;
+        const offset = -length / 2 + i * (length / Math.max(1, postCount - 1));
+        const post = new THREE.Mesh(sharedBoxGeometry(0.10, height, 0.10), fenceMat);
+        if (broken) post.rotation.z = randomBetween(-0.35, 0.35);
+        const px = x + Math.cos(rotation) * offset; const pz = z - Math.sin(rotation) * offset;
+        makeFencePiece(post, px, height / 2 + 0.08, pz, rotation, 'fence_post');
+      }
+      for (const y of [0.28, 0.62]) {
+        if (broken && Math.random() < 0.45) continue;
+        const railCount = Math.max(2, Math.ceil(length / 1.25));
+        const railLength = length / railCount;
+        for (let i = 0; i < railCount; i++) {
+          if (broken && Math.random() < 0.24) continue;
+          const offset = -length / 2 + railLength * (i + 0.5);
+          const rail = new THREE.Mesh(sharedBoxGeometry(railLength - 0.035, 0.10, 0.08), fenceMat);
+          if (broken) rail.rotation.z = randomBetween(-0.18, 0.18);
+          const rx = x + Math.cos(rotation) * offset; const rz = z - Math.sin(rotation) * offset;
+          makeFencePiece(rail, rx, y + 0.08, rz, rotation, 'fence_rail');
+        }
+      }
+    };
+    addFence(-(totalW + 2.4) / 2, -0.5, totalD + 3.2, Math.PI / 2, propertyCondition === 'rundown');
+    addFence((totalW + 2.4) / 2, -0.5, totalD + 3.2, Math.PI / 2, propertyCondition === 'rundown');
+    addFence(0, -(totalD + 2.6) / 2, totalW + 2.4, 0, propertyCondition === 'rundown');
+    if (propertyCondition === 'rundown') {
+      const backZ = pos.z - totalD / 2 - 1.0;
+      for (let i = 0; i < 3; i++) makeStreetFixture(STREET_FIXTURE_KINDS[Math.floor(Math.random() * STREET_FIXTURE_KINDS.length)], { x: pos.x + randomBetween(-totalW * 0.45, totalW * 0.45), z: backZ + randomBetween(-0.55, 0.55) });
+    }
+  }
+  if (firstPiece) firstPiece.propertyCondition = propertyCondition;
+  return firstPiece;
 }
 
 // --- Mid building (office) ---
@@ -1577,7 +2332,7 @@ function makeMidBuilding(pos) {
         const y = cubeSize / 2 + floor * (cubeSize + gap);
         const piece = new THREE.Group();
         const isTop = floor === floorsY - 1;
-        const core = new THREE.Mesh(new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize), isTop ? roofMat : wallMat);
+        const core = new THREE.Mesh(sharedBoxGeometry(cubeSize, cubeSize, cubeSize), isTop ? roofMat : wallMat);
         core.position.y = 0;
         piece.add(core);
 
@@ -1587,37 +2342,38 @@ function makeMidBuilding(pos) {
           const isLeft = col === 0;
           const isRight = col === colsX - 1;
           if (isFront) {
-            const pane = new THREE.Mesh(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), glassMat);
+            const pane = new THREE.Mesh(sharedBoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), glassMat);
             pane.position.set(0, 0.06, cubeSize / 2 + 0.014);
             piece.add(pane);
             registerNightWindow(pane, 0.32);
           }
           if (isBack) {
-            const pane = new THREE.Mesh(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), glassMat);
+            const pane = new THREE.Mesh(sharedBoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), glassMat);
             pane.position.set(0, 0.06, -cubeSize / 2 - 0.014);
             piece.add(pane);
             registerNightWindow(pane, 0.32);
           }
           if (isLeft) {
-            const pane = new THREE.Mesh(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), glassMat);
+            const pane = new THREE.Mesh(sharedBoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), glassMat);
             pane.position.set(-cubeSize / 2 - 0.014, 0.06, 0);
             piece.add(pane);
             registerNightWindow(pane, 0.32);
           }
           if (isRight) {
-            const pane = new THREE.Mesh(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), glassMat);
+            const pane = new THREE.Mesh(sharedBoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), glassMat);
             pane.position.set(cubeSize / 2 + 0.014, 0.06, 0);
             piece.add(pane);
             registerNightWindow(pane, 0.32);
           }
         }
 
-        piece.children.forEach(c => c.castShadow = true);
+        piece.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
         const x = pos.x + localX;
         const z = pos.z + localZ;
         const obj = makeObject(piece, cubeSize * 0.58, 1, Math.max(1, Math.round(totalValue / (colsX * rowsZ * floorsY))), { x, y, z });
         obj.isBuilding = true;
         obj.buildingSize = 'mid';
+        obj.mandateKind = 'office';
         obj.isVoxelBuildingCube = true;
         obj.physicsStackPiece = true;
         obj.stackKind = 'midVoxel';
@@ -1674,12 +2430,11 @@ function makeMidBuilding(pos) {
   return firstPiece;
 }
 
-// --- Government building physics prototype ---
-// This building intentionally does not use the existing stack-physics system.
-// It is registered with GovernmentPhysicsWorld, which owns its body/collider
-// simulation and only syncs positions back to these render groups.
+// --- Government building ---
+// Uses the proven voxel stack fall path while preserving the government visual identity.
 function makeGovernmentBuilding(pos) {
   const buildingId = nextGovernmentBuildingId++;
+  const stackId = nextPhysicsStackId++;
   const pieceW = 1.85;
   const pieceH = 1.1;
   const pieceD = 1.85;
@@ -1711,7 +2466,7 @@ function makeGovernmentBuilding(pos) {
         const g = new THREE.Group();
         const bodyMat = isTop ? tuxBlackMat : (floor % 2 === 0 ? tuxWhiteMat : tuxCharcoalMat);
         const core = new THREE.Mesh(
-          new THREE.BoxGeometry(pieceW, pieceH, pieceD),
+          sharedBoxGeometry(pieceW, pieceH, pieceD),
           bodyMat
         );
         core.position.y = 0;
@@ -1724,15 +2479,15 @@ function makeGovernmentBuilding(pos) {
           registerNightWindow(pane, 0.28);
         };
         if (!isTop) {
-          if (isFront) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, pieceD / 2 + 0.023);
-          if (isBack) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, -pieceD / 2 - 0.023);
-          if (isRight) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), pieceW / 2 + 0.023, 0.06, 0);
-          if (isLeft) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), -pieceW / 2 - 0.023, 0.06, 0);
+          if (isFront) addWindow(sharedBoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, pieceD / 2 + 0.023);
+          if (isBack) addWindow(sharedBoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, -pieceD / 2 - 0.023);
+          if (isRight) addWindow(sharedBoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), pieceW / 2 + 0.023, 0.06, 0);
+          if (isLeft) addWindow(sharedBoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), -pieceW / 2 - 0.023, 0.06, 0);
           if (floor % 2 === 1 && isFront) {
-            const shirt = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.18, pieceH * 0.82, 0.04), tuxWhiteMat);
+            const shirt = new THREE.Mesh(sharedBoxGeometry(pieceW * 0.18, pieceH * 0.82, 0.04), tuxWhiteMat);
             shirt.position.set(0, 0, pieceD / 2 + 0.052);
             g.add(shirt);
-            const bowLeft = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.16, pieceH * 0.12, 0.05), tuxBlackMat);
+            const bowLeft = new THREE.Mesh(sharedBoxGeometry(pieceW * 0.16, pieceH * 0.12, 0.05), tuxBlackMat);
             const bowRight = bowLeft.clone();
             bowLeft.position.set(-pieceW * 0.11, pieceH * 0.22, pieceD / 2 + 0.082);
             bowRight.position.set(pieceW * 0.11, pieceH * 0.22, pieceD / 2 + 0.082);
@@ -1748,17 +2503,18 @@ function makeGovernmentBuilding(pos) {
           g.add(seal);
         }
         if (isTop) {
-          const roofStripe = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.84, 0.055, pieceD * 0.18), tuxSilverMat);
+          const roofStripe = new THREE.Mesh(sharedBoxGeometry(pieceW * 0.84, 0.055, pieceD * 0.18), tuxSilverMat);
           roofStripe.position.y = pieceH / 2 + 0.031;
           g.add(roofStripe);
         }
 
-        g.children.forEach(c => c.castShadow = true);
+        g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
         const x = pos.x + localX;
         const z = pos.z + localZ;
         const obj = makeObject(g, Math.max(pieceW, pieceD) * 0.48, 1, Math.max(2, Math.round(totalValue / (colsX * rowsZ * floorsY))), { x, y, z });
         obj.isBuilding = true;
         obj.buildingSize = 'government';
+        obj.mandateKind = 'government';
         obj.isGovernmentBuildingPiece = true;
         obj.govBuildingId = buildingId;
         obj.govPhysicsActive = false;
@@ -1772,12 +2528,56 @@ function makeGovernmentBuilding(pos) {
         obj.govFloorsY = floorsY;
         obj.govColsX = colsX;
         obj.govRowsZ = rowsZ;
-        governmentPhysics.registerPiece(obj, {
-          buildingId,
-          half: { x: pieceW / 2, y: pieceH / 2, z: pieceD / 2 },
-          mass: 1 + floor * 0.04,
-          active: false,
-        });
+        obj.isVoxelBuildingCube = true;
+        obj.physicsStackPiece = true;
+        obj.stackKind = 'governmentVoxel';
+        obj.stackId = stackId;
+        obj.stackActive = false;
+        obj.stackSettled = false;
+        obj.stackRestTimer = 0;
+        obj.stackIndex = floor;
+        obj.stackFloorCount = floorsY;
+        obj.stackPieceCount = colsX * rowsZ;
+        obj.stackCollapseSize = 0;
+        obj.stackCenterX = pos.x;
+        obj.stackCenterZ = pos.z;
+        obj.stackLocalX = localX;
+        obj.stackLocalZ = localZ;
+        obj.stackFloorY = pieceH / 2;
+        obj.stackHeight = pieceH;
+        obj.stackPieceW = pieceW;
+        obj.stackPieceD = pieceD;
+        obj.voxelColX = col;
+        obj.voxelColZ = row;
+        obj.voxelColsX = colsX;
+        obj.voxelRowsZ = rowsZ;
+        obj.voxelFloorsY = floorsY;
+        obj.vx = 0;
+        obj.vy = 0;
+        obj.vz = 0;
+        obj.avx = 0;
+        obj.avy = 0;
+        obj.avz = 0;
+        obj.stackReleased = false;
+        obj.stackSupportLostAt = 0;
+        obj.stackSupportDelaySeconds = randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax);
+        obj.stackMaxSpread = STACK_PHYSICS_CONFIG.voxelColumnSpread;
+        obj.voxelBaseX = x;
+        obj.voxelBaseY = y;
+        obj.voxelBaseZ = z;
+        obj.voxelGravity = randomBetween(
+          STACK_PHYSICS_CONFIG.voxelGravity - STACK_PHYSICS_CONFIG.voxelGravityJitter,
+          STACK_PHYSICS_CONFIG.voxelGravity + STACK_PHYSICS_CONFIG.voxelGravityJitter
+        );
+        obj.voxelTerminalVelocity = STACK_PHYSICS_CONFIG.voxelTerminalVelocity;
+        obj.voxelLeanDirX = 0;
+        obj.voxelLeanDirZ = 0;
+        obj.voxelLeanAngle = 0;
+        obj.voxelTeeterSeconds = 0;
+        obj.voxelTeeterReleasedAt = 0;
+        obj.x = x;
+        obj.z = z;
+        physicsStackPieces.push(obj);
         if (!firstPiece) firstPiece = obj;
       }
     }
@@ -1816,7 +2616,7 @@ function makeSkyscraper(pos) {
         const localZ = -d / 2 + cellD / 2 + row * (cellD + gap);
         const piece = new THREE.Group();
         const isTop = i === floorCount - 1;
-        const core = new THREE.Mesh(new THREE.BoxGeometry(cellW, blockH, cellD), isTop ? capMat : wallMat);
+        const core = new THREE.Mesh(sharedBoxGeometry(cellW, blockH, cellD), isTop ? capMat : wallMat);
         core.position.y = 0;
         piece.add(core);
 
@@ -1826,38 +2626,39 @@ function makeSkyscraper(pos) {
           const isRight = col === cols - 1;
           const isLeft = col === 0;
           if (isFront) {
-            const band = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
+            const band = new THREE.Mesh(sharedBoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
             band.position.set(0, 0.02, cellD / 2 + 0.021);
             piece.add(band);
             registerNightWindow(band, 0.3);
           }
           if (isBack) {
-            const band = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
+            const band = new THREE.Mesh(sharedBoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
             band.position.set(0, 0.02, -cellD / 2 - 0.021);
             piece.add(band);
             registerNightWindow(band, 0.3);
           }
           if (isRight) {
-            const band = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
+            const band = new THREE.Mesh(sharedBoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
             band.position.set(cellW / 2 + 0.021, 0.02, 0);
             piece.add(band);
             registerNightWindow(band, 0.3);
           }
           if (isLeft) {
-            const band = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
+            const band = new THREE.Mesh(sharedBoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
             band.position.set(-cellW / 2 - 0.021, 0.02, 0);
             piece.add(band);
             registerNightWindow(band, 0.3);
           }
         }
 
-        piece.children.forEach(c => c.castShadow = true);
+        piece.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
         const x = pos.x + localX;
         const z = pos.z + localZ;
         const size = Math.max(0.58, Math.hypot(cellW, cellD) * 0.36);
         const obj = makeObject(piece, size, 2, Math.max(4, Math.round(totalValue / floorCount / pieceCount)), { x, y, z });
         obj.isBuilding = true;
         obj.buildingSize = 'large';
+        obj.mandateKind = 'tower';
         obj.isSkyscraperChunk = true;
         obj.physicsStackPiece = true;
         obj.stackId = stackId;
@@ -1910,6 +2711,322 @@ function randInBlock(bp, margin = 2) {
 // simulation — it gets populated on each call.
 const movingCars = [];
 const carCrashEffects = [];
+const animatedParkObjects = [];
+const reservedParcelKeys = new Set();
+const parcelKey = (bp) => `${bp.x.toFixed(3)},${bp.z.toFixed(3)}`;
+// Full-parcel attractions need most of a city parcel to read clearly. Compact
+// attractions can either headline a parcel occasionally or share a mixed park.
+const FULL_PARCEL_PARK_ARCHETYPES = Object.freeze([
+  'basketball', 'baseball', 'tennis', 'running_track', 'swimming_pool',
+  'four_hole_golf', 'amusement_park',
+]);
+const COMPACT_PARK_ARCHETYPES = Object.freeze([
+  'playground', 'picnic_bbq', 'fountain_garden', 'dog_park', 'skate_park',
+  'volleyball', 'miniature_golf', 'seesaw_park',
+]);
+const PARK_ARCHETYPES = Object.freeze([...FULL_PARCEL_PARK_ARCHETYPES, ...COMPACT_PARK_ARCHETYPES]);
+const PARK_VARIANTS = Object.freeze(['normal', 'rundown', 'fancy']);
+
+function makeParkBox(name, bp, dx, dz, w, h, d, color, value = 18, y = h / 2) {
+  const mesh = new THREE.Mesh(sharedBoxGeometry(w, h, d), sharedBoxMat(color));
+  const obj = makeObject(mesh, Math.max(0.2, Math.min(w, d) * 0.52), 0, Math.max(1, Math.round(value * 0.2)), { x: bp.x + dx, z: bp.z + dz, y });
+  obj.parkAssetName = name;
+  obj.parkParcelKey = parcelKey(bp);
+  obj.mandateKind = 'park';
+  return obj;
+}
+
+function makeParkPerson(bp, dx, dz, color = 0x4f7ed6, motion = null) {
+  const person = makePerson({ x: bp.x + dx, z: bp.z + dz });
+  person.value = 3;
+  person.parkAssetName = 'park visitor';
+  person.parkParcelKey = parcelKey(bp);
+  if (motion) animatedParkObjects.push({ obj: person, motion, originX: person.x, originZ: person.z, phase: Math.random() * Math.PI * 2 });
+  return person;
+}
+
+function makeParkBall(bp, dx, dz, color, motion = 'bounce') {
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), sharedBoxMat(color));
+  const obj = makeObject(mesh, 0.28, 0, 4, { x: bp.x + dx, z: bp.z + dz, y: 0.32 });
+  obj.parkAssetName = `${motion} ball`;
+  obj.parkParcelKey = parcelKey(bp);
+  animatedParkObjects.push({ obj, motion, originX: obj.x, originZ: obj.z, phase: Math.random() * Math.PI * 2 });
+  return obj;
+}
+
+function addParkSurface(bp, variant, color = 0x4f8b45) {
+  const surfaceColor = variant === 'rundown' ? 0x796b43 : variant === 'fancy' ? 0x31935a : color;
+  for (let x = -8; x <= 8; x += 2) {
+    for (let z = -8; z <= 8; z += 2) makeParkBox('park turf', bp, x, z, 1.92, 0.16, 1.92, surfaceColor, 4, 0.08);
+  }
+}
+
+function addParkTiledSurface(name, bp, width, depth, tileSize, color, value = 5) {
+  for (let x = -width / 2 + tileSize / 2; x < width / 2; x += tileSize) {
+    for (let z = -depth / 2 + tileSize / 2; z < depth / 2; z += tileSize) {
+      makeParkBox(name, bp, x, z, Math.min(tileSize - 0.05, width), 0.14, Math.min(tileSize - 0.05, depth), color, value, 0.16);
+    }
+  }
+}
+
+function addParkFence(bp, variant, radius = 9.2) {
+  const color = variant === 'rundown' ? 0x6d5237 : variant === 'fancy' ? 0xf3ead0 : 0xb7bdc3;
+  const gaps = variant === 'rundown' ? new Set([2, 7, 13, 18]) : new Set();
+  let index = 0;
+  for (const side of [-1, 1]) for (let n = -8; n <= 8; n += 2, index++) {
+    if (!gaps.has(index)) makeParkBox('park fence section', bp, n, side * radius, 1.8, 0.85, 0.12, color, 12, 0.425);
+    if (!gaps.has(index + 24)) makeParkBox('park fence section', bp, side * radius, n, 0.12, 0.85, 1.8, color, 12, 0.425);
+  }
+}
+
+function addBaseballDiamondPieces(bp, scale = 1, centerX = 0, centerZ = 1, prefix = 'baseball') {
+  const tile = 1.05 * scale;
+  const diamondRadius = 5 * scale;
+  for (let dx = -diamondRadius; dx <= diamondRadius + 0.001; dx += tile) {
+    for (let dz = -diamondRadius; dz <= diamondRadius + 0.001; dz += tile) {
+      if (Math.abs(dx) + Math.abs(dz) > diamondRadius + tile * 0.35) continue;
+      makeParkBox(`${prefix} infield dirt`, bp, centerX + dx, centerZ + dz,
+        tile * 0.96, 0.13, tile * 0.96, 0xb98755, 4, 0.17);
+    }
+  }
+  const baseOffset = 5 * scale;
+  const baseSize = Math.max(0.28, 0.65 * scale);
+  for (const [dx, dz, label] of [[0,-baseOffset,'home'],[-baseOffset,0,'third'],[0,baseOffset,'second'],[baseOffset,0,'first']]) {
+    makeParkBox(`${prefix} ${label} base`, bp, centerX + dx, centerZ + dz,
+      baseSize, 0.12, baseSize, 0xffffff, 12, 0.24);
+  }
+  makeParkBox(`${prefix} pitcher mound`, bp, centerX, centerZ, Math.max(0.45, 1.1 * scale), 0.2,
+    Math.max(0.45, 1.1 * scale), 0xc89a67, 8, 0.25);
+
+  // The backstop is deliberately made from short independent sections so it
+  // breaks and falls into the hole like the surrounding lawn and dirt tiles.
+  const fenceRadius = 6.3 * scale;
+  const fenceSections = 11;
+  for (let i = 0; i < fenceSections; i++) {
+    const a = Math.PI * (0.12 + (i / (fenceSections - 1)) * 0.76);
+    const fence = makeParkBox(`${prefix} backstop fence section`, bp,
+      centerX + Math.cos(a) * fenceRadius, centerZ - Math.sin(a) * fenceRadius,
+      Math.max(0.4, 1.15 * scale), Math.max(0.5, 1.15 * scale), 0.1,
+      0x8b969e, 9, Math.max(0.25, 0.575 * scale));
+    fence.mesh.rotation.y = -a;
+  }
+}
+
+function populateParkShowcaseParcel(bp, variant) {
+  // Five compact samples make the current park vocabulary visible together on
+  // one guaranteed parcel without turning any sample into a monolithic prop.
+  addBaseballDiamondPieces(bp, 0.32, -5.2, -4.8, 'mini baseball');
+
+  addParkTiledSurface('mini basketball court section', { x: bp.x + 4.8, z: bp.z - 4.8 }, 6, 3.8, 1.15, 0xb66a3c, 5);
+  for (const x of [-2.5, 2.5]) {
+    makeParkBox('mini basketball hoop', bp, 4.8 + x, -4.8, 0.12, 1.45, 0.12, 0xb9c4cc, 10, 0.73);
+  }
+
+  makeParkBox('mini playground slide', bp, -5.3, 4.7, 1.25, 0.25, 2.6, 0xe65842, 14, 0.7).mesh.rotation.x = -0.28;
+  for (const x of [-6.7, -5.9]) makeParkBox('mini swing frame', bp, x, 3.6, 0.1, 1.6, 0.1, 0xb9c4cc, 8, 0.8);
+
+  makeParkBox('mini fountain basin section', bp, 0, 0.8, 3.2, 0.35, 3.2, 0xe4e0d4, 18, 0.2);
+  makeParkBox('mini fountain statue', bp, 0, 0.8, 0.65, 2.1, 0.65, 0xd8d8d2, 20, 1.05);
+  for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2; makeParkBall(bp, Math.cos(a) * 1.1, 0.8 + Math.sin(a) * 1.1, 0x64d7ff, 'water'); }
+
+  for (const [x,z,w,d] of [[3.7,4.3,2.5,1],[6.2,4.3,2.5,1],[4.9,6,1,2.2]]) {
+    const ramp = makeParkBox('mini skate ramp', bp, x, z, w, 0.3, d, 0xa9adb0, 14, 0.3);
+    ramp.mesh.rotation.z = (x > 5 ? 0.16 : -0.16);
+  }
+  if (variant === 'fancy') for (const [x,z] of [[-8,-8],[8,-8],[-8,8],[8,8]]) makeParkBox('showcase planter',bp,x,z,1,.6,1,0xe6d69a,10,.3);
+}
+
+function populateCompactParkAttraction(bp, archetype, centerX, centerZ, scale = 1) {
+  const metal = 0xb9c4cc;
+  if (archetype === 'volleyball') {
+    addParkTiledSurface('volleyball sand section', { x: bp.x + centerX, z: bp.z + centerZ }, 6 * scale, 4.4 * scale, 1.05 * scale, 0xd9bd78, 4);
+    for (let n = -2.4 * scale; n <= 2.4 * scale; n += 0.8 * scale) makeParkBox('volleyball net section', bp, centerX + n, centerZ, 0.72 * scale, 1.25 * scale, 0.06, 0xf4f4f4, 7, 0.65 * scale);
+    makeParkBall(bp, centerX + 1.1 * scale, centerZ - 1.1 * scale, 0xffffff, 'volleyball');
+  } else if (archetype === 'miniature_golf') {
+    for (let lane = -1; lane <= 1; lane++) {
+      const z = centerZ + lane * 1.35 * scale;
+      addParkTiledSurface('mini golf green section', { x: bp.x + centerX, z: bp.z + z }, 5.2 * scale, 0.9 * scale, 0.8 * scale, 0x3f9a54, 5);
+      makeParkBox('mini golf obstacle', bp, centerX + (lane % 2 ? -0.4 : 0.5) * scale, z, 0.35 * scale, 0.75 * scale, 0.35 * scale, 0xe65842, 9, 0.38 * scale);
+      makeParkBox('mini golf flag', bp, centerX + 2 * scale, z, 0.08, 1.1 * scale, 0.08, 0xf3d34a, 8, 0.55 * scale);
+      makeParkBall(bp, centerX - 2 * scale, z, 0xffffff, 'golfBall');
+    }
+  } else if (archetype === 'seesaw_park') {
+    for (const zOffset of [-1.35, 1.35]) {
+      makeParkBox('seesaw pivot', bp, centerX, centerZ + zOffset * scale, 0.45 * scale, 0.8 * scale, 0.45 * scale, metal, 9, 0.4 * scale);
+      const beam = makeParkBox('seesaw beam', bp, centerX, centerZ + zOffset * scale, 4.2 * scale, 0.18 * scale, 0.5 * scale, 0xf1b733, 15, 0.88 * scale);
+      beam.mesh.rotation.z = zOffset > 0 ? 0.12 : -0.12;
+    }
+  } else if (archetype === 'playground') {
+    const slide = makeParkBox('compact playground slide', bp, centerX - 1.1 * scale, centerZ, 1.15 * scale, 0.24 * scale, 2.8 * scale, 0xe65842, 14, 0.72 * scale);
+    slide.mesh.rotation.x = -0.28;
+    makeParkBox('compact swing frame', bp, centerX + 1.4 * scale, centerZ, 0.12, 1.6 * scale, 1.8 * scale, metal, 10, 0.8 * scale);
+  } else if (archetype === 'fountain_garden') {
+    makeParkBox('compact fountain basin', bp, centerX, centerZ, 3.2 * scale, 0.35, 3.2 * scale, 0xe4e0d4, 18, 0.2);
+    makeParkBox('compact fountain statue', bp, centerX, centerZ, 0.6 * scale, 1.8 * scale, 0.6 * scale, 0xd8d8d2, 20, 0.9 * scale);
+  } else if (archetype === 'skate_park') {
+    for (const xOffset of [-1.5, 1.5]) {
+      const ramp = makeParkBox('compact skate ramp', bp, centerX + xOffset * scale, centerZ, 2.3 * scale, 0.3, 1.1 * scale, 0xa9adb0, 14, 0.3);
+      ramp.mesh.rotation.z = xOffset > 0 ? 0.16 : -0.16;
+    }
+  } else if (archetype === 'dog_park') {
+    makeParkBox('compact dog agility ramp', bp, centerX, centerZ, 3.6 * scale, 0.3, 1.1 * scale, 0xe65842, 16, 0.65);
+    for (const xOffset of [-1.3, 1.3]) makeParkBox('compact park dog', bp, centerX + xOffset * scale, centerZ + 1.2 * scale, 0.6, 0.55, 0.9, 0x9b6a3c, 12, 0.28);
+  } else {
+    for (const xOffset of [-1.3, 1.3]) makeParkBox('compact picnic table', bp, centerX + xOffset * scale, centerZ, 2.1 * scale, 0.24, 1.1 * scale, 0x7b4e2d, 14, 0.7);
+  }
+}
+
+function populateMixedCompactPark(bp, variant) {
+  const choices = [...COMPACT_PARK_ARCHETYPES].sort(() => Math.random() - 0.5).slice(0, 4);
+  const sites = [[-4.6,-4.6],[4.6,-4.6],[-4.6,4.6],[4.6,4.6]];
+  choices.forEach((archetype, index) => populateCompactParkAttraction(bp, archetype, sites[index][0], sites[index][1], 0.82));
+  if (variant === 'fancy') makeParkBox('mixed park directory', bp, 0, 0, 1.3, 2.2, 0.25, 0x315b82, 18, 1.1);
+}
+
+function populateParkParcel(bp, archetype, variant) {
+  addParkSurface(bp, variant, ['basketball','tennis','running_track','skate_park'].includes(archetype) ? 0x63827a : 0x4f8b45);
+  addParkFence(bp, variant);
+  if (archetype === 'showcase') {
+    populateParkShowcaseParcel(bp, variant);
+    return;
+  }
+  if (archetype === 'mixed_compact') {
+    populateMixedCompactPark(bp, variant);
+    return;
+  }
+  const metal = variant === 'rundown' ? 0x695b4d : variant === 'fancy' ? 0xf1d36c : 0xb9c4cc;
+  const accent = variant === 'rundown' ? 0x8b4c35 : variant === 'fancy' ? 0x42bfe8 : 0xe65842;
+  if (archetype === 'playground') {
+    for (const x of [-5, -3.4]) { makeParkBox('swing seat', bp, x, 0, 1.1, 0.12, 0.42, 0x4c3828); makeParkBox('swing frame', bp, x, 0, 0.12, 3, 0.12, metal, 15, 1.5); }
+    makeParkBox('playground slide', bp, 3, -1, 2.2, 0.35, 5.2, accent, 32, 1.25).mesh.rotation.x = -0.35;
+    for (const [x,z] of [[2,4],[4,4],[2,2],[4,2]]) makeParkBox('jungle gym', bp, x, z, 0.25, 2.8, 0.25, metal, 18, 1.4);
+    for (let i=0;i<5;i++) makeParkPerson(bp, -5+i*2.2, randomBetween(-5,5), 0xffc857, 'wander');
+  } else if (archetype === 'basketball') {
+    addParkTiledSurface('basketball court section', bp, 15.5, 9, 2.2, 0xb66a3c, 7);
+    for (const x of [-6.8,6.8]) { makeParkBox('basketball hoop post', bp,x,0,0.18,3.2,0.18,metal,22,1.6); makeParkBox('basketball backboard',bp,x,0,0.18,1.4,2.2,0xffffff,20,3); }
+    for (let i=0;i<8;i++) makeParkPerson(bp, randomBetween(-5,5), randomBetween(-3.5,3.5), i%2?0x2864dc:0xe23b32, 'court');
+    makeParkBall(bp,0,0,0xd96d1f,'basketball');
+  } else if (archetype === 'baseball') {
+    addBaseballDiamondPieces(bp);
+    for(let i=0;i<8;i++) makeParkBox('stadium stand',bp,-8+i*2.2,7.5,1.8,1.2,2.2,metal,25,0.6);
+    for(let i=0;i<18;i++) makeParkPerson(bp,-7.5+(i%9)*1.8,6.8+Math.floor(i/9)*0.8,0xffd166,'cheer');
+    for(const x of [-8,8]) makeParkBox('stadium light',bp,x,-7,0.3,6,0.3,metal,35,3);
+    makeParkBall(bp,0,-4,0xffffff,'baseball');
+  } else if (archetype === 'tennis') {
+    addParkTiledSurface('tennis court section', bp, 15, 9, 2.2, 0x3b8e62, 7);
+    for(let x=-6;x<=6;x+=1.5) makeParkBox('tennis net',bp,x,0,1.35,0.65,0.08,0xf4f4f4,8,0.4);
+    for(const [x,z] of [[-4,-2],[-4,2],[4,-2],[4,2]]) makeParkPerson(bp,x,z,0xffffff,'tennis');
+    makeParkBall(bp,0,0,0xdfff32,'tennisBall');
+  } else if (archetype === 'running_track') {
+    for(let a=0;a<Math.PI*2;a+=Math.PI/18) makeParkBox('running track section',bp,Math.cos(a)*7.2,Math.sin(a)*4.6,1.3,0.12,1.3,0xb64b3d,10,0.16).mesh.rotation.y=-a;
+    for(let i=0;i<8;i++){ const a=i*Math.PI/4; makeParkPerson(bp,Math.cos(a)*7.2,Math.sin(a)*4.6,0x47a3ff,'runner'); }
+  } else if (archetype === 'swimming_pool') {
+    addParkTiledSurface('pool water section', bp, 14, 8, 2, 0x29a9e8, 8);
+    for(let i=0;i<6;i++) makeParkPerson(bp,-5+i*2,randomBetween(-2.5,2.5),0xffd19a,'swim');
+    for(const x of [-6,6]) makeParkBox('diving board',bp,x,0,2.2,0.18,0.6,0xffffff,18,0.55);
+    makeParkBox('park maintenance building',bp,0,7,5,2.6,2.5,variant==='rundown'?0x715445:0xd9d1b8,45,1.3);
+  } else if (archetype === 'picnic_bbq') {
+    for(const [x,z] of [[-5,-4],[0,-4],[5,-4],[-5,3],[0,3],[5,3]]) { makeParkBox('picnic table',bp,x,z,3,0.25,1.4,0x7b4e2d,20,0.8); makeParkBox('BBQ grill',bp,x+1.8,z,0.8,1,0.65,0x292929,24,0.5); makeParkPerson(bp,x,z+1.2,0x58a86b,'cook'); const fire=makeParkBall(bp,x+1.8,z,0xff6b1a,'fire'); fire.mesh.scale.set(.7,1.4,.7); const smoke=makeParkBall(bp,x+1.8,z,0x777777,'smoke'); smoke.mesh.material=smoke.mesh.material.clone(); smoke.mesh.material.transparent=true; smoke.mesh.material.opacity=.5; }
+  } else if (archetype === 'fountain_garden') {
+    makeParkBox('fountain basin',bp,0,0,6,0.55,6,0xe4e0d4,42,0.3);
+    makeParkBox('fountain statue',bp,0,0,1.2,4.2,1.2,0xd8d8d2,55,2.1);
+    for(let i=0;i<8;i++){ const a=i*Math.PI/4; makeParkBall(bp,Math.cos(a)*2,Math.sin(a)*2,0x64d7ff,'water'); }
+    for(const [x,z] of [[-6,-5],[0,-6],[6,-5],[-6,5],[0,6],[6,5]]) makeParkBox('valet parked car',bp,x,z,2.4,0.8,1.2,0x222c45,55,0.4);
+  } else if (archetype === 'dog_park') {
+    for(let i=0;i<10;i++){ const dog=makeParkBox('park dog',bp,randomBetween(-7,7),randomBetween(-7,7),0.65,0.6,1.0,[0x9b6a3c,0x333333,0xd9c2a1][i%3],22,0.3); animatedParkObjects.push({obj:dog,motion:'dog',originX:dog.x,originZ:dog.z,phase:Math.random()*6}); }
+    for(let i=0;i<6;i++) makeParkPerson(bp,randomBetween(-6,6),randomBetween(-6,6),0x6a8caf,'wander');
+    makeParkBox('dog agility ramp',bp,0,0,4,0.3,1.2,accent,22,0.7).mesh.rotation.z=.28;
+  } else if (archetype === 'volleyball' || archetype === 'miniature_golf' || archetype === 'seesaw_park') {
+    // Compact attractions occasionally get the whole parcel as a showcase.
+    populateCompactParkAttraction(bp, archetype, 0, 0, archetype === 'miniature_golf' ? 1.55 : 1.6);
+    for (let i=0;i<5;i++) makeParkPerson(bp,randomBetween(-6,6),randomBetween(-5,5),0xffd166,'wander');
+  } else if (archetype === 'four_hole_golf') {
+    const holes = [[-4.8,-4.8],[4.8,-4.8],[-4.8,4.8],[4.8,4.8]];
+    for (const [x,z] of holes) {
+      addParkTiledSurface('golf green section', { x: bp.x + x, z: bp.z + z }, 5.6, 4.2, 1.35, 0x4a9b4f, 5);
+      makeParkBox('golf flag pin',bp,x+1.4,z,0.09,1.7,0.09,0xf5e451,10,.85);
+      makeParkBall(bp,x-1.25,z,0xffffff,'golfBall');
+    }
+    const cart = makeParkBox('golf cart',bp,0,0,2.5,1.25,1.5,0xf4f1db,32,.63);
+    makeParkBox('golf cart roof',bp,0,0,2.7,.12,1.7,0xeeeeee,10,1.65);
+    cart.mesh.rotation.y = Math.PI / 7;
+  } else if (archetype === 'amusement_park') {
+    // Readable low-poly midway: a carousel, small wheel, booths and riders.
+    makeParkBox('carousel platform',bp,-3.8,0,5.2,.45,5.2,0xf1c95b,35,.24);
+    makeParkBox('carousel canopy',bp,-3.8,0,5.6,.28,5.6,0xe94f55,28,2.7);
+    for(let i=0;i<6;i++){ const a=i*Math.PI/3; makeParkBox('carousel horse',bp,-3.8+Math.cos(a)*1.8,Math.sin(a)*1.8,.65,1.1,.35,0xffffff,18,.65); }
+    makeParkBox('ferris wheel axle',bp,4.2,0,.45,4.8,.45,metal,30,2.4);
+    for(let i=0;i<8;i++){ const a=i*Math.PI/4; makeParkBox('ferris wheel gondola',bp,4.2+Math.cos(a)*3.1,Math.sin(a)*.8,1,.65,.8,[0xe65842,0x42bfe8,0xf1d36c][i%3],18,2.7+Math.sin(a)*2.7); }
+    for(const z of [-6.5,6.5]) for(const x of [-5,0,5]) makeParkBox('midway booth',bp,x,z,2.3,2.2,1.7,0x6b4fa1,24,1.1);
+  } else {
+    for(const [x,z,w,h,d] of [[-4,0,5,.5,2],[4,0,5,.5,2],[0,-4,2,.5,5],[0,4,2,.5,5]]) makeParkBox('skate ramp',bp,x,z,w,h,d,0xa9adb0,25,0.45).mesh.rotation.z=(x+z>0?.18:-.18);
+    for(let i=0;i<7;i++) makeParkPerson(bp,randomBetween(-6,6),randomBetween(-6,6),0x9c5de5,'skate');
+  }
+  if (variant === 'rundown') for(let i=0;i<8;i++) makeParkBox('park litter',bp,randomBetween(-8,8),randomBetween(-8,8),.35,.18,.45,0x6d5643,5,.1);
+  if (variant === 'fancy' && archetype !== 'fountain_garden') {
+    for(const [x,z] of [[-7,-7],[7,-7],[-7,7],[7,7]]) makeParkBox('fancy park planter',bp,x,z,1.5,.8,1.5,0xe6d69a,18,.4);
+    makeParkBox('fancy water statue',bp,0,7,1.1,3.2,1.1,0xe5e0d4,40,1.6);
+    for(let i=0;i<4;i++){ const a=i*Math.PI/2; makeParkBall(bp,Math.cos(a)*1.2,7+Math.sin(a)*1.2,0x64d7ff,'water'); }
+    for(const x of [-5,-1.7,1.7,5]) makeParkBox('valet parked car',bp,x,-7.4,2.4,.8,1.2,0x27324d,50,.4);
+  }
+}
+
+function updateParkAnimations(dt) {
+  const now = getGameplayNow() / 1000;
+  for (let i = animatedParkObjects.length - 1; i >= 0; i--) {
+    const actor = animatedParkObjects[i];
+    if (!actor.obj || actor.obj.consumed || actor.obj.falling) { animatedParkObjects.splice(i,1); continue; }
+    const t = now + actor.phase;
+    const mesh = actor.obj.mesh;
+    if (actor.obj.parkPanicActive) {
+      const threat = actor.obj.parkPanicHole;
+      const safeDistance = Math.max(14, (threat?.radius || 0) + 9);
+      const distance = threat?.alive ? Math.hypot(actor.obj.x - threat.x, actor.obj.z - threat.z) : Infinity;
+      if (!threat?.alive || distance >= safeDistance) {
+        actor.obj.parkPanicActive = false;
+        actor.obj.parkPanicHole = null;
+        actor.originX = actor.obj.x;
+        actor.originZ = actor.obj.z;
+        actor.phase = Math.random() * Math.PI * 2;
+        actor.motion = 'wander';
+      } else {
+        const speed = actor.obj.panicSpeed || 4.2;
+        actor.obj.x += Math.cos(actor.obj.parkPanicDir) * speed * dt;
+        actor.obj.z += Math.sin(actor.obj.parkPanicDir) * speed * dt;
+        mesh.position.x = actor.obj.x;
+        mesh.position.z = actor.obj.z;
+        mesh.rotation.y = -actor.obj.parkPanicDir + Math.PI / 2;
+        continue;
+      }
+    }
+    if (['bounce','basketball','baseball','tennisBall','volleyball','cheer','smoke','water','fire'].includes(actor.motion)) {
+      if (actor.originY === undefined) actor.originY = mesh.position.y;
+      const amplitude = actor.motion === 'cheer' ? .22 : actor.motion === 'smoke' ? 1.8 : actor.motion === 'water' ? 1.3 : .75;
+      mesh.position.y = actor.originY + Math.abs(Math.sin(t * (actor.motion === 'cheer' ? 7 : 4))) * amplitude;
+      if (actor.motion === 'smoke') mesh.material.opacity = 0.2 + (Math.sin(t * 2) + 1) * .15;
+      if (actor.motion === 'fire') mesh.scale.y = 1 + Math.abs(Math.sin(t * 11)) * 0.8;
+    }
+    if (['court','tennis','runner','swim','wander','dog','skate'].includes(actor.motion)) {
+      const range = actor.motion === 'runner' ? 1.8 : actor.motion === 'swim' ? 2.5 : 1.1;
+      actor.obj.x = actor.originX + Math.cos(t * (actor.motion === 'dog' ? 1.8 : 1.1)) * range;
+      actor.obj.z = actor.originZ + Math.sin(t * (actor.motion === 'swim' ? .7 : 1.3)) * range;
+      mesh.position.x = actor.obj.x; mesh.position.z = actor.obj.z;
+    }
+  }
+}
+
+function triggerParkVisitorPanic(parkParcelKey, attackingHole) {
+  if (!parkParcelKey || !attackingHole) return;
+  for (const actor of animatedParkObjects) {
+    const person = actor.obj;
+    if (!person?.isPerson || person.parkParcelKey !== parkParcelKey || person.consumed || person.falling || person.parkPanicActive) continue;
+    // Commit to the direction the visitor was facing at the first strike.
+    person.parkPanicDir = Math.PI / 2 - person.mesh.rotation.y;
+    person.parkPanicHole = attackingHole;
+    person.parkPanicActive = true;
+    person.panicSpeed = Math.max(3.8, person.panicSpeed || 0);
+  }
+}
 
 function getCarForwardVector(car) {
   if (car.axis === 'vertical') return { x: 0, z: car.direction === 'S' ? 1 : -1 };
@@ -1942,7 +3059,29 @@ function isCarDrivingAwayFromThreat(car, threat) {
   return (forward.x * awayX + forward.z * awayZ) / d > 0.35;
 }
 
-function populateCity() {
+function yieldCityBuildFrame() {
+  return new Promise(resolve => requestAnimationFrame(resolve));
+}
+
+function populateParcelDetails(bp, parcelUse, blockBounds) {
+  const spots = [[-6,0],[6,0],[0,-6],[0,6],[-7,-7],[7,7]];
+  const placeFixture = (kind, spot) => makeStreetFixture(kind, { x: bp.x + spot[0] + randomBetween(-0.45,0.45), z: bp.z + spot[1] + randomBetween(-0.45,0.45) });
+  if (parcelUse === 'restaurant') {
+    for (const spot of spots.slice(0,4)) placeFixture(Math.random() < 0.65 ? 'cafe_table' : 'hot_dog_cart', spot);
+    for (const spot of spots.slice(0,3)) makePerson({ x: bp.x + spot[0] + 1, z: bp.z + spot[1] }, blockBounds);
+  } else if (parcelUse === 'market') {
+    for (const spot of spots.slice(0,5)) placeFixture(['street_kiosk','flower_stand','newspaper_stand','hot_dog_cart'][Math.floor(Math.random()*4)], spot);
+    for (const spot of spots.slice(0,4)) makePerson({ x: bp.x + spot[0] * 0.8, z: bp.z + spot[1] * 0.8 }, blockBounds);
+  } else if (parcelUse === 'office_plaza') {
+    for (const [kind, spot] of [['park_fountain',spots[0]],['concrete_planter',spots[1]],['bike_rack',spots[2]],['cafe_table',spots[3]]]) placeFixture(kind, spot);
+  } else if (parcelUse === 'service_yard') {
+    for (const [kind, spot] of [['dumpster',spots[0]],['wood_pallet',spots[1]],['generator',spots[2]],['tool_chest',spots[3]]]) placeFixture(kind, spot);
+  } else if (parcelUse === 'neglected') {
+    for (const spot of spots.slice(0,5)) placeFixture(['shopping_cart','sandbag_stack','wood_pallet','construction_drum','recycling_bin'][Math.floor(Math.random()*5)], spot);
+  }
+}
+
+async function populateCity() {
   const economy = getEffectiveDifficultyProfile();
   const buildingBlockDensity = economy.buildingBlockDensityMult || 1;
   const skyscraperChance = 0.35 * (economy.skyscraperChanceMult || 1);
@@ -1953,13 +3092,44 @@ function populateCity() {
   const parkAssetCount = Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
   const personChance = economy.personChanceMult || 1;
   const governmentBlock = blockPositions[Math.floor(Math.random() * blockPositions.length)];
+  // Keep parks special and legible: every regenerated town gets exactly one
+  // or two park parcels, never the previous four-to-six-parcel flood.
+  const parkCount = Math.random() < 0.5 ? 1 : 2;
+  const parkParcels = new Map();
+  const shuffledParkCandidates = blockPositions.filter(bp => bp !== governmentBlock).sort(() => Math.random() - 0.5);
+  const shuffledFullParcel = [...FULL_PARCEL_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
+  const shuffledCompact = [...COMPACT_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
+  reservedParcelKeys.clear();
+  if (governmentBlock) reservedParcelKeys.add(parcelKey(governmentBlock));
+  for (let i = 0; i < parkCount; i++) {
+    // Most parks present one full-parcel attraction. Mixed parks combine four
+    // compact attractions; a smaller chance lets one compact attraction enjoy
+    // a spacious showcase parcel of its own.
+    const roll = Math.random();
+    const archetype = roll < 0.25
+      ? 'mixed_compact'
+      : roll < 0.42
+        ? shuffledCompact[i % shuffledCompact.length]
+        : shuffledFullParcel[i % shuffledFullParcel.length];
+    parkParcels.set(shuffledParkCandidates[i], {
+      archetype,
+      variant: PARK_VARIANTS[Math.floor(Math.random() * PARK_VARIANTS.length)],
+    });
+  }
+  for (const bp of parkParcels.keys()) reservedParcelKeys.add(parcelKey(bp));
   // Place buildings on block corners/edges, small stuff around perimeter
+  let populatedBlockCount = 0;
   for (const bp of blockPositions) {
     // Decide block type
     const t = Math.random();
+    let parcelUse = 'standard';
     if (bp === governmentBlock) {
       // Government building prototype: separate render and physics rules.
       makeGovernmentBuilding({ x: bp.x, z: bp.z });
+    } else if (parkParcels.has(bp)) {
+      const park = parkParcels.get(bp);
+      parcelUse = `park_${park.archetype}_${park.variant}`;
+      populateParkParcel(bp, park.archetype, park.variant);
     } else if (Math.random() > buildingBlockDensity) {
       // Scarcer difficulties leave more blocks lightly populated.
     } else if (t < skyscraperChance) {
@@ -1968,17 +3138,26 @@ function populateCity() {
     } else if (t < skyscraperChance + midBuildingChance) {
       // Mid building
       makeMidBuilding({ x: bp.x, z: bp.z });
+      parcelUse = Math.random() < 0.68 ? 'office_plaza' : 'service_yard';
     } else {
       // Cluster of small buildings
       const positions = [
-        { x: bp.x - 5, z: bp.z - 5 },
-        { x: bp.x + 5, z: bp.z - 5 },
-        { x: bp.x - 5, z: bp.z + 5 },
-        { x: bp.x + 5, z: bp.z + 5 },
+        { x: bp.x - 5.7, z: bp.z - 5.7 },
+        { x: bp.x + 5.7, z: bp.z - 5.7 },
+        { x: bp.x - 5.7, z: bp.z + 5.7 },
+        { x: bp.x + 5.7, z: bp.z + 5.7 },
       ];
       for (const p of positions) {
         if (Math.random() < smallBuildingChance) makeSmallBuilding(p);
       }
+      // Residential parcels carry noticeably more canopy and green breathing room
+      // than offices, towers, markets, or service yards.
+      const residentialTrees = [[-8.2,0],[8.2,0],[0,-8.2],[0,8.2],[-8,8],[8,-8]];
+      for (const [dx, dz] of residentialTrees) {
+        if (Math.random() < 0.82) makeTree({ x: bp.x + dx + randomBetween(-0.45, 0.45), z: bp.z + dz + randomBetween(-0.45, 0.45) });
+      }
+      const useRoll = Math.random();
+      parcelUse = useRoll < 0.34 ? 'restaurant' : useRoll < 0.62 ? 'market' : useRoll < 0.82 ? 'neglected' : 'standard';
     }
 
     // Sidewalk props along block perimeter
@@ -2015,9 +3194,11 @@ function populateCity() {
         else if (r < 0.78) makeMailbox(pos);
         else if (r < 0.86) makeExtinguisher(pos);
         else if (r < 0.93) makeTree(pos);
-        else makeBench(pos);
+        else makeStreetFixture(STREET_FIXTURE_KINDS[Math.floor(Math.random() * STREET_FIXTURE_KINDS.length)], pos);
       }
     }
+    populatedBlockCount++;
+    if (populatedBlockCount % 2 === 0) await yieldCityBuildFrame();
   }
 
   // Cars on the roads — 80% moving, 20% stationary.
@@ -2072,6 +3253,7 @@ function populateCity() {
     } else {
       car.moving = false;
     }
+    if (i % 8 === 7) await yieldCityBuildFrame();
   }
 
   // Extra people & trees on the grass edges of blocks (parks feel)
@@ -2080,6 +3262,10 @@ function populateCity() {
     const p = randInBlock(bp, 3);
     if (Math.random() < 0.5 * personChance) makePerson(p);
     else makeTree(p);
+    if (i % 10 === 9) await yieldCityBuildFrame();
+  }
+  if (selectedEnvironment === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN) {
+    populateMegakitDowntownTest();
   }
   pruneObjectsToArena();
 }
@@ -2106,9 +3292,6 @@ let trafficGreenAxis = 'horizontal';
 let trafficTimer = 0;
 const TRAFFIC_GREEN_DURATION = HOLESY_CONFIG.traffic.greenDuration;
 const TRAFFIC_YELLOW_MARGIN = HOLESY_CONFIG.traffic.yellowMargin;
-
-// Initial city population (runs at module load)
-populateCity();
 
 // =========================================================================
 // HOLES — player + AI opponents
@@ -2225,6 +3408,21 @@ function createHole(isPlayer, name, rimColor, startPos) {
   rim.position.y = 0.06;
   group.add(rim);
 
+  // Earned cosmetic prototype: colored motes orbit visibly inside the player hole.
+  const prismOrbit = new THREE.Group();
+  prismOrbit.position.y = 0.09;
+  prismOrbit.visible = false;
+  const prismColors = [0xff4d6d, 0xffc857, 0x7ae582, 0x4cc9f0, 0x9b5de5, 0xff70a6, 0xf8f32b];
+  for (let i = 0; i < prismColors.length; i++) {
+    const mote = new THREE.Mesh(
+      new THREE.SphereGeometry(1, 10, 8),
+      new THREE.MeshBasicMaterial({ color: prismColors[i], transparent: true, opacity: 0.92, depthWrite: false })
+    );
+    mote.userData.prismPhase = (i / prismColors.length) * Math.PI * 2;
+    prismOrbit.add(mote);
+  }
+  group.add(prismOrbit);
+
   const vortexArcGroup = new THREE.Group();
   vortexArcGroup.rotation.x = -Math.PI / 2;
   vortexArcGroup.position.y = 0.08;
@@ -2297,7 +3495,9 @@ function createHole(isPlayer, name, rimColor, startPos) {
     loreBuffs: {},
     loreBuffCooldowns: {},
     loreFirstBiteActive: false,
-    group, disc, rim, vortexArcGroup, vortexArcs, labelSprite,
+    group, disc, rim, prismOrbit, vortexArcGroup, vortexArcs, labelSprite,
+    prismOrbitUnlocked: false,
+    equippedCosmeticId: 'none',
     // AI state
     aiState: 'wander', aiTargetObj: null, aiTimer: 0,
     wanderX: startPos.x, wanderZ: startPos.z
@@ -2353,11 +3553,29 @@ function updateHoleVisual(h) {
     const pulseScale = 1 + Math.sin(now / 65) * 0.05 * pulseStrength;
     h.rim.scale.set(pulseScale, pulseScale, 1);
   } else {
-    h.rim.material.color.setHex(h.rimColor);
+    const cosmetic = h.isPlayer ? h.equippedCosmeticId : 'none';
+    if (cosmetic === 'tin_foil_halo') h.rim.material.color.setHex(Math.sin(now / 110) > 0 ? 0xf4f4f6 : 0x9aa0aa);
+    else if (cosmetic === 'bellmar_seal') h.rim.material.color.setHex(Math.sin(now / 260) > 0 ? 0xb8e6ff : 0x5d7fa8);
+    else if (cosmetic === 'condemned_chic') h.rim.material.color.setHex(Math.sin(now / 95) > 0 ? 0xffd400 : 0x171717);
+    else h.rim.material.color.setHex(h.rimColor);
     h.rim.material.opacity = 0.85;
     h.rim.scale.set(1, 1, 1);
   }
   h.group.position.set(h.x, 0, h.z);
+  if (h.prismOrbit) {
+    h.prismOrbit.visible = h.isPlayer && !!h.prismOrbitUnlocked && h.equippedCosmeticId === 'prism_orbit';
+    if (h.prismOrbit.visible) {
+      const orbitRadius = Math.max(0.7, h.radius * 0.58);
+      const moteSize = Math.min(0.42, Math.max(0.13, h.radius * 0.075));
+      h.prismOrbit.rotation.y = now * 0.00105;
+      h.prismOrbit.children.forEach((mote, index) => {
+        const phase = mote.userData.prismPhase + Math.sin(now * 0.0017 + index) * 0.12;
+        mote.position.set(Math.cos(phase) * orbitRadius, 0.03 + Math.sin(now * 0.004 + index) * 0.04, Math.sin(phase) * orbitRadius);
+        const pulse = moteSize * (0.86 + Math.sin(now * 0.006 + index * 0.8) * 0.14);
+        mote.scale.setScalar(pulse);
+      });
+    }
+  }
   // Label size and height scale with hole
   const s = Math.max(3, h.radius * 2.2);
   h.labelSprite.scale.set(s, s / 4, 1);
@@ -2374,9 +3592,9 @@ function updateHoleVisual(h) {
     const swirlStrength = h.isPlayer
       ? Math.min(1, 0.12 + sizeFactor * 0.4 + speedFactor * 0.12 + gustFactor * 0.34 + volumeNorm * 0.36)
       : 0;
-    const ringInner = h.radius * (1.06 + swirlStrength * 0.025);
-    const ringOuter = h.radius * (1.15 + swirlStrength * 0.05);
     h.vortexArcGroup.visible = swirlStrength > 0.03;
+    const vortexScale = h.radius * (1 + swirlStrength * 0.025);
+    h.vortexArcGroup.scale.set(vortexScale, vortexScale, 1);
     const targetSpinSpeed = swirlStrength > 0.03
       ? (0.004 + gustFactor * 0.085 + volumeNorm * 0.11 + speedFactor * 0.045)
       : 0;
@@ -2387,16 +3605,8 @@ function updateHoleVisual(h) {
       const pulse = 0.5 + 0.5 * Math.sin(now * 0.0022 + arcData.pulseOffset + idx * 0.7);
       const targetOpacity = swirlStrength * (0.045 + pulse * 0.09);
       const targetColorLight = 0.6 + gustFactor * 0.05 + pulse * 0.04;
-      const oldGeom = arcData.mesh.geometry;
-      arcData.mesh.geometry = new THREE.RingGeometry(
-        ringInner,
-        ringOuter,
-        36,
-        1,
-        (idx / h.vortexArcs.length) * Math.PI * 2,
-        Math.PI / (7.2 - pulse * 1.4)
-      );
-      oldGeom.dispose();
+      const arcPulseScale = 1 + pulse * 0.025;
+      arcData.mesh.scale.set(arcPulseScale, arcPulseScale, 1);
       arcData.mesh.material.opacity = targetOpacity;
       arcData.mesh.material.color.setHSL(0.57 + pitchNorm * 0.03, 0.54, targetColorLight);
     });
@@ -2453,11 +3663,11 @@ function buildDifficultyPersonality(base, difficulty, index) {
 }
 
 function applyDifficultyToAiPersonalities() {
-  const effectiveDifficulty = getEffectiveDifficultyProfile();
   holes.forEach((h, idx) => {
     if (h.isPlayer) return;
     const aiIndex = idx - 1;
-    h.personality = buildDifficultyPersonality(AI_PERSONALITIES[aiIndex], effectiveDifficulty, aiIndex);
+    const difficulty = activeAiDifficultyProfiles?.[aiIndex] || activeDifficultyProfile;
+    h.personality = buildDifficultyPersonality(AI_PERSONALITIES[aiIndex], difficulty, aiIndex);
   });
 }
 const PLAYER_COLOR = 0x4d9eff; // blue
@@ -2479,6 +3689,7 @@ for (let i = 0; i < 3; i++) {
 }
 
 const player = holes[0];
+player.equippedCosmeticId = cosmeticState.equipped;
 
 // Global reservation: maps object → hole that claimed it this round
 const objectReservations = new WeakMap();
@@ -2501,6 +3712,212 @@ const input = {
 // Detect touch device
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 input.isTouch = isTouchDevice;
+const mobileHudMedia = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
+const MOBILE_HUD_STORAGE_KEY = 'holesy.mobileHudExpanded.v1';
+let mobileHudExpandedPreference = (() => {
+  try { const saved = localStorage.getItem(MOBILE_HUD_STORAGE_KEY); return saved === null ? true : saved === 'true'; }
+  catch { return true; }
+})();
+
+function isMobileHudAvailable() {
+  return isTouchDevice || !!mobileHudMedia?.matches;
+}
+
+function ensureMobileHudMode() {
+  if (!isMobileHudAvailable()) {
+    document.body.classList.remove('mobile-hud-compact', 'mobile-hud-expanded');
+    return;
+  }
+  document.body.classList.toggle('mobile-hud-expanded', mobileHudExpandedPreference);
+  document.body.classList.toggle('mobile-hud-compact', !mobileHudExpandedPreference);
+}
+
+document.body.classList.toggle('touch-device', isTouchDevice);
+ensureMobileHudMode();
+
+const HAPTIC_PATTERNS = Object.freeze({
+  devour: { pattern: 28, cooldownMs: 72, nativeStyle: 'LIGHT', nativeDurationMs: 45 },
+  objectHeavy: { pattern: [42, 24, 58], cooldownMs: 120, nativeStyle: 'MEDIUM', nativeDurationMs: 90 },
+  diagnostic: { pattern: [240, 90, 260, 90, 420], cooldownMs: 0, nativeStyle: 'HEAVY', nativeDurationMs: 700 },
+  powerup: { pattern: [18, 24, 34], cooldownMs: 180, nativeStyle: 'MEDIUM', nativeDurationMs: 80 },
+  runGoal: { pattern: [14, 18, 22], cooldownMs: 140, nativeStyle: 'MEDIUM', nativeDurationMs: 70 },
+  goalSweep: { pattern: [24, 32, 38, 32, 52], cooldownMs: 520, nativeStyle: 'HEAVY', nativeDurationMs: 180 },
+  mandateComplete: { pattern: [24, 28, 44, 34, 70], cooldownMs: 620, nativeNotification: 'SUCCESS', nativeDurationMs: 220 },
+  mandateFail: { pattern: [80, 42, 80], cooldownMs: 900, nativeNotification: 'ERROR', nativeDurationMs: 260 },
+  waveStart: { pattern: [18, 26, 26], cooldownMs: 360, nativeStyle: 'MEDIUM', nativeDurationMs: 100 },
+  waveTransition: { pattern: [24, 30, 42], cooldownMs: 500, nativeStyle: 'MEDIUM', nativeDurationMs: 130 },
+  bossInbound: { pattern: [44, 44, 44, 44, 88], cooldownMs: 1200, nativeNotification: 'WARNING', nativeDurationMs: 320 },
+  bossDefeat: { pattern: [32, 26, 56, 34, 88], cooldownMs: 720, nativeNotification: 'SUCCESS', nativeDurationMs: 260 },
+  unitClear: { pattern: [24, 20, 42, 24, 56], cooldownMs: 520, nativeStyle: 'HEAVY', nativeDurationMs: 180 },
+  rivalDevoured: { pattern: [28, 22, 58], cooldownMs: 520, nativeStyle: 'HEAVY', nativeDurationMs: 150 },
+  playerDamage: { pattern: 18, cooldownMs: 250, nativeStyle: 'LIGHT', nativeDurationMs: 55 },
+  playerDefeat: { pattern: [90, 45, 120], cooldownMs: 1000, nativeNotification: 'ERROR', nativeDurationMs: 360 },
+});
+const hapticLastAt = {};
+let lastHapticStatus = '';
+let iosSwitchHapticInput = null;
+
+function isLikelyIosWebKit() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent || '')
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function getIosSwitchHapticInput() {
+  if (!isLikelyIosWebKit()) return null;
+  if (iosSwitchHapticInput) return iosSwitchHapticInput;
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.setAttribute('switch', '');
+  input.setAttribute('aria-hidden', 'true');
+  input.tabIndex = -1;
+  input.style.cssText = 'position:fixed;left:-100px;top:-100px;width:1px;height:1px;opacity:0;pointer-events:none;';
+  document.body.appendChild(input);
+  iosSwitchHapticInput = input;
+  return iosSwitchHapticInput;
+}
+
+function triggerIosSwitchHaptic() {
+  const input = getIosSwitchHapticInput();
+  if (!input) return false;
+  try {
+    input.checked = !input.checked;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    lastHapticStatus = 'iosSwitch';
+    return true;
+  } catch (err) {
+    lastHapticStatus = 'iosSwitchError';
+    return false;
+  }
+}
+
+function getNativeHapticsBridge() {
+  const capHaptics = globalThis.Capacitor?.Plugins?.Haptics;
+  if (capHaptics) return { type: 'capacitor', api: capHaptics };
+  const customBridge = globalThis.HolesyNativeHaptics;
+  if (customBridge) return { type: 'custom', api: customBridge };
+  return null;
+}
+
+function invokeNativeHaptic(type, def) {
+  const bridge = getNativeHapticsBridge();
+  if (!bridge) return false;
+  try {
+    let result = null;
+    if (bridge.type === 'capacitor') {
+      if (def.nativeNotification && typeof bridge.api.notification === 'function') {
+        result = bridge.api.notification({ type: def.nativeNotification });
+      } else if (type === 'diagnostic' && typeof bridge.api.vibrate === 'function') {
+        result = bridge.api.vibrate({ duration: def.nativeDurationMs || 500 });
+      } else if (typeof bridge.api.impact === 'function') {
+        result = bridge.api.impact({ style: def.nativeStyle || 'LIGHT' });
+      } else if (typeof bridge.api.vibrate === 'function') {
+        result = bridge.api.vibrate({ duration: def.nativeDurationMs || 80 });
+      }
+    } else if (typeof bridge.api.trigger === 'function') {
+      result = bridge.api.trigger(type, { duration: def.nativeDurationMs || 80, pattern: def.pattern });
+    } else if (typeof bridge.api.vibrate === 'function') {
+      result = bridge.api.vibrate(def.nativeDurationMs || 80);
+    }
+    if (!result) return false;
+    lastHapticStatus = 'native';
+    Promise.resolve(result).catch(() => { lastHapticStatus = 'nativeError'; });
+    return true;
+  } catch (err) {
+    lastHapticStatus = 'nativeError';
+    return false;
+  }
+}
+
+function triggerHaptic(type = 'devour', options = {}) {
+  const def = HAPTIC_PATTERNS[type] || HAPTIC_PATTERNS.devour;
+  const now = performance.now();
+  const lastAt = hapticLastAt[type] || 0;
+  if (!options.force && now - lastAt < def.cooldownMs) {
+    lastHapticStatus = 'cooldown';
+    return false;
+  }
+  hapticLastAt[type] = now;
+  if (invokeNativeHaptic(type, def)) return true;
+  if (triggerIosSwitchHaptic()) return true;
+  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
+    lastHapticStatus = 'unsupported';
+    return false;
+  }
+  try {
+    const ok = navigator.vibrate(def.pattern);
+    lastHapticStatus = ok === false ? 'blocked' : 'sent';
+    return ok !== false;
+  } catch (err) {
+    lastHapticStatus = 'error';
+    return false;
+  }
+}
+
+function getHapticSupportText() {
+  if (getNativeHapticsBridge()) {
+    return 'Native haptics available. Tap to test.';
+  }
+  if (getIosSwitchHapticInput()) {
+    return 'iOS web fallback available. Tap to test.';
+  }
+  if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
+    return 'No browser haptics here. Try Android Chrome or Samsung Internet.';
+  }
+  if (window.isSecureContext === false && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    return 'Haptics may be blocked on this non-secure URL.';
+  }
+  return 'Haptics supported. Tap to test.';
+}
+
+function getHapticResultText() {
+  switch (lastHapticStatus) {
+    case 'native':
+      return 'Native haptic test sent.';
+    case 'nativeError':
+      return 'Native haptics failed in this app shell.';
+    case 'iosSwitch':
+      return 'iOS web fallback tick sent. This is a limited system haptic, not full game vibration.';
+    case 'iosSwitchError':
+      return 'iOS web fallback failed in this browser.';
+    case 'sent':
+      return 'Haptic test sent. If you felt nothing, this browser may be silently ignoring vibration.';
+    case 'blocked':
+      return 'Haptics were blocked by this browser or device setting.';
+    case 'unsupported':
+      return 'This browser has no web haptics API, so the game cannot vibrate this device.';
+    case 'error':
+      return 'Haptics test failed in this browser.';
+    case 'cooldown':
+      return 'Haptics are cooling down. Try again.';
+    default:
+      return getHapticSupportText();
+  }
+}
+
+function getHapticButtonResultText() {
+  switch (lastHapticStatus) {
+    case 'native':
+      return 'Native';
+    case 'nativeError':
+      return 'Native Fail';
+    case 'iosSwitch':
+      return 'iOS Tick';
+    case 'iosSwitchError':
+      return 'iOS Fail';
+    case 'sent':
+      return 'Sent';
+    case 'blocked':
+      return 'Blocked';
+    case 'unsupported':
+      return 'No Haptics';
+    case 'error':
+      return 'Failed';
+    case 'cooldown':
+      return 'Wait';
+    default:
+      return 'Haptics';
+  }
+}
 
 // Keyboard state (WASD + arrow keys as alternative to mouse)
 const keys = { w: false, a: false, s: false, d: false };
@@ -2671,25 +4088,39 @@ function releaseKeyboardControl() {
 }
 
 function applyMouseControl() {
+  const reach = getPlayerPrecisionReach();
   if (input.mouseCarryActive) {
-    const reach = HOLESY_CONFIG.input.touchReach;
     player.targetX = clampToArena(player.x + input.mouseCarryDx * reach, 2);
     player.targetZ = clampToArena(player.z + input.mouseCarryDz * reach, 2);
     return;
   }
   const target = getMouseGround();
-  player.targetX = clampToArena(target.x, 2);
-  player.targetZ = clampToArena(target.z, 2);
+  const dx = target.x - player.x;
+  const dz = target.z - player.z;
+  const distance = Math.hypot(dx, dz);
+  const scale = distance > reach ? reach / distance : 1;
+  player.targetX = clampToArena(player.x + dx * scale, 2);
+  player.targetZ = clampToArena(player.z + dz * scale, 2);
+}
+
+function getPlayerPrecisionReach() {
+  const config = HOLESY_CONFIG.input;
+  const growth = THREE.MathUtils.clamp(
+    (player.radius - MIN_RADIUS) / Math.max(0.01, config.precisionFullRadius - MIN_RADIUS),
+    0,
+    1
+  );
+  return THREE.MathUtils.lerp(config.precisionReach, config.touchReach, growth);
 }
 
 function applyTouchControl() {
   const mag = Math.hypot(input.dragDx, input.dragDy);
   if (mag <= HOLESY_CONFIG.input.touchDeadzone) return;
   const maxMag = HOLESY_CONFIG.input.touchMaxMagnitude;
-  const scale = Math.min(1, mag / maxMag);
+  const scale = Math.pow(Math.min(1, mag / maxMag), HOLESY_CONFIG.input.touchResponseExponent);
   const nx = (input.dragDx / mag) * scale;
   const ny = (input.dragDy / mag) * scale;
-  const reach = HOLESY_CONFIG.input.touchReach;
+  const reach = getPlayerPrecisionReach();
   player.targetX = clampToArena(player.x + nx * reach, 2);
   player.targetZ = clampToArena(player.z + ny * reach, 2);
 }
@@ -2728,6 +4159,14 @@ const GAME_STATES = Object.freeze({
 let currentGameState = GAME_STATES.TITLE;
 let gameTime = 120; // 2 minutes
 let lastT = performance.now();
+let lastHudUpdateAt = 0;
+const HUD_UPDATE_INTERVAL_MS = 100;
+let mandateTargets = [];
+let mandateCollected = 0;
+let mandateComplete = false;
+const MANDATE_COUNT = 5;
+const MANDATE_BONUS = 0;
+const MANDATE_ROW_BONUS = 0;
 let animationFrameId = null;
 let idleFrameTimerId = null;
 let lifecycleTerminated = false;
@@ -2746,7 +4185,7 @@ let lmsMode = false;
 //   'lms'   — starts with lmsMode = true immediately, no timer
 //   'waves' — progressive 4-wave run
 //   'endless' — unbounded wave run that keeps scaling until the player cashes out or is consumed
-let selectedMode = 'timed';
+let selectedMode = 'endless';
 
 // Waves mode state. Active only when selectedMode === 'waves'.
 // Survival across waves matters — eliminated holes stay eliminated. If only
@@ -2790,6 +4229,18 @@ const subtitleEl = document.getElementById('subtitle');
 const finalWrap = document.getElementById('final-wrap');
 const leaderboardEl = document.getElementById('leaderboard');
 const miniLbEl = document.getElementById('mini-lb');
+const runObjectivesEl = document.getElementById('run-objectives');
+const mandatePanelEl = document.getElementById('mandate-panel');
+const mandateDotsEl = document.getElementById('mandate-dots');
+const mandateLabelEl = document.getElementById('mandate-label');
+const waveContractEl = document.getElementById('wave-contract');
+const waveContractMandatesEl = document.getElementById('wave-contract-mandates');
+const waveContractGoalsEl = document.getElementById('wave-contract-goals');
+let waveContractToken = 0;
+const adaptiveAssistIndicatorEl = document.getElementById('adaptive-assist-indicator');
+const mobileHudToggleBtn = document.getElementById('mobile-hud-toggle');
+const hapticTestBtn = document.getElementById('haptic-test-btn');
+const hapticStatusEl = document.getElementById('haptic-status');
 const playBtn = document.getElementById('play-btn');
 let playButtonAction = 'begin';
 const stagePop = document.getElementById('stage-pop');
@@ -2817,6 +4268,29 @@ const modePickerWrap = document.getElementById('mode-picker-wrap');
 const modePicker = document.getElementById('mode-picker');
 const difficultySelect = document.getElementById('difficulty-select');
 const difficultyDesc = document.getElementById('difficulty-desc');
+const environmentSelect = document.getElementById('environment-select');
+const cosmeticSelect = document.getElementById('cosmetic-select');
+const cosmeticDesc = document.getElementById('cosmetic-desc');
+function refreshCosmeticPicker() {
+  if (!cosmeticSelect) return;
+  const choices = ['<option value="none">Classic Hole</option>'];
+  for (const id of cosmeticState.unlocked) {
+    const reward = COSMETIC_REWARDS[id];
+    if (reward) choices.push(`<option value="${id}">${reward.name}</option>`);
+  }
+  cosmeticSelect.innerHTML = choices.join('');
+  if (![...cosmeticSelect.options].some(option => option.value === cosmeticState.equipped)) cosmeticState.equipped = 'none';
+  cosmeticSelect.value = cosmeticState.equipped;
+  cosmeticDesc.textContent = cosmeticState.equipped === 'none' ? 'Earn permanent cosmetics from selected achievements.' : COSMETIC_REWARDS[cosmeticState.equipped].description;
+}
+cosmeticSelect?.addEventListener('change', () => {
+  cosmeticState.equipped = cosmeticSelect.value;
+  player.equippedCosmeticId = cosmeticState.equipped;
+  saveCosmeticState();
+  refreshCosmeticPicker();
+});
+refreshCosmeticPicker();
+const environmentDesc = document.getElementById('environment-desc');
 const statsWindowBtn = document.getElementById('stats-window-btn');
 const loreArchiveBtn = document.getElementById('lore-archive-btn');
 const howToPlayBtn = document.getElementById('how-to-play-btn');
@@ -2828,13 +4302,68 @@ const loreStarterPatternsEl = document.getElementById('lore-starter-patterns');
 const loreDocListEl = document.getElementById('lore-doc-list');
 const loreThreadEl = document.getElementById('lore-thread');
 const loreDocTitleEl = document.getElementById('lore-doc-title');
+
+function syncModePickerSelection() {
+  if (!modePicker) return;
+  modePicker.querySelectorAll('.mode-option').forEach(opt => {
+    const isSelected = opt.dataset.mode === selectedMode;
+    opt.classList.toggle('selected', isSelected);
+    opt.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+  });
+}
 const loreDocMetaEl = document.getElementById('lore-doc-meta');
 const loreDocBodyEl = document.getElementById('lore-doc-body');
 const buildNotesModal = document.getElementById('build-notes-modal');
 const buildNotesCloseBtn = document.getElementById('build-notes-close-btn');
 const buildNotesListEl = document.getElementById('build-notes-list');
+const statsModal = document.getElementById('stats-modal');
+const statsCloseBtn = document.getElementById('stats-close-btn');
+const statsModalBody = document.getElementById('stats-modal-body');
+const feedbackBtn = document.getElementById('beta-feedback-btn');
+const feedbackModal = document.getElementById('feedback-modal');
+const feedbackForm = document.getElementById('feedback-shell');
+const feedbackCloseBtn = document.getElementById('feedback-close-btn');
+const feedbackDevice = document.getElementById('feedback-device');
+const feedbackThanks = document.getElementById('feedback-thanks');
+const feedbackOkBtn = document.getElementById('feedback-ok-btn');
+const FEEDBACK_ENDPOINT = '';
+
+function getFeedbackEnvironment() {
+  const ua = navigator.userAgent || 'Unknown';
+  const browser = ua.includes('Edg/') ? 'Edge' : ua.includes('Chrome/') ? 'Chrome' : ua.includes('Firefox/') ? 'Firefox' : ua.includes('Safari/') ? 'Safari' : 'Other';
+  const device = /Android/i.test(ua) ? 'Android' : /iPhone|iPad|iPod/i.test(ua) ? 'iPhone/iPad' : /Windows/i.test(ua) ? 'Windows PC' : /Macintosh/i.test(ua) ? 'Mac' : 'Other';
+  return { browser, device, viewport: `${window.innerWidth}x${window.innerHeight}` };
+}
+function openFeedback() {
+  const env = getFeedbackEnvironment();
+  feedbackDevice.textContent = `${BUILD_LABEL} · ${env.device} · ${env.browser} · ${env.viewport}`;
+  feedbackModal.classList.remove('hidden');
+  feedbackThanks?.classList.add('hidden');
+}
+function closeFeedback() { feedbackModal.classList.add('hidden'); }
+feedbackBtn?.addEventListener('click', openFeedback);
+feedbackCloseBtn?.addEventListener('click', closeFeedback);
+feedbackOkBtn?.addEventListener('click', closeFeedback);
+feedbackModal?.addEventListener('click', event => { if (event.target === feedbackModal) closeFeedback(); });
+feedbackForm?.addEventListener('submit', async event => {
+  event.preventDefault();
+  const env = getFeedbackEnvironment();
+  const rating = feedbackForm.querySelector('input[name="rating"]:checked')?.value || '5';
+  const add = document.getElementById('feedback-add').value.trim();
+  const comment = document.getElementById('feedback-comment').value.trim() || 'No comment supplied.';
+  const again = document.getElementById('feedback-again').checked ? 'Yes' : 'No';
+  const report = { submittedAt: new Date().toISOString(), build: BUILD_LABEL, device: env.device, browser: env.browser, viewport: env.viewport, mode: selectedMode, difficulty: selectedDifficultyName, rating: Number(rating), playAgain: again, add, comment };
+  if (FEEDBACK_ENDPOINT) {
+    const response = await fetch(FEEDBACK_ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(report) });
+    if (!response.ok) return;
+  } else {
+    const queued = JSON.parse(localStorage.getItem('holesy.feedback.queue.v1') || '[]'); queued.push(report); localStorage.setItem('holesy.feedback.queue.v1', JSON.stringify(queued));
+  }
+  feedbackThanks?.classList.remove('hidden');
+});
 difficultySelect.value = selectedDifficultyName;
 setDifficulty(selectedDifficultyName);
+setEnvironment(selectedEnvironment);
 
 syncStartupUi();
 
@@ -2842,10 +4371,75 @@ let gameStats = loadGameStats();
 let activeGameRun = null;
 let pendingPlayerEndReason = '';
 let statsWindowRef = null;
+const ADAPTIVE_ASSIST_LOG_KEY = 'holesy.adaptive-assist.log.v1';
+let adaptiveRunElapsedMs = 0;
+let adaptiveFirstAssistTriggered = false;
+let adaptiveIndicatorUntil = 0;
+
+function loadAdaptiveAssistLog() {
+  try {
+    const value = JSON.parse(localStorage.getItem(ADAPTIVE_ASSIST_LOG_KEY) || '[]');
+    return Array.isArray(value) ? value.slice(-200) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function recordAdaptiveAssist(adjustment, reason) {
+  const entry = { timestamp: new Date().toISOString(), version: BUILD_LABEL, adjustment, reason };
+  const entries = [...loadAdaptiveAssistLog(), entry].slice(-200);
+  try { localStorage.setItem(ADAPTIVE_ASSIST_LOG_KEY, JSON.stringify(entries)); } catch (e) {}
+  adaptiveIndicatorUntil = performance.now() + 12000;
+  if (adaptiveAssistIndicatorEl) {
+    adaptiveAssistIndicatorEl.hidden = false;
+    adaptiveAssistIndicatorEl.title = `${adjustment}: ${reason} Click to download the adjustment log.`;
+  }
+}
+
+function downloadAdaptiveAssistLog() {
+  const entries = loadAdaptiveAssistLog();
+  const header = 'Holesy Player Performance Adjustment Log\nDate/time | Version | Adjustment | Reason\n';
+  const body = entries.map(entry => `${entry.timestamp} | ${entry.version} | ${entry.adjustment} | ${entry.reason}`).join('\n');
+  const url = URL.createObjectURL(new Blob([`${header}${body}${body ? '\n' : ''}`], { type: 'text/plain;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'holesy-player-performance-adjustments.txt';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+adaptiveAssistIndicatorEl?.addEventListener('click', downloadAdaptiveAssistLog);
+
+function updateFirstRunAdaptiveAssistance(dt) {
+  if (!running || !endlessMode || currentWave !== 1 || !player?.alive || !activeGameRun) return;
+  adaptiveRunElapsedMs += dt * 1000;
+  if (!adaptiveFirstAssistTriggered && adaptiveRunElapsedMs >= 20000) {
+    const objectiveProgress = mandateTargets.reduce((sum, objective) => sum + objective.progress, 0)
+      + activeRunObjectives.reduce((sum, objective) => sum + objective.progress, 0);
+    if (player.score < 250 && objectiveProgress <= 0) {
+      adaptiveFirstAssistTriggered = true;
+      const now = getGameplayNow();
+      player.effects.speedMultiplier = Math.max(player.effects.speedMultiplier || 1, 1.10);
+      player.effects.speedBoostUntil = Math.max(player.effects.speedBoostUntil || 0, now + 10000);
+      player.effects.speedSource = 'adaptive_first_run';
+      recordAdaptiveAssist(
+        '10% movement boost for 10 seconds',
+        `After 20 active seconds in Endless Wave 1, score was ${Math.round(player.score)} and objective progress was ${objectiveProgress}.`
+      );
+      updateActiveEffectsUi();
+    }
+  }
+  if (adaptiveAssistIndicatorEl && !adaptiveAssistIndicatorEl.hidden && performance.now() >= adaptiveIndicatorUntil) {
+    adaptiveAssistIndicatorEl.hidden = true;
+  }
+}
 
 let debugOverlayEnabled = false;
 let debugOverlayEl = null;
 let activeEffectsUiEl = null;
+let activeEffectsUiSignature = '';
+let lastActiveEffectsUiUpdateAt = 0;
+const ACTIVE_EFFECTS_UI_INTERVAL_MS = 100;
 
 function ensureDebugOverlay() {
   if (debugOverlayEl) return;
@@ -2884,6 +4478,14 @@ function hideDebugOverlay() {
 }
 
 const ACTIVE_EFFECT_VISUALS = {
+  mandate_surge: {
+    icon: 'MANDATE',
+    label: 'Mandate Surge',
+    effect: 'Wave-long surge',
+    bg: 'linear-gradient(135deg, rgba(255,221,89,0.96), rgba(255,94,126,0.9))',
+    border: 'rgba(255,240,180,0.9)',
+    glow: 'rgba(255,190,72,0.46)',
+  },
   speed_burst: {
     icon: '⚡',
     label: 'Speed Burst',
@@ -2904,6 +4506,14 @@ const ACTIVE_EFFECT_VISUALS = {
     bg: 'linear-gradient(135deg, rgba(255, 116, 98, 0.96), rgba(163, 0, 0, 0.92))',
     border: 'rgba(255, 208, 180, 0.88)',
     glow: 'rgba(255, 92, 65, 0.48)',
+  },
+  goal_sweep: {
+    icon: 'GOAL',
+    label: 'Goal Sweep',
+    effect: 'Speed surge',
+    bg: 'linear-gradient(135deg, rgba(126,247,233,0.94), rgba(255,221,89,0.9))',
+    border: 'rgba(255,255,210,0.86)',
+    glow: 'rgba(126,247,233,0.38)',
   },
   unit_clear_shield: {
     icon: '✹',
@@ -2949,15 +4559,21 @@ function ensureActiveEffectsUi() {
 function hideActiveEffectsUi() {
   if (!activeEffectsUiEl) return;
   activeEffectsUiEl.style.display = 'none';
-  activeEffectsUiEl.innerHTML = '';
+  if (activeEffectsUiSignature) {
+    activeEffectsUiSignature = '';
+    activeEffectsUiEl.innerHTML = '';
+  }
 }
 
 function effectVisualFor(type, source) {
   if (type === 'speed') {
+    if (source === 'mandate') return ACTIVE_EFFECT_VISUALS.mandate_surge;
     if (source === 'unit_clear') return ACTIVE_EFFECT_VISUALS.unit_clear_speed;
+    if (source === 'run_goals') return ACTIVE_EFFECT_VISUALS.goal_sweep;
     if (source === 'speed_burst') return ACTIVE_EFFECT_VISUALS.speed_burst;
     return ACTIVE_EFFECT_VISUALS.default_speed;
   }
+  if (source === 'mandate') return ACTIVE_EFFECT_VISUALS.mandate_surge;
   if (source === 'unit_clear') return ACTIVE_EFFECT_VISUALS.unit_clear_shield;
   if (source === 'iron_skin') return ACTIVE_EFFECT_VISUALS.iron_skin;
   return ACTIVE_EFFECT_VISUALS.default_shield;
@@ -3067,12 +4683,18 @@ function updateActiveEffectsUi() {
     hideActiveEffectsUi();
     return;
   }
-  const entries = buildActiveEffectEntries(getGameplayNow());
+  const now = getGameplayNow();
+  if (now - lastActiveEffectsUiUpdateAt < ACTIVE_EFFECTS_UI_INTERVAL_MS) return;
+  lastActiveEffectsUiUpdateAt = now;
+  const entries = buildActiveEffectEntries(now);
   if (!entries.length) {
     hideActiveEffectsUi();
     return;
   }
   activeEffectsUiEl.style.display = 'flex';
+  const signature = JSON.stringify(entries.map(entry => [entry.icon, entry.label, entry.effect, entry.countdown]));
+  if (signature === activeEffectsUiSignature) return;
+  activeEffectsUiSignature = signature;
   activeEffectsUiEl.innerHTML = entries.map(entry => `
     <div style="
       position: relative;
@@ -3086,8 +4708,6 @@ function updateActiveEffectsUi() {
       text-align: center;
       color: #fff8f2;
       text-shadow: 0 2px 10px rgba(0,0,0,0.55);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
     ">
       <div style="
         position: absolute;
@@ -3155,7 +4775,7 @@ function updateDebugOverlay() {
   const lines = [
     'DEBUG OVERLAY  (`)',
     `build: ${BUILD_LABEL}`,
-    `performance: ${HOLESY_CONFIG.performance.activeProfileName}`,
+    `performance: ${HOLESY_CONFIG.performance.activeProfileName} | dpr ${adaptivePixelRatio.toFixed(2)} | shadows ${renderer.shadowMap.enabled ? 'on' : 'off'}`,
     `state: ${currentGameState}`,
     `mode: ${selectedModeLabel()}`,
     `difficulty: ${activeDifficultyProfile.label}${activeEndlessPressureProfile ? ` | pressure ${activeEndlessPressureProfile.label}` : ''}`,
@@ -3377,36 +4997,41 @@ function initMusicContext() {
   music.ambienceGain.gain.value = 1;
   music.sfxGain.gain.value = 1;
   music.celebrationGain.gain.value = 1;
-  // Gentle reverb tail via convolver with generated IR
-  const reverb = music.ctx.createConvolver();
-  const rvLen = music.ctx.sampleRate * 1.8;
-  const rvBuf = music.ctx.createBuffer(2, rvLen, music.ctx.sampleRate);
-  for (let c = 0; c < 2; c++) {
-    const d = rvBuf.getChannelData(c);
-    for (let i = 0; i < rvLen; i++) {
-      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / rvLen, 2.5);
-    }
-  }
-  reverb.buffer = rvBuf;
-  const reverbSend = music.ctx.createGain();
-  reverbSend.gain.value = 0.25;
-  const reverbReturn = music.ctx.createGain();
-  reverbReturn.gain.value = 0.4;
   music.masterGain.connect(music.duckGain);
   music.archiveGain.connect(music.duckGain);
   music.ambienceGain.connect(music.ctx.destination);
   music.sfxGain.connect(music.duckGain);
   music.celebrationGain.connect(music.ctx.destination);
-  music.masterGain.connect(reverbSend);
-  music.archiveGain.connect(reverbSend);
-  music.sfxGain.connect(reverbSend);
-  reverbSend.connect(reverb);
-  reverb.connect(reverbReturn);
   music.duckGain.connect(music.ctx.destination);
-  reverbReturn.connect(music.duckGain);
-  music.reverb = reverbSend;
-  // Preload the embedded scream sample so it's ready when people get devoured
-  loadAudioBanks();
+  music.reverb = music.ctx.createGain();
+  music.reverb.gain.value = 0;
+  music.reverb.connect(music.duckGain);
+}
+
+function initializeMusicReverb() {
+  if (!music.ctx || music._reverbInitialized) return;
+  music._reverbInitialized = true;
+  const convolver = music.ctx.createConvolver();
+  const rvLen = music.ctx.sampleRate * 1.8;
+  const rvBuf = music.ctx.createBuffer(2, rvLen, music.ctx.sampleRate);
+  for (let channel = 0; channel < 2; channel++) {
+    const data = rvBuf.getChannelData(channel);
+    for (let i = 0; i < rvLen; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / rvLen, 2.5);
+    }
+  }
+  convolver.buffer = rvBuf;
+  const send = music.reverb;
+  const output = music.ctx.createGain();
+  send.disconnect();
+  send.gain.value = 0.25;
+  output.gain.value = 0.4;
+  music.masterGain.connect(send);
+  music.archiveGain.connect(send);
+  music.sfxGain.connect(send);
+  send.connect(convolver);
+  convolver.connect(output);
+  output.connect(music.duckGain);
 }
 
 function getSfxDestination() {
@@ -3893,17 +5518,18 @@ function isMusicAudibleAllowed() {
 }
 
 function isGameplayAudioAllowed() {
-  return !music.muted && running && isGameState(GAME_STATES.PLAYING);
+  return !music.muted && !music.focusSuspended && isMusicAllowedByFocus() && running && isGameState(GAME_STATES.PLAYING);
 }
 
 function handleMusicFocusChange() {
   music.focusSuspended = !isMusicAllowedByFocus();
   if (music.focusSuspended) {
-    if (music.playing) stopMusic(160);
-    if (music.archivePlaying) stopArchiveMusic(160);
+    if (music.ctx && music.ctx.state === 'running') music.ctx.suspend().catch(() => {});
     return;
   }
-  syncTitleAudioToGameState();
+  if (music.ctx && music.ctx.state === 'suspended') {
+    music.ctx.resume().then(() => syncTitleAudioToGameState()).catch(() => syncTitleAudioToGameState());
+  } else syncTitleAudioToGameState();
 }
 
 function toggleMusic() {
@@ -3919,6 +5545,9 @@ function toggleMusic() {
 
 // Music toggle button (created in DOM)
 const musicToggleBtn = document.createElement('div');
+musicToggleBtn.id = 'music-toggle-btn';
+musicToggleBtn.setAttribute('role', 'button');
+musicToggleBtn.setAttribute('tabindex', '0');
 musicToggleBtn.textContent = '🎵 Music';
 musicToggleBtn.style.cssText = `
   position: fixed; top: 12px; right: 12px; z-index: 30;
@@ -3927,7 +5556,23 @@ musicToggleBtn.style.cssText = `
   padding: 8px 14px; color: #fff; font-size: 12px; font-weight: 600;
   cursor: pointer; user-select: none;
 `;
-musicToggleBtn.addEventListener('click', toggleMusic);
+let lastMusicToggleActivationTs = 0;
+function handleMusicTogglePress(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  const nowTs = performance.now();
+  if (nowTs - lastMusicToggleActivationTs < 350) return;
+  lastMusicToggleActivationTs = nowTs;
+  toggleMusic();
+}
+musicToggleBtn.addEventListener('click', handleMusicTogglePress);
+musicToggleBtn.addEventListener('pointerup', handleMusicTogglePress);
+musicToggleBtn.addEventListener('touchend', handleMusicTogglePress, { passive: false });
+musicToggleBtn.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') handleMusicTogglePress(e);
+});
 document.body.appendChild(musicToggleBtn);
 
 // Music is started explicitly by the Start button's first tap (see play button
@@ -3941,6 +5586,7 @@ let musicStarted = false;
 
 function syncStartupUi() {
     setPlayButtonAction('begin');
+    syncModePickerSelection();
     modePickerWrap.classList.remove('hidden');
     setGameState(GAME_STATES.MODE_SELECT);
   }
@@ -3990,10 +5636,10 @@ function buildGameStatsMarkup() {
   if (!summary.totalGames) {
     return `
       <div class="stats-head">
-        <div class="stats-title">Temporary Game Stats Tracker</div>
+        <div class="stats-title">Game Stats</div>
         <button class="stats-reset" type="button" data-stats-reset>Reset</button>
       </div>
-      <div class="stats-empty">No completed runs recorded yet. This window will track win/loss rate, duration, difficulty, mode, score, and end reasons for tuning comparisons.</div>
+      <div class="stats-empty">No completed runs recorded yet. Stats will track win/loss rate, duration, difficulty, mode, score, and end reasons for tuning comparisons.</div>
     `;
   }
 
@@ -4019,7 +5665,7 @@ function buildGameStatsMarkup() {
 
   return `
     <div class="stats-head">
-      <div class="stats-title">Temporary Game Stats Tracker</div>
+      <div class="stats-title">Game Stats</div>
       <button class="stats-reset" type="button" data-stats-reset>Reset</button>
     </div>
     <div class="stats-grid">
@@ -4078,14 +5724,30 @@ function openGamePopup(url, name, features) {
   return isTouchDevice ? window.open(url, name) : window.open(url, name, features);
 }
 
+function renderStatsModal() {
+  if (!statsModalBody) return;
+  statsModalBody.innerHTML = buildGameStatsMarkup();
+  const resetBtn = statsModalBody.querySelector('[data-stats-reset]');
+  if (resetBtn) resetBtn.addEventListener('click', resetStatsFromStatsWindow);
+}
+
 function openStatsWindow() {
-  statsWindowRef = openGamePopup('', 'holesyStatsWindow', 'width=720,height=860');
-  if (!statsWindowRef) {
-    showEventBanner('Stats popup was blocked. Allow popups for this site to see the record room.', 4200);
+  if (!statsModal || !statsModalBody) {
+    statsWindowRef = openGamePopup('', 'holesyStatsWindow', 'width=720,height=860');
+    if (!statsWindowRef) {
+      showEventBanner('Stats view is unavailable in this browser session.', 4200);
+      return;
+    }
+    renderStatsWindow();
+    statsWindowRef.focus();
     return;
   }
-  renderStatsWindow();
-  statsWindowRef.focus();
+  renderStatsModal();
+  statsModal.classList.remove('hidden');
+}
+
+function closeStatsWindow() {
+  if (statsModal) statsModal.classList.add('hidden');
 }
 
 function openHowToPlayWindow() {
@@ -4098,6 +5760,7 @@ function openHowToPlayWindow() {
 }
 
 function refreshStatsWindow() {
+  if (statsModal && statsModalBody && !statsModal.classList.contains('hidden')) renderStatsModal();
   if (statsWindowRef && !statsWindowRef.closed) renderStatsWindow();
 }
 
@@ -4120,6 +5783,11 @@ function startTrackedGameRun() {
     recorded: false,
   };
   pendingPlayerEndReason = '';
+  adaptiveRunElapsedMs = 0;
+  adaptiveFirstAssistTriggered = false;
+  adaptiveIndicatorUntil = 0;
+  if (adaptiveAssistIndicatorEl) adaptiveAssistIndicatorEl.hidden = true;
+  beginRunObjectives();
 }
 
 function finalizeTrackedGameRun(reasonOverride = '') {
@@ -4136,6 +5804,7 @@ function finalizeTrackedGameRun(reasonOverride = '') {
     : isPlayerWinForStats(reason, leader, aliveHoles, playerRank) ? 'win' : 'loss';
 
   activeGameRun.recorded = true;
+  flushObjectMasterySave();
   gameStats = recordGameRun(gameStats, {
     mode,
     difficulty: activeGameRun.difficulty,
@@ -4163,7 +5832,7 @@ function classifyGameEndReason(reasonOverride, mode, aliveHoles, leader, playerR
 
 function isPlayerWinForStats(reason, leader, aliveHoles, playerRank) {
   if (reason === 'score_win' || reason === 'waves_lockdown_complete_score_win' || reason === 'survival_win' || reason === 'waves_survived' || reason === 'endless_survived') return true;
-  if (reason === 'score_loss' || reason === 'waves_lockdown_complete_score_loss' || reason === 'endless_score_loss' || reason === 'survival_loss' || reason === 'eaten_by_rival' || reason === 'shot_by_soldiers' || reason === 'abandoned' || reason === 'voluntary_cashout') return false;
+  if (reason === 'score_loss' || reason === 'waves_lockdown_complete_score_loss' || reason === 'endless_score_loss' || reason === 'survival_loss' || reason === 'eaten_by_rival' || reason === 'shot_by_soldiers' || reason === 'mandate_failed' || reason === 'abandoned' || reason === 'voluntary_cashout') return false;
   if (!player.alive) return false;
   if (aliveHoles.length === 1 && aliveHoles[0].isPlayer) return true;
   return leader && leader.isPlayer && playerRank === 1;
@@ -4174,6 +5843,736 @@ function recordAbandonedRunIfNeeded() {
   if (isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION, GAME_STATES.LMS_CHOICE)) {
     finalizeTrackedGameRun('abandoned');
   }
+}
+
+const OBJECT_MASTERY_STORAGE_KEY = 'holesy.objectMastery.v1';
+const RUN_OBJECTIVE_COUNT = 3;
+const RUN_OBJECTIVE_SET_REFRESH_INTERVAL = 5;
+const RUN_OBJECTIVE_SET_BONUS_SCORE = 750;
+const RUN_OBJECTIVE_SET_SPEED_SECONDS = 12;
+const RUN_OBJECTIVE_PLAIN_LABELS = Object.freeze({ people: 'people', vehicles: 'cars', props: 'street objects', trees: 'trees', buildings: 'building pieces', soldiers: 'soldiers', manholes: 'manhole covers' });
+const OBJECT_MASTERY_SAVE_DEBOUNCE_MS = 2500;
+const RUN_OBJECTIVE_DEFS = Object.freeze([
+  { id: 'people', label: 'Crowd Sweep', target: 45, reward: 220 },
+  { id: 'people', label: 'Lunch Rush', target: 60, reward: 290 },
+  { id: 'people', label: 'Crosswalk Cleanout', target: 75, reward: 360 },
+  { id: 'people', label: 'Neighborhood Panic', target: 95, reward: 450 },
+  { id: 'people', label: 'No Witnesses', target: 120, reward: 560 },
+  { id: 'people', label: 'Sidewalk Feast', target: 140, reward: 650 },
+  { id: 'people', label: 'Citywide Snack', target: 165, reward: 760 },
+  { id: 'vehicles', label: 'Traffic Jam', target: 12, reward: 260 },
+  { id: 'vehicles', label: 'Tow Yard', target: 16, reward: 340 },
+  { id: 'vehicles', label: 'Rush Hour', target: 22, reward: 460 },
+  { id: 'vehicles', label: 'Car Collector', target: 28, reward: 590 },
+  { id: 'vehicles', label: 'No Parking', target: 34, reward: 700 },
+  { id: 'vehicles', label: 'Street Sweepers', target: 40, reward: 820 },
+  { id: 'props', label: 'Street Stuff', target: 35, reward: 210 },
+  { id: 'props', label: 'Curb Cleanup', target: 48, reward: 290 },
+  { id: 'props', label: 'Cone Zone', target: 60, reward: 360 },
+  { id: 'props', label: 'Bench Lunch', target: 72, reward: 430 },
+  { id: 'props', label: 'Urban Vacuum', target: 85, reward: 510 },
+  { id: 'props', label: 'Block Detail', target: 105, reward: 630 },
+  { id: 'trees', label: 'Tree Line', target: 14, reward: 210 },
+  { id: 'trees', label: 'Park Problem', target: 20, reward: 310 },
+  { id: 'trees', label: 'Leaf Eater', target: 28, reward: 430 },
+  { id: 'trees', label: 'Root Work', target: 36, reward: 560 },
+  { id: 'trees', label: 'Green Belt', target: 48, reward: 720 },
+  { id: 'buildings', label: 'Building Bites', target: 80, reward: 380 },
+  { id: 'buildings', label: 'Office Lunch', target: 120, reward: 560 },
+  { id: 'buildings', label: 'Block Collapse', target: 170, reward: 760 },
+  { id: 'buildings', label: 'Floor Plan', target: 230, reward: 980 },
+  { id: 'buildings', label: 'Downtown Dentist', target: 300, reward: 1250 },
+  { id: 'buildings', label: 'Concrete Appetite', target: 380, reward: 1550 },
+  { id: 'soldiers', label: 'Squad Breaker', target: 10, reward: 330, waveOnly: true },
+  { id: 'soldiers', label: 'Line Of Fire', target: 16, reward: 520, waveOnly: true },
+  { id: 'soldiers', label: 'No Formation', target: 24, reward: 760, waveOnly: true },
+  { id: 'soldiers', label: 'Army Snack', target: 32, reward: 1000, waveOnly: true },
+  { id: 'soldiers', label: 'Green Sweep', target: 45, reward: 1380, waveOnly: true },
+  { id: 'manholes', label: 'Utility Bite', target: 8, reward: 190, megaKitOnly: true },
+  { id: 'manholes', label: 'Sewer Tour', target: 12, reward: 290, megaKitOnly: true },
+  { id: 'manholes', label: 'Understreet Diet', target: 18, reward: 430, megaKitOnly: true },
+  { id: 'people', label: 'Population Dip', target: 55, reward: 310 },
+  { id: 'people', label: 'Office Exodus', target: 85, reward: 490 },
+  { id: 'vehicles', label: 'Double Parked', target: 18, reward: 390 },
+  { id: 'vehicles', label: 'Metal Diet', target: 30, reward: 650 },
+  { id: 'props', label: 'Sidewalk Details', target: 52, reward: 320 },
+  { id: 'props', label: 'City Clutter', target: 95, reward: 570 },
+  { id: 'trees', label: 'Shade Theft', target: 24, reward: 370 },
+  { id: 'trees', label: 'Stump Day', target: 42, reward: 650 },
+  { id: 'buildings', label: 'Window Count', target: 145, reward: 680 },
+  { id: 'buildings', label: 'Permit Denied', target: 260, reward: 1100 },
+  { id: 'soldiers', label: 'Helmet Buffet', target: 20, reward: 640, waveOnly: true },
+  { id: 'soldiers', label: 'Ranged Problem', target: 38, reward: 1200, waveOnly: true },
+]);
+let activeRunObjectives = [];
+let activeRunObjectiveFamilies = new Set();
+let activeRunObjectiveSetRewarded = false;
+let runObjectivesUiDirty = true;
+let objectMastery = loadObjectMastery();
+player.prismOrbitUnlocked = !!objectMastery.cosmetics?.prismOrbit;
+let objectMasterySaveTimer = null;
+let objectMasterySavePending = false;
+
+function createEmptyObjectMastery() {
+  return { schemaVersion: 1, families: {}, cosmetics: {} };
+}
+
+function loadObjectMastery() {
+  try {
+    const raw = localStorage.getItem(OBJECT_MASTERY_STORAGE_KEY);
+    if (!raw) return createEmptyObjectMastery();
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return createEmptyObjectMastery();
+    if (!parsed.families || typeof parsed.families !== 'object') parsed.families = {};
+    if (!parsed.cosmetics || typeof parsed.cosmetics !== 'object') parsed.cosmetics = {};
+    if (parsed.cosmetics.prismOrbit && parsed.cosmetics.prismOrbit.source !== 'wave_goal_mandate_sweep') {
+      delete parsed.cosmetics.prismOrbit;
+      try { localStorage.setItem(OBJECT_MASTERY_STORAGE_KEY, JSON.stringify(parsed)); } catch {}
+    }
+    parsed.schemaVersion = 1;
+    return parsed;
+  } catch {
+    return createEmptyObjectMastery();
+  }
+}
+
+function saveObjectMastery() {
+  objectMasterySavePending = false;
+  if (objectMasterySaveTimer) {
+    clearTimeout(objectMasterySaveTimer);
+    objectMasterySaveTimer = null;
+  }
+  try {
+    localStorage.setItem(OBJECT_MASTERY_STORAGE_KEY, JSON.stringify(objectMastery));
+  } catch {
+    // Mastery is optional feedback; gameplay continues if local storage is blocked.
+  }
+}
+
+function scheduleObjectMasterySave() {
+  objectMasterySavePending = true;
+  if (objectMasterySaveTimer) return;
+  objectMasterySaveTimer = setTimeout(() => {
+    objectMasterySaveTimer = null;
+    saveObjectMastery();
+  }, OBJECT_MASTERY_SAVE_DEBOUNCE_MS);
+}
+
+function flushObjectMasterySave() {
+  if (!objectMasterySavePending && !objectMasterySaveTimer) return;
+  saveObjectMastery();
+}
+
+function ensureMasteryFamily(familyId) {
+  if (!objectMastery.families[familyId]) objectMastery.families[familyId] = { eaten: 0, goalsCompleted: 0 };
+  return objectMastery.families[familyId];
+}
+
+function masteryTierForCount(count) {
+  if (count >= 500) return 6;
+  if (count >= 250) return 5;
+  if (count >= 100) return 4;
+  if (count >= 50) return 3;
+  if (count >= 20) return 2;
+  if (count >= 1) return 1;
+  return 0;
+}
+
+function getObjectiveDef(familyId) {
+  return RUN_OBJECTIVE_DEFS.find(def => def.id === familyId) || null;
+}
+
+function isRunObjectiveEligible(def) {
+  if (def.waveOnly && !isWaveBasedMode()) return false;
+  if (def.megaKitOnly && selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN) return false;
+  return true;
+}
+
+function beginRunObjectives() {
+  const eligible = RUN_OBJECTIVE_DEFS.filter(isRunObjectiveEligible);
+  const shuffled = [...eligible].sort(() => Math.random() - 0.5);
+  const usedFamilies = new Set();
+  const selected = [];
+  for (const def of shuffled) {
+    if (usedFamilies.has(def.id)) continue;
+    selected.push(def);
+    usedFamilies.add(def.id);
+    if (selected.length >= RUN_OBJECTIVE_COUNT) break;
+  }
+  activeRunObjectives = selected.map(def => ({
+    id: def.id,
+    label: `Eat ${def.target} ${RUN_OBJECTIVE_PLAIN_LABELS[def.id] || 'objects'}`,
+    target: def.target,
+    reward: def.reward,
+    progress: 0,
+    complete: false,
+  }));
+  activeRunObjectiveFamilies = new Set(activeRunObjectives.map(objective => objective.id));
+  activeRunObjectiveSetRewarded = false;
+  markRunObjectivesUiDirty();
+}
+
+function refreshRunObjectivesForWave(waveNum) {
+  if (!isWaveBasedMode()) return;
+  if (waveNum === 1 || (endlessMode && waveNum > 1 && (waveNum - 1) % RUN_OBJECTIVE_SET_REFRESH_INTERVAL === 0)) {
+    beginRunObjectives();
+    if (waveNum > 1) showEventBanner('NEW RUN GOALS: The city changed the terms.', 2600);
+  }
+}
+
+function markRunObjectivesUiDirty() {
+  runObjectivesUiDirty = true;
+}
+
+function flushRunObjectivesUi() {
+  if (!runObjectivesUiDirty) return;
+  runObjectivesUiDirty = false;
+  updateRunObjectivesUi();
+}
+
+function objectFamilyForObjective(obj) {
+  if (!obj) return '';
+  const assetName = String(obj.megakitAssetName || '').toLowerCase();
+  if (assetName.includes('manhole')) return 'manholes';
+  if (obj.isPerson) return 'people';
+  if (obj.isCar) return 'vehicles';
+  if (obj.isTree) return 'trees';
+  if (obj.isBuilding || obj.isVoxelBuildingCube || obj.isSkyscraperChunk || obj.isGovernmentBuildingPiece || obj.buildingSize || obj.physicsStackPiece) return 'buildings';
+  if (obj.isProp || obj.isPowerup) return 'props';
+  return '';
+}
+
+function recordPlayerObjectFamilyProgress(obj, hole) {
+  const familyId = objectFamilyForObjective(obj);
+  if (!familyId) return;
+  if (!activeRunObjectiveFamilies.has(familyId)) return;
+  if (!activeRunObjectives.some(objective => objective.id === familyId && !objective.complete)) return;
+  recordPlayerFamilyProgress(familyId, 1, hole, obj);
+}
+
+function recordPlayerFamilyProgress(familyId, amount, hole, sourceObj = null) {
+  if (!familyId || !amount) return;
+  const mastery = ensureMasteryFamily(familyId);
+  const previousTier = masteryTierForCount(mastery.eaten);
+  mastery.eaten += amount;
+  const nextTier = masteryTierForCount(mastery.eaten);
+
+  for (const objective of activeRunObjectives) {
+    if (objective.id !== familyId || objective.complete) continue;
+    objective.progress = Math.min(objective.target, objective.progress + amount);
+    if (objective.progress >= objective.target) {
+      objective.complete = true;
+      objective.celebrateUntil = performance.now() + 900;
+      mastery.goalsCompleted += 1;
+      if (hole && hole.isPlayer) {
+        playRunGoalChime();
+        triggerHaptic('runGoal');
+        const pos = sourceObj
+          ? new THREE.Vector3(sourceObj.x || hole.x, 0, sourceObj.z || hole.z)
+          : new THREE.Vector3(hole.x, 0, hole.z);
+        flashConsumed('GOAL COMPLETE', pos);
+        showEventBanner(`GOAL: ${objective.label} · MASTERY +1`, 2400);
+      }
+    }
+  }
+  maybeAwardRunObjectiveSetReward(hole);
+  maybeUnlockPrismOrbit(hole);
+
+  if (nextTier > previousTier && nextTier > 1) {
+    const def = getObjectiveDef(familyId);
+    showEventBanner(`MASTERY: ${(def ? def.label : familyId)} L${nextTier}`, 2400);
+  }
+  markRunObjectivesUiDirty();
+  scheduleObjectMasterySave();
+}
+
+function maybeAwardRunObjectiveSetReward(hole) {
+  if (activeRunObjectiveSetRewarded || !hole || !hole.isPlayer || !activeRunObjectives.length) return;
+  if (!activeRunObjectives.every(objective => objective.complete)) return;
+  activeRunObjectiveSetRewarded = true;
+  const now = getGameplayNow();
+  hole.effects.speedMultiplier = Math.max(hole.effects.speedMultiplier || 1, 1.35);
+  hole.effects.speedBoostUntil = Math.max(hole.effects.speedBoostUntil || 0, now + RUN_OBJECTIVE_SET_SPEED_SECONDS * 1000);
+  hole.effects.speedSource = 'run_goals';
+  hole.unitClearPulseUntil = Math.max(hole.unitClearPulseUntil || 0, now + 1200);
+  hole.unitClearGlowUntil = Math.max(hole.unitClearGlowUntil || 0, now + 1600);
+  hole.unitClearShakeUntil = Math.max(hole.unitClearShakeUntil || 0, now + 480);
+  triggerUnitClearVisuals(hole);
+  playUnitClearStinger();
+  triggerHaptic('goalSweep');
+  showEventBanner('GOAL SWEEP · SPEED + MASTERY', 2800);
+  flashConsumed('GOAL SWEEP', new THREE.Vector3(hole.x, 0, hole.z));
+  updateActiveEffectsUi();
+}
+
+function maybeUnlockPrismOrbit(hole) {
+  if (!hole?.isPlayer || objectMastery.cosmetics.prismOrbit) return false;
+  if (!mandateComplete || !activeRunObjectives.length || !activeRunObjectives.every(objective => objective.complete)) return false;
+  objectMastery.cosmetics.prismOrbit = { unlockedAt: new Date().toISOString(), source: 'wave_goal_mandate_sweep', wave: currentWave };
+  hole.prismOrbitUnlocked = true;
+  grantCosmetic('prism_orbit', false);
+  hole.equippedCosmeticId = cosmeticState.equipped;
+  scheduleObjectMasterySave();
+  playUnitClearStinger();
+  showEventBanner('COSMETIC UNLOCKED: PRISM ORBIT', 3000);
+  flashConsumed('PRISM ORBIT', new THREE.Vector3(hole.x, 0, hole.z));
+  markRunObjectivesUiDirty();
+  return true;
+}
+
+function runObjectiveInstruction(objective) {
+  const target = objective.target.toLocaleString();
+  const instructions = {
+    people: `Devour ${target} people.`,
+    vehicles: `Devour ${target} cars or trucks.`,
+    props: `Devour ${target} street props, such as benches, hydrants, cones, lamps, or similar objects.`,
+    trees: `Devour ${target} trees.`,
+    buildings: `Devour ${target} breakable building pieces.`,
+    soldiers: `Devour ${target} soldiers.`,
+    manholes: `Devour ${target} road manhole covers in MegaKit Downtown.`,
+  };
+  const cosmeticCopy = objectMastery.cosmetics.prismOrbit ? 'Prism Orbit equipped.' : 'Complete all goals and the Mandate in one wave to unlock Prism Orbit.';
+  return `${instructions[objective.id] || `Devour ${target} matching objects.`} Reward: buff and mastery. ${cosmeticCopy}`;
+}
+
+function updateRunObjectivesUi() {
+  if (!runObjectivesEl) return;
+  const runObjectivesPanel = document.getElementById('run-objectives-panel');
+  if (!activeRunObjectives.length) {
+    runObjectivesPanel?.classList.remove('all-goals-complete');
+    runObjectivesEl.innerHTML = '<div class="objective-empty">New goals on next run</div>';
+    return;
+  }
+  const objectiveHtml = activeRunObjectives.map(objective => {
+    const mastery = ensureMasteryFamily(objective.id);
+    const tier = masteryTierForCount(mastery.eaten);
+    const pct = Math.max(0, Math.min(100, (objective.progress / objective.target) * 100));
+    const status = `${objective.complete ? 'complete' : ''} ${(objective.celebrateUntil || 0) > performance.now() ? 'goal-pop' : ''}`.trim();
+    const instruction = runObjectiveInstruction(objective);
+    return `<div class="objective-row ${status}" tabindex="0" data-goal-help="${escapeHtml(instruction)}" aria-label="${escapeHtml(`${objective.label}. ${instruction}`)}">
+      <div class="objective-main">
+        <span class="objective-name">${escapeHtml(objective.label)}</span>
+        <span class="objective-count">${objective.progress}/${objective.target}</span>
+      </div>
+      <div class="objective-progress"><span style="width:${pct.toFixed(1)}%"></span></div>
+      <div class="objective-meta">L${tier} mastery &middot; ${objectMastery.cosmetics.prismOrbit ? 'Prism Orbit equipped' : 'Prism Orbit challenge'}</div>
+    </div>`;
+  }).join('');
+  const rewardState = activeRunObjectiveSetRewarded ? 'claimed' : 'available';
+  runObjectivesPanel?.classList.toggle('all-goals-complete', activeRunObjectives.every(objective => objective.complete));
+  runObjectivesEl.innerHTML = `${objectiveHtml}
+    <div class="objective-set-reward ${rewardState}">
+      <span>All goals</span>
+      <strong>${RUN_OBJECTIVE_SET_SPEED_SECONDS}s speed + mastery</strong>
+    </div>`;
+}
+
+// =========================================================================
+// DEVOUR MANDATE TARGET SYSTEM
+// =========================================================================
+function mandateSlot(config) {
+  return Object.freeze({
+    verb: 'Eat',
+    action: 'eat',
+    minCount: 1,
+    baseCount: 6,
+    waveStep: 1,
+    randomCount: 3,
+    maxCount: 24,
+    baseCapRatio: 0.32,
+    capRatioStep: 0.025,
+    maxRatio: 0.68,
+    weight: 1,
+    ...config,
+  });
+}
+
+const MANDATE_TARGET_SLOTS = Object.freeze([
+  mandateSlot({ id: 'people', group: 'people', label: 'People', minCount: 8, baseCount: 30, waveStep: 5.0, randomCount: 5, maxCount: 72, baseCapRatio: 0.34, maxRatio: 0.68, weight: 1.1, test: obj => obj.isPerson }),
+  mandateSlot({ id: 'moving_people', group: 'people', label: 'Moving People', minCount: 4, baseCount: 15, waveStep: 3.0, randomCount: 5, maxCount: 46, baseCapRatio: 0.28, maxRatio: 0.56, weight: 0.9, test: obj => obj.isPerson && obj.moving }),
+  mandateSlot({ id: 'standing_people', group: 'people', label: 'Standing People', minCount: 3, baseCount: 10, waveStep: 2.0, randomCount: 4, maxCount: 34, baseCapRatio: 0.34, maxRatio: 0.62, test: obj => obj.isPerson && !obj.moving }),
+  mandateSlot({ id: 'north_people', group: 'people', label: 'Northside People', minCount: 2, baseCount: 10, waveStep: 2.2, randomCount: 4, maxCount: 34, baseCapRatio: 0.36, maxRatio: 0.64, test: obj => obj.isPerson && obj.z < 0 }),
+  mandateSlot({ id: 'south_people', group: 'people', label: 'Southside People', minCount: 2, baseCount: 10, waveStep: 2.2, randomCount: 4, maxCount: 34, baseCapRatio: 0.36, maxRatio: 0.64, test: obj => obj.isPerson && obj.z >= 0 }),
+  mandateSlot({ id: 'east_people', group: 'people', label: 'Eastside People', minCount: 2, baseCount: 10, waveStep: 2.2, randomCount: 4, maxCount: 34, baseCapRatio: 0.36, maxRatio: 0.64, test: obj => obj.isPerson && obj.x >= 0 }),
+  mandateSlot({ id: 'west_people', group: 'people', label: 'Westside People', minCount: 2, baseCount: 10, waveStep: 2.2, randomCount: 4, maxCount: 34, baseCapRatio: 0.36, maxRatio: 0.64, test: obj => obj.isPerson && obj.x < 0 }),
+  mandateSlot({ id: 'center_people', group: 'people', label: 'People Near Center', minCount: 2, baseCount: 8, waveStep: 2.0, randomCount: 4, maxCount: 30, baseCapRatio: 0.36, maxRatio: 0.66, test: obj => obj.isPerson && Math.abs(obj.x) < currentArenaHalf * 0.45 && Math.abs(obj.z) < currentArenaHalf * 0.45 }),
+  mandateSlot({ id: 'edge_people', group: 'people', label: 'People Near Border', minCount: 2, baseCount: 8, waveStep: 2.0, randomCount: 4, maxCount: 30, baseCapRatio: 0.38, maxRatio: 0.68, test: obj => obj.isPerson && (Math.abs(obj.x) > currentArenaHalf * 0.55 || Math.abs(obj.z) > currentArenaHalf * 0.55) }),
+
+  mandateSlot({ id: 'props', group: 'props', label: 'Street Props', minCount: 12, baseCount: 42, waveStep: 5.5, randomCount: 6, maxCount: 82, baseCapRatio: 0.38, maxRatio: 0.68, weight: 1.05, test: obj => obj.isProp }),
+  mandateSlot({ id: 'hydrants', group: 'props', label: 'Hydrants', minCount: 1, baseCount: 5, waveStep: 1.2, randomCount: 3, maxCount: 16, baseCapRatio: 0.46, maxRatio: 0.76, test: obj => obj.mandateKind === 'hydrant' }),
+  mandateSlot({ id: 'cones', group: 'props', label: 'Traffic Cones', minCount: 1, baseCount: 6, waveStep: 1.5, randomCount: 4, maxCount: 20, baseCapRatio: 0.48, maxRatio: 0.78, test: obj => obj.mandateKind === 'cone' }),
+  mandateSlot({ id: 'trash_cans', group: 'props', label: 'Trash Cans', minCount: 1, baseCount: 5, waveStep: 1.2, randomCount: 3, maxCount: 18, baseCapRatio: 0.46, maxRatio: 0.76, test: obj => obj.mandateKind === 'trash' }),
+  mandateSlot({ id: 'mailboxes', group: 'props', label: 'Mailboxes', minCount: 1, baseCount: 4, waveStep: 1.0, randomCount: 3, maxCount: 14, baseCapRatio: 0.48, maxRatio: 0.78, test: obj => obj.mandateKind === 'mailbox' }),
+  mandateSlot({ id: 'benches', group: 'props', label: 'Benches', minCount: 1, baseCount: 3, waveStep: 1.0, randomCount: 2, maxCount: 12, baseCapRatio: 0.50, maxRatio: 0.82, test: obj => obj.mandateKind === 'bench' }),
+  mandateSlot({ id: 'lamps', group: 'props', label: 'Street Lamps', minCount: 1, baseCount: 5, waveStep: 1.2, randomCount: 3, maxCount: 18, baseCapRatio: 0.44, maxRatio: 0.74, test: obj => obj.mandateKind === 'lamp' }),
+  mandateSlot({ id: 'fire_gear', group: 'props', label: 'Fire Gear', minCount: 1, baseCount: 4, waveStep: 1.0, randomCount: 3, maxCount: 14, baseCapRatio: 0.48, maxRatio: 0.78, test: obj => obj.mandateKind === 'extinguisher' || obj.mandateKind === 'hydrant' }),
+  mandateSlot({ id: 'north_props', group: 'props', label: 'Northside Props', minCount: 3, baseCount: 12, waveStep: 2.4, randomCount: 4, maxCount: 34, baseCapRatio: 0.40, maxRatio: 0.70, test: obj => obj.isProp && obj.z < 0 }),
+  mandateSlot({ id: 'south_props', group: 'props', label: 'Southside Props', minCount: 3, baseCount: 12, waveStep: 2.4, randomCount: 4, maxCount: 34, baseCapRatio: 0.40, maxRatio: 0.70, test: obj => obj.isProp && obj.z >= 0 }),
+  mandateSlot({ id: 'east_props', group: 'props', label: 'Eastside Props', minCount: 3, baseCount: 12, waveStep: 2.4, randomCount: 4, maxCount: 34, baseCapRatio: 0.40, maxRatio: 0.70, test: obj => obj.isProp && obj.x >= 0 }),
+  mandateSlot({ id: 'west_props', group: 'props', label: 'Westside Props', minCount: 3, baseCount: 12, waveStep: 2.4, randomCount: 4, maxCount: 34, baseCapRatio: 0.40, maxRatio: 0.70, test: obj => obj.isProp && obj.x < 0 }),
+  mandateSlot({ id: 'center_props', group: 'props', label: 'Downtown Props', minCount: 2, baseCount: 9, waveStep: 2.0, randomCount: 4, maxCount: 30, baseCapRatio: 0.42, maxRatio: 0.72, test: obj => obj.isProp && Math.abs(obj.x) < currentArenaHalf * 0.45 && Math.abs(obj.z) < currentArenaHalf * 0.45 }),
+
+  mandateSlot({ id: 'trees', group: 'trees', label: 'Trees', minCount: 5, baseCount: 16, waveStep: 3.0, randomCount: 5, maxCount: 48, baseCapRatio: 0.34, maxRatio: 0.66, weight: 0.9, test: obj => obj.isTree }),
+  mandateSlot({ id: 'north_trees', group: 'trees', label: 'North Trees', minCount: 2, baseCount: 8, waveStep: 1.8, randomCount: 4, maxCount: 28, baseCapRatio: 0.40, maxRatio: 0.70, test: obj => obj.isTree && obj.z < 0 }),
+  mandateSlot({ id: 'park_trees', group: 'trees', label: 'Park Trees', minCount: 3, baseCount: 9, waveStep: 2.0, randomCount: 4, maxCount: 32, baseCapRatio: 0.36, maxRatio: 0.68, test: obj => obj.isTree && Math.abs(obj.x) < currentArenaHalf * 0.72 && Math.abs(obj.z) < currentArenaHalf * 0.72 }),
+  mandateSlot({ id: 'south_trees', group: 'trees', label: 'South Trees', minCount: 2, baseCount: 8, waveStep: 1.8, randomCount: 4, maxCount: 28, baseCapRatio: 0.40, maxRatio: 0.70, test: obj => obj.isTree && obj.z >= 0 }),
+  mandateSlot({ id: 'east_trees', group: 'trees', label: 'East Trees', minCount: 2, baseCount: 8, waveStep: 1.8, randomCount: 4, maxCount: 28, baseCapRatio: 0.40, maxRatio: 0.70, test: obj => obj.isTree && obj.x >= 0 }),
+  mandateSlot({ id: 'west_trees', group: 'trees', label: 'West Trees', minCount: 2, baseCount: 8, waveStep: 1.8, randomCount: 4, maxCount: 28, baseCapRatio: 0.40, maxRatio: 0.70, test: obj => obj.isTree && obj.x < 0 }),
+  mandateSlot({ id: 'edge_trees', group: 'trees', label: 'Edge Trees', minCount: 2, baseCount: 7, waveStep: 1.7, randomCount: 4, maxCount: 26, baseCapRatio: 0.42, maxRatio: 0.72, test: obj => obj.isTree && (Math.abs(obj.x) > currentArenaHalf * 0.55 || Math.abs(obj.z) > currentArenaHalf * 0.55) }),
+
+  mandateSlot({ id: 'cars', group: 'cars', label: 'Cars', minCount: 2, baseCount: 6, waveStep: 1.35, randomCount: 3, maxCount: 16, baseCapRatio: 0.24, maxRatio: 0.50, weight: 1.0, test: obj => obj.isCar }),
+  mandateSlot({ id: 'moving_cars', group: 'cars', label: 'Moving Cars', minCount: 1, baseCount: 4, waveStep: 1.1, randomCount: 3, maxCount: 14, baseCapRatio: 0.26, maxRatio: 0.52, weight: 1.05, test: obj => obj.isCar && obj.moving && !obj.crashed }),
+  mandateSlot({ id: 'parked_cars', group: 'cars', label: 'Parked Cars', minCount: 1, baseCount: 2, waveStep: 0.7, randomCount: 2, maxCount: 8, baseCapRatio: 0.40, maxRatio: 0.80, test: obj => obj.isCar && !obj.moving }),
+  mandateSlot({ id: 'northbound_cars', group: 'cars', label: 'Northbound Cars', minCount: 1, baseCount: 2, waveStep: 0.8, randomCount: 2, maxCount: 8, baseCapRatio: 0.42, maxRatio: 0.82, test: obj => obj.isCar && obj.direction === 'N' }),
+  mandateSlot({ id: 'southbound_cars', group: 'cars', label: 'Southbound Cars', minCount: 1, baseCount: 2, waveStep: 0.8, randomCount: 2, maxCount: 8, baseCapRatio: 0.42, maxRatio: 0.82, test: obj => obj.isCar && obj.direction === 'S' }),
+  mandateSlot({ id: 'east_west_cars', group: 'cars', label: 'Cross-Town Cars', minCount: 1, baseCount: 3, waveStep: 0.9, randomCount: 2, maxCount: 10, baseCapRatio: 0.42, maxRatio: 0.82, test: obj => obj.isCar && (obj.direction === 'E' || obj.direction === 'W') }),
+  mandateSlot({ id: 'north_cars', group: 'cars', label: 'Northside Cars', minCount: 1, baseCount: 3, waveStep: 0.9, randomCount: 2, maxCount: 10, baseCapRatio: 0.40, maxRatio: 0.76, test: obj => obj.isCar && obj.z < 0 }),
+  mandateSlot({ id: 'south_cars', group: 'cars', label: 'Southside Cars', minCount: 1, baseCount: 3, waveStep: 0.9, randomCount: 2, maxCount: 10, baseCapRatio: 0.40, maxRatio: 0.76, test: obj => obj.isCar && obj.z >= 0 }),
+  mandateSlot({ id: 'east_cars', group: 'cars', label: 'Eastside Cars', minCount: 1, baseCount: 3, waveStep: 0.9, randomCount: 2, maxCount: 10, baseCapRatio: 0.40, maxRatio: 0.76, test: obj => obj.isCar && obj.x >= 0 }),
+  mandateSlot({ id: 'west_cars', group: 'cars', label: 'Westside Cars', minCount: 1, baseCount: 3, waveStep: 0.9, randomCount: 2, maxCount: 10, baseCapRatio: 0.40, maxRatio: 0.76, test: obj => obj.isCar && obj.x < 0 }),
+
+  mandateSlot({ id: 'buildings', group: 'buildings', label: 'Buildings', minCount: 8, baseCount: 28, waveStep: 4.5, randomCount: 5, maxCount: 72, baseCapRatio: 0.30, maxRatio: 0.62, test: obj => obj.isBuilding }),
+  mandateSlot({ id: 'shops', group: 'buildings', label: 'Shops', minCount: 4, baseCount: 16, waveStep: 3.2, randomCount: 4, maxCount: 48, baseCapRatio: 0.34, maxRatio: 0.66, weight: 0.9, test: obj => obj.isBuilding && obj.buildingSize === 'small' }),
+  mandateSlot({ id: 'offices', group: 'buildings', label: 'Offices', minCount: 5, baseCount: 24, waveStep: 4.5, randomCount: 5, maxCount: 62, baseCapRatio: 0.32, maxRatio: 0.64, weight: 0.95, test: obj => obj.isBuilding && obj.buildingSize === 'mid' }),
+  mandateSlot({ id: 'towers', group: 'buildings', label: 'Towers', minCount: 4, baseCount: 22, waveStep: 4.0, randomCount: 5, maxCount: 66, baseCapRatio: 0.30, maxRatio: 0.58, weight: 0.95, test: obj => obj.isBuilding && obj.buildingSize === 'large' }),
+  mandateSlot({ id: 'government', group: 'buildings', label: 'Government Blocks', minCount: 2, baseCount: 8, waveStep: 1.7, randomCount: 3, maxCount: 20, baseCapRatio: 0.34, maxRatio: 0.70, test: obj => obj.isGovernmentBuildingPiece || obj.buildingSize === 'government' }),
+  mandateSlot({ id: 'roof_chunks', group: 'buildings', label: 'Roof Chunks', minCount: 2, baseCount: 8, waveStep: 2.0, randomCount: 3, maxCount: 28, baseCapRatio: 0.40, maxRatio: 0.72, test: obj => obj.isBuilding && obj.stackIndex >= (obj.stackFloorCount || 1) - 1 }),
+  mandateSlot({ id: 'upper_floors', group: 'buildings', label: 'Upper Floors', minCount: 3, baseCount: 12, waveStep: 2.5, randomCount: 4, maxCount: 40, baseCapRatio: 0.34, maxRatio: 0.64, test: obj => obj.isBuilding && obj.stackIndex >= Math.max(1, Math.floor((obj.stackFloorCount || 1) * 0.55)) }),
+  mandateSlot({ id: 'north_buildings', group: 'buildings', label: 'North Buildings', minCount: 3, baseCount: 12, waveStep: 2.6, randomCount: 4, maxCount: 38, baseCapRatio: 0.36, maxRatio: 0.66, test: obj => obj.isBuilding && obj.z < 0 }),
+  mandateSlot({ id: 'south_buildings', group: 'buildings', label: 'South Buildings', minCount: 3, baseCount: 12, waveStep: 2.6, randomCount: 4, maxCount: 38, baseCapRatio: 0.36, maxRatio: 0.66, test: obj => obj.isBuilding && obj.z >= 0 }),
+  mandateSlot({ id: 'east_buildings', group: 'buildings', label: 'East Buildings', minCount: 3, baseCount: 12, waveStep: 2.6, randomCount: 4, maxCount: 38, baseCapRatio: 0.36, maxRatio: 0.66, test: obj => obj.isBuilding && obj.x >= 0 }),
+  mandateSlot({ id: 'west_buildings', group: 'buildings', label: 'West Buildings', minCount: 3, baseCount: 12, waveStep: 2.6, randomCount: 4, maxCount: 38, baseCapRatio: 0.36, maxRatio: 0.66, test: obj => obj.isBuilding && obj.x < 0 }),
+  mandateSlot({ id: 'center_buildings', group: 'buildings', label: 'Downtown Buildings', minCount: 3, baseCount: 10, waveStep: 2.4, randomCount: 4, maxCount: 34, baseCapRatio: 0.38, maxRatio: 0.68, test: obj => obj.isBuilding && Math.abs(obj.x) < currentArenaHalf * 0.45 && Math.abs(obj.z) < currentArenaHalf * 0.45 }),
+  mandateSlot({ id: 'edge_buildings', group: 'buildings', label: 'Edge Buildings', minCount: 3, baseCount: 10, waveStep: 2.4, randomCount: 4, maxCount: 34, baseCapRatio: 0.38, maxRatio: 0.68, test: obj => obj.isBuilding && (Math.abs(obj.x) > currentArenaHalf * 0.55 || Math.abs(obj.z) > currentArenaHalf * 0.55) }),
+  mandateSlot({ id: 'skyscraper_chunks', group: 'buildings', label: 'Skyscraper Chunks', minCount: 3, baseCount: 12, waveStep: 2.6, randomCount: 4, maxCount: 42, baseCapRatio: 0.34, maxRatio: 0.64, test: obj => obj.isSkyscraperChunk }),
+
+  mandateSlot({ id: 'rival_holes', group: 'rivals', label: 'Rival Holes', verb: 'Devour', action: 'rival', minCount: 1, baseCount: 1, waveStep: 0.22, randomCount: 1, maxCount: 3, baseCapRatio: 0.40, maxRatio: 0.80, weight: 0.55, availability: () => holes.filter(h => h.alive && !h.isPlayer).length, test: h => h && !h.isPlayer }),
+  mandateSlot({ id: 'soldiers', group: 'military', label: 'Soldiers', action: 'soldier', minCount: 1, baseCount: 3, waveStep: 1.2, randomCount: 2, maxCount: 14, baseCapRatio: 0.35, maxRatio: 0.62, minWave: 2, availability: estimateMandateSoldierSupply, soldierTest: s => getUnitType(s) === 'soldier' && !s.isArmyBoss }),
+  mandateSlot({ id: 'military_units', group: 'military', label: 'Military Units', action: 'soldier', minCount: 1, baseCount: 3, waveStep: 1.4, randomCount: 2, maxCount: 16, baseCapRatio: 0.35, maxRatio: 0.64, minWave: 2, availability: estimateMandateMilitarySupply, soldierTest: s => !s.isArmyBoss }),
+  mandateSlot({ id: 'boss_units', group: 'military', label: 'Boss Units', action: 'soldier', minCount: 1, baseCount: 1, waveStep: 0.12, randomCount: 0, maxCount: 1, baseCapRatio: 1, maxRatio: 1, minWave: 5, weight: 0.38, availability: () => shouldWaveSpawnArmyBoss(currentWave) ? 1 : 0, soldierTest: s => !!s.isArmyBoss }),
+]);
+const MANDATE_PRESSURE = Object.freeze({
+  endlessSoftCapWave: 10,
+  districtPoolSize: 30,
+});
+const MANDATE_REWARD = Object.freeze({
+  speedMultiplier: 1.28,
+  bulletDamageMultiplier: 0.72,
+  minDurationMs: 1200,
+});
+
+function resetMandateState() {
+  mandateTargets = [];
+  mandateCollected = 0;
+  mandateComplete = false;
+  updateMandateHUD();
+}
+
+function isMandateSatisfied() {
+  return mandateTargets.length <= 0 || mandateComplete;
+}
+
+function getMandateRewardDurationMs() {
+  if (isGameState(GAME_STATES.WAVE_TRANSITION)) return MANDATE_REWARD.minDurationMs;
+  if (isWaveBasedMode() || selectedMode === 'timed') {
+    return Math.max(MANDATE_REWARD.minDurationMs, Math.ceil(Math.max(0, gameTime) * 1000));
+  }
+  return 12000;
+}
+
+function applyMandateRewardBurst(h) {
+  if (!h?.isPlayer || !h.effects) return;
+  const now = getGameplayNow();
+  const rewardUntil = now + getMandateRewardDurationMs();
+  h.effects.speedMultiplier = Math.max(h.effects.speedMultiplier || 1, MANDATE_REWARD.speedMultiplier);
+  h.effects.speedBoostUntil = Math.max(h.effects.speedBoostUntil || 0, rewardUntil);
+  h.effects.speedSource = 'mandate';
+  h.effects.bulletDamageMultiplier = Math.min(h.effects.bulletDamageMultiplier || 1, MANDATE_REWARD.bulletDamageMultiplier);
+  h.effects.bulletShieldUntil = Math.max(h.effects.bulletShieldUntil || 0, rewardUntil);
+  h.effects.bulletShieldSource = 'mandate';
+  h.unitClearPulseUntil = Math.max(h.unitClearPulseUntil || 0, now + 1800);
+  h.unitClearGlowUntil = Math.max(h.unitClearGlowUntil || 0, rewardUntil);
+  h.unitClearShakeUntil = Math.max(h.unitClearShakeUntil || 0, now + 620);
+  triggerUnitClearVisuals(h);
+  h.unitClearGlowUntil = Math.max(h.unitClearGlowUntil || 0, rewardUntil);
+  updateActiveEffectsUi();
+}
+
+function isMandateSelectableObject(obj) {
+  return !!obj && !obj.consumed && !obj.falling && !obj.airDropping;
+}
+
+function estimateMandateSoldierSupply() {
+  const cfg = getWaveConfig(currentWave);
+  if (!cfg?.soldiersEnabled && !shouldWaveSpawnArmyBoss(currentWave)) return 0;
+  const avgCount = Math.max(0, Math.round(((cfg.soldierCountMin || 0) + (cfg.soldierCountMax || 0)) / 2));
+  if (avgCount <= 0) return 0;
+  const avgInterval = Math.max(1, ((cfg.spawnIntervalMin || 10) + (cfg.spawnIntervalMax || 12)) / 2);
+  const possibleDrops = Math.max(1, Math.floor((cfg.duration || gameTime || 60) / avgInterval));
+  return Math.max(avgCount, Math.min(avgCount * possibleDrops, (cfg.soldierCountMax || avgCount) * 5));
+}
+
+function estimateMandateMilitarySupply() {
+  return estimateMandateSoldierSupply() + (shouldWaveSpawnArmyBoss(currentWave) ? 1 : 0);
+}
+
+function getMandateTargetCountForWave() {
+  const wave = Math.max(1, currentWave || 1);
+  const tierMax = Math.min(MANDATE_COUNT, 1 + Math.floor((wave - 1) / 5));
+  return tierMax <= 1 ? 1 : randomInt(1, tierMax);
+}
+
+function getMandateRequiredCount(slot, availableCount) {
+  const wave = Math.max(1, currentWave || 1);
+  const effectiveWave = Math.min(wave, MANDATE_PRESSURE.endlessSoftCapWave);
+  const waveCount = (slot.baseCount || slot.minCount || 1) + (effectiveWave - 1) * (slot.waveStep || 0);
+  const ceiling = Math.max(slot.minCount || 1, Math.ceil(waveCount + Math.random() * (slot.randomCount || 0)));
+  const pressureRatio = Math.min(
+    slot.maxRatio || 1,
+    (slot.baseCapRatio || slot.maxRatio || 1) + (effectiveWave - 1) * (slot.capRatioStep || 0)
+  );
+  const inventoryCap = Math.max(1, Math.ceil(availableCount * pressureRatio));
+  const slotCap = Math.max(1, slot.maxCount || inventoryCap);
+  const cap = Math.min(availableCount, inventoryCap, slotCap);
+  const floor = Math.min(cap, Math.max(1, slot.minCount || 1));
+  const desired = randomInt(floor, Math.max(floor, Math.min(cap, ceiling)));
+  return Math.max(floor, Math.min(cap, desired));
+}
+
+function getMandateAvailableCount(slot) {
+  if (typeof slot.availability === 'function') return Math.max(0, Math.floor(slot.availability()));
+  return objects.filter(obj => isMandateSelectableObject(obj) && slot.test(obj)).length;
+}
+
+function weightedShuffleMandateSlots(slots) {
+  return [...slots]
+    .map(slot => ({ slot, rank: Math.random() / Math.max(0.1, slot.weight || 1) }))
+    .sort((a, b) => a.rank - b.rank)
+    .map(entry => entry.slot);
+}
+
+function selectMandateTargets() {
+  mandateTargets = [];
+  mandateCollected = 0;
+  mandateComplete = false;
+
+  const wave = Math.max(1, currentWave || 1);
+  const eligibleSlots = weightedShuffleMandateSlots(MANDATE_TARGET_SLOTS)
+    .filter(slot => wave >= (slot.minWave || 1))
+    .map(slot => ({ slot, availableCount: getMandateAvailableCount(slot) }))
+    .filter(entry => entry.availableCount > 0);
+  const districtPool = eligibleSlots.slice(0, MANDATE_PRESSURE.districtPoolSize);
+  const targetCount = Math.min(getMandateTargetCountForWave(), districtPool.length, MANDATE_COUNT);
+  const usedGroups = new Set();
+
+  for (const entry of districtPool) {
+    if (mandateTargets.length >= targetCount) break;
+    const { slot, availableCount } = entry;
+    if (slot.group && usedGroups.has(slot.group)) continue;
+    if (slot.group) usedGroups.add(slot.group);
+    mandateTargets.push({
+      id: slot.id,
+      label: slot.label,
+      verb: slot.verb || 'Eat',
+      action: slot.action || 'eat',
+      required: getMandateRequiredCount(slot, availableCount),
+      progress: 0,
+      failed: false,
+      test: slot.test,
+      soldierTest: slot.soldierTest,
+    });
+  }
+
+  for (const entry of districtPool) {
+    if (mandateTargets.length >= targetCount) break;
+    const { slot, availableCount } = entry;
+    if (mandateTargets.some(objective => objective.id === slot.id)) continue;
+    mandateTargets.push({
+      id: slot.id,
+      label: slot.label,
+      verb: slot.verb || 'Eat',
+      action: slot.action || 'eat',
+      required: getMandateRequiredCount(slot, availableCount),
+      progress: 0,
+      failed: false,
+      test: slot.test,
+      soldierTest: slot.soldierTest,
+    });
+  }
+
+  if (mandateTargets.length !== targetCount) {
+    console.warn(`MANDATE CATEGORY SHORTFALL: selected ${mandateTargets.length}/${targetCount}`);
+  }
+  updateMandateHUD();
+}
+
+function applyMandateCompletionReward(h) {
+  if (!h?.isPlayer || mandateComplete || mandateTargets.length <= 0) return;
+  mandateCollected = mandateTargets.filter(objective => objective.progress >= objective.required && !objective.failed).length;
+  if (mandateCollected < mandateTargets.length) return;
+  mandateComplete = true;
+  playUnitClearStinger();
+  triggerHaptic('mandateComplete');
+  showEventBanner('MANDATE PASSED', 2400);
+  flashConsumed('MANDATE PASSED', new THREE.Vector3(h.x, 0, h.z));
+  maybeUnlockPrismOrbit(h);
+}
+
+function recordMandateProgress(h, source, action = 'eat') {
+  if (!h?.isPlayer || mandateComplete || !source || mandateTargets.length <= 0) return;
+  let changed = false;
+  for (const objective of mandateTargets) {
+    if (objective.action !== action || objective.progress >= objective.required) continue;
+    const matches = action === 'soldier'
+      ? (typeof objective.soldierTest === 'function' ? objective.soldierTest(source) : true)
+      : (typeof objective.test === 'function' ? objective.test(source) : true);
+    if (!matches) continue;
+    const wasComplete = objective.progress >= objective.required;
+    objective.progress = Math.min(objective.required, objective.progress + 1);
+    if (!wasComplete && objective.progress >= objective.required) {
+      playMandateRowTick();
+      triggerHaptic('runGoal');
+      flashConsumed(`${objective.label} CLEARED`, new THREE.Vector3(h.x, 0, h.z));
+    }
+    changed = true;
+  }
+  if (!changed) return;
+  applyMandateCompletionReward(h);
+  updateMandateHUD();
+}
+
+function recordMandateTargetConsume(h, obj) {
+  recordMandateProgress(h, obj, 'eat');
+}
+
+function recordMandateRivalHoleConsume(h, eaten) {
+  recordMandateProgress(h, eaten, 'rival');
+}
+
+function recordMandateSoldierConsume(h, soldier) {
+  recordMandateProgress(h, soldier, 'soldier');
+}
+
+let mandateWarningWasActive = false;
+let mandateWarningArrowTimer = null;
+let mandateHudWasComplete = false;
+let mandateSuccessPulseTimer = null;
+
+function removeMandateWarningArrow() {
+  document.getElementById('mandate-warning-arrow')?.remove();
+  if (mandateWarningArrowTimer) clearTimeout(mandateWarningArrowTimer);
+  mandateWarningArrowTimer = null;
+}
+
+function showMandateWarningArrow() {
+  removeMandateWarningArrow();
+  const rect = mandatePanelEl.getBoundingClientRect();
+  const arrow = document.createElement('div');
+  arrow.id = 'mandate-warning-arrow';
+  arrow.setAttribute('aria-hidden', 'true');
+  arrow.style.setProperty('--mandate-arrow-x', `${Math.max(92, rect.left - 70)}px`);
+  arrow.style.setProperty('--mandate-arrow-y', `${Math.min(window.innerHeight - 92, rect.bottom + 70)}px`);
+  arrow.innerHTML = '<span>↗</span>';
+  document.body.appendChild(arrow);
+  mandateWarningArrowTimer = setTimeout(removeMandateWarningArrow, 7200);
+}
+
+function startMandateSuccessPulse() {
+  document.body.classList.remove('mandate-screen-warning');
+  document.body.classList.add('mandate-screen-success');
+  mandatePanelEl.classList.remove('mandate-warn');
+  mandatePanelEl.classList.add('mandate-success-pulse');
+  removeMandateWarningArrow();
+  if (mandateSuccessPulseTimer) clearTimeout(mandateSuccessPulseTimer);
+  mandateSuccessPulseTimer = setTimeout(() => {
+    document.body.classList.remove('mandate-screen-success');
+    mandatePanelEl?.classList.remove('mandate-success-pulse');
+    mandateSuccessPulseTimer = null;
+  }, 4000);
+}
+
+function updateMandateHUD() {
+  if (!mandatePanelEl || !mandateDotsEl || !mandateLabelEl) return;
+  mandatePanelEl.style.display = isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION) ? '' : 'none';
+  const deadlineWarningWasVisible = mandateWarningWasActive || document.body.classList.contains('mandate-screen-warning') || mandatePanelEl.classList.contains('mandate-warn');
+
+  if (mandateDotsEl.children.length !== mandateTargets.length) {
+    mandateDotsEl.innerHTML = '';
+    for (let i = 0; i < mandateTargets.length; i++) {
+      const row = document.createElement('div');
+      row.className = 'mandate-target';
+      row.id = `mandate-target-${i}`;
+      const dot = document.createElement('div');
+      dot.className = 'mandate-dot';
+      dot.id = `mandate-dot-${i}`;
+      const label = document.createElement('span');
+      label.className = 'mandate-target-label';
+      label.textContent = '';
+      const markerCopy = document.createElement('span');
+      markerCopy.className = 'mandate-marker-copy';
+      row.appendChild(dot);
+      row.appendChild(label);
+      row.appendChild(markerCopy);
+      mandateDotsEl.appendChild(row);
+    }
+  }
+
+  mandateTargets.forEach((objective, i) => {
+    const dot = document.getElementById(`mandate-dot-${i}`);
+    const row = document.getElementById(`mandate-target-${i}`);
+    const label = row?.querySelector('.mandate-target-label');
+    const progress = row?.querySelector('.mandate-marker-copy');
+    if (!dot || !row || !label || !progress) return;
+    const collected = objective.progress >= objective.required && !objective.failed;
+    dot.classList.toggle('collected', collected);
+    row.classList.toggle('collected', collected);
+    row.classList.toggle('failed', !!objective.failed);
+    label.textContent = `${objective.verb} ${objective.label}`;
+    progress.textContent = `${objective.progress}/${objective.required}`;
+  });
+
+  const completedTargetCount = mandateTargets.filter(objective => objective.progress >= objective.required && !objective.failed).length;
+  mandateCollected = completedTargetCount;
+  const remaining = Math.max(0, mandateTargets.length - completedTargetCount);
+  const isComplete = remaining === 0 && mandateTargets.length > 0;
+  if (isComplete) mandateComplete = true;
+  mandateLabelEl.textContent = remaining === 0 && mandateTargets.length > 0 ? 'Complete!' : `${remaining || MANDATE_COUNT} left`;
+  mandatePanelEl.classList.toggle('mandate-complete', isComplete);
+  if (isComplete && !mandateHudWasComplete && deadlineWarningWasVisible) startMandateSuccessPulse();
+  if (!isComplete && mandateHudWasComplete) {
+    document.body.classList.remove('mandate-screen-success');
+    mandatePanelEl.classList.remove('mandate-success-pulse');
+  }
+  mandateHudWasComplete = isComplete;
+  const warnActive = remaining > 0 && gameTime > 0 && gameTime <= 15 && !mandateComplete;
+  if (warnActive && !mandateWarningWasActive) {
+    playMandateDeadlineWarning();
+    playMandateArrowFlashAlerts(1.45);
+    document.body.classList.add('mandate-screen-warning');
+    showMandateWarningArrow();
+  }
+  mandateWarningWasActive = warnActive;
+  mandatePanelEl.classList.toggle('mandate-warn', warnActive);
+  if (!warnActive && !isComplete) document.body.classList.remove('mandate-screen-warning');
+}
+
+function markMandateFailureRows() {
+  for (const objective of mandateTargets) {
+    if (objective.progress < objective.required) objective.failed = true;
+  }
+  updateMandateHUD();
+}
+
+function triggerMandateFailureGameOver() {
+  if (isMandateSatisfied()) return false;
+  const remaining = Math.max(0, mandateTargets.length - mandateCollected);
+  console.log(`MANDATE FAILED - ${remaining} target(s) remaining`);
+  markMandateFailureRows();
+  pendingPlayerEndReason = 'mandate_failed';
+  triggerHaptic('mandateFail');
+  showEventBanner('MANDATE FAILED: THE LOCKDOWN CLOSES.', 4200);
+  endGame();
+  return true;
 }
 
 // =========================================================================
@@ -4233,9 +6632,14 @@ const STARTER_BUFF_PATTERNS = Object.freeze([
 
 let loreUnlocked = loadIdSet(LORE_STORAGE_KEY, LORE_STARTING_UNLOCKS);
 let achievementUnlocked = loadIdSet(ACHIEVEMENT_STORAGE_KEY, []);
+for (const [cosmeticId, reward] of Object.entries(COSMETIC_REWARDS)) {
+  if (achievementUnlocked.has(reward.achievement)) grantCosmetic(cosmeticId, false);
+}
 let selectedLoreDocId = LORE_STARTING_UNLOCKS[0];
 let pendingLoreDropId = '';
 let roundLoreState = null;
+let lastLoreTrackingUpdateAt = 0;
+const LORE_TRACKING_INTERVAL_MS = 250;
 
 function loadIdSet(key, defaults = []) {
   try {
@@ -4307,9 +6711,10 @@ function unlockAchievement(id, announce = true) {
   }
   if (announce && isNew) {
     const headline = def.active ? `BUFF: ${def.playerName}` : `ACHIEVEMENT: ${def.playerName}`;
-    showStagePop(def.active ? 'BUFF ACTIVE' : 'ACHIEVEMENT', 2600);
     showEventBanner(`${headline} - ${def.effectText}`, 6200);
   }
+  const cosmeticId = Object.keys(COSMETIC_REWARDS).find(key => COSMETIC_REWARDS[key].achievement === id);
+  if (cosmeticId) grantCosmetic(cosmeticId, isNew);
   return isNew;
 }
 
@@ -4413,6 +6818,7 @@ function renderLoreDocument(docId) {
 }
 
 function startLoreRunTracking() {
+  lastLoreTrackingUpdateAt = 0;
   roundLoreState = {
     consumed: 0,
     firstEatChecked: false,
@@ -4496,23 +6902,7 @@ function getLoreSpeedMultiplier(h) {
 }
 
 function getLoreScoreMultiplier(h, obj) {
-  if (!h.isPlayer || !roundLoreState) return 1;
-  const category = getObjectLoreCategory(obj);
-  let mult = 1;
-  if (category === 'person' && h.loreFirstBiteActive) mult *= 1.15;
-  if (getLoreTimedBuffRemaining('tree_hugger') > 0 && category === 'tree') mult *= 2;
-  if (getLoreTimedBuffRemaining('quiet_block') > 0) mult *= 1.5;
-  if (getLoreTimedBuffRemaining('linden_street') > 0 && category === 'building') mult *= 1.35;
-  if (getLoreComboState('block_party')) mult *= 1.25;
-  if (getLoreComboState('too_loud') && category === 'building') mult *= 1.25;
-  if (roundLoreState.quietReady) {
-    mult *= 10;
-    roundLoreState.quietReady = false;
-    roundLoreState.quietAnnounced = false;
-    unlockAchievement('the_quiet');
-    showEventBanner('BUFF USED: Quiet Bite - this bite scored x10.', 5200);
-  }
-  return mult;
+  return 1;
 }
 
 function handleLoreConsume(h, obj) {
@@ -4574,7 +6964,6 @@ function handleLoreConsume(h, obj) {
       unlockAchievement('linden_street');
       const lindenWasNew = activateLoreTimedBuff('linden_street', ACHIEVEMENT_DEFS.linden_street.durationMs);
       if (lindenWasNew) {
-        h.score += 180;
         h.bonusRadius = (h.bonusRadius || 0) + 0.28;
         h.targetRadius = radiusFromScore(h);
         showEventBanner('ACTIVE BUFF: Building Chain - buildings score more for 12 seconds. Combo risk: Crowd Magnet slows you.', 6800);
@@ -4586,11 +6975,14 @@ function handleLoreConsume(h, obj) {
 
 function updateLoreRunTracking() {
   if (!running || !player || !roundLoreState) return;
+  const now = performance.now();
+  if (now - lastLoreTrackingUpdateAt < LORE_TRACKING_INTERVAL_MS) return;
+  lastLoreTrackingUpdateAt = now;
   roundLoreState.maxPlayerRadius = Math.max(roundLoreState.maxPlayerRadius, player.radius, player.targetRadius || player.radius);
   const ranked = [...holes].sort((a, b) => b.score - a.score);
   const playerRank = Math.max(1, ranked.findIndex(h => h.isPlayer) + 1);
   roundLoreState.bestPlayerRank = Math.min(roundLoreState.bestPlayerRank, playerRank);
-  if (!roundLoreState.quietReady && performance.now() - roundLoreState.lastEatAt >= 30000) {
+  if (!roundLoreState.quietReady && now - roundLoreState.lastEatAt >= 30000) {
     roundLoreState.quietReady = true;
     if (!roundLoreState.quietAnnounced) {
       roundLoreState.quietAnnounced = true;
@@ -4613,6 +7005,7 @@ function primeAudioFromStartGesture() {
       music.ctx.resume().catch(err => console.warn('resume failed:', err));
     }
     startMusic();
+    scheduleAudioBankWarmup(0);
   }
 
 function syncTitleAudioToGameState() {
@@ -4721,32 +7114,60 @@ const audioBank = {
   biteChew: [null], // single-sample slot; wrapped in array for decodeSample compatibility
 };
 
-// Decode a base64 MP3 into an AudioBuffer, push to given bank array at given index
-function decodeSample(b64, bank, idx) {
+// Decode embedded MP3 data asynchronously so user gestures never spend seconds
+// converting base64 strings on the main thread.
+async function decodeSample(b64, bank, idx) {
   try {
-    const bin = atob(b64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    music.ctx.decodeAudioData(bytes.buffer.slice(0))
-      .then(buf => { bank[idx] = buf; })
-      .catch(err => { console.warn('Audio decode failed:', err); });
+    const response = await fetch(`data:audio/mpeg;base64,${b64}`);
+    const encodedAudio = await response.arrayBuffer();
+    bank[idx] = await music.ctx.decodeAudioData(encodedAudio);
   } catch (err) { console.warn('Audio load failed:', err); }
+}
+
+function awardEndlessWaveLoreDrop() {
+  if (!endlessMode || !roundLoreState) return false;
+  const nextDoc = pickNextLoreDrop();
+  if (!nextDoc) return false;
+  roundLoreState.endlessLorePity = (roundLoreState.endlessLorePity || 0) + 1;
+  const chance = Math.min(0.72, 0.28 + (roundLoreState.endlessLorePity - 1) * 0.16);
+  if (roundLoreState.endlessLorePity < 3 && Math.random() > chance) return false;
+  roundLoreState.endlessLorePity = 0;
+  return unlockLoreDoc(nextDoc, `Endless Wave ${currentWave}`);
 }
 
 // Load all banks — called from initMusicContext
 let audioBanksLoaded = false;
+let audioBankWarmupTimer = null;
 const activeNonMusicSources = new Set();
-function loadAudioBanks() {
+
+function scheduleAudioBankWarmup(delayMs = 2500) {
+  if (audioBanksLoaded || audioBankWarmupTimer || !music.ctx) return;
+  audioBankWarmupTimer = setTimeout(() => {
+    audioBankWarmupTimer = null;
+    initializeMusicReverb();
+    void loadAudioBanks();
+  }, delayMs);
+}
+
+async function loadAudioBanks() {
   if (audioBanksLoaded || !music.ctx) return;
   audioBanksLoaded = true;
-  SCREAM_SAMPLES_B64.forEach((b, i) => decodeSample(b, audioBank.screams, i));
-  TREE_SAMPLES_B64.forEach((b, i) => decodeSample(b, audioBank.trees, i));
-  CAR_SAMPLES_B64.forEach((b, i) => decodeSample(b, audioBank.cars, i));
-  BUILDING_SAMPLES_B64.forEach((b, i) => decodeSample(b, audioBank.buildings, i));
-  METAL_SAMPLES_B64.forEach((b, i) => decodeSample(b, audioBank.metal, i));
-  GUNSHOT_SAMPLES_B64.forEach((b, i) => decodeSample(b, audioBank.gunshots, i));
-  SOLDIER_VOICE_SAMPLES_B64.forEach((b, i) => decodeSample(b, audioBank.soldierVoices, i));
-  decodeSample(BITE_CHEW_B64, audioBank.biteChew, 0);
+  const banks = [
+    [SCREAM_SAMPLES_B64, audioBank.screams],
+    [TREE_SAMPLES_B64, audioBank.trees],
+    [CAR_SAMPLES_B64, audioBank.cars],
+    [BUILDING_SAMPLES_B64, audioBank.buildings],
+    [METAL_SAMPLES_B64, audioBank.metal],
+    [GUNSHOT_SAMPLES_B64, audioBank.gunshots],
+    [SOLDIER_VOICE_SAMPLES_B64, audioBank.soldierVoices],
+    [[BITE_CHEW_B64], audioBank.biteChew],
+  ];
+  for (const [samples, bank] of banks) {
+    for (let i = 0; i < samples.length; i++) {
+      await decodeSample(samples[i], bank, i);
+      await new Promise(resolve => setTimeout(resolve, 0));
+    }
+  }
 }
 
 // Generate a voice profile for a person (gender + panic + sample + pitch wobble)
@@ -4808,7 +7229,7 @@ function stopActiveNonMusicSources() {
 function playScream(voice, volumeScale = 1.0) {
   initMusicContext();
   if (!music.ctx) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const buf = audioBank.screams[voice.sampleIdx];
   if (!buf) return; // not decoded yet — silent this one
   playSample(buf, voice.playbackRate, voice.gain * volumeScale, 0.12);
@@ -4818,7 +7239,7 @@ function playScream(voice, volumeScale = 1.0) {
 function playTreeSound(volumeScale = 1.0) {
   initMusicContext();
   if (!music.ctx) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   // Pick a random tree sample that has decoded
   const loaded = audioBank.trees.filter(b => b);
   if (loaded.length === 0) return;
@@ -4833,7 +7254,7 @@ function playTreeSound(volumeScale = 1.0) {
 function playCarSound(volumeScale = 1.0) {
   initMusicContext();
   if (!music.ctx) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.cars.filter(b => b);
   if (loaded.length === 0) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
@@ -4847,7 +7268,7 @@ function playCarSound(volumeScale = 1.0) {
 function playBuildingSound(buildingSize, volumeScale = 1.0) {
   initMusicContext();
   if (!music.ctx) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.buildings.filter(b => b);
   if (loaded.length === 0) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
@@ -4867,7 +7288,7 @@ function playBuildingSound(buildingSize, volumeScale = 1.0) {
 function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId = 'global') {
   initMusicContext();
   if (!music.ctx) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.buildings.filter(b => b);
   if (loaded.length === 0) return;
   const now = performance.now();
@@ -4910,7 +7331,7 @@ function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId
 function playSkyscraperChunkSound(volumeScale = 1.0, obj = null) {
   initMusicContext();
   if (!music.ctx) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.buildings.filter(b => b);
   if (loaded.length === 0) return;
   const now = performance.now();
@@ -4946,7 +7367,7 @@ function playSkyscraperChunkSound(volumeScale = 1.0, obj = null) {
 function playVoxelCubeImpactSound(obj, volumeScale = 1.0) {
   initMusicContext();
   if (!music.ctx) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.buildings.filter(b => b);
   if (loaded.length === 0) return;
   const stackId = obj?.stackId || 'single';
@@ -4987,7 +7408,7 @@ function playVoxelCubeImpactSound(obj, volumeScale = 1.0) {
 function playMetalSound(volumeScale = 1.0) {
   initMusicContext();
   if (!music.ctx) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.metal.filter(b => b);
   if (loaded.length === 0) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
@@ -5012,7 +7433,7 @@ const MIN_GUNSHOT_SPACING = HOLESY_CONFIG.music.minGunshotSpacing; // seconds (~
 function playGunshot(volumeScale = 1.0) {
   initMusicContext();
   if (!music.ctx || !isGameplayAudioAllowed()) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.gunshots.filter(b => b);
   if (loaded.length === 0) return;
   // Global throttle: skip playback if a shot just played very recently
@@ -5027,12 +7448,36 @@ function playGunshot(volumeScale = 1.0) {
   playSample(buf, rate, gain, 0.04);
 }
 
+let lastCannonShotTime = 0;
+function playCannonShot(volumeScale = 1.0) {
+  initMusicContext();
+  if (!music.ctx || !isGameplayAudioAllowed()) return;
+  const ctx = music.ctx;
+  const now = ctx.currentTime;
+  if (now - lastCannonShotTime < 0.18) return;
+  lastCannonShotTime = now;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(78, now);
+  osc.frequency.exponentialRampToValueAtTime(36, now + 0.22);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(Math.max(0.001, 0.82 * volumeScale), now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+  osc.connect(gain);
+  const destination = getSfxDestination();
+  if (!destination) return;
+  gain.connect(destination);
+  osc.start(now);
+  osc.stop(now + 0.45);
+}
+
 // Soldier voice callouts — less frequent than gunshots, play random phrases.
 // Call this occasionally from each soldier (e.g. every 3-6s with some randomness).
 function playSoldierVoice(volumeScale = 1.0) {
   initMusicContext();
   if (!music.ctx || !isGameplayAudioAllowed()) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.soldierVoices.filter(b => b);
   if (loaded.length === 0) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
@@ -5047,7 +7492,7 @@ function playSoldierVoice(volumeScale = 1.0) {
 function playBiteChew() {
   initMusicContext();
   if (!music.ctx) return;
-  if (!audioBanksLoaded) loadAudioBanks();
+  if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const buf = audioBank.biteChew[0];
   if (!buf) return;
   playSample(buf, 1.0, 0.85, 0.10);
@@ -5257,6 +7702,159 @@ function resetWaveCountdownCue() {
   lastWaveCountdownCueProof = '';
 }
 
+function playMandateRowTick() {
+  initMusicContext();
+  if (!music.ctx || music.muted) return;
+  const ctx = music.ctx;
+  const now = ctx.currentTime;
+  const output = getCelebrationDestination();
+  [659.25, 880].forEach((freq, index) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, now + index * 0.055);
+    gain.gain.setValueAtTime(0.0001, now + index * 0.055);
+    gain.gain.exponentialRampToValueAtTime(0.075, now + index * 0.055 + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.055 + 0.14);
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(now + index * 0.055);
+    osc.stop(now + index * 0.055 + 0.16);
+  });
+}
+
+function playRunGoalChime() {
+  initMusicContext();
+  if (!music.ctx || music.muted) return;
+  const ctx = music.ctx;
+  const now = ctx.currentTime;
+  const output = getCelebrationDestination();
+  [523.25, 659.25, 783.99].forEach((freq, index) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now + index * 0.075);
+    gain.gain.setValueAtTime(0.0001, now + index * 0.075);
+    gain.gain.exponentialRampToValueAtTime(0.055, now + index * 0.075 + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.075 + 0.24);
+    osc.connect(gain);
+    gain.connect(output);
+    osc.start(now + index * 0.075);
+    osc.stop(now + index * 0.075 + 0.26);
+  });
+}
+
+function playBossInboundWarning() {
+  initMusicContext();
+  if (!music.ctx || music.muted) return;
+  const ctx = music.ctx;
+  const now = ctx.currentTime;
+  const output = getCelebrationDestination();
+  [110, 82.41, 110].forEach((freq, index) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, now + index * 0.22);
+    gain.gain.setValueAtTime(0.0001, now + index * 0.22);
+    gain.gain.exponentialRampToValueAtTime(0.12, now + index * 0.22 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + index * 0.22 + 0.18);
+    osc.connect(gain); gain.connect(output);
+    osc.start(now + index * 0.22); osc.stop(now + index * 0.22 + 0.2);
+  });
+}
+
+function playMandateDeadlineWarning() {
+  initMusicContext();
+  if (!music.ctx || !isGameplayAudioAllowed()) return;
+  const ctx = music.ctx;
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  const output = ctx.destination;
+  [246.94, 185, 138.59].forEach((freq, index) => {
+    const start = ctx.currentTime + index * 0.22;
+    const osc = ctx.createOscillator(); const gain = ctx.createGain();
+    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start); gain.gain.exponentialRampToValueAtTime(0.19, start + 0.015); gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
+    osc.connect(gain); gain.connect(output); osc.start(start); osc.stop(start + 0.2);
+  });
+}
+
+function playMandateArrowFlashAlerts(delaySeconds = 0) {
+  initMusicContext();
+  if (!music.ctx || !isGameplayAudioAllowed()) return;
+  if (music.ctx.state === 'suspended') music.ctx.resume().catch(() => {});
+  const ctx = music.ctx;
+  for (let flash = 0; flash < 5; flash++) {
+    const start = ctx.currentTime + delaySeconds + flash * 1.1;
+    const osc = ctx.createOscillator();
+    const wobble = ctx.createOscillator();
+    const wobbleDepth = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    osc.type = flash % 2 ? 'square' : 'sawtooth';
+    osc.frequency.setValueAtTime(215 + flash * 13, start);
+    osc.frequency.exponentialRampToValueAtTime(118 + flash * 7, start + 0.16);
+    wobble.type = 'sine'; wobble.frequency.setValueAtTime(19, start); wobbleDepth.gain.setValueAtTime(28, start);
+    wobble.connect(wobbleDepth); wobbleDepth.connect(osc.frequency);
+    filter.type = 'bandpass'; filter.frequency.setValueAtTime(620, start); filter.Q.value = 2.6;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.14, start + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.22);
+    osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+    osc.start(start); wobble.start(start); osc.stop(start + 0.24); wobble.stop(start + 0.24);
+  }
+}
+
+function playBossVictoryFanfare() {
+  initMusicContext();
+  if (!music.ctx || music.muted) return;
+  const ctx = music.ctx;
+  const now = ctx.currentTime;
+  const output = getCelebrationDestination();
+  const phrase = [392, 523.25, 659.25, 783.99, 659.25, 783.99, 1046.5];
+  phrase.forEach((freq, index) => {
+    const start = now + index * 0.13;
+    const len = index === phrase.length - 1 ? 0.52 : 0.19;
+    const osc = ctx.createOscillator();
+    const overtone = ctx.createOscillator();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    osc.type = 'sawtooth'; overtone.type = 'square';
+    osc.frequency.setValueAtTime(freq, start);
+    overtone.frequency.setValueAtTime(freq * 2, start);
+    filter.type = 'bandpass'; filter.frequency.setValueAtTime(1100, start); filter.Q.value = 0.8;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.095, start + 0.025);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + len);
+    osc.connect(filter); overtone.connect(filter); filter.connect(gain); gain.connect(output);
+    osc.start(start); overtone.start(start); osc.stop(start + len + 0.02); overtone.stop(start + len + 0.02);
+  });
+}
+
+function announceBossInbound(unitType) {
+  triggerHaptic('bossInbound');
+  duckNonCelebrationAudio(1500);
+  playBossInboundWarning();
+  showEventBanner(getBossBanner(unitType), HOLESY_CONFIG.eventMessaging.waveBriefingDurationMs);
+  eventBannerBackdrop?.classList.add('boss-alert');
+  setTimeout(() => eventBannerBackdrop?.classList.remove('boss-alert'), 1800);
+}
+
+function celebrateBossDefeat(hole, soldier, scoreValue) {
+  if (!hole?.isPlayer) return;
+  const now = getGameplayNow();
+  hole.unitClearPulseUntil = Math.max(hole.unitClearPulseUntil || 0, now + 1800);
+  hole.unitClearGlowUntil = Math.max(hole.unitClearGlowUntil || 0, now + 2400);
+  hole.unitClearShakeUntil = Math.max(hole.unitClearShakeUntil || 0, now + 760);
+  triggerUnitClearVisuals(hole);
+  duckNonCelebrationAudio(1800);
+  playBossVictoryFanfare();
+  const def = getUnitDefinition(getUnitType(soldier));
+  showStagePop('BOSS DEVOURED!', 1900);
+  showEventBanner(`${def.label.toUpperCase()} DOWN · +${scoreValue} · WEAKER UNITS MAY RETURN`, 3000);
+  eventBannerBackdrop?.classList.add('boss-defeat');
+  setTimeout(() => eventBannerBackdrop?.classList.remove('boss-defeat'), 1800);
+}
+
 function showWaveCountdownCueProof(second) {
   lastWaveCountdownCueProof = `cue ${second} fired @ ${gameTime.toFixed(2)}s`;
   if (waveEndWarnEl) {
@@ -5357,6 +7955,9 @@ function triggerUnitClearVisuals(h) {
 }
 
 function applyUnitClearSpeedBoost(h, roster) {
+  if (h.effects?.speedSource === 'unit_clear' && performance.now() < (h.effects.speedBoostUntil || 0)) {
+    return { boostDurationMs: 0, boostMultiplier: h.effects.speedMultiplier || 1 };
+  }
   const lowWaveCfg = getWaveConfig(2);
   const highWaveCfg = getWaveConfig(Math.max(4, currentWave));
   const soldierSpan = Math.max(1, highWaveCfg.soldierCountMax - lowWaveCfg.soldierCountMin);
@@ -5380,17 +7981,48 @@ function showStagePop(text, durationMs = 1400) {
 }
 
 let eventBannerTimer = null;
+let activeEventBanner = null;
+
+function getEventBannerPriority(text) {
+  const value = String(text || '').toUpperCase();
+  if (value.includes('BOSS') || value.includes('MANDATE FAILED') || value.includes('PLAYER CONSUMED') || value.includes('NEW WAVE') || value.includes('DISTRICT')) return 3;
+  if (value.includes('GOAL SWEEP') || value.includes('MANDATE COMPLETE') || value.includes('ACHIEVEMENT')) return 2;
+  return 1;
+}
+
+function compactEventBannerText(text) {
+  const replacements = [
+    [/FULL UNIT CLEAR! MASS SURGED\. BULLET DAMAGE SUPPRESSED\. SPEED BOOST ACTIVE\./i, 'UNIT CLEARED · MASS + SHIELD + SPEED'],
+    [/MANDATE COMPLETE: SURGE ACTIVE UNTIL WAVE END\./i, 'MANDATE COMPLETE · SURGE ACTIVE'],
+    [/GOAL SWEEP: \+(\d+) and speed surge\./i, 'GOAL SWEEP · +$1 · SPEED'],
+    [/Bonus Mass claimed! Score and size increased\./i, 'BONUS MASS · SCORE + SIZE'],
+  ];
+  let value = String(text || '').replace(/\s+/g, ' ').trim();
+  for (const [pattern, replacement] of replacements) value = value.replace(pattern, replacement);
+  const limit = window.matchMedia?.('(max-width: 768px)').matches ? 42 : 64;
+  return value.length > limit ? `${value.slice(0, limit - 1).trim()}…` : value;
+}
+
 function showEventBanner(text, durationMs = HOLESY_CONFIG.aidDrops.flashDurationMs) {
-    eventBanner.textContent = text;
-    eventBanner.classList.add('show');
-    eventBannerBackdrop.classList.add('show');
-    if (eventBannerTimer) clearTimeout(eventBannerTimer);
-    eventBannerTimer = setTimeout(() => {
-      eventBanner.classList.remove('show');
-      eventBannerBackdrop.classList.remove('show');
-      eventBannerTimer = null;
-    }, durationMs);
-  }
+  const message = { text: compactEventBannerText(text), durationMs: Math.min(durationMs, 2800), priority: getEventBannerPriority(text) };
+  if (!message.text) return;
+  if (activeEventBanner?.text === message.text) return;
+  if (activeEventBanner && message.priority < activeEventBanner.priority) return;
+  if (eventBannerTimer) clearTimeout(eventBannerTimer);
+  eventBannerTimer = null;
+  eventBanner.classList.remove('show');
+  eventBannerBackdrop.classList.remove('show', 'boss-alert', 'boss-defeat');
+  activeEventBanner = message;
+  eventBanner.textContent = message.text;
+  eventBanner.classList.add('show');
+  eventBannerBackdrop.classList.add('show');
+  eventBannerTimer = setTimeout(() => {
+    eventBanner.classList.remove('show');
+    eventBannerBackdrop.classList.remove('show', 'boss-alert', 'boss-defeat');
+    eventBannerTimer = null;
+    activeEventBanner = null;
+  }, message.durationMs);
+}
 
 function clearPendingWaveStart() {
   if (!pendingWaveStartTimer) return;
@@ -5415,6 +8047,7 @@ function clearPlayerConsumedReturn() {
 function schedulePlayerConsumedReturn(eater) {
   if (playerConsumedReturnTimer) return;
   pendingPlayerEndReason = 'eaten_by_rival';
+  triggerHaptic('playerDefeat');
   running = false;
   syncAlienAidLoop(true);
   stopAllPlaneEngines(false);
@@ -5443,6 +8076,7 @@ function clearTransientRoundUi() {
   if (waveEndWarnEl) waveEndWarnEl.style.display = 'none';
   eventBanner.classList.remove('show');
   eventBannerBackdrop.classList.remove('show');
+  activeEventBanner = null;
   if (eventBannerTimer) {
     clearTimeout(eventBannerTimer);
     eventBannerTimer = null;
@@ -5491,6 +8125,11 @@ function resetWaveRuntimeState() {
   soldiersEnabledThisWave = true;
   currentSoldierSpeedMult = 1.0;
   currentSoldierDamageMult = 1.0;
+  armyBossPendingThisWave = false;
+  armyBossSpawnedThisRun = false;
+  currentWaveBossUnitType = null;
+  unlockedBossUnitTypes.length = 0;
+  for (const key of Object.keys(bossUnlockWaveByType)) delete bossUnlockWaveByType[key];
   pausedWaveTransitionRemainingMs = null;
   pausedWaveTransitionNextWave = null;
   pausedStateBeforePause = null;
@@ -5531,12 +8170,14 @@ function showGameplayUi() {
   finalWrap.classList.add('hidden');
   leaderboardEl.innerHTML = '';
   updateActiveEffectsUi();
+  updateMandateHUD();
 }
 
 function hideGameplayUi() {
   hud.classList.add('hidden');
   miniLbEl.classList.add('hidden');
   gameControls.classList.add('hidden');
+  if (mandatePanelEl) mandatePanelEl.style.display = 'none';
   hideActiveEffectsUi();
 }
 
@@ -5547,12 +8188,14 @@ function resetStandardRoundTuning() {
   currentSoldierSpeedMult = activeDifficultyProfile.soldierSpeedMult;
   currentSoldierDamageMult = activeDifficultyProfile.soldierDamageMult;
   currentSoldierHitChanceMult = activeDifficultyProfile.soldierHitChanceMult;
+  armyBossPendingThisWave = false;
+  currentWaveBossUnitType = null;
 }
 
-function rebuildWaveWorldForCurrentArena() {
+async function rebuildWaveWorldForCurrentArena() {
   tearDownWorld();
   repositionHolesForNewWave();
-  populateCity();
+  await populateCity();
 }
 
 function enterTimedOrLmsRound() {
@@ -5572,13 +8215,14 @@ function enterTimedOrLmsRound() {
   updatePauseButtonLabel();
 }
 
-function beginWaveRun() {
+async function beginWaveRun() {
   currentWave = 1;
   setEndlessPressureForWave(1);
   const cfg = getWaveConfig(1);
   setArenaScale(cfg.worldScale || 1.0);
   resetHoleState();
-  rebuildWaveWorldForCurrentArena();
+  await rebuildWaveWorldForCurrentArena();
+  selectMandateTargets();
   startWave(1);
 }
 
@@ -5589,20 +8233,27 @@ function applyWaveConfig(cfg) {
   currentSoldierSpeedMult = cfg.soldierSpeedMult;
   currentSoldierDamageMult = cfg.soldierDamageMult;
   currentSoldierHitChanceMult = cfg.soldierHitChanceMult || 1.0;
-  soldiersEnabledThisWave = cfg.soldiersEnabled;
+  soldiersEnabledThisWave = cfg.soldiersEnabled || shouldWaveSpawnArmyBoss(currentWave);
+  currentWaveBossUnitType = null;
+  armyBossPendingThisWave = shouldWaveSpawnArmyBoss(currentWave);
   waveTimer = cfg.spawnIntervalMin + Math.random() * (cfg.spawnIntervalMax - cfg.spawnIntervalMin);
 }
 
-function enterWaveTransition(nextWave) {
+async function enterWaveTransition(nextWave) {
+  document.body.classList.remove('mandate-screen-warning');
+  document.body.classList.remove('mandate-screen-success');
+  removeMandateWarningArrow();
   wavesTransitioning = true;
   running = false;
   freezeGameplayTime();
   setGameState(GAME_STATES.WAVE_TRANSITION);
+  triggerHaptic('waveTransition');
   showStagePop('DISTRICT CONSUMED', 1800);
   showEventBanner(waveTransitionLore(nextWave), HOLESY_CONFIG.eventMessaging.waveTransitionDurationMs);
   setEndlessPressureForWave(nextWave);
   setArenaScale(getWaveConfig(nextWave).worldScale || 1.0);
-  rebuildWaveWorldForCurrentArena();
+  await rebuildWaveWorldForCurrentArena();
+  selectMandateTargets();
   updatePauseButtonLabel();
   scheduleNextWaveStart(nextWave);
 }
@@ -5629,7 +8280,10 @@ function flashConsumed(value, worldPos) {
   setTimeout(() => el.remove(), 750);
 }
 
-function startGame() {
+async function startGame() {
+  playBtn.disabled = true;
+  playBtn.textContent = 'Building City...';
+  await yieldCityBuildFrame();
   pendingLoreDropId = '';
   if (roundLoreState) roundLoreState.documentDropAwarded = true;
   invalidateRoundLifecycle();
@@ -5646,6 +8300,7 @@ function startGame() {
   wavesMode = (selectedMode === 'waves');
   endlessMode = (selectedMode === 'endless');
   if (!endlessMode) activeEndlessPressureProfile = null;
+  rollAiDifficultyProfilesForRun(activeDifficultyProfile);
   applyDifficultyToAiPersonalities();
   startTrackedGameRun();
   setGameState(GAME_STATES.PLAYING);
@@ -5654,20 +8309,25 @@ function startGame() {
   timerEl.classList.remove('lms-active');
 
   if (isWaveBasedMode()) {
-    beginWaveRun();
+    await beginWaveRun();
     startLoreRunTracking();
     showGameplayUi();
     syncTitleAudioToGameState();
+    scheduleAudioBankWarmup(1000);
+    playBtn.disabled = false;
     return;
   }
 
   tearDownWorld();
   resetHoleState();
-  populateCity();
+  await populateCity();
+  selectMandateTargets();
   startLoreRunTracking();
   enterTimedOrLmsRound();
   showGameplayUi();
   syncTitleAudioToGameState();
+  scheduleAudioBankWarmup(1000);
+  playBtn.disabled = false;
 }
 
 function updatePauseButtonLabel() {
@@ -5779,6 +8439,12 @@ function serializeHoleState(h, now = getGameplayNow()) {
     recentSoldierDamageRadius: h.recentSoldierDamageRadius || 0,
     aiState: h.aiState,
     aiTimer: h.aiTimer || 0,
+    collapseFocus: h.collapseFocus ? {
+      x: h.collapseFocus.x,
+      z: h.collapseFocus.z,
+      stackId: h.collapseFocus.stackId,
+      expiresRemainingMs: getRemainingMs(h.collapseFocus.expiresAt, now),
+    } : null,
     threatAwareSince: h.threatAwareSince || 0,
     lastSeenThreat: h.lastSeenThreat ? { x: h.lastSeenThreat.x, z: h.lastSeenThreat.z } : null,
     hitFlashRemainingMs: getRemainingMs(h.hitFlashUntil, now),
@@ -5820,6 +8486,12 @@ function restoreHoleState(h, state, now = performance.now()) {
   h.aiTargetObj = null;
   h.aiState = state.aiState || 'wander';
   h.aiTimer = state.aiTimer || 0;
+  h.collapseFocus = state.collapseFocus ? {
+    x: state.collapseFocus.x,
+    z: state.collapseFocus.z,
+    stackId: state.collapseFocus.stackId,
+    expiresAt: restoreFutureTimestamp(state.collapseFocus.expiresRemainingMs, now),
+  } : null;
   h.threatAwareSince = state.threatAwareSince || 0;
   h.lastSeenThreat = state.lastSeenThreat || null;
   h.hitFlashUntil = restoreFutureTimestamp(state.hitFlashRemainingMs, now);
@@ -5842,9 +8514,10 @@ function restoreHoleState(h, state, now = performance.now()) {
 }
 
 function getSavedObjectType(obj) {
+  if (obj.streetFixtureKind) return `fixture:${obj.streetFixtureKind}`;
   if (obj.isPowerup) return 'powerup';
   if (obj.isGovernmentBuildingPiece) return 'governmentBuildingPiece';
-  if (obj.isVoxelBuildingCube) return 'midVoxelCube';
+  if (obj.isVoxelBuildingCube) return obj.stackKind === 'smallVoxel' ? 'smallVoxelCube' : 'midVoxelCube';
   if (obj.isSkyscraperChunk) return 'skyscraperChunk';
   if (obj.isBuilding) return obj.buildingSize === 'mid' ? 'midBuilding' : obj.buildingSize === 'large' ? 'skyscraperChunk' : 'smallBuilding';
   if (obj.isCar) return 'car';
@@ -6021,10 +8694,10 @@ function makeSavedGenericObject(state) {
   const g = new THREE.Group();
   const h = Math.max(0.4, state.stackHeight || state.size || 0.8);
   const w = Math.max(0.6, (state.size || 0.8) * 1.7);
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), sharedBoxMat(colorByType[state.type] || 0x8a8f98));
+  const mesh = new THREE.Mesh(sharedBoxGeometry(w, h, w), sharedBoxMat(colorByType[state.type] || 0x8a8f98));
   mesh.position.y = h / 2;
   g.add(mesh);
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, state.size || 0.6, state.tier || 1, state.value || 10, { x: state.x, y: state.y || 0, z: state.z });
   if (state.type === 'skyscraperChunk') {
     obj.isBuilding = true;
@@ -6052,7 +8725,7 @@ function makeSavedSkyscraperChunk(state) {
   const wallMat = sharedBoxMat(0x3d5a80);
   const glassMat = sharedBoxMat(0x98c1d9);
   const capMat = sharedBoxMat(0x293548);
-  const core = new THREE.Mesh(new THREE.BoxGeometry(cellW, h, cellD), isTop ? capMat : wallMat);
+  const core = new THREE.Mesh(sharedBoxGeometry(cellW, h, cellD), isTop ? capMat : wallMat);
   core.position.y = 0;
   g.add(core);
   if (!isTop) {
@@ -6065,13 +8738,13 @@ function makeSavedSkyscraperChunk(state) {
     const isBack = localZ < -halfD + cellD * 0.75;
     const isFront = localZ > halfD - cellD * 0.75;
     const addFrontBackBand = (z) => {
-      const band = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
+      const band = new THREE.Mesh(sharedBoxGeometry(Math.max(0.35, cellW - 0.18), 0.34, 0.035), glassMat);
       band.position.set(0, 0.02, z);
       g.add(band);
       registerNightWindow(band, 0.3);
     };
     const addSideBand = (x) => {
-      const band = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
+      const band = new THREE.Mesh(sharedBoxGeometry(0.035, 0.34, Math.max(0.35, cellD - 0.18)), glassMat);
       band.position.set(x, 0.02, 0);
       g.add(band);
       registerNightWindow(band, 0.3);
@@ -6081,7 +8754,7 @@ function makeSavedSkyscraperChunk(state) {
     if (isRight) addSideBand(cellW / 2 + 0.021);
     if (isLeft) addSideBand(-cellW / 2 - 0.021);
   }
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, state.size || Math.max(0.58, Math.hypot(cellW, cellD) * 0.36), state.tier || 2, state.value || 10, { x: state.x, y: state.y || 0, z: state.z });
   obj.isBuilding = true;
   obj.buildingSize = 'large';
@@ -6093,12 +8766,16 @@ function makeSavedSkyscraperChunk(state) {
 
 function makeSavedMidVoxelCube(state) {
   const g = new THREE.Group();
-  const cubeSize = Math.max(0.5, state.stackPieceW || state.stackHeight || 1.48);
+  const isSmall = state.stackKind === 'smallVoxel' || state.type === 'smallVoxelCube';
+  const pieceW = Math.max(0.5, state.stackPieceW || state.stackHeight || (isSmall ? 1.72 : 1.48));
+  const pieceH = Math.max(0.5, state.stackHeight || (isSmall ? 1.22 : pieceW));
+  const pieceD = Math.max(0.5, state.stackPieceD || pieceW);
   const isTop = state.stackFloorCount > 0 && state.stackIndex >= state.stackFloorCount - 1;
-  const wallMat = sharedBoxMat(0x9aa5a8);
-  const glassMat = sharedBoxMat(0x263848);
-  const roofMat = sharedBoxMat(0x59666c);
-  const core = new THREE.Mesh(new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize), isTop ? roofMat : wallMat);
+  const wallMat = sharedBoxMat(isSmall ? 0xd1a77a : 0x9aa5a8);
+  const glassMat = sharedBoxMat(isSmall ? 0x74b9ff : 0x263848);
+  const roofMat = sharedBoxMat(isSmall ? 0x6d4c41 : 0x59666c);
+  const trimMat = sharedBoxMat(0x5d4037);
+  const core = new THREE.Mesh(sharedBoxGeometry(pieceW, pieceH, pieceD), isTop ? roofMat : wallMat);
   core.position.y = 0;
   g.add(core);
 
@@ -6111,22 +8788,56 @@ function makeSavedMidVoxelCube(state) {
       const pane = new THREE.Mesh(geometry, glassMat);
       pane.position.copy(position);
       g.add(pane);
-      registerNightWindow(pane, 0.32);
+      registerNightWindow(pane, isSmall ? 0.38 : 0.32);
     };
-    if (row === rowsZ - 1) addPane(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), new THREE.Vector3(0, 0.06, cubeSize / 2 + 0.014));
-    if (row === 0) addPane(new THREE.BoxGeometry(cubeSize * 0.58, cubeSize * 0.34, 0.026), new THREE.Vector3(0, 0.06, -cubeSize / 2 - 0.014));
-    if (col === 0) addPane(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), new THREE.Vector3(-cubeSize / 2 - 0.014, 0.06, 0));
-    if (col === colsX - 1) addPane(new THREE.BoxGeometry(0.026, cubeSize * 0.34, cubeSize * 0.58), new THREE.Vector3(cubeSize / 2 + 0.014, 0.06, 0));
+    if (row === rowsZ - 1) addPane(sharedBoxGeometry(pieceW * (isSmall ? 0.46 : 0.58), pieceH * (isSmall ? 0.42 : 0.34), 0.026), new THREE.Vector3(0, 0.06, pieceD / 2 + 0.014));
+    if (row === 0) addPane(sharedBoxGeometry(pieceW * (isSmall ? 0.46 : 0.58), pieceH * (isSmall ? 0.42 : 0.34), 0.026), new THREE.Vector3(0, 0.06, -pieceD / 2 - 0.014));
+    if (col === 0) addPane(sharedBoxGeometry(0.026, pieceH * (isSmall ? 0.42 : 0.34), pieceD * (isSmall ? 0.46 : 0.58)), new THREE.Vector3(-pieceW / 2 - 0.014, 0.06, 0));
+    if (col === colsX - 1) addPane(sharedBoxGeometry(0.026, pieceH * (isSmall ? 0.42 : 0.34), pieceD * (isSmall ? 0.46 : 0.58)), new THREE.Vector3(pieceW / 2 + 0.014, 0.06, 0));
+    if (isSmall && row === rowsZ - 1 && col === Math.floor(colsX / 2)) {
+      const door = new THREE.Mesh(sharedBoxGeometry(pieceW * 0.36, pieceH * 0.82, 0.04), trimMat);
+      door.position.set(0, -pieceH * 0.08, pieceD / 2 + 0.045);
+      g.add(door);
+    }
+  } else if (isSmall) {
+    const cap = new THREE.Mesh(sharedBoxGeometry(pieceW * 1.08, 0.16, pieceD * 1.08), roofMat);
+    cap.position.y = pieceH / 2 + 0.08;
+    g.add(cap);
   }
 
-  g.children.forEach(c => c.castShadow = true);
-  const obj = makeObject(g, state.size || cubeSize * 0.58, state.tier || 1, state.value || 2, { x: state.x, y: state.y || cubeSize / 2, z: state.z });
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
+  const obj = makeObject(g, state.size || Math.max(pieceW, pieceD) * 0.58, state.tier || 1, state.value || 2, { x: state.x, y: state.y || pieceH / 2, z: state.z });
   obj.isBuilding = true;
-  obj.buildingSize = 'mid';
+  obj.buildingSize = isSmall ? 'small' : 'mid';
   obj.isVoxelBuildingCube = true;
   obj.physicsStackPiece = true;
-  obj.stackKind = 'midVoxel';
+  obj.stackKind = isSmall ? 'smallVoxel' : 'midVoxel';
   physicsStackPieces.push(obj);
+  return obj;
+}
+
+function makeSavedLegacySmallBuilding(state) {
+  const g = new THREE.Group();
+  const w = Math.max(3.2, (state.size || 2.4) * 2);
+  const d = w;
+  const h = Math.max(2.4, state.stackHeight || state.y || 3.2);
+  const base = new THREE.Mesh(sharedBoxGeometry(w, h, d), sharedBoxMat(0xd1a77a));
+  base.position.y = h / 2;
+  g.add(base);
+  const roof = new THREE.Mesh(sharedBoxGeometry(w + 0.3, 0.3, d + 0.3), sharedBoxMat(0x6d4c41));
+  roof.position.y = h + 0.15;
+  g.add(roof);
+  const win = new THREE.Mesh(sharedBoxGeometry(0.8, 0.8, 0.05), sharedBoxMat(0x74b9ff));
+  win.position.set(0, Math.min(h - 0.6, 1.4), d / 2 + 0.01);
+  g.add(win);
+  registerNightWindow(win, 0.38);
+  const door = new THREE.Mesh(sharedBoxGeometry(0.9, 1.6, 0.05), sharedBoxMat(0x5d4037));
+  door.position.set(0, 0.8, d / 2 + 0.01);
+  g.add(door);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
+  const obj = makeObject(g, state.size || Math.max(w, d) / 2, state.tier || 4, state.value || 120, { x: state.x, y: state.y || 0, z: state.z });
+  obj.isBuilding = true;
+  obj.buildingSize = 'small';
   return obj;
 }
 
@@ -6142,7 +8853,7 @@ function makeSavedGovernmentBuildingPiece(state) {
   const windowMat = sharedBoxMat(0x111c22);
   const g = new THREE.Group();
   const bodyMat = isTop ? tuxBlackMat : ((state.govFloor || 0) % 2 === 0 ? tuxWhiteMat : tuxCharcoalMat);
-  const core = new THREE.Mesh(new THREE.BoxGeometry(pieceW, pieceH, pieceD), bodyMat);
+  const core = new THREE.Mesh(sharedBoxGeometry(pieceW, pieceH, pieceD), bodyMat);
   core.position.y = 0;
   g.add(core);
 
@@ -6157,15 +8868,15 @@ function makeSavedGovernmentBuildingPiece(state) {
     registerNightWindow(pane, 0.28);
   };
   if (!isTop) {
-    if (row === rowsZ - 1) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, pieceD / 2 + 0.023);
-    if (row === 0) addWindow(new THREE.BoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, -pieceD / 2 - 0.023);
-    if (col === colsX - 1) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), pieceW / 2 + 0.023, 0.06, 0);
-    if (col === 0) addWindow(new THREE.BoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), -pieceW / 2 - 0.023, 0.06, 0);
+    if (row === rowsZ - 1) addWindow(sharedBoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, pieceD / 2 + 0.023);
+    if (row === 0) addWindow(sharedBoxGeometry(pieceW * 0.48, pieceH * 0.32, 0.035), 0, 0.06, -pieceD / 2 - 0.023);
+    if (col === colsX - 1) addWindow(sharedBoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), pieceW / 2 + 0.023, 0.06, 0);
+    if (col === 0) addWindow(sharedBoxGeometry(0.035, pieceH * 0.32, pieceD * 0.48), -pieceW / 2 - 0.023, 0.06, 0);
     if ((state.govFloor || 0) % 2 === 1 && row === rowsZ - 1) {
-      const shirt = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.18, pieceH * 0.82, 0.04), tuxWhiteMat);
+      const shirt = new THREE.Mesh(sharedBoxGeometry(pieceW * 0.18, pieceH * 0.82, 0.04), tuxWhiteMat);
       shirt.position.set(0, 0, pieceD / 2 + 0.052);
       g.add(shirt);
-      const bowLeft = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.16, pieceH * 0.12, 0.05), tuxBlackMat);
+      const bowLeft = new THREE.Mesh(sharedBoxGeometry(pieceW * 0.16, pieceH * 0.12, 0.05), tuxBlackMat);
       const bowRight = bowLeft.clone();
       bowLeft.position.set(-pieceW * 0.11, pieceH * 0.22, pieceD / 2 + 0.082);
       bowRight.position.set(pieceW * 0.11, pieceH * 0.22, pieceD / 2 + 0.082);
@@ -6181,12 +8892,12 @@ function makeSavedGovernmentBuildingPiece(state) {
     g.add(seal);
   }
   if (isTop) {
-    const roofStripe = new THREE.Mesh(new THREE.BoxGeometry(pieceW * 0.84, 0.055, pieceD * 0.18), tuxSilverMat);
+    const roofStripe = new THREE.Mesh(sharedBoxGeometry(pieceW * 0.84, 0.055, pieceD * 0.18), tuxSilverMat);
     roofStripe.position.y = pieceH / 2 + 0.031;
     g.add(roofStripe);
   }
 
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   const obj = makeObject(g, state.size || Math.max(pieceW, pieceD) * 0.48, state.tier || 1, state.value || 4, { x: state.x, y: state.y || pieceH / 2, z: state.z });
   obj.isBuilding = true;
   obj.buildingSize = 'government';
@@ -6206,19 +8917,27 @@ function makeSavedGovernmentBuildingPiece(state) {
   obj.govColsX = colsX;
   obj.govRowsZ = rowsZ;
   nextGovernmentBuildingId = Math.max(nextGovernmentBuildingId, obj.govBuildingId + 1);
-  governmentPhysics.registerPiece(obj, {
-    buildingId: obj.govBuildingId,
-    half: { x: pieceW / 2, y: pieceH / 2, z: pieceD / 2 },
-    mass: 1 + obj.govFloor * 0.04,
-    active: obj.govPhysicsActive,
-    released: obj.govPhysicsReleased,
-    vx: state.govVx || 0,
-    vy: state.govVy || 0,
-    vz: state.govVz || 0,
-    avx: state.govAvx || 0,
-    avy: state.govAvy || 0,
-    avz: state.govAvz || 0,
-  });
+  const restoreAsVoxel = state.stackKind === 'governmentVoxel' || state.physicsStackPiece || state.stackId;
+  if (restoreAsVoxel) {
+    obj.isVoxelBuildingCube = true;
+    obj.physicsStackPiece = true;
+    obj.stackKind = 'governmentVoxel';
+    physicsStackPieces.push(obj);
+  } else {
+    governmentPhysics.registerPiece(obj, {
+      buildingId: obj.govBuildingId,
+      half: { x: pieceW / 2, y: pieceH / 2, z: pieceD / 2 },
+      mass: 1 + obj.govFloor * 0.04,
+      active: obj.govPhysicsActive,
+      released: obj.govPhysicsReleased,
+      vx: state.govVx || 0,
+      vy: state.govVy || 0,
+      vz: state.govVz || 0,
+      avx: state.govAvx || 0,
+      avy: state.govAvy || 0,
+      avz: state.govAvz || 0,
+    });
+  }
   return obj;
 }
 
@@ -6377,7 +9096,8 @@ function restoreSavedObject(state, now = performance.now()) {
   if (state.type === 'person') obj = makePerson({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'tree') obj = makeTree({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'car') obj = makeCar({ x: state.x, y: state.y || 0, z: state.z });
-  else if (state.type === 'smallBuilding') obj = makeSmallBuilding({ x: state.x, z: state.z });
+  else if (state.type === 'smallBuilding') obj = makeSavedLegacySmallBuilding(state);
+  else if (state.type === 'smallVoxelCube') obj = makeSavedMidVoxelCube(state);
   else if (state.type === 'midVoxelCube') obj = makeSavedMidVoxelCube(state);
   else if (state.type === 'governmentBuildingPiece') obj = makeSavedGovernmentBuildingPiece(state);
   else if (state.type === 'midBuilding') obj = makeMidBuilding({ x: state.x, z: state.z });
@@ -6387,6 +9107,7 @@ function restoreSavedObject(state, now = performance.now()) {
   else if (state.type === 'hydrant') obj = makeHydrant({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'trash') obj = makeTrash({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'cone') obj = makeCone({ x: state.x, y: state.y || 0, z: state.z });
+  else if (String(state.type || '').startsWith('fixture:')) obj = makeStreetFixture(String(state.type).slice(8), { x: state.x, y: state.y || 0, z: state.z });
   else obj = makeSavedGenericObject(state);
   restoreObjectCommonState(obj, state, now);
   return obj;
@@ -6402,11 +9123,19 @@ function serializeSoldierState(s) {
     voiceCooldown: s.voiceCooldown || 0,
     alive: s.alive !== false,
     waveId: s.waveId || 0,
+    unitType: getUnitType(s),
+    isArmyBoss: !!s.isArmyBoss,
+    damageMultiplier: getSoldierDamageMultiplier(s),
+    eatRadius: getSoldierEatRadius(s),
+    scoreValue: getSoldierScoreValue(s),
+    progressValue: getSoldierProgressValue(s),
   };
 }
 
 function restoreSoldierState(state) {
-  const mesh = makeSoldierMesh();
+  const isArmyBoss = !!state.isArmyBoss;
+  const unitType = getUnitType(state);
+  const mesh = makeSoldierMesh({ unitType, isArmyBoss });
   mesh.position.set(state.x, 0, state.z);
   mesh.rotation.y = state.rotY || 0;
   scene.add(mesh);
@@ -6421,6 +9150,12 @@ function restoreSoldierState(state) {
     isSoldier: true,
     alive: state.alive !== false,
     waveId: state.waveId || 0,
+    unitType,
+    isArmyBoss,
+    damageMultiplier: state.damageMultiplier || getArmyBossDefault('damageMultiplier', isArmyBoss, unitType),
+    eatRadius: state.eatRadius || getArmyBossDefault('eatRadius', isArmyBoss, unitType),
+    scoreValue: state.scoreValue || getArmyBossDefault('scoreValue', isArmyBoss, unitType),
+    progressValue: state.progressValue || getArmyBossDefault('progressValue', isArmyBoss, unitType),
   });
 }
 
@@ -6431,13 +9166,23 @@ function serializeParatrooperState(p) {
     t: p.t || 0,
     totalT: p.totalT || difficultyParachuteFallTime(),
     waveId: p.waveId || 0,
+    unitType: getUnitType(p),
+    isArmyBoss: !!p.isArmyBoss,
+    damageMultiplier: getSoldierDamageMultiplier(p),
+    eatRadius: getSoldierEatRadius(p),
+    scoreValue: getSoldierScoreValue(p),
+    progressValue: getSoldierProgressValue(p),
   };
 }
 
 function restoreParatrooperState(state) {
   const para = new THREE.Group();
-  const soldier = makeSoldierMesh();
+  const isArmyBoss = !!state.isArmyBoss;
+  const unitType = getUnitType(state);
+  const soldier = makeSoldierMesh({ unitType, isArmyBoss });
   const chute = makeParachuteMesh();
+  const parachuteScale = getUnitDefinition(unitType).parachuteScale || (isArmyBoss ? 1.85 : 1);
+  if (parachuteScale !== 1) chute.scale.setScalar(parachuteScale);
   para.add(soldier);
   para.add(chute);
   para.position.set(state.targetX, state.startY || PLANE_ALTITUDE, state.targetZ);
@@ -6452,6 +9197,12 @@ function restoreParatrooperState(state) {
     t: state.t || 0,
     totalT: state.totalT || difficultyParachuteFallTime(),
     waveId: state.waveId || 0,
+    unitType,
+    isArmyBoss,
+    damageMultiplier: state.damageMultiplier || getArmyBossDefault('damageMultiplier', isArmyBoss, unitType),
+    eatRadius: state.eatRadius || getArmyBossDefault('eatRadius', isArmyBoss, unitType),
+    scoreValue: state.scoreValue || getArmyBossDefault('scoreValue', isArmyBoss, unitType),
+    progressValue: state.progressValue || getArmyBossDefault('progressValue', isArmyBoss, unitType),
   });
 }
 
@@ -6463,6 +9214,8 @@ function serializePlaneState(p) {
     dropX: p.dropX, dropZ: p.dropZ,
     deployed: !!p.deployed,
     soldierCount: p.soldierCount || 0,
+    armyBossCount: p.armyBossCount || 0,
+    unitManifest: Array.isArray(p.unitManifest) ? p.unitManifest.map(unit => ({ unitType: getUnitType(unit), isArmyBoss: !!unit.isArmyBoss })) : null,
     engineAudioAccumulator: p.engineAudioAccumulator || PLANE_ENGINE_AUDIO_INTERVAL,
     waveId: p.waveId || 0,
   };
@@ -6479,6 +9232,8 @@ function restorePlaneState(state) {
     dropX: state.dropX, dropZ: state.dropZ,
     deployed: !!state.deployed,
     soldierCount: state.soldierCount || 0,
+    armyBossCount: state.armyBossCount || 0,
+    unitManifest: Array.isArray(state.unitManifest) ? state.unitManifest.map(unit => ({ unitType: getUnitType(unit), isArmyBoss: !!unit.isArmyBoss })) : null,
     engine: createPlaneEngineDrone(),
     engineAudioAccumulator: state.engineAudioAccumulator || PLANE_ENGINE_AUDIO_INTERVAL,
     waveId: state.waveId || 0,
@@ -6576,6 +9331,12 @@ function buildEndlessSaveState() {
     currentSoldierSpeedMult,
     currentSoldierDamageMult,
     currentSoldierHitChanceMult,
+    armyBossPendingThisWave,
+    armyBossSpawnedThisRun,
+    currentWaveBossUnitType,
+    unlockedBossUnitTypes: unlockedBossUnitTypes.slice(),
+    bossUnlockWaveByType: { ...bossUnlockWaveByType },
+    activeAiDifficultyProfiles: activeAiDifficultyProfiles ? activeAiDifficultyProfiles.map(cloneDifficultyProfile) : null,
     currentArenaScale,
     activeGameRunElapsedMs: activeGameRun ? performance.now() - activeGameRun.startedAtMs : 0,
     pendingPlayerEndReason,
@@ -6640,10 +9401,15 @@ function loadEndlessGame() {
   leaderboardEl.innerHTML = '';
   resetInputState();
   selectedMode = 'endless';
+  syncModePickerSelection();
   setDifficulty(save.selectedDifficultyName || selectedDifficultyName || 'normal');
   lmsMode = false;
   wavesMode = false;
   endlessMode = true;
+  activeAiDifficultyProfiles = Array.isArray(save.activeAiDifficultyProfiles)
+    ? save.activeAiDifficultyProfiles.map(profile => Object.freeze(cloneDifficultyProfile(profile)))
+    : null;
+  if (!activeAiDifficultyProfiles) rollAiDifficultyProfilesForRun(activeDifficultyProfile);
   setEndlessPressureForWave(save.currentWave || 1);
   currentWave = save.currentWave || 1;
   waveNumber = save.waveNumber || 0;
@@ -6653,6 +9419,19 @@ function loadEndlessGame() {
   currentSoldierSpeedMult = save.currentSoldierSpeedMult || activeDifficultyProfile.soldierSpeedMult;
   currentSoldierDamageMult = save.currentSoldierDamageMult || activeDifficultyProfile.soldierDamageMult;
   currentSoldierHitChanceMult = save.currentSoldierHitChanceMult || activeDifficultyProfile.soldierHitChanceMult;
+  armyBossPendingThisWave = !!save.armyBossPendingThisWave;
+  armyBossSpawnedThisRun = !!save.armyBossSpawnedThisRun;
+  currentWaveBossUnitType = save.currentWaveBossUnitType || null;
+  unlockedBossUnitTypes.length = 0;
+  (Array.isArray(save.unlockedBossUnitTypes) ? save.unlockedBossUnitTypes : []).forEach(type => {
+    if (BOSS_UNIT_TYPES.includes(type) && !unlockedBossUnitTypes.includes(type)) unlockedBossUnitTypes.push(type);
+  });
+  for (const key of Object.keys(bossUnlockWaveByType)) delete bossUnlockWaveByType[key];
+  if (save.bossUnlockWaveByType && typeof save.bossUnlockWaveByType === 'object') {
+    for (const [type, wave] of Object.entries(save.bossUnlockWaveByType)) {
+      if (BOSS_UNIT_TYPES.includes(type)) bossUnlockWaveByType[type] = Math.max(1, Number(wave) || 1);
+    }
+  }
   pendingPlayerEndReason = save.pendingPlayerEndReason || '';
   aidDropCountdown = typeof save.aidDropCountdown === 'number' ? save.aidDropCountdown : null;
   applyTimeOfDayLook(currentWave);
@@ -6669,6 +9448,7 @@ function loadEndlessGame() {
   (save.planes || []).forEach(restorePlaneState);
   (save.aidShips || []).forEach(restoreAidShipState);
   restoreRoundLoreState(save.roundLoreState, now);
+  selectMandateTargets();
 
   activeGameRun = {
     mode: 'endless',
@@ -6709,6 +9489,7 @@ function resetHoleState() {
     h.recentSoldierDamageRadius = 0;
     h.aiTargetObj = null;
     h.aiState = 'wander';
+    h.collapseFocus = null;
     h.aiTimer = i === 0 ? 0 : Math.random() * 1.2;
     h.wanderX = h.spawnX;
     h.wanderZ = h.spawnZ;
@@ -6752,6 +9533,7 @@ function resetRoundState() {
   clearTransientRoundUi();
   lmsMode = false;
   resetWaveRuntimeState();
+  resetMandateState();
   gameTime = 120;
   setArenaScale(1.0);
   resetAidDropState();
@@ -6760,7 +9542,6 @@ function resetRoundState() {
   waveLabel.classList.add('hidden');
   tearDownWorld();
   resetHoleState();
-  populateCity();
   resetInputState();
   updatePauseButtonLabel();
   updateWaveHudBanner();
@@ -6833,6 +9614,7 @@ function cashoutFromLmsChoice() {
 // and their tracking arrays. Also clears pending wave rosters since any
 // in-flight bonuses no longer apply.
 function tearDownWorld() {
+  clearMegakitEnvironmentMeshes();
   // Consumables (people, cars, trees, buildings, props, lamps). Also includes
   // any object currently mid-fall (the animate loop handles falling objects
   // whether consumed or not, and removes them from scene at y < -5).
@@ -6840,15 +9622,19 @@ function tearDownWorld() {
     if (obj.mesh && obj.mesh.parent) scene.remove(obj.mesh);
   }
   objects.length = 0;
+  clearSharedBoxGeometryCache();
   physicsStackPieces.length = 0;
   activePhysicsStackIds.clear();
   stackCollapsePlans.clear();
   governmentPhysics.clear();
   movingCars.length = 0;
   movingPeople.length = 0;
+  animatedParkObjects.length = 0;
   nightWindowVisuals.length = 0;
   streetLightVisuals.length = 0;
   vehicleLightVisuals.length = 0;
+  activeBuildingPowerCuts.clear();
+  activeStreetLightPowerCuts.clear();
   for (const fx of carCrashEffects) {
     if (fx.mesh && fx.mesh.parent) scene.remove(fx.mesh);
   }
@@ -6859,6 +9645,10 @@ function tearDownWorld() {
     removeWaveUnitObject(s.mesh);
   }
   soldiers.length = 0;
+  for (const s of consumedWaveUnits) {
+    removeWaveUnitObject(s.mesh);
+  }
+  consumedWaveUnits.length = 0;
 
   // Paratroopers (group meshes with attached soldier + chute children)
   for (const p of paratroopers) {
@@ -6897,24 +9687,45 @@ function tearDownWorld() {
 // Repositions surviving holes to fresh corner spawn points and zeroes their
 // bonusRadius lingering from the previous wave's hole combat. Radius still
 // reflects accumulated score (via radiusFromScore).
-function repositionHolesForNewWave() {
+function shuffledWaveStartCorners() {
+  const padding = 8;
+  const edge = Math.max(padding, currentArenaHalf - padding);
   const corners = [
-    { x: -HALF + 8,  z: -HALF + 8  },
-    { x:  HALF - 8,  z: -HALF + 8  },
-    { x: -HALF + 8,  z:  HALF - 8  },
-    { x:  HALF - 8,  z:  HALF - 8  },
+    { x: -edge, z: -edge, key: 'nw' },
+    { x:  edge, z: -edge, key: 'ne' },
+    { x: -edge, z:  edge, key: 'sw' },
+    { x:  edge, z:  edge, key: 'se' },
   ];
+  for (let i = corners.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = corners[i];
+    corners[i] = corners[j];
+    corners[j] = tmp;
+  }
+  return corners;
+}
+
+function pickWaveStartCorner(hole, availableCorners) {
+  if (!availableCorners.length) return null;
+  const previousKey = hole?.lastWaveStartCornerKey || '';
+  let index = availableCorners.findIndex(corner => corner.key !== previousKey);
+  if (index < 0) index = 0;
+  return availableCorners.splice(index, 1)[0];
+}
+
+function repositionHolesForNewWave() {
+  const corners = shuffledWaveStartCorners();
   const alive = holes.filter(h => h.alive);
   alive.forEach((h, i) => {
-    const c = corners[i % corners.length];
-    const scaledX = Math.sign(c.x) * Math.min(Math.abs(c.x), currentArenaHalf - 8);
-    const scaledZ = Math.sign(c.z) * Math.min(Math.abs(c.z), currentArenaHalf - 8);
-    h.x = scaledX; h.z = scaledZ;
-    h.targetX = scaledX; h.targetZ = scaledZ;
+    const c = pickWaveStartCorner(h, corners) || shuffledWaveStartCorners()[i % 4];
+    h.x = c.x; h.z = c.z;
+    h.targetX = c.x; h.targetZ = c.z;
+    h.lastWaveStartCornerKey = c.key;
     // Clear hole-hunt target since the world just changed under it
     h.aiTargetObj = null;
     h.aiState = 'wander';
-    h.wanderX = scaledX; h.wanderZ = scaledZ;
+    h.collapseFocus = null;
+    h.wanderX = c.x; h.wanderZ = c.z;
     h.aiTimer = 0;
     h.threatAwareSince = 0;
     h.lastSeenThreat = null;
@@ -6956,7 +9767,6 @@ function respawnEndlessRivalHole(eaten, eater) {
   eaten.alive = true;
   eaten.group.visible = true;
   if (!eaten.group.parent) scene.add(eaten.group);
-  eaten.score = Math.max(0, Math.floor((eaten.score || 0) * 0.24));
   eaten.bonusRadius = Math.max(0, (eaten.bonusRadius || 0) * 0.12);
   eaten.sizeResetScoreFloor = eaten.score;
   eaten.recentSoldierDamageRadius = 0;
@@ -6968,6 +9778,7 @@ function respawnEndlessRivalHole(eaten, eater) {
   eaten.wanderZ = point.z;
   eaten.aiTargetObj = null;
   eaten.aiState = 'wander';
+  eaten.collapseFocus = null;
   eaten.aiTimer = 0.45 + Math.random() * 0.8;
   eaten.threatAwareSince = 0;
   eaten.lastSeenThreat = null;
@@ -6986,8 +9797,69 @@ function respawnEndlessRivalHole(eaten, eater) {
   updateHoleVisual(eaten);
 }
 
+const AI_COLLAPSE_FOCUS_DURATION_MS = 12000;
+const AI_COLLAPSE_FOCUS_SEARCH_RADIUS = 18;
+
+function rememberAiCollapseFocus(hole, x, z, stackId = null) {
+  if (!hole || hole.isPlayer || !hole.alive) return;
+  hole.collapseFocus = {
+    x,
+    z,
+    stackId,
+    expiresAt: getGameplayNow() + AI_COLLAPSE_FOCUS_DURATION_MS,
+  };
+  hole.aiTimer = 0;
+}
+
 function isEndlessWorldShiftWave(waveNum) {
-  return endlessMode && waveNum > 1 && waveNum % 5 === 0;
+  const interval = HOLESY_CONFIG.military.armyBossWaveInterval || 5;
+  return endlessMode && waveNum > 1 && (waveNum - 1) % interval === 0;
+}
+
+function shouldWaveSpawnArmyBoss(waveNum) {
+  if (HOLESY_CONFIG.military.bossEveryWaveTest) return endlessMode && waveNum > 0;
+  const interval = HOLESY_CONFIG.military.armyBossWaveInterval || 5;
+  return endlessMode && waveNum > 0 && waveNum % interval === 0;
+}
+
+function pickBossUnitTypeForWave(waveNum) {
+  if (currentWaveBossUnitType && shouldWaveSpawnArmyBoss(waveNum)) return currentWaveBossUnitType;
+  const locked = BOSS_UNIT_TYPES.filter(type => !unlockedBossUnitTypes.includes(type));
+  const pool = locked.length ? locked : BOSS_UNIT_TYPES;
+  currentWaveBossUnitType = pool[Math.floor(Math.random() * pool.length)] || 'tank';
+  return currentWaveBossUnitType;
+}
+
+function unlockBossDropType(unitType, waveNum = currentWave) {
+  if (!BOSS_UNIT_TYPES.includes(unitType)) return;
+  if (!unlockedBossUnitTypes.includes(unitType)) unlockedBossUnitTypes.push(unitType);
+  if (!bossUnlockWaveByType[unitType]) bossUnlockWaveByType[unitType] = waveNum;
+}
+
+function getUnlockedDropBossTypesForWave(waveNum = currentWave) {
+  return unlockedBossUnitTypes.filter(type => (bossUnlockWaveByType[type] || Infinity) < waveNum);
+}
+
+function getRandomPostBossDropUnitType() {
+  const pool = [UNIT_TYPE_SOLDIER, ...getUnlockedDropBossTypesForWave(currentWave)];
+  return pool[Math.floor(Math.random() * pool.length)] || UNIT_TYPE_SOLDIER;
+}
+
+function getBossBanner(unitType) {
+  const name = BOSS_PERMANENT_NAMES[unitType] || 'Unknown Menace';
+  return `${name} — ${getUnitDefinition(unitType).banner || 'BOSS INBOUND!'}`;
+}
+
+function isFinalConfiguredWave() {
+  return wavesMode && !endlessMode && currentWave >= WAVE_CONFIGS.length - 1;
+}
+
+function getAliveHoleCount() {
+  return holes.reduce((count, h) => count + (h.alive ? 1 : 0), 0);
+}
+
+function shouldSpawnLateModeArmyBoss() {
+  return false;
 }
 
 function resetHoleSizesForEndlessWorldShift() {
@@ -7013,7 +9885,40 @@ function resetHoleSizesForEndlessWorldShift() {
 
 // Starts or advances a wave. waveNum is 1-based. Called from startGame (wave 1)
 // and from the wave-end path for 2+.
+function presentWaveContract(waveNum, onDocked) {
+  if (!waveContractEl) { onDocked(); return; }
+  const token = ++waveContractToken;
+  const pendingMandates = mandateTargets.filter(target => target.progress < target.required || target.failed);
+  const pendingGoals = activeRunObjectives.filter(goal => !goal.complete);
+  const mandateCard = waveContractMandatesEl?.closest('.wave-contract-card');
+  const goalsCard = waveContractGoalsEl?.closest('.wave-contract-card');
+  mandateCard?.classList.toggle('hidden', pendingMandates.length === 0);
+  goalsCard?.classList.toggle('hidden', pendingGoals.length === 0);
+  waveContractMandatesEl.innerHTML = pendingMandates
+    .map(target => `<div>☠ ${escapeHtml(`${target.verb} ${target.required} ${target.label}`)}</div>`).join('');
+  waveContractGoalsEl.innerHTML = pendingGoals
+    .map(goal => `<div>★ ${escapeHtml(goal.label)}</div>`).join('');
+  waveContractEl.classList.remove('hidden', 'docking');
+  hud.style.opacity = '0.28';
+  setTimeout(() => {
+    if (token !== waveContractToken) return;
+    waveContractEl.classList.add('docking');
+    hud.style.opacity = '1';
+  }, 5500);
+  setTimeout(() => {
+    if (token !== waveContractToken) return;
+    waveContractEl.classList.add('hidden');
+    waveContractEl.classList.remove('docking');
+    onDocked();
+  }, 6500);
+}
+
 function startWave(waveNum) {
+  document.body.classList.remove('mandate-screen-warning');
+  document.body.classList.remove('mandate-screen-success');
+  mandatePanelEl?.classList.remove('mandate-success-pulse');
+  removeMandateWarningArrow();
+  if (mandateSuccessPulseTimer) { clearTimeout(mandateSuccessPulseTimer); mandateSuccessPulseTimer = null; }
   unfreezeGameplayTime();
   currentWave = waveNum;
   setEndlessPressureForWave(waveNum);
@@ -7022,22 +9927,27 @@ function startWave(waveNum) {
   applyTimeOfDayLook(waveNum);
   const worldShift = isEndlessWorldShiftWave(waveNum);
   if (worldShift) resetHoleSizesForEndlessWorldShift();
+  refreshRunObjectivesForWave(waveNum);
   scheduleWaveAidDrop();
   wavesTransitioning = false;
-  running = true;
-  restoreGameplayAudioMix();
+  running = false;
   setGameState(GAME_STATES.PLAYING);
-  lastT = performance.now();
   updateHUD();
-  // Banner to announce the wave briefly
-  showWaveBanner(waveNum);
+  presentWaveContract(waveNum, () => {
+    running = true;
+    restoreGameplayAudioMix();
+    lastT = performance.now();
+    triggerHaptic(shouldWaveSpawnArmyBoss(waveNum) ? 'bossInbound' : 'waveStart');
+    showWaveBanner(waveNum);
     showEventBanner(waveThreatBriefing(waveNum), worldShift ? 8200 : HOLESY_CONFIG.eventMessaging.waveBriefingDurationMs);
+  });
 }
 
 // Called when the wave timer hits zero in Waves mode. Either advances to
 // the next wave or ends the run if this was wave 4.
 function onWaveTimerExpired() {
   if (!player.alive && playerConsumedReturnTimer) return;
+  if (triggerMandateFailureGameOver()) return;
   // If somehow only one hole is left at this point, end immediately as a win.
   const aliveCount = holes.filter(h => h.alive).length;
   if (!endlessMode && aliveCount <= 1) { endGame(); return; }
@@ -7046,6 +9956,7 @@ function onWaveTimerExpired() {
     endGame();
     return;
   }
+  if (endlessMode) awardEndlessWaveLoreDrop();
   enterWaveTransition(currentWave + 1);
 }
 
@@ -7060,7 +9971,7 @@ function showWaveBanner(waveNum) {
 
 function waveThreatBriefing(waveNum) {
   if (endlessMode) {
-    if (isEndlessWorldShiftWave(waveNum)) return `Endless Wave ${waveNum}: The Parallax moved the breach. Scores remain. Bodies do not. Every Hunger is small again.`;
+    if (shouldWaveSpawnArmyBoss(waveNum)) return `Endless Wave ${waveNum}: ${getBossBanner(pickBossUnitTypeForWave(waveNum))}`;
     if (waveNum === 1) return 'Endless Wave 1: The first district is still pretending this can be contained.';
     if (waveNum < ENDLESS_WAVE_TUNING.ultraReferenceWave) return `Endless Wave ${waveNum}: The next district has already learned from the last one.`;
     return `Endless Wave ${waveNum}: The Parallax is no longer escalating. It is refining.`;
@@ -7078,6 +9989,11 @@ function waveTransitionLore(nextWave) {
 let currentSoldierSpeedMult = 1.0;
 let currentSoldierDamageMult = 1.0;
 let currentSoldierHitChanceMult = 1.0;
+let armyBossPendingThisWave = false;
+let armyBossSpawnedThisRun = false;
+let currentWaveBossUnitType = null;
+const unlockedBossUnitTypes = [];
+const bossUnlockWaveByType = {};
 // When false (Waves mode, wave 1), no soldier-wave spawns happen.
 // Non-waves modes always have soldiers enabled.
 let soldiersEnabledThisWave = true;
@@ -7466,7 +10382,7 @@ function applyPowerupToHole(h, powerupId) {
     h.unitClearGlowUntil = Math.max(h.unitClearGlowUntil || 0, now + 1200);
   }
   if (h.isPlayer) {
-    showStagePop(powerup.pickupText);
+    triggerHaptic('powerup');
     if (powerup.id === 'growth_cache') {
       flashConsumed('BONUS MASS', new THREE.Vector3(h.x, 0, h.z));
     }
@@ -7538,6 +10454,11 @@ function endGame() {
             ? `Endless Wave ${currentWave} kept going. You did not.`
             : "The breach stayed active, but your hole did not survive the crackdown.";
         }
+      } else if (pendingPlayerEndReason === 'mandate_failed') {
+        reason = "Mandate Failed.";
+        subtitle = endlessMode
+          ? `Endless Wave ${currentWave} closed before the Mandate was complete.`
+          : `Wave ${currentWave} closed before the Mandate was complete.`;
       } else if (aliveHoles.length === 1 && aliveHoles[0].isPlayer) {
         reason = endlessMode ? "Endless Breach Survived." : "Containment Survived.";
         subtitle = endlessMode
@@ -7653,8 +10574,35 @@ function updateHUD() {
     </div>`;
   });
   miniLbEl.innerHTML = mini;
+  flushRunObjectivesUi();
+  updateMandateHUD();
   updateActiveEffectsUi();
+  syncMobileHudToggle();
   updateDebugOverlay();
+}
+
+function syncMobileHudToggle() {
+  if (!mobileHudToggleBtn) return;
+  ensureMobileHudMode();
+  const mobileHudAvailable = isMobileHudAvailable();
+  const toggleVisible = mobileHudAvailable && isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION);
+  mobileHudToggleBtn.classList.toggle('hidden', !toggleVisible);
+  document.body.classList.toggle('mobile-hud-toggle-visible', toggleVisible);
+  const expanded = document.body.classList.contains('mobile-hud-expanded');
+  mobileHudToggleBtn.setAttribute('aria-pressed', expanded ? 'true' : 'false');
+  mobileHudToggleBtn.textContent = expanded ? 'HUD-' : 'HUD+';
+}
+
+function setMobileHudExpanded(expanded) {
+  mobileHudExpandedPreference = !!expanded;
+  try { localStorage.setItem(MOBILE_HUD_STORAGE_KEY, String(mobileHudExpandedPreference)); } catch {}
+  document.body.classList.toggle('mobile-hud-expanded', expanded);
+  document.body.classList.toggle('mobile-hud-compact', !expanded);
+  syncMobileHudToggle();
+}
+
+function updateHapticStatus(text = getHapticSupportText()) {
+  if (hapticStatusEl) hapticStatusEl.textContent = text;
 }
 
 let lastPlayBtnActivationTs = 0;
@@ -7684,6 +10632,42 @@ playBtn.addEventListener('touchend', (e) => {
     handlePlayButtonPress(e);
   }, { passive: false });
 playBtn.addEventListener('pointerup', handlePlayButtonPress);
+if (mobileHudToggleBtn) {
+  mobileHudToggleBtn.addEventListener('click', () => {
+    setMobileHudExpanded(!document.body.classList.contains('mobile-hud-expanded'));
+  });
+}
+if (mobileHudMedia?.addEventListener) {
+  mobileHudMedia.addEventListener('change', () => {
+    ensureMobileHudMode();
+    syncMobileHudToggle();
+  });
+}
+if (hapticTestBtn) {
+  let lastHapticTestActivationTs = 0;
+  const handleHapticTestPress = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const nowTs = performance.now();
+    if (nowTs - lastHapticTestActivationTs < 350) return;
+    lastHapticTestActivationTs = nowTs;
+    hapticTestBtn.textContent = 'Testing...';
+    triggerHaptic('diagnostic', { force: true });
+    const resultText = getHapticResultText();
+    updateHapticStatus(resultText);
+    hapticTestBtn.textContent = getHapticButtonResultText();
+    window.setTimeout(() => {
+      hapticTestBtn.textContent = 'Haptics';
+      updateHapticStatus(getHapticResultText());
+    }, 1800);
+  };
+  hapticTestBtn.addEventListener('click', handleHapticTestPress);
+  hapticTestBtn.addEventListener('pointerup', handleHapticTestPress);
+  hapticTestBtn.addEventListener('touchend', handleHapticTestPress, { passive: false });
+  updateHapticStatus();
+}
 
 // Last Man Standing modal — wire both buttons
 lmsEnterBtn.addEventListener('click', () => enterLms());
@@ -7733,7 +10717,7 @@ modePicker.addEventListener('click', (e) => {
   const option = e.target.closest('.mode-option');
   if (!option) return;
   const mode = option.dataset.mode;
-  if (option.classList.contains('disabled')) {
+  if (option.classList.contains('disabled') || option.disabled) {
     // Gentle feedback that this mode isn't available yet
     option.animate(
       [
@@ -7747,10 +10731,8 @@ modePicker.addEventListener('click', (e) => {
     );
     return;
   }
-  // Update selected styling
-  modePicker.querySelectorAll('.mode-option').forEach(opt => opt.classList.remove('selected'));
-  option.classList.add('selected');
   selectedMode = mode;
+  syncModePickerSelection();
   if (!musicStarted && !music.muted) {
     primeAudioFromStartGesture();
   } else {
@@ -7761,6 +10743,17 @@ modePicker.addEventListener('click', (e) => {
 difficultySelect.addEventListener('change', () => {
   setDifficulty(difficultySelect.value);
 });
+
+if (environmentSelect) {
+  environmentSelect.addEventListener('change', async () => {
+    setEnvironment(environmentSelect.value);
+    if (!isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION)) {
+      tearDownWorld();
+      await populateCity();
+      wakeRenderLoop();
+    }
+  });
+}
 
 function bindMenuActionButton(button, action) {
   if (!button) return;
@@ -7788,11 +10781,15 @@ bindMenuActionButton(loadEndlessSaveBtn, () => loadEndlessGame());
 if (loreCloseBtn) loreCloseBtn.addEventListener('click', closeLoreArchive);
 if (buildVersionBtn) buildVersionBtn.addEventListener('click', openBuildNotes);
 if (buildNotesCloseBtn) buildNotesCloseBtn.addEventListener('click', closeBuildNotes);
+if (statsCloseBtn) statsCloseBtn.addEventListener('click', closeStatsWindow);
 loreModal.addEventListener('click', (e) => {
   if (e.target === loreModal) closeLoreArchive();
 });
 buildNotesModal.addEventListener('click', (e) => {
   if (e.target === buildNotesModal) closeBuildNotes();
+});
+statsModal.addEventListener('click', (e) => {
+  if (e.target === statsModal) closeStatsWindow();
 });
 markBootStep('menu-listeners-ready');
 loreDocListEl.addEventListener('click', (e) => {
@@ -7816,10 +10813,10 @@ function canObjectFitHole(h, obj) {
   return getObjectLargestDimension(obj) <= h.radius * 2 * 0.95 && obj.size <= h.radius * 0.98;
 }
 
-function tryJamOversizedObject(h, obj) {
+function tryJamOversizedObject(h, obj, distance = null) {
   if (!h?.alive || !obj || obj.jammedInHole || obj.consumed || obj.falling || obj.isPowerup) return false;
   if (canObjectFitHole(h, obj)) return false;
-  const d = Math.hypot(obj.x - h.x, obj.z - h.z);
+  const d = distance ?? Math.hypot(obj.x - h.x, obj.z - h.z);
   if (d > Math.max(0.4, h.radius - Math.min(obj.size || 0, h.radius * 0.35))) return false;
 
   obj.jammedInHole = true;
@@ -7919,6 +10916,8 @@ function awardObjectConsume(h, obj) {
   }
   if (obj.isPowerup) applyPowerupToHole(h, obj.powerupId);
   h.targetRadius = radiusFromScore(h);
+  recordMandateTargetConsume(h, obj);
+  if (h.isPlayer) recordPlayerObjectFamilyProgress(obj, h);
   // Category-based sound effect — distance-attenuated relative to player camera
   if (!music.muted) {
     const distToPlayer = Math.hypot(obj.x - player.x, obj.z - player.z);
@@ -7942,6 +10941,7 @@ function awardObjectConsume(h, obj) {
   }
   // Visual feedback for player
   if (h.isPlayer) {
+    triggerHaptic(obj.isBuilding || obj.isVoxelBuildingCube || obj.isSkyscraperChunk || obj.isGovernmentBuildingPiece || obj.physicsStackPiece ? 'objectHeavy' : 'devour');
     flashConsumed(loreScoreMultiplier > 1 ? `${scoreValue} x${loreScoreMultiplier.toFixed(2)}` : scoreValue, new THREE.Vector3(h.x, 0, h.z));
   }
 }
@@ -8042,8 +11042,11 @@ function shouldSettleActiveVoxelAfterHoleMiss(piece) {
   const sourceHole = piece.stackCollapsedBy;
   if (!sourceHole?.alive) return false;
   if (isMeshProjectedInsideHoleMouth(piece.mesh, sourceHole)) return false;
+  const floorY = piece.stackFloorY ?? Math.max(0.2, (piece.stackHeight || 1) / 2);
+  const currentY = piece.mesh?.position?.y ?? floorY;
+  if (currentY > floorY + 0.08) return false;
   const baseY = piece.voxelBaseY ?? piece.mesh?.position?.y ?? 0;
-  const hasStartedFalling = piece.stackReleased || (piece.mesh?.position?.y ?? baseY) < baseY - 0.05;
+  const hasStartedFalling = piece.stackReleased || currentY < baseY - 0.05;
   return hasStartedFalling;
 }
 
@@ -8079,17 +11082,22 @@ function activateGovernmentBuildingFromPiece(obj, h) {
 
 // Helper: a hole consumes an object (triggered when it starts falling)
 function beginConsume(h, obj) {
-  if (obj.isGovernmentBuildingPiece && !obj.govPhysicsActive) {
+  if (obj.parkParcelKey && !obj.isPerson) triggerParkVisitorPanic(obj.parkParcelKey, h);
+  if (obj.mandateKind === 'hydrant') spawnHydrantJet(obj);
+  if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
+    const activated = obj.stackKind === 'smallVoxel'
+      ? activateSmallVoxelBuilding(obj, h)
+      : activateVoxelBuildingColumn(obj, h);
+    if (!activated) return;
+  } else if (obj.isGovernmentBuildingPiece && !obj.govPhysicsActive && !obj.isVoxelBuildingCube) {
     activateGovernmentBuildingFromPiece(obj, h);
     return;
   }
-  if (obj.isGovernmentBuildingPiece && obj.govPhysicsActive) {
+  if (obj.isGovernmentBuildingPiece && obj.govPhysicsActive && !obj.isVoxelBuildingCube) {
     if ((obj.govDebrisProtectedUntil || 0) > performance.now()) return;
     governmentPhysics.removeObject(obj);
   }
-  if (obj.physicsStackPiece && obj.isVoxelBuildingCube && !obj.stackActive) {
-    if (!activateVoxelBuildingColumn(obj, h)) return;
-  } else if (obj.physicsStackPiece && !obj.isVoxelBuildingCube) {
+  if (obj.physicsStackPiece && !obj.isVoxelBuildingCube) {
     if (!activatePhysicsStack(obj.stackId, h, obj)) return;
   }
   extinguishBuildingLights(obj, true);
@@ -8186,6 +11194,8 @@ function holeEatsHole(eater, eaten) {
   if (!endlessMode || eaten.isPlayer) scene.remove(eaten.group);
   // Visual feedback
   if (eater.isPlayer) {
+    triggerHaptic('rivalDevoured');
+    recordMandateRivalHoleConsume(eater, eaten);
     showStagePop('DEVOURED ' + eaten.name.toUpperCase() + '!');
     flashConsumed('+' + reward + ' (ate ' + eaten.name + ')', new THREE.Vector3(eater.x, 0, eater.z));
     // Apple bite-n-chew sound plays the player's own kill
@@ -8224,6 +11234,41 @@ function scoreObjectForAI(h, p, o, distance) {
   }
   const valueStream = baseValue + routeValue * 0.32 * (p.routeLookahead || 0);
   return ((Math.pow(valueStream, p.greed) * sizeFactor * powerupFactor * scoreFactor) / distancePenalty) * jitter;
+}
+
+function getCollapseFocusObjectiveForAI(h, p) {
+  const focus = h.collapseFocus;
+  if (!focus) return null;
+  if (getGameplayNow() > (focus.expiresAt || 0)) {
+    h.collapseFocus = null;
+    return null;
+  }
+  const maxSize = h.radius * 0.95;
+  let best = null;
+  let bestScore = -Infinity;
+  for (const o of objects) {
+    if (o.consumed || o.falling || o.airDropping) continue;
+    if (o.size > maxSize) continue;
+    if (focus.stackId && o.stackId !== focus.stackId) continue;
+    if (o.physicsStackPiece && !o.stackActive) continue;
+    if (o.physicsStackPiece && !o.stackSettled && !o.isSkyscraperChunk) continue;
+    const focusDist = Math.hypot(o.x - focus.x, o.z - focus.z);
+    if (focusDist > AI_COLLAPSE_FOCUS_SEARCH_RADIUS) continue;
+    const d = Math.hypot(o.x - h.x, o.z - h.z);
+    const score = scoreObjectForAI(h, p, o, d) * (1.5 + Math.max(0, 1 - focusDist / AI_COLLAPSE_FOCUS_SEARCH_RADIUS));
+    if (score > bestScore) {
+      bestScore = score;
+      best = o;
+    }
+  }
+  if (best) return { type: 'object', target: best };
+  return {
+    type: 'search',
+    target: {
+      x: clampToArena(focus.x + randomBetween(-4, 4), 3),
+      z: clampToArena(focus.z + randomBetween(-4, 4), 3),
+    },
+  };
 }
 
 function getAidSearchPoint(ship, p) {
@@ -8307,13 +11352,14 @@ function clampVectorLength2(x, z, maxLength) {
 
 function getObjectLargestDimension(obj) {
   if (!obj) return 0;
-  const dims = [
-    obj.stackPieceW,
-    obj.stackPieceD,
-    obj.stackHeight,
-    obj.size ? obj.size * 2 : 0,
-  ].filter(value => Number.isFinite(value) && value > 0);
-  return dims.length ? Math.max(...dims) : (obj.size || 0) * 2;
+  let largest = Math.max(0, Number(obj.size) || 0) * 2;
+  const width = Number(obj.stackPieceW) || 0;
+  const depth = Number(obj.stackPieceD) || 0;
+  const height = Number(obj.stackHeight) || 0;
+  if (width > largest) largest = width;
+  if (depth > largest) largest = depth;
+  if (height > largest) largest = height;
+  return largest;
 }
 
 function clampVoxelMotion(piece) {
@@ -8517,7 +11563,9 @@ function createCollapsePlan(stackId, sourceHole, consumedPiece) {
   const centerZ = anchor?.stackCenterZ ?? anchor?.z ?? sourceHole.z;
   const hitX = consumedPiece?.x ?? sourceHole.x;
   const hitZ = consumedPiece?.z ?? sourceHole.z;
-  const away = normalize2(centerX - sourceHole.x, centerZ - sourceHole.z, normalize2(centerX - hitX, centerZ - hitZ));
+  const randomAway = normalize2(randomBetween(-1, 1), randomBetween(-1, 1));
+  const sourceAway = normalize2(sourceHole.x - centerX, sourceHole.z - centerZ, randomAway);
+  const away = normalize2(hitX - centerX, hitZ - centerZ, sourceAway);
   const jitter = randomBetween(-0.34, 0.34);
   const cos = Math.cos(jitter);
   const sin = Math.sin(jitter);
@@ -8578,6 +11626,14 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
   const firstActivation = !activePhysicsStackIds.has(stackId);
   if (firstActivation) {
     activePhysicsStackIds.add(stackId);
+    const intactShell = megakitIntactShellsByStack.get(stackId);
+    if (intactShell) {
+      if (intactShell.parent) intactShell.parent.remove(intactShell);
+      megakitIntactShellsByStack.delete(stackId);
+    }
+    for (const piece of physicsStackPieces) {
+      if (piece.stackId === stackId && piece.mesh) piece.mesh.visible = true;
+    }
     extinguishStackLights(stackId);
     if (!music.muted) {
       const sourceX = sourceHole?.x ?? player.x;
@@ -8589,6 +11645,7 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
   }
 
   const plan = getCollapsePlan(stackId, sourceHole, consumedPiece);
+  rememberAiCollapseFocus(sourceHole, plan.centerX, plan.centerZ, stackId);
   for (const piece of physicsStackPieces) {
     if (piece.stackId !== stackId || piece.consumed || piece.falling || piece.stackActive) continue;
     piece.stackActive = true;
@@ -8635,8 +11692,8 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
     piece.vx += clamped.x;
     piece.vz += clamped.z;
     piece.vy += plan.style === 'pancake'
-      ? randomBetween(-0.55, 0.12) - (1 - floorT) * 0.32
-      : 0.24 + Math.random() * 0.72 + floorT * 0.74;
+      ? randomBetween(-0.75, 0.04) - (1 - floorT) * 0.42
+      : randomBetween(0.02, 0.24) + floorT * 0.28;
     piece.avx += randomBetween(-2.8, 2.8) + plan.lateral.z * (plan.style === 'pancake' ? 0.55 : 1.6 + floorT * 3.2);
     piece.avy += randomBetween(-1.8, 1.8) + bandShear * 1.05 + spiral * 0.9;
     piece.avz += randomBetween(-2.8, 2.8) - plan.lateral.x * (plan.style === 'pancake' ? 0.55 : 1.6 + floorT * 3.2);
@@ -8653,6 +11710,7 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
 
   let activated = false;
   const now = getGameplayNow();
+  rememberAiCollapseFocus(sourceHole, seedPiece.stackCenterX ?? seedPiece.x, seedPiece.stackCenterZ ?? seedPiece.z, stackId);
   const outward = normalize2(seedPiece.x - sourceHole.x, seedPiece.z - sourceHole.z, { x: 0, z: 1 });
   const lateralRoll = randomBetween(-0.42, 0.42);
   const cos = Math.cos(lateralRoll);
@@ -8680,7 +11738,7 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     piece.stackSupportLostAt = 0;
     piece.stackSupportDelaySeconds = piece.stackIndex <= 0
       ? 0
-      : randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax) * (0.62 + floorT * 0.48);
+      : randomBetween(STACK_PHYSICS_CONFIG.voxelReleaseDelayMin, STACK_PHYSICS_CONFIG.voxelReleaseDelayMax) * (0.52 + floorT * 0.32);
     piece.stackDelaySeconds = 0;
     piece.stackMaxSpread = STACK_PHYSICS_CONFIG.voxelColumnSpread;
     piece.voxelBaseX = piece.x;
@@ -8713,7 +11771,7 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     const lateralKick = (randomBetween(0.22, 0.62) + breakImpulse) * (0.62 + floorT * 0.8);
     piece.vx += breakDir.x * lateralKick + randomBetween(-0.32, 0.32);
     piece.vz += breakDir.z * lateralKick + randomBetween(-0.32, 0.32);
-    piece.vy = Math.max(piece.vy, randomBetween(0.14, 0.36) * (0.55 + floorT));
+    piece.vy = Math.max(piece.vy, randomBetween(0.02, 0.12) * (0.45 + floorT * 0.45));
     piece.avx += randomBetween(-0.75, 0.75) + breakDir.z * lateralKick * 0.22;
     piece.avy += randomBetween(-0.55, 0.55) + randomBetween(-0.18, 0.18) * lateralKick;
     piece.avz += randomBetween(-0.75, 0.75) - breakDir.x * lateralKick * 0.22;
@@ -8732,16 +11790,38 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
   return activated;
 }
 
+function activateSmallVoxelBuilding(seedPiece, sourceHole = player) {
+  if (!seedPiece?.isVoxelBuildingCube || seedPiece.stackKind !== 'smallVoxel') return false;
+  const stackId = seedPiece.stackId;
+  if (stackId === undefined) return false;
+  let activated = false;
+  const columnSeeds = new Map();
+  for (const piece of physicsStackPieces) {
+    if (piece.stackId !== stackId || !piece.isVoxelBuildingCube || piece.stackActive || piece.consumed || piece.falling) continue;
+    const key = `${piece.voxelColX}:${piece.voxelColZ}`;
+    if (!columnSeeds.has(key) || (piece.stackIndex || 0) < (columnSeeds.get(key).stackIndex || 0)) {
+      columnSeeds.set(key, piece);
+    }
+  }
+  for (const piece of columnSeeds.values()) {
+    activated = activateVoxelBuildingColumn(piece, sourceHole) || activated;
+  }
+  return activated;
+}
+
+const contactNonVoxelPieces = [];
+const contactVoxelPieces = [];
+const voxelContactStacks = new Map();
+
 function resolvePhysicsStackContacts(dt) {
-  const activePieces = physicsStackPieces.filter(piece => piece.stackActive && !piece.stackSettled && !piece.consumed && !piece.falling && !piece.jammedInHole);
-  const solidVoxelPieces = physicsStackPieces.filter(piece =>
-    piece.stackActive &&
-    piece.isVoxelBuildingCube &&
-    !piece.consumed &&
-    !piece.falling &&
-    !piece.jammedInHole
-  );
-  const nonVoxelPieces = activePieces.filter(piece => !piece.isVoxelBuildingCube);
+  contactNonVoxelPieces.length = 0;
+  contactVoxelPieces.length = 0;
+  for (const piece of physicsStackPieces) {
+    if (!piece.stackActive || piece.consumed || piece.falling || piece.jammedInHole) continue;
+    if (piece.isVoxelBuildingCube || piece.usesBoxStackContacts) contactVoxelPieces.push(piece);
+    else if (!piece.stackSettled) contactNonVoxelPieces.push(piece);
+  }
+  const nonVoxelPieces = contactNonVoxelPieces;
   for (let i = 0; i < nonVoxelPieces.length; i++) {
     const a = nonVoxelPieces[i];
     for (let j = i + 1; j < nonVoxelPieces.length; j++) {
@@ -8768,9 +11848,10 @@ function resolvePhysicsStackContacts(dt) {
     }
   }
 
-  const voxelPieces = solidVoxelPieces;
+  const voxelPieces = contactVoxelPieces;
   if (!voxelPieces.length) return;
-  const byStack = new Map();
+  const byStack = voxelContactStacks;
+  byStack.clear();
   for (const piece of voxelPieces) {
     const list = byStack.get(piece.stackId) || [];
     list.push(piece);
@@ -8785,6 +11866,7 @@ function resolvePhysicsStackContacts(dt) {
       const reachY = (a.stackHeight || a.size * 2 || 1) * 2.25;
       for (let j = i + 1; j < pieces.length && checkedPairs < maxPairs; j++) {
         const b = pieces[j];
+        if (a.stackSettled && b.stackSettled) continue;
         const dy = b.mesh.position.y - a.mesh.position.y;
         if (dy > reachY + (b.stackHeight || b.size * 2 || 1)) break;
         const dx = b.x - a.x;
@@ -8859,10 +11941,14 @@ function resolvePhysicsStackContacts(dt) {
           a.avy += randomBetween(-0.1, 0.1) * impulse;
           b.avy += randomBetween(-0.1, 0.1) * impulse;
         }
-        a.stackSettled = false;
-        b.stackSettled = false;
-        a.stackRestTimer = 0;
-        b.stackRestTimer = 0;
+        if (impact >= 0.35) {
+          a.stackSettled = false;
+          b.stackSettled = false;
+          a.stackRestTimer = 0;
+          b.stackRestTimer = 0;
+          a.groundedSpinTimer = 0;
+          b.groundedSpinTimer = 0;
+        }
         clampVoxelMotion(a);
         clampVoxelMotion(b);
         a.mesh.position.x = a.x;
@@ -8875,18 +11961,18 @@ function resolvePhysicsStackContacts(dt) {
 }
 
 function applyVoxelObjectImpacts(dt) {
-  const activeVoxels = physicsStackPieces.filter(piece =>
-    piece.isVoxelBuildingCube &&
-    piece.stackActive &&
-    piece.stackReleased &&
-    !piece.stackSettled &&
-    !piece.consumed &&
-    !piece.falling &&
-    !piece.jammedInHole
-  );
   let processedCubes = 0;
-  for (const cube of activeVoxels) {
+  for (const cube of physicsStackPieces) {
     if (processedCubes >= STACK_PHYSICS_CONFIG.voxelImpactMaxCubesPerFrame) break;
+    if (
+      !cube.isVoxelBuildingCube ||
+      !cube.stackActive ||
+      !cube.stackReleased ||
+      cube.stackSettled ||
+      cube.consumed ||
+      cube.falling ||
+      cube.jammedInHole
+    ) continue;
     const cubeSpeed = Math.hypot(cube.vx || 0, cube.vy || 0, cube.vz || 0);
     if (cubeSpeed < 0.35) continue;
     processedCubes++;
@@ -8941,17 +12027,39 @@ function applyVoxelObjectImpacts(dt) {
   }
 }
 
+const INACTIVE_STACK_SCAN_STRIDE = ACTIVE_PERFORMANCE_PROFILE_NAME === 'low'
+  ? 8
+  : ACTIVE_PERFORMANCE_PROFILE_NAME === 'medium' ? 6 : 4;
+let inactiveStackScanFrame = 0;
+
+function sleepPhysicsStackPiece(piece) {
+  piece.stackSettled = true;
+  piece.stackRestTimer = 0;
+  piece.groundedSpinTimer = 0;
+  piece.vx = 0;
+  piece.vy = 0;
+  piece.vz = 0;
+  piece.avx = 0;
+  piece.avy = 0;
+  piece.avz = 0;
+  if (piece.isVoxelBuildingCube) snapVoxelCubeToGroundFace(piece);
+}
+
 function updatePhysicsStackPieces(dt) {
-  for (const piece of physicsStackPieces) {
+  const inactiveScanBucket = inactiveStackScanFrame++ % INACTIVE_STACK_SCAN_STRIDE;
+  for (let pieceIndex = 0; pieceIndex < physicsStackPieces.length; pieceIndex++) {
+    const piece = physicsStackPieces[pieceIndex];
     if (piece.consumed || piece.falling || piece.jammedInHole) continue;
 
     if (!piece.stackActive) {
+      if (pieceIndex % INACTIVE_STACK_SCAN_STRIDE !== inactiveScanBucket) continue;
       for (const h of holes) {
         if (!h.alive) continue;
         const d = Math.hypot(piece.x - h.x, piece.z - h.z);
         if (piece.isVoxelBuildingCube) {
           if (d < h.radius + piece.size + STACK_PHYSICS_CONFIG.voxelTriggerPadding) {
-            activateVoxelBuildingColumn(piece, h);
+            if (piece.stackKind === 'smallVoxel') activateSmallVoxelBuilding(piece, h);
+            else activateVoxelBuildingColumn(piece, h);
             break;
           }
         } else if (d < h.radius + STACK_PHYSICS_CONFIG.triggerPadding) {
@@ -9004,7 +12112,8 @@ function updatePhysicsStackPieces(dt) {
     piece.avz *= 0.986;
     clampVoxelMotion(piece);
 
-    if (piece.mesh.position.y <= piece.stackFloorY) {
+    const onGround = piece.mesh.position.y <= piece.stackFloorY;
+    if (onGround) {
       const impactSpeed = Math.abs(piece.vy || 0);
       piece.mesh.position.y = piece.stackFloorY;
       if (Math.abs(piece.vy) > 2.2) {
@@ -9040,30 +12149,26 @@ function updatePhysicsStackPieces(dt) {
 
     const speed = Math.hypot(piece.vx, piece.vy, piece.vz);
     const angularSpeed = Math.hypot(piece.avx, piece.avy, piece.avz);
+    if (onGround && speed < 0.5) {
+      piece.groundedSpinTimer = (piece.groundedSpinTimer || 0) + dt;
+    } else {
+      piece.groundedSpinTimer = 0;
+    }
+    const forceGroundSleep = piece.groundedSpinTimer >= 0.75;
     const groundedIdle = piece.mesh.position.y <= piece.stackFloorY + 0.001 &&
       speed < STACK_PHYSICS_CONFIG.groundedSpeedCutoff &&
       angularSpeed < STACK_PHYSICS_CONFIG.groundedSpinCutoff;
-    if (piece.mesh.position.y <= piece.stackFloorY + 0.001 && speed < STACK_PHYSICS_CONFIG.restSpeed && angularSpeed < STACK_PHYSICS_CONFIG.restAngularSpeed) {
+    if (forceGroundSleep) {
+      sleepPhysicsStackPiece(piece);
+    } else if (piece.mesh.position.y <= piece.stackFloorY + 0.001 && speed < STACK_PHYSICS_CONFIG.restSpeed && angularSpeed < STACK_PHYSICS_CONFIG.restAngularSpeed) {
       piece.stackRestTimer += dt;
       if (piece.stackRestTimer >= STACK_PHYSICS_CONFIG.settleAfterSeconds) {
-        piece.stackSettled = true;
-        if (piece.isVoxelBuildingCube) {
-          snapVoxelCubeToGroundFace(piece);
-        } else {
-          piece.vx = 0; piece.vy = 0; piece.vz = 0;
-          piece.avx = 0; piece.avy = 0; piece.avz = 0;
-        }
+        sleepPhysicsStackPiece(piece);
       }
     } else if (groundedIdle) {
       piece.stackRestTimer += dt;
       if (piece.stackRestTimer >= STACK_PHYSICS_CONFIG.groundedIdleSettleSeconds) {
-        piece.stackSettled = true;
-        if (piece.isVoxelBuildingCube) {
-          snapVoxelCubeToGroundFace(piece);
-        } else {
-          piece.vx = 0; piece.vy = 0; piece.vz = 0;
-          piece.avx = 0; piece.avy = 0; piece.avz = 0;
-        }
+        sleepPhysicsStackPiece(piece);
       }
     } else {
       piece.stackRestTimer = 0;
@@ -9117,6 +12222,8 @@ function updateAI(h, dt) {
   // AI fleeing from soldiers picks a target point AWAY from the soldier centroid.
   let soldierThreat = null;
   let soldierThreatCentroid = null;
+  let edibleSoldier = null;
+  let edibleSoldierDist = Infinity;
   if (soldiers && soldiers.length > 0) {
     let nearbySoldierCount = 0;
     let cx = 0, cz = 0, nearestSoldierDist = Infinity;
@@ -9177,10 +12284,10 @@ function updateAI(h, dt) {
     let minPreyDist = Infinity;
     for (const other of holes) {
       if (other === h || !other.alive) continue;
-      if (other.radius < h.radius * 0.9) {
+      if (other.radius < h.radius * 0.98) {
         const d = Math.hypot(other.x - h.x, other.z - h.z);
         // Prey must be within vision AND within aggression-scaled hunt range
-        const huntRange = Math.min(p.visionRange, 30 * (p.aggression + (p.chaseBonus || 0)));
+        const huntRange = Math.min(p.visionRange * (other.isPlayer ? 1.25 : 1), (other.isPlayer ? 44 : 34) * (p.aggression + (p.chaseBonus || 0) + currentWave * 0.025));
         if (d < huntRange && d < minPreyDist) {
           prey = other;
           minPreyDist = d;
@@ -9189,6 +12296,7 @@ function updateAI(h, dt) {
     }
 
     const aidObjective = getAidObjectiveForAI(h, p);
+    const collapseObjective = getCollapseFocusObjectiveForAI(h, p);
 
     if (soldierThreat) {
       // Flee soldiers — pick a wander target away from soldier centroid at ~40 units
@@ -9203,6 +12311,10 @@ function updateAI(h, dt) {
     } else if (threat) {
       h.aiState = 'flee';
       h.aiTargetObj = threat;
+    } else if (edibleSoldier && Math.random() < Math.min(0.9, 0.08 + currentWave * 0.065 + p.aggression * 0.12)) {
+      h.aiState = 'hunt_object';
+      h.aiTargetObj = edibleSoldier;
+      h.aiTimer = Math.min(h.aiTimer, Math.max(0.18, 0.65 - currentWave * 0.025));
     } else if (aidObjective && aidObjective.type === 'object') {
       h.aiState = 'hunt_object';
       h.aiTargetObj = aidObjective.target;
@@ -9213,7 +12325,18 @@ function updateAI(h, dt) {
       h.wanderZ = aidObjective.target.z;
       h.aiTargetObj = null;
       h.aiTimer = Math.min(h.aiTimer, 0.55 + Math.random() * 0.35);
-    } else if (prey && Math.random() < Math.min(0.98, 0.4 + p.aggression * 0.3 + (p.chaseBonus || 0))) {
+    } else if (collapseObjective && collapseObjective.type === 'object') {
+      h.aiState = 'hunt_object';
+      h.aiTargetObj = collapseObjective.target;
+      objectReservations.set(collapseObjective.target, h);
+      h.aiTimer = Math.min(h.aiTimer, 0.45 + Math.random() * 0.28);
+    } else if (collapseObjective && collapseObjective.type === 'search') {
+      h.aiState = 'wander';
+      h.wanderX = collapseObjective.target.x;
+      h.wanderZ = collapseObjective.target.z;
+      h.aiTargetObj = null;
+      h.aiTimer = Math.min(h.aiTimer, 0.55 + Math.random() * 0.35);
+    } else if (prey && (prey.isPlayer || Math.random() < Math.min(0.98, 0.55 + p.aggression * 0.3 + (p.chaseBonus || 0)))) {
       h.aiState = 'hunt_hole';
       h.aiTargetObj = prey;
     } else if (Math.random() < p.wanderBias) {
@@ -9333,10 +12456,8 @@ function moveHole(h, dt) {
   if (!h.alive) return;
   // Constant speed regardless of radius — no "big hole moves like snail"
   // Fleeing AI moves nearly as fast as the player so chases are real contests
-  let speed;
-  if (h.isPlayer) speed = 14;
-  else if (h.aiState === 'flee') speed = 13.5; // fleeing AI — nearly player speed
-  else speed = 12;
+  let speed = h.isPlayer ? 14 : (h.aiState === 'flee' ? 13.5 : 12);
+  if (!h.isPlayer && h.aiState === 'hunt_hole') speed *= Math.min(1.55, 1.08 + Math.max(0, currentWave - 1) * 0.04);
   if (!h.isPlayer && h.personality && h.personality.speedMult) speed *= h.personality.speedMult;
   speed *= getHoleSpeedMultiplier(h);
   const dx = h.targetX - h.x;
@@ -9366,7 +12487,14 @@ function resolveHoleCollisions() {
       const smaller = bigger === a ? b : a;
       // If smaller hole's center is inside bigger hole, AND bigger is at least slightly larger
       if (d < bigger.radius - 0.2 && bigger.radius > smaller.radius * 1.02) {
-        holeEatsHole(bigger, smaller);
+        const now = performance.now();
+        if (smaller.pendingPredator !== bigger) {
+          smaller.pendingPredator = bigger; smaller.predatorContactSince = now; smaller.predatorContactFrames = 1; continue;
+        }
+        smaller.predatorContactFrames = (smaller.predatorContactFrames || 0) + 1;
+        if (smaller.predatorContactFrames >= 3 && now - (smaller.predatorContactSince || now) >= 140) holeEatsHole(bigger, smaller);
+      } else if (smaller.pendingPredator === bigger) {
+        smaller.pendingPredator = null; smaller.predatorContactSince = 0; smaller.predatorContactFrames = 0;
       }
     }
   }
@@ -9887,6 +13015,7 @@ function updateMovingPeople(dt) {
 const planes = [];
 const paratroopers = [];
 const soldiers = [];
+const consumedWaveUnits = [];
 const tracers = []; // active bullet-trail line meshes with fade timers
 let waveTimer = 9; // replaced by the active wave config when a run starts
 let waveNumber = 0;
@@ -9925,19 +13054,409 @@ const UNIT_CLEAR_DAMAGE_REFUND_HIGHROLL_FLOOR = 0.82;
 const UNIT_CLEAR_DAMAGE_REFUND_HIGHROLL_CHANCE = 0.8;
 const UNIT_CLEAR_RECENT_DAMAGE_CAP_BASE = 0.4;
 const UNIT_CLEAR_RECENT_DAMAGE_CAP_PER_SOLDIER = 0.12;
+const SOLDIER_BASE_EAT_RADIUS = 0.8;
+const SOLDIER_BASE_SCORE_VALUE = 30;
+const SOLDIER_BASE_PROGRESS_VALUE = 1;
+const UNIT_TYPE_SOLDIER = 'soldier';
+const BOSS_UNIT_TYPES = Object.freeze(['tank', 'mech', 'heavy', 'mortar', 'sniper', 'drone', 'grenadier', 'flamer', 'railgun', 'shock']);
+const BOSS_PERMANENT_NAMES = Object.freeze({
+  tank: 'General Treadwell', mech: 'Major Overkill', heavy: 'Commander Bulkhead',
+  mortar: 'Colonel Crater', sniper: 'Deadeye Dolores', drone: 'Marshal Buzzkill',
+  grenadier: 'Captain Kaboom', flamer: 'Baron Burnside', railgun: 'Doctor Longshot',
+  shock: 'Sergeant Static',
+});
+const OFFENSIVE_UNIT_DEFS = Object.freeze({
+  soldier: Object.freeze({
+    id: 'soldier',
+    label: 'Soldier',
+    banner: 'SOLDIER DROP',
+    attack: 'rifle',
+    bossEligible: false,
+    scale: 1,
+    damageMultiplier: 1,
+    dropDamageMultiplier: 1,
+    eatRadius: SOLDIER_BASE_EAT_RADIUS,
+    scoreValue: SOLDIER_BASE_SCORE_VALUE,
+    progressValue: SOLDIER_BASE_PROGRESS_VALUE,
+    range: SOLDIER_RANGE,
+    speedMult: 0.78,
+    shotsPerSecond: SOLDIER_SHOTS_PER_SEC,
+    burstCount: SOLDIER_BURST_COUNT,
+    reloadTime: SOLDIER_RELOAD_TIME,
+    hitChance: [0.60, 0.40, 0.20],
+  }),
+  tank: Object.freeze({
+    id: 'tank',
+    label: 'Siege Tank',
+    banner: 'BOSS INBOUND: SIEGE TANK - BIG CANNON, HUGE SINGLE HIT.',
+    attack: 'cannon',
+    bossEligible: true,
+    scale: 1,
+    parachuteScale: 1.85,
+    damageMultiplier: 5.4,
+    dropDamageMultiplier: 2.7,
+    eatRadius: HOLESY_CONFIG.military.armyBossEatRadius,
+    dropEatRadius: 2.45,
+    scoreValue: HOLESY_CONFIG.military.armyBossScoreValue,
+    dropScoreValue: 70,
+    progressValue: HOLESY_CONFIG.military.armyBossProgressValue,
+    dropProgressValue: 2,
+    range: 22,
+    speedMult: 1.55,
+    shotsPerSecond: 0.28,
+    burstCount: 1,
+    reloadTime: 2.8,
+    hitChance: [0.82, 0.62, 0.42],
+  }),
+  mech: Object.freeze({
+    id: 'mech',
+    label: 'Twin-Gun Mech',
+    banner: 'BOSS INBOUND: TWIN-GUN MECH - TWO HEAVY MACHINE-GUN HANDS.',
+    attack: 'twin_machine_gun',
+    bossEligible: true,
+    scale: 2.25,
+    parachuteScale: 1.55,
+    damageMultiplier: 3.75,
+    dropDamageMultiplier: 1.875,
+    eatRadius: 2.25,
+    dropEatRadius: 1.65,
+    scoreValue: 105,
+    dropScoreValue: 58,
+    progressValue: 3,
+    dropProgressValue: 2,
+    range: 18,
+    speedMult: 1.32,
+    shotsPerSecond: 5.5,
+    burstCount: 12,
+    reloadTime: 1.35,
+    hitChance: [0.52, 0.36, 0.22],
+    muzzleOffsets: [-0.55, 0.55],
+  }),
+  heavy: Object.freeze({
+    id: 'heavy',
+    label: 'Shield Commander',
+    banner: 'BOSS INBOUND: SHIELD COMMANDER - HEAVY BURSTS AND HARD ARMOR.',
+    attack: 'heavy_burst',
+    bossEligible: true,
+    scale: 2.8,
+    parachuteScale: 1.45,
+    damageMultiplier: 3.8,
+    dropDamageMultiplier: 1.9,
+    eatRadius: 2.55,
+    dropEatRadius: 1.85,
+    scoreValue: 110,
+    dropScoreValue: 60,
+    progressValue: 3,
+    dropProgressValue: 2,
+    range: 17,
+    speedMult: 0.95,
+    shotsPerSecond: 2.1,
+    burstCount: 4,
+    reloadTime: 1.85,
+    hitChance: [0.68, 0.46, 0.27],
+  }),
+  mortar: Object.freeze({
+    id: 'mortar',
+    label: 'Mortar Carrier',
+    banner: 'BOSS INBOUND: MORTAR CARRIER - LOBS SPLASH ROUNDS OVER COVER.',
+    attack: 'mortar',
+    bossEligible: true,
+    scale: 2.2,
+    parachuteScale: 1.45,
+    damageMultiplier: 3.9,
+    dropDamageMultiplier: 1.95,
+    eatRadius: 2.35,
+    dropEatRadius: 1.75,
+    scoreValue: 105,
+    dropScoreValue: 58,
+    progressValue: 3,
+    dropProgressValue: 2,
+    range: 26,
+    speedMult: 1.05,
+    shotsPerSecond: 0.42,
+    burstCount: 1,
+    reloadTime: 2.25,
+    hitChance: [0.72, 0.55, 0.38],
+    areaRadius: 3.6,
+    tracerColor: 0xff9f1c,
+    tracerY: 1.65,
+    tracerDuration: 0.26,
+    cannonAudio: true,
+    visualColor: 0xb36b24,
+    trimColor: 0xffc857,
+  }),
+  sniper: Object.freeze({
+    id: 'sniper',
+    label: 'Rail Sniper',
+    banner: 'BOSS INBOUND: RAIL SNIPER - LONG RANGE, SLOW, MEAN SHOTS.',
+    attack: 'sniper',
+    bossEligible: true,
+    scale: 2.0,
+    parachuteScale: 1.35,
+    damageMultiplier: 4.25,
+    dropDamageMultiplier: 2.125,
+    eatRadius: 2.05,
+    dropEatRadius: 1.55,
+    scoreValue: 100,
+    dropScoreValue: 55,
+    progressValue: 3,
+    dropProgressValue: 2,
+    range: 32,
+    speedMult: 1.1,
+    shotsPerSecond: 0.55,
+    burstCount: 1,
+    reloadTime: 1.7,
+    hitChance: [0.92, 0.78, 0.58],
+    tracerColor: 0xd7f7ff,
+    tracerY: 1.35,
+    tracerDuration: 0.20,
+    visualColor: 0x323b45,
+    trimColor: 0x9de8ff,
+  }),
+  drone: Object.freeze({
+    id: 'drone',
+    label: 'Drone Marshal',
+    banner: 'BOSS INBOUND: DRONE MARSHAL - FAST HOVER UNIT WITH STINGING LASERS.',
+    attack: 'drone_laser',
+    bossEligible: true,
+    scale: 1.75,
+    parachuteScale: 1.3,
+    damageMultiplier: 3.15,
+    dropDamageMultiplier: 1.575,
+    eatRadius: 1.9,
+    dropEatRadius: 1.35,
+    scoreValue: 95,
+    dropScoreValue: 50,
+    progressValue: 3,
+    dropProgressValue: 2,
+    range: 19,
+    speedMult: 2.2,
+    shotsPerSecond: 7.2,
+    burstCount: 18,
+    reloadTime: 1.2,
+    hitChance: [0.46, 0.34, 0.21],
+    tracerColor: 0xbaff39,
+    tracerY: 1.9,
+    tracerDuration: 0.09,
+    visualColor: 0x294041,
+    trimColor: 0xbaff39,
+  }),
+  grenadier: Object.freeze({
+    id: 'grenadier',
+    label: 'Grenade Captain',
+    banner: 'BOSS INBOUND: GRENADE CAPTAIN - BURST EXPLOSIVES, DANGEROUS UP CLOSE.',
+    attack: 'grenade',
+    bossEligible: true,
+    scale: 2.15,
+    parachuteScale: 1.4,
+    damageMultiplier: 3.55,
+    dropDamageMultiplier: 1.775,
+    eatRadius: 2.2,
+    dropEatRadius: 1.65,
+    scoreValue: 100,
+    dropScoreValue: 55,
+    progressValue: 3,
+    dropProgressValue: 2,
+    range: 15,
+    speedMult: 1.25,
+    shotsPerSecond: 1.15,
+    burstCount: 3,
+    reloadTime: 1.8,
+    hitChance: [0.78, 0.48, 0.22],
+    areaRadius: 2.8,
+    tracerColor: 0xff5d2e,
+    tracerY: 1.2,
+    tracerDuration: 0.18,
+    cannonAudio: true,
+    visualColor: 0x58662a,
+    trimColor: 0xff7b35,
+  }),
+  flamer: Object.freeze({
+    id: 'flamer',
+    label: 'Flame Rig',
+    banner: 'BOSS INBOUND: FLAME RIG - SHORT RANGE, BRUTAL CLOSE PRESSURE.',
+    attack: 'flame',
+    bossEligible: true,
+    scale: 2.35,
+    parachuteScale: 1.45,
+    damageMultiplier: 3.7,
+    dropDamageMultiplier: 1.85,
+    eatRadius: 2.3,
+    dropEatRadius: 1.7,
+    scoreValue: 105,
+    dropScoreValue: 58,
+    progressValue: 3,
+    dropProgressValue: 2,
+    range: 10,
+    speedMult: 1.55,
+    shotsPerSecond: 4.4,
+    burstCount: 14,
+    reloadTime: 1.55,
+    hitChance: [0.82, 0.36, 0.12],
+    damageScale: 0.52,
+    tracerColor: 0xff7a00,
+    tracerY: 1.25,
+    tracerDuration: 0.16,
+    visualColor: 0x71351b,
+    trimColor: 0xffb000,
+  }),
+  railgun: Object.freeze({
+    id: 'railgun',
+    label: 'Railgun Tripod',
+    banner: 'BOSS INBOUND: RAILGUN TRIPOD - CHARGED PIERCING SHOTS.',
+    attack: 'railgun',
+    bossEligible: true,
+    scale: 2.4,
+    parachuteScale: 1.5,
+    damageMultiplier: 4.85,
+    dropDamageMultiplier: 2.425,
+    eatRadius: 2.45,
+    dropEatRadius: 1.8,
+    scoreValue: 120,
+    dropScoreValue: 65,
+    progressValue: 4,
+    dropProgressValue: 2,
+    range: 28,
+    speedMult: 0.92,
+    shotsPerSecond: 0.36,
+    burstCount: 1,
+    reloadTime: 2.4,
+    hitChance: [0.88, 0.72, 0.48],
+    tracerColor: 0xe0b3ff,
+    tracerY: 1.7,
+    tracerDuration: 0.24,
+    visualColor: 0x3b2355,
+    trimColor: 0xd38cff,
+  }),
+  shock: Object.freeze({
+    id: 'shock',
+    label: 'Shock Bruiser',
+    banner: 'BOSS INBOUND: SHOCK BRUISER - CLOSE-RANGE ELECTRIC PULSE.',
+    attack: 'shockwave',
+    bossEligible: true,
+    scale: 2.65,
+    parachuteScale: 1.55,
+    damageMultiplier: 4.05,
+    dropDamageMultiplier: 2.025,
+    eatRadius: 2.5,
+    dropEatRadius: 1.85,
+    scoreValue: 112,
+    dropScoreValue: 60,
+    progressValue: 3,
+    dropProgressValue: 2,
+    range: 8,
+    speedMult: 1.7,
+    shotsPerSecond: 1.0,
+    burstCount: 2,
+    reloadTime: 1.6,
+    hitChance: [0.90, 0.44, 0.10],
+    areaRadius: 2.2,
+    tracerColor: 0x55fff2,
+    tracerY: 1.35,
+    tracerDuration: 0.14,
+    visualColor: 0x233d5a,
+    trimColor: 0x55fff2,
+  }),
+});
+
+const BOSS_COMBAT_CONFIG = Object.freeze({
+  minEatRadius: 4.4,
+  eatRadiusScaleBonus: 2.2,
+  speedBoostEatRadiusTax: 0.75,
+  closeDamageRangeRatio: 0.56,
+  closeDamageMaxBonus: 1.55,
+  closeDamageWaveBonus: 0.08,
+  kiteIdealRangeRatio: 0.62,
+  kiteMinRangeRatio: 0.32,
+  kiteRetreatSpeed: 0.92,
+  kiteStrafeSpeed: 0.48,
+  kiteFarStrafeSpeed: 0.22,
+  kiteBoundaryInset: 3.2,
+  kiteTurnSecondsMin: 0.45,
+  kiteTurnSecondsMax: 1.05,
+});
+
+function getUnitDefinition(unitType = UNIT_TYPE_SOLDIER) {
+  return OFFENSIVE_UNIT_DEFS[unitType] || OFFENSIVE_UNIT_DEFS.soldier;
+}
+
+function getUnitType(state = {}) {
+  if (state.unitType) return state.unitType;
+  if (state.isArmyBoss) return 'tank';
+  return UNIT_TYPE_SOLDIER;
+}
+
+function getBossRequiredEatRadius(def) {
+  const scale = Math.max(1, def.scale || 1);
+  return Math.max(
+    def.eatRadius || SOLDIER_BASE_EAT_RADIUS,
+    BOSS_COMBAT_CONFIG.minEatRadius,
+    scale + BOSS_COMBAT_CONFIG.eatRadiusScaleBonus
+  );
+}
+
+function buildOffensiveUnitState(unitType = UNIT_TYPE_SOLDIER, isBoss = false) {
+  const def = getUnitDefinition(unitType);
+  const bossForm = !!isBoss && !!def.bossEligible;
+  return {
+    unitType: def.id,
+    isArmyBoss: bossForm,
+    damageMultiplier: bossForm ? def.damageMultiplier : (def.dropDamageMultiplier ?? def.damageMultiplier ?? 1),
+    eatRadius: bossForm ? getBossRequiredEatRadius(def) : (def.dropEatRadius ?? def.eatRadius ?? SOLDIER_BASE_EAT_RADIUS),
+    scoreValue: bossForm ? def.scoreValue : (def.dropScoreValue ?? def.scoreValue ?? SOLDIER_BASE_SCORE_VALUE),
+    progressValue: bossForm ? def.progressValue : (def.dropProgressValue ?? def.progressValue ?? SOLDIER_BASE_PROGRESS_VALUE),
+  };
+}
+
+function getArmyBossDefault(key, isArmyBoss, unitType = 'tank') {
+  const state = buildOffensiveUnitState(unitType, !!isArmyBoss);
+  if (key === 'damageMultiplier') return state.damageMultiplier;
+  if (key === 'eatRadius') return state.eatRadius;
+  if (key === 'scoreValue') return state.scoreValue;
+  if (key === 'progressValue') return state.progressValue;
+  return 1;
+}
+
+function getSoldierDamageMultiplier(s) {
+  return s?.damageMultiplier || getArmyBossDefault('damageMultiplier', !!s?.isArmyBoss, getUnitType(s));
+}
+
+function getSoldierEatRadius(s) {
+  return s?.eatRadius || getArmyBossDefault('eatRadius', !!s?.isArmyBoss, getUnitType(s));
+}
+
+function getSoldierScoreValue(s) {
+  return s?.scoreValue || getArmyBossDefault('scoreValue', !!s?.isArmyBoss, getUnitType(s));
+}
+
+function getSoldierProgressValue(s) {
+  return s?.progressValue || getArmyBossDefault('progressValue', !!s?.isArmyBoss, getUnitType(s));
+}
 
 // ---- Geometry factories ----
 const WAVE_UNIT_GEOMETRIES = {
-  planeBody: new THREE.BoxGeometry(1.6, 1.4, 8),
-  planeWing: new THREE.BoxGeometry(10, 0.3, 1.8),
-  planeTail: new THREE.BoxGeometry(2.5, 0.25, 0.8),
-  planeFin: new THREE.BoxGeometry(0.25, 1.1, 1.0),
+  planeBody: sharedBoxGeometry(1.6, 1.4, 8),
+  planeWing: sharedBoxGeometry(10, 0.3, 1.8),
+  planeTail: sharedBoxGeometry(2.5, 0.25, 0.8),
+  planeFin: sharedBoxGeometry(0.25, 1.1, 1.0),
   planeEngine: new THREE.CylinderGeometry(0.35, 0.35, 1.4, 8),
-  soldierBody: new THREE.BoxGeometry(0.55, 0.75, 0.38),
-  soldierLegs: new THREE.BoxGeometry(0.52, 0.65, 0.36),
-  soldierHelmet: new THREE.BoxGeometry(0.50, 0.28, 0.50),
-  soldierHead: new THREE.BoxGeometry(0.42, 0.28, 0.42),
-  soldierRifle: new THREE.BoxGeometry(0.12, 0.12, 1.1),
+  soldierBody: sharedBoxGeometry(0.55, 0.75, 0.38),
+  soldierLegs: sharedBoxGeometry(0.52, 0.65, 0.36),
+  soldierHelmet: sharedBoxGeometry(0.50, 0.28, 0.50),
+  soldierHead: sharedBoxGeometry(0.42, 0.28, 0.42),
+  soldierRifle: sharedBoxGeometry(0.12, 0.12, 1.1),
+  mechTorso: sharedBoxGeometry(0.9, 1.0, 0.65),
+  mechLeg: sharedBoxGeometry(0.25, 0.9, 0.32),
+  mechArm: sharedBoxGeometry(0.28, 0.8, 0.26),
+  mechHandGun: sharedBoxGeometry(0.20, 0.20, 1.15),
+  mechHead: sharedBoxGeometry(0.5, 0.34, 0.44),
+  heavyShield: sharedBoxGeometry(0.74, 1.05, 0.16),
+  tankBody: sharedBoxGeometry(3.2, 0.85, 6.4),
+  tankTurret: sharedBoxGeometry(1.65, 0.65, 2.1),
+  tankTrack: sharedBoxGeometry(0.52, 0.55, 6.65),
+  tankBarrel: new THREE.CylinderGeometry(0.13, 0.13, 2.8, 8),
+  tankWheel: new THREE.CylinderGeometry(0.28, 0.28, 0.2, 10),
+  tankHatch: sharedBoxGeometry(0.82, 0.16, 0.72),
   parachuteCanopy: new THREE.SphereGeometry(1.4, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
   parachuteCords: [0, Math.PI / 2, Math.PI, 3 * Math.PI / 2].map(angle =>
     new THREE.BufferGeometry().setFromPoints([
@@ -9957,6 +13476,18 @@ const SHARED_WAVE_UNIT_GEOMETRIES = new Set([
   WAVE_UNIT_GEOMETRIES.soldierHelmet,
   WAVE_UNIT_GEOMETRIES.soldierHead,
   WAVE_UNIT_GEOMETRIES.soldierRifle,
+  WAVE_UNIT_GEOMETRIES.mechTorso,
+  WAVE_UNIT_GEOMETRIES.mechLeg,
+  WAVE_UNIT_GEOMETRIES.mechArm,
+  WAVE_UNIT_GEOMETRIES.mechHandGun,
+  WAVE_UNIT_GEOMETRIES.mechHead,
+  WAVE_UNIT_GEOMETRIES.heavyShield,
+  WAVE_UNIT_GEOMETRIES.tankBody,
+  WAVE_UNIT_GEOMETRIES.tankTurret,
+  WAVE_UNIT_GEOMETRIES.tankTrack,
+  WAVE_UNIT_GEOMETRIES.tankBarrel,
+  WAVE_UNIT_GEOMETRIES.tankWheel,
+  WAVE_UNIT_GEOMETRIES.tankHatch,
   WAVE_UNIT_GEOMETRIES.parachuteCanopy,
   ...WAVE_UNIT_GEOMETRIES.parachuteCords,
 ]);
@@ -9983,6 +13514,80 @@ function removeWaveUnitObject(root) {
   if (!root) return;
   if (root.parent) root.parent.remove(root);
   disposeWaveUnitObject(root);
+}
+
+const ARMY_BOSS_VISUAL_SCALE_MULTIPLIER = 1.4;
+
+function addArmyBossNameLabel(root, unitType) {
+  const name = BOSS_PERMANENT_NAMES[unitType];
+  if (!root || !name || root.userData.bossNameLabel) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 192;
+  const ctx = canvas.getContext('2d');
+  ctx.font = '700 76px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 20;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.95)';
+  ctx.strokeText(name, 512, 96);
+  ctx.fillStyle = '#fff4c2';
+  ctx.fillText(name, 512, 96);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false });
+  const label = new THREE.Sprite(material);
+  const rootScale = Math.max(0.01, root.scale.y || 1);
+  const bounds = new THREE.Box3().setFromObject(root);
+  const visibleHeight = Math.max(1.8, bounds.max.y - bounds.min.y);
+  label.position.y = (visibleHeight + 1.15) / rootScale;
+  label.scale.set(18.6 / rootScale, 3.48 / rootScale, 1);
+  label.renderOrder = 50;
+  label.userData.holesyUnshadowed = true;
+  label.userData.isBossNameLabel = true;
+  root.add(label);
+  root.userData.bossNameLabel = label;
+  root.userData.bossPermanentName = name;
+}
+
+function addArmyBossNeonGlow(g, radius = 1.8, height = 1.5) {
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: 0xff1744,
+    transparent: true,
+    opacity: 0.30,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(radius, 18, 12), glowMat);
+  glow.scale.set(1, Math.max(0.32, height / Math.max(0.1, radius * 2.2)), 1);
+  glow.position.y = height * 0.62;
+  glow.renderOrder = 6;
+  glow.userData.holesyUnshadowed = true;
+  glow.userData.isBossGlow = true;
+  g.add(glow);
+
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: 0xff335c,
+    transparent: true,
+    opacity: 0.62,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(radius * 0.88, 0.055, 8, 36), ringMat);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.08;
+  ring.renderOrder = 7;
+  ring.userData.holesyUnshadowed = true;
+  ring.userData.isBossGlow = true;
+  g.add(ring);
+}
+
+function finalizeArmyBossVisual(g, isBoss, baseScale, glowRadius = 1.8, glowHeight = 1.5) {
+  g.scale.setScalar(baseScale * (isBoss ? ARMY_BOSS_VISUAL_SCALE_MULTIPLIER : 1));
+  g.userData.isArmyBoss = !!isBoss;
+  if (isBoss) addArmyBossNeonGlow(g, glowRadius, glowHeight);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
 }
 
 function makePlaneMesh() {
@@ -10022,30 +13627,254 @@ function makePlaneMesh() {
     eng.position.set(wx, -0.25, 0.4);
     g.add(eng);
   }
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   return g;
 }
 
-function makeSoldierMesh() {
+function makeArmyBossTankMesh(isBoss = false) {
   const g = new THREE.Group();
-  // Green uniform body
+  const hullMat = sharedBoxMat(0x2f6f33);
+  const darkHullMat = sharedBoxMat(0x214f25);
+  const trackMat = sharedBoxMat(0x151913);
+  const trimMat = sharedBoxMat(0x5f7f3a);
+
+  const body = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankBody, hullMat);
+  body.position.y = 0.78;
+  g.add(body);
+
+  for (const x of [-1.82, 1.82]) {
+    const track = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankTrack, trackMat);
+    track.position.set(x, 0.48, 0);
+    g.add(track);
+    for (const z of [-2.25, -1.0, 0.25, 1.5, 2.65]) {
+      const wheel = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankWheel, trimMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(x, 0.47, z);
+      g.add(wheel);
+    }
+  }
+
+  const turret = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankTurret, darkHullMat);
+  turret.position.set(0, 1.38, 0.45);
+  g.add(turret);
+
+  const barrel = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankBarrel, trackMat);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.set(0, 1.42, 2.55);
+  g.add(barrel);
+
+  const hatch = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankHatch, trimMat);
+  hatch.position.set(0, 1.78, -0.1);
+  g.add(hatch);
+
+  finalizeArmyBossVisual(g, isBoss, 1, 3.45, 2.25);
+  g.userData.isTank = true;
+  return g;
+}
+
+function makeMechUnitMesh(isBoss = false) {
+  const g = new THREE.Group();
+  const armorMat = sharedBoxMat(isBoss ? 0x2f4f7f : 0x35566d);
+  const darkMat = sharedBoxMat(0x17202c);
+  const trimMat = sharedBoxMat(0x72d1ff);
+  const scale = isBoss ? OFFENSIVE_UNIT_DEFS.mech.scale : 1.65;
+
+  const torso = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.mechTorso, armorMat);
+  torso.position.y = 1.28;
+  g.add(torso);
+
+  const head = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.mechHead, trimMat);
+  head.position.y = 1.98;
+  g.add(head);
+
+  for (const x of [-0.32, 0.32]) {
+    const leg = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.mechLeg, darkMat);
+    leg.position.set(x, 0.48, 0);
+    g.add(leg);
+  }
+
+  for (const x of [-0.74, 0.74]) {
+    const arm = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.mechArm, armorMat);
+    arm.position.set(x, 1.2, 0.02);
+    g.add(arm);
+    const gun = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.mechHandGun, darkMat);
+    gun.position.set(x, 1.08, 0.72);
+    g.add(gun);
+  }
+
+  g.userData.unitType = 'mech';
+  finalizeArmyBossVisual(g, isBoss, scale, 1.15, 2.25);
+  return g;
+}
+
+function makeHeavyCommanderMesh(isBoss = false) {
+  const g = new THREE.Group();
+  const uniformMat = sharedBoxMat(isBoss ? 0x6f1f1f : 0x5b2b2b);
+  const darkMat = sharedBoxMat(0x151515);
+  const shieldMat = sharedBoxMat(0x242a32);
+  const visorMat = sharedBoxMat(0xffd166);
+  const scale = isBoss ? OFFENSIVE_UNIT_DEFS.heavy.scale : 1.85;
+
+  const body = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierBody, uniformMat);
+  body.position.y = 0.8;
+  g.add(body);
+
+  const legs = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierLegs, darkMat);
+  legs.position.y = 0.32;
+  g.add(legs);
+
+  const helmet = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierHelmet, darkMat);
+  helmet.position.y = 1.38;
+  g.add(helmet);
+
+  const visor = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierHead, visorMat);
+  visor.scale.set(0.78, 0.42, 0.5);
+  visor.position.y = 1.2;
+  g.add(visor);
+
+  const shield = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.heavyShield, shieldMat);
+  shield.position.set(-0.48, 0.88, 0.48);
+  shield.rotation.y = -0.2;
+  g.add(shield);
+
+  const rifle = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierRifle, darkMat);
+  rifle.scale.set(1.4, 1.3, 1.55);
+  rifle.position.set(0.38, 0.95, 0.66);
+  g.add(rifle);
+
+  g.userData.unitType = 'heavy';
+  finalizeArmyBossVisual(g, isBoss, scale, 1.05, 1.75);
+  return g;
+}
+
+function makeAdvancedBossMesh(unitType, isBoss = false) {
+  const def = getUnitDefinition(unitType);
+  const g = new THREE.Group();
+  const bodyMat = sharedBoxMat(def.visualColor || 0x444a52);
+  const trimMat = sharedBoxMat(def.trimColor || 0xffffff);
+  const darkMat = sharedBoxMat(0x151515);
+  const scale = isBoss ? (def.scale || 2.1) : Math.max(1.45, (def.scale || 2.1) * 0.74);
+
+  const body = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierBody, bodyMat);
+  body.position.y = 0.8;
+  g.add(body);
+
+  const legs = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierLegs, darkMat);
+  legs.position.y = 0.32;
+  g.add(legs);
+
+  const helmet = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierHelmet, trimMat);
+  helmet.position.y = 1.38;
+  g.add(helmet);
+
+  const core = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierHead, trimMat);
+  core.scale.set(0.76, 0.48, 0.55);
+  core.position.y = 1.18;
+  g.add(core);
+
+  if (unitType === 'mortar') {
+    const tube = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankBarrel, darkMat);
+    tube.rotation.x = Math.PI * 0.28;
+    tube.position.set(0, 1.45, -0.28);
+    g.add(tube);
+    const pack = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankTurret, bodyMat);
+    pack.scale.set(0.5, 0.72, 0.5);
+    pack.position.set(0, 0.98, -0.48);
+    g.add(pack);
+  } else if (unitType === 'sniper' || unitType === 'railgun') {
+    const barrel = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankBarrel, darkMat);
+    barrel.rotation.x = Math.PI / 2;
+    barrel.scale.set(unitType === 'railgun' ? 0.95 : 0.65, unitType === 'railgun' ? 0.95 : 0.65, unitType === 'railgun' ? 1.28 : 1.06);
+    barrel.position.set(0.25, 1.02, 0.95);
+    g.add(barrel);
+    const brace = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierRifle, trimMat);
+    brace.scale.set(2.5, 1.4, 1.1);
+    brace.position.set(-0.22, 0.72, 0.45);
+    g.add(brace);
+  } else if (unitType === 'drone') {
+    body.position.y = 1.35;
+    legs.visible = false;
+    const rotorA = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.planeWing, trimMat);
+    rotorA.scale.set(0.22, 0.12, 0.18);
+    rotorA.position.y = 1.85;
+    g.add(rotorA);
+    const rotorB = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.planeWing, trimMat);
+    rotorB.scale.set(0.22, 0.12, 0.18);
+    rotorB.rotation.y = Math.PI / 2;
+    rotorB.position.y = 1.85;
+    g.add(rotorB);
+  } else if (unitType === 'grenadier') {
+    for (const x of [-0.46, 0.46]) {
+      const pod = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankWheel, trimMat);
+      pod.rotation.z = Math.PI / 2;
+      pod.position.set(x, 1.04, 0.48);
+      g.add(pod);
+    }
+    const launcher = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierRifle, darkMat);
+    launcher.scale.set(1.8, 1.8, 1.4);
+    launcher.position.set(0.36, 0.96, 0.62);
+    g.add(launcher);
+  } else if (unitType === 'flamer') {
+    const tank = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankTurret, trimMat);
+    tank.scale.set(0.48, 0.82, 0.42);
+    tank.position.set(0, 0.98, -0.5);
+    g.add(tank);
+    const nozzle = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankBarrel, darkMat);
+    nozzle.rotation.x = Math.PI / 2;
+    nozzle.scale.set(0.75, 0.75, 0.7);
+    nozzle.position.set(0.34, 0.9, 0.72);
+    g.add(nozzle);
+  } else if (unitType === 'shock') {
+    for (const x of [-0.5, 0.5]) {
+      const coil = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.tankWheel, trimMat);
+      coil.position.set(x, 1.08, 0.34);
+      g.add(coil);
+    }
+    const shield = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.heavyShield, trimMat);
+    shield.position.set(0, 0.86, 0.56);
+    shield.scale.set(1.35, 0.8, 0.9);
+    g.add(shield);
+  }
+
+  g.userData.unitType = unitType;
+  finalizeArmyBossVisual(g, isBoss, scale, 1.05, unitType === 'drone' ? 2.1 : 1.75);
+  return g;
+}
+
+function makeSoldierMesh(options = {}) {
+  const isArmyBoss = !!options.isArmyBoss || !!options.boss;
+  const unitType = getUnitType(options);
+  let bossMesh = null;
+  if (unitType === 'tank') bossMesh = makeArmyBossTankMesh(isArmyBoss);
+  else if (unitType === 'mech') bossMesh = makeMechUnitMesh(isArmyBoss);
+  else if (unitType === 'heavy') bossMesh = makeHeavyCommanderMesh(isArmyBoss);
+  else if (unitType !== UNIT_TYPE_SOLDIER) bossMesh = makeAdvancedBossMesh(unitType, isArmyBoss);
+  if (bossMesh) {
+    if (isArmyBoss) addArmyBossNameLabel(bossMesh, unitType);
+    return bossMesh;
+  }
+  const g = new THREE.Group();
+  const uniformColor = 0x4d5c3a;
+  const legsColor = 0x3d4a2d;
+  const helmetColor = 0x2e3a22;
+  // Uniform body
   const body = new THREE.Mesh(
     WAVE_UNIT_GEOMETRIES.soldierBody,
-    sharedBoxMat(0x4d5c3a)
+    sharedBoxMat(uniformColor)
   );
   body.position.y = 0.8;
   g.add(body);
   // Fatigues legs
   const legs = new THREE.Mesh(
     WAVE_UNIT_GEOMETRIES.soldierLegs,
-    sharedBoxMat(0x3d4a2d)
+    sharedBoxMat(legsColor)
   );
   legs.position.y = 0.32;
   g.add(legs);
   // Helmet
   const helmet = new THREE.Mesh(
     WAVE_UNIT_GEOMETRIES.soldierHelmet,
-    sharedBoxMat(0x2e3a22)
+    sharedBoxMat(helmetColor)
   );
   helmet.position.y = 1.38;
   g.add(helmet);
@@ -10063,7 +13892,7 @@ function makeSoldierMesh() {
   );
   rifle.position.set(0.25, 0.95, 0.5);
   g.add(rifle);
-  g.children.forEach(c => c.castShadow = true);
+  g.children.forEach(c => c.castShadow = !c.userData?.holesyUnshadowed);
   return g;
 }
 
@@ -10085,12 +13914,31 @@ function makeParachuteMesh() {
 }
 
 // ---- Wave spawning ----
+function buildPlaneUnitManifest(cfg) {
+  if (armyBossPendingThisWave) {
+    const bossType = pickBossUnitTypeForWave(currentWave);
+    armyBossPendingThisWave = false;
+    armyBossSpawnedThisRun = true;
+    unlockBossDropType(bossType, currentWave);
+    return [buildOffensiveUnitState(bossType, true)];
+  }
+  const soldierSpread = Math.max(0, cfg.soldierCountMax - cfg.soldierCountMin);
+  const unitCount = cfg.soldierCountMin + Math.floor(Math.random() * (soldierSpread + 1));
+  const manifest = [];
+  for (let i = 0; i < unitCount; i++) {
+    manifest.push(buildOffensiveUnitState(getRandomPostBossDropUnitType(), false));
+  }
+  return manifest;
+}
+
 function spawnWave() {
   waveNumber++;
   const waveId = waveNumber;
   const cfg = getWaveConfig(currentWave) || getWaveConfig(2);
-  const soldierSpread = Math.max(0, cfg.soldierCountMax - cfg.soldierCountMin);
-  const soldierCount = cfg.soldierCountMin + Math.floor(Math.random() * (soldierSpread + 1));
+  const unitManifest = buildPlaneUnitManifest(cfg);
+  const soldierCount = unitManifest.filter(unit => getUnitType(unit) === UNIT_TYPE_SOLDIER).length;
+  const armyBossCount = unitManifest.filter(unit => unit.isArmyBoss).length;
+  const rosterCount = unitManifest.length;
 
   // Pick a random drop point within the city
   const dropX = randomBetween(-currentArenaHalf + 10, currentArenaHalf - 10);
@@ -10129,16 +13977,19 @@ function spawnWave() {
     startX, startZ, endX, endZ, dropX, dropZ,
     deployed: false,
     soldierCount,
+    armyBossCount,
+    unitManifest,
     engine,
     engineAudioAccumulator: PLANE_ENGINE_AUDIO_INTERVAL,
     waveId,
   });
 
   // Register this wave's roster for unit-clear bonus tracking
-  waveRosters[waveId] = { expected: soldierCount, remaining: soldierCount, eatenBy: null };
+  waveRosters[waveId] = { expected: rosterCount, remaining: rosterCount, eatenBy: null };
 
   // Announce via a soldier voice callout for drama
   if (!music.muted) playSoldierVoice(1.0);
+  if (armyBossCount) announceBossInbound(getUnitType(unitManifest.find(unit => unit.isArmyBoss)));
 }
 
 // Tracks soldiers-per-wave for the "devoured full unit" bonus
@@ -10260,32 +14111,36 @@ const TRACER_MAT = new THREE.LineBasicMaterial({
 });
 const TRACER_DURATION = HOLESY_CONFIG.military.tracerDuration; // seconds
 
-function spawnTracer(sx, sz, ex, ez) {
+function spawnTracer(sx, sz, ex, ez, options = {}) {
   // Start point is raised to rifle height (~0.95); end point is at ground level
+  const y = options.y || 0.95;
   const pts = [
-    new THREE.Vector3(sx, 0.95, sz),
+    new THREE.Vector3(sx, y, sz),
     new THREE.Vector3(ex, 0.1, ez),
   ];
   const geo = new THREE.BufferGeometry().setFromPoints(pts);
   // Clone the material so each tracer can fade independently
   const mat = TRACER_MAT.clone();
+  if (options.color) mat.color.setHex(options.color);
+  if (options.opacity) mat.opacity = options.opacity;
   const line = new THREE.Line(geo, mat);
   scene.add(line);
-  tracers.push({ line, mat, geo, age: 0 });
+  tracers.push({ line, mat, geo, age: 0, duration: options.duration || TRACER_DURATION });
 }
 
 function updateTracers(dt) {
   for (let i = tracers.length - 1; i >= 0; i--) {
     const t = tracers[i];
     t.age += dt;
-    if (t.age >= TRACER_DURATION) {
+    const duration = t.duration || TRACER_DURATION;
+    if (t.age >= duration) {
       scene.remove(t.line);
       t.geo.dispose();
       t.mat.dispose();
       tracers.splice(i, 1);
     } else {
       // Linear fade
-      t.mat.opacity = 1 - (t.age / TRACER_DURATION);
+      t.mat.opacity = 1 - (t.age / duration);
     }
   }
 }
@@ -10333,16 +14188,28 @@ function updatePlanes(dt) {
 
 function deployParatroopers(plane) {
   // Spread soldiers in a loose cluster around drop point (3-5 unit spread)
-  for (let i = 0; i < plane.soldierCount; i++) {
-    const spread = 3 + Math.random() * 2;
+  const unitManifest = Array.isArray(plane.unitManifest)
+    ? plane.unitManifest
+    : [
+        ...Array.from({ length: plane.armyBossCount || 0 }, () => buildOffensiveUnitState('tank', true)),
+        ...Array.from({ length: plane.soldierCount || 0 }, () => buildOffensiveUnitState(UNIT_TYPE_SOLDIER, false)),
+      ];
+  for (let i = 0; i < unitManifest.length; i++) {
+    const unit = unitManifest[i];
+    const isArmyBoss = !!unit.isArmyBoss;
+    const unitType = getUnitType(unit);
+    const def = getUnitDefinition(unitType);
+    const spread = isArmyBoss ? 1.5 + Math.random() * 1.5 : 3 + Math.random() * 2;
     const angle = Math.random() * Math.PI * 2;
     const tx = plane.dropX + Math.cos(angle) * spread;
     const tz = plane.dropZ + Math.sin(angle) * spread;
 
     const para = new THREE.Group();
-    const soldier = makeSoldierMesh();
+    const soldier = makeSoldierMesh({ unitType, isArmyBoss });
     para.add(soldier);
     const chute = makeParachuteMesh();
+    const parachuteScale = def.parachuteScale || (isArmyBoss ? 1.85 : 1);
+    if (parachuteScale !== 1) chute.scale.setScalar(parachuteScale);
     para.add(chute);
     para.position.set(tx, PLANE_ALTITUDE, tz);
     scene.add(para);
@@ -10357,6 +14224,12 @@ function deployParatroopers(plane) {
       t: 0,
       totalT: difficultyParachuteFallTime(),
       waveId: plane.waveId,
+      unitType,
+      isArmyBoss,
+      damageMultiplier: getSoldierDamageMultiplier(unit),
+      eatRadius: getSoldierEatRadius(unit),
+      scoreValue: getSoldierScoreValue(unit),
+      progressValue: getSoldierProgressValue(unit),
     });
   }
 }
@@ -10393,6 +14266,12 @@ function updateParatroopers(dt) {
         isSoldier: true,        // flag so beginConsume can detect and play male scream
         alive: true,
         waveId: p.waveId,
+        unitType: getUnitType(p),
+        isArmyBoss: !!p.isArmyBoss,
+        damageMultiplier: getSoldierDamageMultiplier(p),
+        eatRadius: getSoldierEatRadius(p),
+        scoreValue: getSoldierScoreValue(p),
+        progressValue: getSoldierProgressValue(p),
       });
       paratroopers.splice(i, 1);
     }
@@ -10419,9 +14298,314 @@ function nearestHoleToSoldier(s) {
   return best ? { hole: best, centerDist: bestCenterDist, edgeDist: bestEdgeDist } : null;
 }
 
+function isArmyBossTankPushCandidate(obj) {
+  if (!obj || obj.consumed || obj.falling || obj.jammedInHole || obj.airDropping) return false;
+  if (obj.isPowerup) return false;
+  return !!(obj.isBuilding || obj.isVoxelBuildingCube || obj.isSkyscraperChunk || obj.isGovernmentBuildingPiece || obj.physicsStackPiece || obj.isProp || obj.isPerson || obj.isTree || obj.isCar);
+}
+
+function getArmyBossTankBuildingKey(obj) {
+  if (obj.govBuildingId) return `gov:${obj.govBuildingId}`;
+  if (obj.stackId) return `stack:${obj.stackId}`;
+  return `piece:${obj.mesh?.uuid || obj.x + ':' + obj.z}`;
+}
+
+function makeArmyBossTankCollapseSource(tank, radius = HOLESY_CONFIG.military.armyBossTankBuildingCrushRadius) {
+  return {
+    x: tank.x,
+    z: tank.z,
+    radius,
+    isPlayer: false,
+    alive: true,
+  };
+}
+
+function shoveArmyBossTankObject(obj, dir, pushAmount, pushStrength) {
+  if (!obj?.mesh || obj.physicsStackPiece || obj.isBuilding || obj.isVoxelBuildingCube || obj.isSkyscraperChunk || obj.isGovernmentBuildingPiece) {
+    if (obj?.stackActive) {
+      obj.vx = (obj.vx || 0) + dir.x * pushStrength;
+      obj.vz = (obj.vz || 0) + dir.z * pushStrength;
+      obj.avx = (obj.avx || 0) + dir.z * pushStrength * 0.16;
+      obj.avz = (obj.avz || 0) - dir.x * pushStrength * 0.16;
+    }
+    return;
+  }
+
+  obj.x += dir.x * pushAmount;
+  obj.z += dir.z * pushAmount;
+  obj.mesh.position.x = obj.x;
+  obj.mesh.position.z = obj.z;
+  obj.mesh.rotation.y += THREE.MathUtils.clamp(pushAmount * 0.12, -0.18, 0.18);
+  if (obj.isCar) {
+    obj.currentSpeed = Math.min(obj.currentSpeed || 0, 0.4);
+    obj.blockedByTankTimer = 0.65;
+  }
+}
+
+function activateArmyBossTankVoxelPressure(seedPiece, source, depth) {
+  if (!seedPiece?.isVoxelBuildingCube) return false;
+  if (seedPiece.stackKind === 'smallVoxel') return activateSmallVoxelBuilding(seedPiece, source);
+  let activated = activateVoxelBuildingColumn(seedPiece, source);
+  const ring = Math.min(3, Math.max(1, Math.floor(depth / Math.max(0.1, HOLESY_CONFIG.military.armyBossTankCollapseDepthStep))));
+  let extraColumns = 0;
+  for (const piece of physicsStackPieces) {
+    if (extraColumns >= 5) break;
+    if (piece.stackId !== seedPiece.stackId || !piece.isVoxelBuildingCube || piece.stackActive || piece.consumed || piece.falling) continue;
+    const dc = Math.abs((piece.voxelColX ?? 0) - (seedPiece.voxelColX ?? 0)) + Math.abs((piece.voxelColZ ?? 0) - (seedPiece.voxelColZ ?? 0));
+    if (dc <= ring && (piece.stackIndex || 0) === 0) {
+      activated = activateVoxelBuildingColumn(piece, source) || activated;
+      extraColumns++;
+    }
+  }
+  return activated;
+}
+
+function triggerArmyBossTankBuildingPressure(obj, tank, penetration, dir) {
+  if (!obj || !(obj.isBuilding || obj.isVoxelBuildingCube || obj.isSkyscraperChunk || obj.isGovernmentBuildingPiece || obj.physicsStackPiece)) return false;
+  const key = getArmyBossTankBuildingKey(obj);
+  if (!tank.tankBuildingPressure) tank.tankBuildingPressure = new Map();
+  const prev = tank.tankBuildingPressure.get(key) || { depth: 0, lastAt: 0, lastStep: -1 };
+  const stepSize = Math.max(0.1, HOLESY_CONFIG.military.armyBossTankCollapseDepthStep);
+  const speedBonus = Math.min(1.4, (tank.tankLastSpeed || 0) * 0.18);
+  const depth = prev.depth + Math.max(0.08, penetration * 0.45 + speedBonus);
+  const depthStep = Math.floor(depth / stepSize);
+  const now = getGameplayNow();
+  const canPulse = depthStep > prev.lastStep || now - prev.lastAt >= HOLESY_CONFIG.military.armyBossTankCrushCooldownMs;
+  tank.tankBuildingPressure.set(key, { depth, lastAt: canPulse ? now : prev.lastAt, lastStep: Math.max(prev.lastStep, depthStep) });
+  if (!canPulse) return false;
+
+  const radius = HOLESY_CONFIG.military.armyBossTankBuildingCrushRadius + Math.min(3.2, depth * 0.32);
+  const source = makeArmyBossTankCollapseSource(tank, radius);
+  source.x -= dir.x * Math.min(2.2, radius * 0.36);
+  source.z -= dir.z * Math.min(2.2, radius * 0.36);
+
+  if (obj.isGovernmentBuildingPiece) return activateGovernmentBuildingFromPiece(obj, source);
+  if (obj.isVoxelBuildingCube) return activateArmyBossTankVoxelPressure(obj, source, depth);
+  if (obj.physicsStackPiece) return activatePhysicsStack(obj.stackId, source, null);
+  return false;
+}
+
+function updateArmyBossTankContact(tank, dt, moveX, moveZ, facingDir) {
+  const pushRadius = HOLESY_CONFIG.military.armyBossTankPushRadius;
+  const pushStrength = HOLESY_CONFIG.military.armyBossTankPushStrength;
+  const speed = Math.hypot(moveX, moveZ) / Math.max(0.001, dt);
+  tank.tankLastSpeed = speed;
+  const forward = normalize2(Math.sin(facingDir), Math.cos(facingDir), { x: 0, z: 1 });
+  let contacts = 0;
+  for (const obj of objects) {
+    if (contacts >= 12) break;
+    if (!isArmyBossTankPushCandidate(obj)) continue;
+    const dx = obj.x - tank.x;
+    const dz = obj.z - tank.z;
+    if (Math.abs(dx) > pushRadius + 4.5 || Math.abs(dz) > pushRadius + 4.5) continue;
+    const dist = Math.hypot(dx, dz) || 0.001;
+    const objectRadius = Math.max(0.35, Math.min(2.6, obj.size || 0.5));
+    const minDist = pushRadius + objectRadius * 0.72;
+    if (dist > minDist) continue;
+    const radial = { x: dx / dist, z: dz / dist };
+    const pushDir = normalize2(forward.x * 0.78 + radial.x * 0.22, forward.z * 0.78 + radial.z * 0.22, forward);
+    const penetration = minDist - dist;
+    const pushAmount = Math.min(1.7, penetration * 0.42 + Math.max(0.06, speed * dt * 0.52));
+    shoveArmyBossTankObject(obj, pushDir, pushAmount, pushStrength * Math.max(0.25, dt));
+    triggerArmyBossTankBuildingPressure(obj, tank, penetration, pushDir);
+    contacts++;
+  }
+}
+
+function getOffensiveUnitRange(s) {
+  return getUnitDefinition(getUnitType(s)).range || SOLDIER_RANGE;
+}
+
+function getOffensiveUnitWaveScale() {
+  if (!isWaveBasedMode()) return 0;
+  return Math.max(0, currentWave - 1);
+}
+
+function getOffensiveUnitWavePressure() {
+  const waveStep = getOffensiveUnitWaveScale();
+  if (waveStep <= 0) return 0;
+  return Math.pow(waveStep + 4, 1.18) - Math.pow(4, 1.18);
+}
+
+function getOffensiveUnitWaveSpeedBonus(s) {
+  const unitType = getUnitType(s);
+  const pressure = getOffensiveUnitWavePressure();
+  if (pressure <= 0) return 1;
+  const perPressure = unitType === UNIT_TYPE_SOLDIER ? 0.008 : 0.019;
+  const cap = unitType === UNIT_TYPE_SOLDIER ? 1.38 : 2.35;
+  return Math.min(cap, 1 + pressure * perPressure);
+}
+
+function getOffensiveUnitWaveDamageBonus(s) {
+  const unitType = getUnitType(s);
+  const pressure = getOffensiveUnitWavePressure();
+  if (pressure <= 0) return 1;
+  const perPressure = unitType === UNIT_TYPE_SOLDIER ? 0.011 : 0.026;
+  const cap = unitType === UNIT_TYPE_SOLDIER ? 1.58 : 2.85;
+  return Math.min(cap, 1 + pressure * perPressure);
+}
+
+function getOffensiveUnitSpeedMultiplier(s) {
+  const bossBoost = s?.isArmyBoss ? 1.16 : 1;
+  return (getUnitDefinition(getUnitType(s)).speedMult || 1) * getOffensiveUnitWaveSpeedBonus(s) * bossBoost;
+}
+
+function getBossProximityDamageMultiplier(s, tgt = null) {
+  if (!s?.isArmyBoss || !tgt?.hole) return 1;
+  const range = Math.max(1, getOffensiveUnitRange(s));
+  const closeRange = Math.max(3, range * BOSS_COMBAT_CONFIG.closeDamageRangeRatio);
+  const edgeDist = Math.max(0, tgt.edgeDist ?? holeEdgeDistanceToPoint(tgt.hole, s.x, s.z));
+  const closeT = THREE.MathUtils.clamp(1 - edgeDist / closeRange, 0, 1);
+  if (closeT <= 0) return 1;
+  const waveBonus = Math.min(0.55, Math.max(0, currentWave - 1) * BOSS_COMBAT_CONFIG.closeDamageWaveBonus);
+  return 1 + closeT * (BOSS_COMBAT_CONFIG.closeDamageMaxBonus + waveBonus);
+}
+
+function getOffensiveUnitDamageMultiplier(s, tgt = null) {
+  const bossBoost = s?.isArmyBoss ? 1.45 : 1;
+  return getSoldierDamageMultiplier(s) * getOffensiveUnitWaveDamageBonus(s) * bossBoost * getBossProximityDamageMultiplier(s, tgt);
+}
+
+function getOffensiveUnitShotInterval(s) {
+  const def = getUnitDefinition(getUnitType(s));
+  return 1 / Math.max(0.1, def.shotsPerSecond || SOLDIER_SHOTS_PER_SEC);
+}
+
+function getOffensiveUnitBurstCount(s) {
+  return Math.max(1, getUnitDefinition(getUnitType(s)).burstCount || SOLDIER_BURST_COUNT);
+}
+
+function getOffensiveUnitReloadTime(s) {
+  return Math.max(0.15, getUnitDefinition(getUnitType(s)).reloadTime || SOLDIER_RELOAD_TIME);
+}
+
+function rollOffensiveUnitHit(s, edgeDist) {
+  const def = getUnitDefinition(getUnitType(s));
+  const chances = def.hitChance || OFFENSIVE_UNIT_DEFS.soldier.hitChance;
+  let hitChance;
+  if (edgeDist < 3) hitChance = chances[0];
+  else if (edgeDist < 8) hitChance = chances[1];
+  else hitChance = chances[2];
+  hitChance = Math.min(0.96, hitChance * currentSoldierHitChanceMult);
+  return Math.random() < hitChance;
+}
+
+function getOffensiveUnitTracerOptions(s) {
+  const unitType = getUnitType(s);
+  const def = getUnitDefinition(unitType);
+  if (def.tracerColor) {
+    return {
+      color: def.tracerColor,
+      y: def.tracerY || 1.25,
+      duration: def.tracerDuration || 0.14,
+      opacity: 1,
+    };
+    populateParcelDetails(bp, parcelUse, blockBounds);
+  }
+  if (unitType === 'tank') return { color: 0xff6b2c, y: 1.55, duration: 0.22, opacity: 1 };
+  if (unitType === 'mech') return { color: 0x6fd4ff, y: 1.55, duration: 0.12, opacity: 1 };
+  if (unitType === 'heavy') return { color: 0xff3b3b, y: 1.25, duration: 0.14, opacity: 1 };
+  return {};
+}
+
+function fireOffensiveUnitShot(s, tgt, didHit, originOffsetX = 0) {
+  let endX = tgt.hole.x;
+  let endZ = tgt.hole.z;
+  if (!didHit) {
+    const missAngle = Math.random() * Math.PI * 2;
+    const missDist = tgt.hole.radius + Math.random() * 1.2;
+    endX = tgt.hole.x + Math.cos(missAngle) * missDist;
+    endZ = tgt.hole.z + Math.sin(missAngle) * missDist;
+  }
+  const cos = Math.cos(s.mesh.rotation.y);
+  const sin = Math.sin(s.mesh.rotation.y);
+  const sx = s.x + cos * originOffsetX;
+  const sz = s.z - sin * originOffsetX;
+  spawnTracer(sx, sz, endX, endZ, getOffensiveUnitTracerOptions(s));
+  return { x: endX, z: endZ };
+}
+
+function playOffensiveUnitWeaponAudio(s) {
+  const distToPlayer = Math.hypot(s.x - player.x, s.z - player.z);
+  const volScale = Math.max(0, 1 - distToPlayer / 70);
+  if (music.muted || volScale <= 0) return;
+  if (getUnitType(s) === 'tank' || getUnitDefinition(getUnitType(s)).cannonAudio) playCannonShot(volScale);
+  else playGunshot(volScale);
+}
+
+function getBossKiteVector(s, tgt, dxToTarget, dzToTarget) {
+  if (!s?.isArmyBoss || !tgt?.hole?.alive) return null;
+  const range = Math.max(1, getOffensiveUnitRange(s));
+  const edgeDist = Math.max(0, tgt.edgeDist ?? holeEdgeDistanceToPoint(tgt.hole, s.x, s.z));
+  const idealEdge = Math.max(4, range * BOSS_COMBAT_CONFIG.kiteIdealRangeRatio);
+  const minEdge = Math.max(2.5, range * BOSS_COMBAT_CONFIG.kiteMinRangeRatio);
+  const dist = Math.hypot(dxToTarget, dzToTarget) || 0.001;
+  const awayX = -dxToTarget / dist;
+  const awayZ = -dzToTarget / dist;
+  const now = getGameplayNow();
+
+  if (!s.bossStrafeSign || now >= (s.bossStrafeUntil || 0)) {
+    s.bossStrafeSign = Math.random() < 0.5 ? -1 : 1;
+    s.bossStrafeUntil = now + 1000 * randomBetween(BOSS_COMBAT_CONFIG.kiteTurnSecondsMin, BOSS_COMBAT_CONFIG.kiteTurnSecondsMax);
+  }
+
+  const sideX = -awayZ * s.bossStrafeSign;
+  const sideZ = awayX * s.bossStrafeSign;
+  const retreatWeight = edgeDist < idealEdge
+    ? THREE.MathUtils.clamp((idealEdge - edgeDist) / Math.max(0.001, idealEdge - minEdge), 0.25, 1)
+    : 0;
+  const strafeWeight = edgeDist < range * 0.92 ? BOSS_COMBAT_CONFIG.kiteStrafeSpeed : BOSS_COMBAT_CONFIG.kiteFarStrafeSpeed;
+  let moveX = awayX * retreatWeight + sideX * strafeWeight;
+  let moveZ = awayZ * retreatWeight + sideZ * strafeWeight;
+
+  const boundary = Math.max(8, currentArenaHalf - BOSS_COMBAT_CONFIG.kiteBoundaryInset);
+  if (Math.abs(s.x) > boundary) moveX += -Math.sign(s.x) * 0.85;
+  if (Math.abs(s.z) > boundary) moveZ += -Math.sign(s.z) * 0.85;
+
+  const len = Math.hypot(moveX, moveZ);
+  if (len <= 0.0001) return null;
+  const speedScale = retreatWeight > 0 ? BOSS_COMBAT_CONFIG.kiteRetreatSpeed : 0.38;
+  return { x: moveX / len, z: moveZ / len, speedScale };
+}
+
+function applyOffensiveAreaDamage(centerX, centerZ, sourceUnit, baseMultiplier) {
+  const def = getUnitDefinition(getUnitType(sourceUnit));
+  const areaRadius = def.areaRadius || 0;
+  if (areaRadius <= 0) return;
+  for (const h of holes) {
+    if (!h.alive) continue;
+    const d = Math.hypot(h.x - centerX, h.z - centerZ);
+    if (d > areaRadius + Math.max(0, h.radius || 0)) continue;
+    const falloff = Math.max(0.35, 1 - d / Math.max(0.1, areaRadius + Math.max(0, h.radius || 0)));
+    applyShotDamage(h, baseMultiplier * falloff);
+  }
+}
+
+function fireOffensiveUnitAtTarget(s, tgt) {
+  const unitType = getUnitType(s);
+  const def = getUnitDefinition(unitType);
+  const damageScale = def.damageScale || 1;
+  if (unitType === 'mech') {
+    const offsets = getUnitDefinition(unitType).muzzleOffsets || [-0.45, 0.45];
+    for (const offset of offsets) {
+      const didHit = rollOffensiveUnitHit(s, tgt.edgeDist);
+      if (didHit) applyShotDamage(tgt.hole, getOffensiveUnitDamageMultiplier(s, tgt) * 0.62);
+      fireOffensiveUnitShot(s, tgt, didHit, offset);
+    }
+  } else {
+    const didHit = rollOffensiveUnitHit(s, tgt.edgeDist);
+    const impact = fireOffensiveUnitShot(s, tgt, didHit, 0);
+    if (didHit) {
+      const damage = getOffensiveUnitDamageMultiplier(s, tgt) * damageScale;
+      applyShotDamage(tgt.hole, damage);
+      applyOffensiveAreaDamage(impact.x, impact.z, s, damage * 0.65);
+    }
+  }
+  playOffensiveUnitWeaponAudio(s);
+}
+
 // ---- Per-frame: soldiers ----
 function updateSoldiers(dt) {
-  const SHOT_INTERVAL = 1 / SOLDIER_SHOTS_PER_SEC;
   for (let i = soldiers.length - 1; i >= 0; i--) {
     const s = soldiers[i];
     if (!s.alive) { soldiers.splice(i, 1); continue; }
@@ -10429,23 +14613,39 @@ function updateSoldiers(dt) {
     const tgt = nearestHoleToSoldier(s);
     if (!tgt) continue;
 
-    const inRange = tgt.edgeDist <= SOLDIER_RANGE;
+    const inRange = tgt.edgeDist <= getOffensiveUnitRange(s);
     const dx = tgt.hole.x - s.x;
     const dz = tgt.hole.z - s.z;
     const facingDir = Math.atan2(dx, dz);
     s.mesh.rotation.y = facingDir;
+    let moveX = 0;
+    let moveZ = 0;
 
-    // Movement: pursue if not in range. Stop to fire if in range.
+    // Movement: pursue if not in range. Bosses kite while firing to stay threatening.
     if (!inRange) {
-      const step = SOLDIER_SPEED * currentSoldierSpeedMult * dt;
+      const step = SOLDIER_SPEED * currentSoldierSpeedMult * getOffensiveUnitSpeedMultiplier(s) * dt;
       const norm = Math.hypot(dx, dz);
       if (norm > 0.0001) {
-        s.x += (dx / norm) * step;
-        s.z += (dz / norm) * step;
+        moveX = (dx / norm) * step;
+        moveZ = (dz / norm) * step;
+        s.x += moveX;
+        s.z += moveZ;
       }
       s.mesh.position.x = s.x;
       s.mesh.position.z = s.z;
     } else {
+      if (s.isArmyBoss) {
+        const kite = getBossKiteVector(s, tgt, dx, dz);
+        if (kite) {
+          const step = SOLDIER_SPEED * currentSoldierSpeedMult * getOffensiveUnitSpeedMultiplier(s) * kite.speedScale * dt;
+          moveX = kite.x * step;
+          moveZ = kite.z * step;
+          s.x = clampToArena(s.x + moveX, BOSS_COMBAT_CONFIG.kiteBoundaryInset);
+          s.z = clampToArena(s.z + moveZ, BOSS_COMBAT_CONFIG.kiteBoundaryInset);
+          s.mesh.position.x = s.x;
+          s.mesh.position.z = s.z;
+        }
+      }
       // Fire!
       s.burstCooldown -= dt;
       if (s.burstCooldown <= 0) {
@@ -10456,46 +14656,18 @@ function updateSoldiers(dt) {
         }
         // Fire one round
         s.burstRounds++;
-        s.burstCooldown = SHOT_INTERVAL;
-
-        // Distance-based hit chance
-        let hitChance;
-        if (tgt.edgeDist < 3) hitChance = 0.60;
-        else if (tgt.edgeDist < 8) hitChance = 0.40;
-        else hitChance = 0.20;
-        hitChance = Math.min(0.92, hitChance * currentSoldierHitChanceMult);
-
-        const didHit = Math.random() < hitChance;
-        if (didHit) {
-          applyShotDamage(tgt.hole);
-        }
-
-        // Spawn a visible tracer — thin bright line from soldier's rifle
-        // to the hole (or a near-miss point if the shot didn't hit).
-        // Missed shots veer slightly so you see the bullets scatter near the hole.
-        let endX = tgt.hole.x;
-        let endZ = tgt.hole.z;
-        if (!didHit) {
-          // Misses land within ~1.5 radii of the hole center
-          const missAngle = Math.random() * Math.PI * 2;
-          const missDist = tgt.hole.radius + Math.random() * 1.2;
-          endX = tgt.hole.x + Math.cos(missAngle) * missDist;
-          endZ = tgt.hole.z + Math.sin(missAngle) * missDist;
-        }
-        spawnTracer(s.x, s.z, endX, endZ);
-
-        // Play gunshot audio (distance-attenuated), throttled globally
-        const distToPlayer = Math.hypot(s.x - player.x, s.z - player.z);
-        const volScale = Math.max(0, 1 - distToPlayer / 60);
-        if (!music.muted && volScale > 0) playGunshot(volScale);
+        s.burstCooldown = getOffensiveUnitShotInterval(s);
+        fireOffensiveUnitAtTarget(s, tgt);
 
         // End of burst → enter reload
-        if (s.burstRounds >= SOLDIER_BURST_COUNT) {
+        if (s.burstRounds >= getOffensiveUnitBurstCount(s)) {
           s.reloading = true;
-          s.burstCooldown = SOLDIER_RELOAD_TIME;
+          s.burstCooldown = getOffensiveUnitReloadTime(s);
         }
       }
     }
+
+    if (getUnitType(s) === 'tank') updateArmyBossTankContact(s, dt, moveX, moveZ, facingDir);
 
     // Occasional voice callouts
     s.voiceCooldown -= dt;
@@ -10509,10 +14681,10 @@ function updateSoldiers(dt) {
 }
 
 // ---- Apply shot damage to a hole ----
-function applyShotDamage(h) {
+function applyShotDamage(h, damageMultiplier = 1) {
   if (!h.alive) return;
   const baseDmg = h.isPlayer ? SHOT_DAMAGE_PLAYER : SHOT_DAMAGE_AI;
-  const shotRadiusDamage = baseDmg * currentSoldierDamageMult * getHoleBulletDamageMultiplier(h);
+  const shotRadiusDamage = baseDmg * currentSoldierDamageMult * getHoleBulletDamageMultiplier(h) * Math.max(0, damageMultiplier || 1);
   let remainingDamage = shotRadiusDamage;
   const positiveBonus = Math.max(0, h.bonusRadius || 0);
   if (positiveBonus > 0) {
@@ -10532,6 +14704,7 @@ function applyShotDamage(h) {
 
   // Red flash indicator — set timestamp; render logic will interpret it
   h.hitFlashUntil = performance.now() + 300;
+  if (h.isPlayer) triggerHaptic('playerDamage');
 
   // Hole dies if targetRadius is at floor
   if (h.targetRadius <= MIN_HOLE_RADIUS) {
@@ -10539,6 +14712,7 @@ function applyShotDamage(h) {
     scene.remove(h.group);
     if (h.isPlayer) {
       pendingPlayerEndReason = 'shot_by_soldiers';
+      triggerHaptic('playerDefeat');
       running = false;
       syncAlienAidLoop(true);
       stopAllPlaneEngines(false);
@@ -10561,6 +14735,12 @@ function isWavePlaneCapReached() {
 function updateWaves(dt) {
   if (!soldiersEnabledThisWave) return; // Waves mode: wave 1 has no soldiers
   if (isWavePlaneCapReached()) return;
+  if (shouldSpawnLateModeArmyBoss()) {
+    armyBossPendingThisWave = true;
+    currentWaveBossUnitType = pickBossUnitTypeForWave(currentWave);
+    lastWaveHudSecond = null;
+    announceBossInbound(currentWaveBossUnitType);
+  }
   waveTimer -= dt;
   if (waveTimer <= 0) {
     if (isWavePlaneCapReached()) {
@@ -10653,10 +14833,22 @@ function playConsumedSoldierAudio(soldier) {
 }
 
 function applySoldierConsumeScore(hole, soldier) {
-  hole.score += 30;
+  const scoreValue = getSoldierScoreValue(soldier);
+  const progressValue = getSoldierProgressValue(soldier);
+  hole.score += scoreValue;
   hole.targetRadius = radiusFromScore(hole);
   if (hole.isPlayer) {
-    flashConsumed(30, new THREE.Vector3(soldier.x, 0, soldier.z));
+    triggerHaptic(soldier.isArmyBoss ? 'bossDefeat' : 'devour');
+    if (soldier.isArmyBoss) celebrateBossDefeat(hole, soldier, scoreValue);
+    recordMandateSoldierConsume(hole, soldier);
+    recordPlayerFamilyProgress('soldiers', progressValue, hole, soldier);
+    const unitType = getUnitType(soldier);
+    const label = soldier.isArmyBoss
+      ? `BOSS +${scoreValue}`
+      : unitType !== UNIT_TYPE_SOLDIER
+        ? `${getUnitDefinition(unitType).label.toUpperCase()} +${scoreValue}`
+        : scoreValue;
+    flashConsumed(label, new THREE.Vector3(soldier.x, 0, soldier.z));
   }
 }
 
@@ -10687,10 +14879,57 @@ function handleWaveRosterSoldierConsume(hole, soldier) {
   }
 }
 
-function removeConsumedSoldier(soldier, soldierIndex) {
-  removeWaveUnitObject(soldier.mesh);
+function removeConsumedSoldier(soldier, soldierIndex, eater = null) {
   soldier.alive = false;
   soldiers.splice(soldierIndex, 1);
+  if (!eater?.alive || !soldier.mesh) {
+    removeWaveUnitObject(soldier.mesh);
+    return;
+  }
+  soldier.falling = true;
+  soldier.fallVel = 0;
+  soldier.spin = (Math.random() - 0.5) * 4;
+  soldier.size = getSoldierEatRadius(soldier);
+  soldier.fallBaseScale = soldier.mesh.scale.x || 1;
+  soldier.fallTargetHole = eater;
+  configureHoleDescentPath(eater, soldier);
+  setHoleDescentRenderMode(soldier, true);
+  setHoleDescentVisible(soldier, true);
+  consumedWaveUnits.push(soldier);
+}
+
+function updateConsumedWaveUnits(dt) {
+  for (let i = consumedWaveUnits.length - 1; i >= 0; i--) {
+    const unit = consumedWaveUnits[i];
+    if (!unit?.mesh) {
+      consumedWaveUnits.splice(i, 1);
+      continue;
+    }
+    const h = unit.fallTargetHole || player;
+    unit.fallVel += 25 * dt;
+    unit.mesh.position.y -= unit.fallVel * dt;
+    const entryX = unit.fallEntryX ?? unit.fallTargetX ?? unit.x ?? h.x;
+    const entryZ = unit.fallEntryZ ?? unit.fallTargetZ ?? unit.z ?? h.z;
+    const depth = Math.max(0, -unit.mesh.position.y);
+    const driftDepth = Math.min(HOLE_DESCENT_CONFIG.maxScreenDownDrift, depth * HOLE_DESCENT_CONFIG.screenDownDriftPerDepth);
+    const targetX = entryX + (unit.fallScreenDownX ?? 0) * driftDepth;
+    const targetZ = entryZ + (unit.fallScreenDownZ ?? 1) * driftDepth;
+    const horizontalLerp = Math.min(1, dt * HOLE_DESCENT_CONFIG.horizontalLerp);
+    unit.mesh.position.x += (targetX - unit.mesh.position.x) * horizontalLerp;
+    unit.mesh.position.z += (targetZ - unit.mesh.position.z) * horizontalLerp;
+    setHoleDescentVisible(unit, isHoleDescentVisibleInMouth(unit, h));
+    unit.mesh.rotation.x += unit.spin * dt;
+    unit.mesh.rotation.z += unit.spin * dt * 0.7;
+    const shrinkT = THREE.MathUtils.clamp((depth - HOLE_DESCENT_CONFIG.shrinkStartDepth) / Math.max(1, HOLE_DESCENT_CONFIG.fullShrinkDepth - HOLE_DESCENT_CONFIG.shrinkStartDepth), 0, 1);
+    const baseScale = unit.fallBaseScale || 1;
+    const scale = baseScale * THREE.MathUtils.lerp(1, HOLE_DESCENT_CONFIG.minScale, shrinkT);
+    unit.mesh.scale.set(scale, scale, scale);
+    if (unit.mesh.position.y < -HOLE_DESCENT_CONFIG.removeDepth) {
+      setHoleDescentRenderMode(unit, false);
+      removeWaveUnitObject(unit.mesh);
+      consumedWaveUnits.splice(i, 1);
+    }
+  }
 }
 
 function applyUnitClearReward(h, roster) {
@@ -10707,9 +14946,9 @@ function applyUnitClearReward(h, roster) {
   h.effects.bulletShieldSource = 'unit_clear';
   h.targetRadius = radiusFromScore(h);
   if (h.isPlayer) {
+    triggerHaptic('unitClear');
     playUnitClearStinger();
     triggerUnitClearVisuals(h);
-    showStagePop('UNIT WIPED! +' + breakdown.bonus.toLocaleString(), UNIT_CLEAR_STAGE_POP_DURATION_MS);
     flashConsumed('CLUTCH CLEAR · +' + breakdown.bonus + ' · GROWTH +' + breakdown.restoreRadius.toFixed(2) + ' · SPEED x' + speedBoost.boostMultiplier.toFixed(2), new THREE.Vector3(h.x, 0, h.z));
     showEventBanner('FULL UNIT CLEAR! MASS SURGED. BULLET DAMAGE SUPPRESSED. SPEED BOOST ACTIVE.', UNIT_CLEAR_BANNER_DURATION_MS);
   }
@@ -10734,12 +14973,18 @@ function consumeSoldiersByHoles() {
     for (const h of holes) {
       if (!h.alive) continue;
       const d = Math.hypot(s.x - h.x, s.z - h.z);
-      // Soldier is small (~0.5 radius equivalent), so any hole > ~0.8 can eat
-      if (d < h.radius - 0.2 && h.radius > 0.8) {
+      const eatRadius = getSoldierEatRadius(s);
+      const isTrueBoss = !!s.isArmyBoss;
+      const edgeInset = isTrueBoss ? Math.max(0.9, h.radius * 0.24) : (getUnitType(s) !== UNIT_TYPE_SOLDIER ? 0.45 : 0.2);
+      const speedBoostEatTax = isTrueBoss && (h.effects?.speedUntil || 0) > performance.now()
+        ? BOSS_COMBAT_CONFIG.speedBoostEatRadiusTax
+        : 0;
+      // Normal soldiers are small; boss-derived units are physically larger and need a bigger hole.
+      if (d < h.radius - edgeInset && h.radius > eatRadius + speedBoostEatTax) {
         playConsumedSoldierAudio(s);
         applySoldierConsumeScore(h, s);
         handleWaveRosterSoldierConsume(h, s);
-        removeConsumedSoldier(s, i);
+        removeConsumedSoldier(s, i, h);
         break;
       }
     }
@@ -10760,7 +15005,7 @@ function ensureWaveHud() {
     z-index: 25;
     background: linear-gradient(180deg, #b71c1c 0%, #7f0000 100%);
     color: #ffffff;
-    font-family: "Impact", "Arial Black", sans-serif;
+    font-family: var(--font-ui);
     font-size: ${HOLESY_CONFIG.hud.waveHudFontSize}px;
     font-weight: 900;
     letter-spacing: 0.08em;
@@ -10788,7 +15033,7 @@ function ensureWaveEndWarning() {
     transform: translate(-50%, -100%);
     z-index: 26;
     color: #ffe082;
-    font-family: "Impact", "Arial Black", sans-serif;
+    font-family: var(--font-ui);
     font-size: clamp(22px, 2.4vw, 34px);
     font-weight: 900;
     letter-spacing: 0.08em;
@@ -10811,33 +15056,52 @@ waveWarnStyle.textContent = `
 `;
 document.head.appendChild(waveWarnStyle);
 
+const waveHudProjectionPoint = new THREE.Vector3();
+let lastWaveHudSecond = null;
+let lastWaveEndWarningSecond = null;
+
 function updateWaveHudBanner() {
     ensureWaveHud();
     ensureWaveEndWarning();
     // Only show during active gameplay (not on title or end screens)
     if (!isGameState(GAME_STATES.PLAYING) || !isWaveBasedMode() || !soldiersEnabledThisWave) {
-      waveHudEl.style.display = 'none';
-      waveEndWarnEl.style.display = 'none';
+      if (waveHudEl.style.display !== 'none') waveHudEl.style.display = 'none';
+      if (waveEndWarnEl.style.display !== 'none') waveEndWarnEl.style.display = 'none';
+      lastWaveHudSecond = null;
+      lastWaveEndWarningSecond = null;
       return;
     }
-    waveHudEl.style.display = 'block';
+    if (waveHudEl.style.display !== 'block') waveHudEl.style.display = 'block';
     const secs = Math.max(0, Math.ceil(waveTimer));
-    waveHudEl.textContent = `🚨 NEXT TROOP DEPLOYMENT: ${secs} SECONDS! 🚨`;
-    waveEndWarnEl.style.display = (gameTime > 0 && gameTime <= 3) ? 'block' : 'none';
-    if (waveEndWarnEl.style.display === 'block') {
-      waveEndWarnEl.textContent = `NEW WAVE IN ${Math.max(1, Math.ceil(gameTime))}`;
+    if (secs !== lastWaveHudSecond) {
+      lastWaveHudSecond = secs;
+      waveHudEl.textContent = armyBossPendingThisWave
+        ? `🚨 ARMY BOSS DEPLOYMENT: ${secs} SECONDS! 🚨`
+        : `🚨 NEXT TROOP DEPLOYMENT: ${secs} SECONDS! 🚨`;
+    }
+    const showWaveEndWarning = gameTime > 0 && gameTime <= 3;
+    const warningDisplay = showWaveEndWarning ? 'block' : 'none';
+    if (waveEndWarnEl.style.display !== warningDisplay) waveEndWarnEl.style.display = warningDisplay;
+    if (showWaveEndWarning) {
+      const warningSecond = Math.max(1, Math.ceil(gameTime));
+      if (warningSecond !== lastWaveEndWarningSecond) {
+        lastWaveEndWarningSecond = warningSecond;
+        waveEndWarnEl.textContent = `NEW WAVE IN ${warningSecond}`;
+      }
       if (player && player.alive) {
-        const labelWorld = new THREE.Vector3(
+        waveHudProjectionPoint.set(
           player.x,
           Math.max(3.8, player.labelSprite ? player.labelSprite.position.y + 1.2 : player.radius * 1.6 + 1.8),
           player.z
         );
-        labelWorld.project(camera);
-        const screenX = (labelWorld.x * 0.5 + 0.5) * window.innerWidth;
-        const screenY = (-labelWorld.y * 0.5 + 0.5) * window.innerHeight;
+        waveHudProjectionPoint.project(camera);
+        const screenX = (waveHudProjectionPoint.x * 0.5 + 0.5) * window.innerWidth;
+        const screenY = (-waveHudProjectionPoint.y * 0.5 + 0.5) * window.innerHeight;
         waveEndWarnEl.style.left = `${screenX}px`;
         waveEndWarnEl.style.top = `${Math.max(24, screenY - 14)}px`;
       }
+    } else {
+      lastWaveEndWarningSecond = null;
     }
   }
 
@@ -10885,6 +15149,10 @@ function releaseStatsWindowReference() {
 
 function clearUiLifecycleTimers() {
   clearPendingWaveStart();
+  if (audioBankWarmupTimer) {
+    clearTimeout(audioBankWarmupTimer);
+    audioBankWarmupTimer = null;
+  }
   if (stagePopTimer) {
     clearTimeout(stagePopTimer);
     stagePopTimer = null;
@@ -10947,8 +15215,10 @@ function animate(frameNow = performance.now()) {
   animationFrameId = null;
   if (lifecycleTerminated) return;
   const now = frameNow;
-  const dt = Math.min(0.05, (now - lastT) / 1000);
+  const frameDeltaMs = now - lastT;
+  const dt = Math.min(0.05, frameDeltaMs / 1000);
   lastT = now;
+  updateAdaptiveRenderer(now, frameDeltaMs);
   if (isIdleRenderState()) {
     stopHoleWindNow();
   } else {
@@ -10957,6 +15227,8 @@ function animate(frameNow = performance.now()) {
     updateActiveEffectsUi();
   }
   if (running) {
+    updateHydrantJets();
+    updateFirstRunAdaptiveAssistance(dt);
     // Timer only counts down in normal mode. In LMS, time is paused at 0.
     if (!lmsMode) {
       gameTime -= dt;
@@ -10993,6 +15265,7 @@ function animate(frameNow = performance.now()) {
     updateTrafficLights(dt);
     updateMovingCars(dt);
     updateMovingPeople(dt);
+    updateParkAnimations(dt);
 
     // --- Military simulation ---
     updateWaves(dt);
@@ -11008,26 +15281,43 @@ function animate(frameNow = performance.now()) {
     updateWaveHudBanner();
 
     // --- Object consumption (all holes compete for objects) ---
+    const playerLorePullBonus = player.alive && getLoreTimedBuffRemaining('pedestrian_pull', now) > 0
+      ? player.radius * (getLoreComboState('block_party', now) ? 0.55 : 0.35)
+      : 0;
     for (const obj of objects) {
       if (obj.consumed || obj.falling) continue;
       if (obj.jammedInHole) continue;
       if (obj.physicsStackPiece && !obj.stackActive) continue;
 
-      // Find the FIRST hole that can eat this object (closest + big enough)
+      // Resolve eating and pulling from one distance pass per hole/object pair.
       let eater = null;
-      let bestD = Infinity;
+      let bestDistanceSq = Infinity;
+      let puller = null;
+      let pullDistanceSq = Infinity;
+      let pullRange = 0;
       for (const h of holes) {
         if (!h.alive) continue;
         const dxo = obj.x - h.x;
         const dzo = obj.z - h.z;
-        const d = Math.hypot(dxo, dzo);
+        const distanceSq = dxo * dxo + dzo * dzo;
         if (!canObjectFitHole(h, obj)) {
-          if (d < h.radius - 0.1) tryJamOversizedObject(h, obj);
+          const jamRadius = h.radius - 0.1;
+          if (distanceSq < jamRadius * jamRadius) tryJamOversizedObject(h, obj, Math.sqrt(distanceSq));
           continue;
         }
-        // Within falling range
-        if (d < h.radius - 0.1 && d < bestD) {
-          eater = h; bestD = d;
+        const eatRadius = h.radius - 0.1;
+        if (distanceSq < eatRadius * eatRadius && distanceSq < bestDistanceSq) {
+          eater = h;
+          bestDistanceSq = distanceSq;
+        }
+        if (!obj.isGovernmentBuildingPiece) {
+          const lorePullBonus = h.isPlayer ? playerLorePullBonus : 0;
+          const candidatePullRange = h.radius + obj.size + lorePullBonus;
+          if (distanceSq < candidatePullRange * candidatePullRange && distanceSq < pullDistanceSq) {
+            puller = h;
+            pullDistanceSq = distanceSq;
+            pullRange = candidatePullRange;
+          }
         }
       }
 
@@ -11038,29 +15328,11 @@ function animate(frameNow = performance.now()) {
 
       if (obj.isGovernmentBuildingPiece) continue;
 
-      // Otherwise apply pull from closest hole that could eat it
-      let puller = null;
-      let pullD = Infinity;
-      for (const h of holes) {
-        if (!h.alive) continue;
-        if (obj.physicsStackPiece && !obj.stackActive) continue;
-        if (!canObjectFitHole(h, obj)) continue;
-        const d = Math.hypot(obj.x - h.x, obj.z - h.z);
-        const lorePullBonus = h.isPlayer && getLoreTimedBuffRemaining('pedestrian_pull') > 0
-          ? h.radius * (getLoreComboState('block_party') ? 0.55 : 0.35)
-          : 0;
-        if (d < h.radius + obj.size + lorePullBonus && d < pullD) {
-          puller = h; pullD = d;
-        }
-      }
       if (puller) {
         const dxo = obj.x - puller.x;
         const dzo = obj.z - puller.z;
-        const d = pullD;
-        const lorePullBonus = puller.isPlayer && getLoreTimedBuffRemaining('pedestrian_pull') > 0
-          ? puller.radius * (getLoreComboState('block_party') ? 0.55 : 0.35)
-          : 0;
-        const pull = Math.max(0, (puller.radius + obj.size + lorePullBonus - d)) * 8 * dt;
+        const d = Math.sqrt(pullDistanceSq);
+        const pull = Math.max(0, pullRange - d) * 8 * dt;
         const nx = dxo / (d + 0.001);
         const nz = dzo / (d + 0.001);
         obj.x -= nx * pull;
@@ -11149,6 +15421,7 @@ function animate(frameNow = performance.now()) {
     }
 
     // --- Update visuals ---
+    updateConsumedWaveUnits(dt);
     for (const h of holes) updateHoleVisual(h);
 
     // --- End game if only one hole remains ---
@@ -11175,7 +15448,10 @@ function animate(frameNow = performance.now()) {
     }
     camera.lookAt(focus.x, 0, focus.z);
 
-    updateHUD();
+    if (now - lastHudUpdateAt >= HUD_UPDATE_INTERVAL_MS) {
+      lastHudUpdateAt = now;
+      updateHUD();
+    }
     updateLoreRunTracking();
   }
 

@@ -68,7 +68,7 @@ export const DIFFICULTY_PROFILES = Object.freeze({
     soldierIntervalMult: 0.38,
     soldierHitChanceMult: 1.55,
     parachuteFallMult: 0.58,
-    waveOneSoldiers: true,
+    waveOneSoldiers: false,
     waveOneIntervalMin: 9,
     waveOneIntervalMax: 11,
     waveOneSoldierCountMin: 2,

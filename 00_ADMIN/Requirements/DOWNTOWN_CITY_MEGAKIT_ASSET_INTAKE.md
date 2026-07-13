@@ -63,6 +63,18 @@ The pack is a modular downtown construction kit rather than a complete ready-to-
 - Procedural skin library: use kit pieces to theme existing Holesy building types while preserving current physics behavior.
 - Hybrid approach: start with a handcrafted test district, then promote the best pieces into reusable procedural skins.
 
-## Current Decision
+## Runtime Wiring Update
+
+`Master 16.78` added a title-screen Environment selector with Classic Aldine as the default and MegaKit Downtown as an optional test environment. User live-play testing then found the road/sidewalk/ground overlays and visual-only showcase buildings violated the gameplay baseline: holes could appear under fake terrain, buildings no longer read as block-bound only, and showcase buildings were not breakable.
+
+`Master 16.79` keeps the selector but rolls MegaKit Downtown back to small consumable prop dressing only. Future themed buildings must be implemented through the validated building/voxel/destruction paths before they return to gameplay.
+
+`Master 16.80` restores readable MegaKit Downtown ground detail without reopening the safety defects: it adds thin, non-colliding block-edge/sidewalk trim below the hole render plane and larger circular road manholes as normal consumable props. The environment still excludes fake ground patches, visual-only road/sidewalk slabs, and non-breakable showcase buildings.
+
+`Master 16.81` repairs the 16.80 visibility defect found in live play: the block-edge/sidewalk trim is widened and brightened, and road manholes are enlarged with brighter metal rings and surface bars so they read from the normal gameplay camera and evening/night lighting.
+
+The release package includes only the texture runtime subset needed by the selector, not the full raw intake folder.
+
+## Original Intake Decision
 
 No runtime wiring was added in this intake. This avoids loading a large asset set in the current playable build and keeps `Master 16.77` behavior unchanged.

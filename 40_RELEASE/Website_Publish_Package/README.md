@@ -43,9 +43,11 @@ This package was generated from:
 - `PACKAGE_MANIFEST.md` lists every required package file for clean install, rollback, and upload checks.
 - The bottom-left build badge opens in-game build notes for future patch-note publication.
 - This package includes the promoted lore Archive, found-document drops, achievement buffs, Archive music, starter Field Patterns, and the end-screen/feedback cleanup from the `Master 15.39` through `Master 15.45` candidate lineage.
-- Current patch label is `Master 16.74`.
-- The current package includes the `Master 16.x` Endless Waves, save/load, medium-office voxel, government-building physics, and time-of-day lighting line through the validated `Master 16.73` short building-window power flicker.
+- Current patch label is `Master 16.119`.
+- The current package includes the `Master 16.x` Endless Waves, save/load, medium-office voxel, government-building physics, time-of-day lighting, natural skyscraper debris spread, small house/shop breakup line, optional MegaKit Downtown test environment, mobile HUD/haptic diagnostics, randomized Mandate variety, mobile haptics/mute placement repair, stronger haptic diagnostics, unsupported haptics clarity, native haptics bridge support, the iOS web haptic fallback attempt, the Capacitor native app shell scaffold, the Wave 1 soldier-free Mandate repair, and transparent first-run adaptive assistance through `Master 16.119`.
 - `Master 16.74` completes the governed `PERF-012` modular production package migration evidence: source/release package shape is modular, low-risk data/config modules are extracted, and the package manifest records required upload files.
+- `Master 16.77` keeps that modular package shape while applying the medium-style government voxel collapse repair and visible small-building breakup fix.
+- `Master 16.78` keeps Classic Aldine as the default environment and adds a title-screen Environment selector for a MegaKit Downtown test district backed by imported CC0 Downtown City MegaKit textures.
 
 ## Publish Rule
 
@@ -68,3 +70,4 @@ Recommended manual GoDaddy upload structure:
 - When a newer master is approved, regenerate this package from the new master
 - Future packages must preserve the modular structure captured in the architecture decision; a single bundled file is no longer the normal publish shape
 - Delta packages are an upload convenience only; they do not replace the full modular release package as the governed baseline
+

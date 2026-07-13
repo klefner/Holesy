@@ -1,17 +1,17 @@
 export const GOVERNMENT_PHYSICS_CONFIG = Object.freeze({
   fixedStep: 1 / 60,
   maxSubSteps: 3,
-  gravity: 24,
-  maxFallSpeed: 34,
+  gravity: 34,
+  maxFallSpeed: 46,
   maxHorizontalSpeed: 18,
   maxAngularSpeed: 12,
   cellSize: 3.2,
   solverIterations: 6,
   restitution: 0.44,
-  groundRestitution: 0.26,
+  groundRestitution: 0.14,
   friction: 0.72,
   airDamping: 0.992,
-  groundDamping: 0.82,
+  groundDamping: 0.74,
   angularDamping: 0.9,
   sleepSpeed: 0.08,
   sleepAngular: 0.1,
@@ -19,12 +19,12 @@ export const GOVERNMENT_PHYSICS_CONFIG = Object.freeze({
   contactSlop: 0.012,
   activationImpulseMin: 5.6,
   activationImpulseMax: 11.4,
-  activationLiftMin: 2.1,
-  activationLiftMax: 7.4,
+  activationLiftMin: 0.7,
+  activationLiftMax: 3.2,
   activationJitter: 1.9,
   activationColumnBoost: 2.25,
   activationNeighborBoost: 0.95,
-  activationHeightLift: 1.1,
+  activationHeightLift: 0.45,
   activationShockJitter: 1.25,
   shakeDuration: 0.58,
   shakeDistance: 0.34,
@@ -37,7 +37,7 @@ export const GOVERNMENT_PHYSICS_CONFIG = Object.freeze({
   releaseImpulseTopple: 4.3,
   columnLeanImpulse: 3.4,
   blastSeparation: 0.42,
-  sideImpactHop: 1.05,
+  sideImpactHop: 0.38,
   sideImpactScatter: 0.62,
   impactSpin: 5.8,
 });
@@ -69,12 +69,16 @@ export class GovernmentPhysicsWorld {
     this.bodies = [];
     this.bodyByObject = new WeakMap();
     this.accumulator = 0;
+    this.contactGrid = new Map();
+    this.testedPairs = new Set();
   }
 
   clear() {
     this.bodies.length = 0;
     this.bodyByObject = new WeakMap();
     this.accumulator = 0;
+    this.contactGrid.clear();
+    this.testedPairs.clear();
   }
 
   registerPiece(object, options) {
@@ -216,12 +220,24 @@ export class GovernmentPhysicsWorld {
       body.shakeTimer = this.config.shakeDuration;
       body.position.x += shockDir.x * this.config.blastSeparation * (directColumn ? 1 : 0.45);
       body.position.z += shockDir.z * this.config.blastSeparation * (directColumn ? 1 : 0.45);
+      body.basePosition.x = body.position.x;
+      body.basePosition.z = body.position.z;
       activated++;
     }
     return activated;
   }
 
   step(dt) {
+    const hasAwakeBody = this.bodies.some(body =>
+      body.active &&
+      !body.sleeping &&
+      !body.object?.falling &&
+      !body.object?.consumed
+    );
+    if (!hasAwakeBody) {
+      this.accumulator = 0;
+      return;
+    }
     this.accumulator += Math.min(0.05, Math.max(0, dt));
     let steps = 0;
     while (this.accumulator >= this.config.fixedStep && steps < this.config.maxSubSteps) {
@@ -230,7 +246,9 @@ export class GovernmentPhysicsWorld {
       steps++;
     }
     if (steps >= this.config.maxSubSteps) this.accumulator = 0;
-    for (const body of this.bodies) this.syncObject(body);
+    for (const body of this.bodies) {
+      if (body.active) this.syncObject(body);
+    }
   }
 
   stepFixed(dt) {
@@ -334,7 +352,8 @@ export class GovernmentPhysicsWorld {
 
   solveContacts() {
     const grid = this.buildGrid();
-    const tested = new Set();
+    const tested = this.testedPairs;
+    tested.clear();
     for (const bucket of grid.values()) {
       for (let i = 0; i < bucket.length; i++) {
         for (let j = i + 1; j < bucket.length; j++) {
@@ -350,7 +369,8 @@ export class GovernmentPhysicsWorld {
   }
 
   buildGrid() {
-    const grid = new Map();
+    const grid = this.contactGrid;
+    grid.clear();
     let id = 1;
     for (const body of this.bodies) {
       body._gridId = id++;
