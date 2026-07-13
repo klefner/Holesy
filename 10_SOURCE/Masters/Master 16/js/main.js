@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.169';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.170';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1260,14 +1260,19 @@ async function addMegakitBuildingSkinTest(generation) {
       { assetId: 'megakit-building-medium-2-001', sourceBase: 'Building_Medium_2_001', footprint: 10.5, collapseSize: 5.25 },
       { assetId: 'megakit-building-large-2', sourceBase: 'Building_Large_2', footprint: 12, collapseSize: 6 },
     ];
-    const loaded = await Promise.all(definitions.map(async definition => {
+    // Decode the six glTF files across separate browser frames. Parsing all
+    // converted and authored models in one Promise.all completion burst caused
+    // a visible periodic hitch when the MegaKit district rebuilt.
+    const loaded = [];
+    for (const definition of definitions) {
       const convertedAsset = `assets/environments/downtown-city-megakit/converted/${definition.assetId}/v2.4.0/${definition.sourceBase}_destructible.gltf`;
-      const [gltf, authoredGltf] = await Promise.all([
-        megakitGltfLoader.loadAsync(convertedAsset),
-        megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}${definition.sourceBase}.gltf`),
-      ]);
-      return { definition, gltf, authoredGltf };
-    }));
+      const gltf = await megakitGltfLoader.loadAsync(convertedAsset);
+      await yieldCityBuildFrame();
+      if (selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN || generation !== megakitEnvironmentGeneration) return;
+      const authoredGltf = await megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}${definition.sourceBase}.gltf`);
+      loaded.push({ definition, gltf, authoredGltf });
+      await yieldCityBuildFrame();
+    }
     if (selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN || generation !== megakitEnvironmentGeneration) return;
     const kits = loaded.map(({ definition, gltf, authoredGltf }) => {
       const source = gltf.scene;
@@ -1378,6 +1383,12 @@ async function addMegakitBuildingSkinTest(generation) {
         object.mandateKind = 'tower';
         object.isMegakitAsset = true;
         object.isOfflineConvertedAsset = true;
+        // Keep dormant destruction blocks out of the scene graph while the
+        // authored shell is intact. Five preview buildings otherwise make the
+        // renderer traverse 480 hidden Groups plus their child primitives on
+        // every frame even though none can be drawn yet.
+        scene.remove(piece);
+        object.megakitDormantDetached = true;
         // Imported kit pieces are closed rectangular solids. Keep their
         // existing whole-stack activation, but resolve debris contact with the
         // same box-overlap path used by the proven voxel-building blocks.
@@ -2712,6 +2723,11 @@ function randInBlock(bp, margin = 2) {
 const movingCars = [];
 const carCrashEffects = [];
 const animatedParkObjects = [];
+const parkBallGeometry = new THREE.SphereGeometry(0.28, 10, 8);
+const PARK_VERTICAL_MOTIONS = new Set(['bounce','basketball','baseball','tennisBall','volleyball','cheer','smoke','water','fire']);
+const PARK_TRAVEL_MOTIONS = new Set(['court','tennis','runner','swim','wander','dog','skate']);
+const PARK_HIGH_RATE_MOTIONS = new Set(['basketball','baseball','tennisBall','volleyball','cheer','smoke','water','fire']);
+const PARK_PASSIVE_ANIMATION_RANGE_SQ = 95 * 95;
 const reservedParcelKeys = new Set();
 const parcelKey = (bp) => `${bp.x.toFixed(3)},${bp.z.toFixed(3)}`;
 // Full-parcel attractions need most of a city parcel to read clearly. Compact
@@ -2746,7 +2762,7 @@ function makeParkPerson(bp, dx, dz, color = 0x4f7ed6, motion = null) {
 }
 
 function makeParkBall(bp, dx, dz, color, motion = 'bounce') {
-  const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 8), sharedBoxMat(color));
+  const mesh = new THREE.Mesh(parkBallGeometry, sharedBoxMat(color));
   const obj = makeObject(mesh, 0.28, 0, 4, { x: bp.x + dx, z: bp.z + dz, y: 0.32 });
   obj.parkAssetName = `${motion} ball`;
   obj.parkParcelKey = parcelKey(bp);
@@ -2756,8 +2772,10 @@ function makeParkBall(bp, dx, dz, color, motion = 'bounce') {
 
 function addParkSurface(bp, variant, color = 0x4f8b45) {
   const surfaceColor = variant === 'rundown' ? 0x796b43 : variant === 'fancy' ? 0x31935a : color;
-  for (let x = -8; x <= 8; x += 2) {
-    for (let z = -8; z <= 8; z += 2) makeParkBox('park turf', bp, x, z, 1.92, 0.16, 1.92, surfaceColor, 4, 0.08);
+  // Seven-by-seven remains visibly granular and independently consumable while
+  // removing 32 meshes/draw calls from every park versus the former 9x9 turf.
+  for (let x = -7.5; x <= 7.5; x += 2.5) {
+    for (let z = -7.5; z <= 7.5; z += 2.5) makeParkBox('park turf', bp, x, z, 2.42, 0.16, 2.42, surfaceColor, 4, 0.08);
   }
 }
 
@@ -2972,7 +2990,9 @@ function populateParkParcel(bp, archetype, variant) {
 }
 
 function updateParkAnimations(dt) {
-  const now = getGameplayNow() / 1000;
+  if (!running || document.hidden || !animatedParkObjects.length) return;
+  const nowMs = getGameplayNow();
+  const now = nowMs / 1000;
   for (let i = animatedParkObjects.length - 1; i >= 0; i--) {
     const actor = animatedParkObjects[i];
     if (!actor.obj || actor.obj.consumed || actor.obj.falling) { animatedParkObjects.splice(i,1); continue; }
@@ -2999,14 +3019,23 @@ function updateParkAnimations(dt) {
         continue;
       }
     }
-    if (['bounce','basketball','baseball','tennisBall','volleyball','cheer','smoke','water','fire'].includes(actor.motion)) {
+    // Passive park life does not need simulation-rate updates. Stagger actors
+    // at 20-30 Hz, and stop animating distant actors; panic remains full-rate.
+    const cameraDx = actor.obj.x - camera.position.x;
+    const cameraDz = actor.obj.z - camera.position.z;
+    if (cameraDx * cameraDx + cameraDz * cameraDz > PARK_PASSIVE_ANIMATION_RANGE_SQ) continue;
+    const passiveInterval = PARK_HIGH_RATE_MOTIONS.has(actor.motion) ? 34 : 50;
+    if (actor.nextPassiveUpdateAt === undefined) actor.nextPassiveUpdateAt = nowMs + (actor.phase % 1) * passiveInterval;
+    if (nowMs < actor.nextPassiveUpdateAt) continue;
+    actor.nextPassiveUpdateAt = nowMs + passiveInterval;
+    if (PARK_VERTICAL_MOTIONS.has(actor.motion)) {
       if (actor.originY === undefined) actor.originY = mesh.position.y;
       const amplitude = actor.motion === 'cheer' ? .22 : actor.motion === 'smoke' ? 1.8 : actor.motion === 'water' ? 1.3 : .75;
       mesh.position.y = actor.originY + Math.abs(Math.sin(t * (actor.motion === 'cheer' ? 7 : 4))) * amplitude;
       if (actor.motion === 'smoke') mesh.material.opacity = 0.2 + (Math.sin(t * 2) + 1) * .15;
       if (actor.motion === 'fire') mesh.scale.y = 1 + Math.abs(Math.sin(t * 11)) * 0.8;
     }
-    if (['court','tennis','runner','swim','wander','dog','skate'].includes(actor.motion)) {
+    if (PARK_TRAVEL_MOTIONS.has(actor.motion)) {
       const range = actor.motion === 'runner' ? 1.8 : actor.motion === 'swim' ? 2.5 : 1.1;
       actor.obj.x = actor.originX + Math.cos(t * (actor.motion === 'dog' ? 1.8 : 1.1)) * range;
       actor.obj.z = actor.originZ + Math.sin(t * (actor.motion === 'swim' ? .7 : 1.3)) * range;
@@ -11632,7 +11661,12 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
       megakitIntactShellsByStack.delete(stackId);
     }
     for (const piece of physicsStackPieces) {
-      if (piece.stackId === stackId && piece.mesh) piece.mesh.visible = true;
+      if (piece.stackId !== stackId || !piece.mesh) continue;
+      if (piece.megakitDormantDetached && !piece.mesh.parent) {
+        scene.add(piece.mesh);
+        piece.megakitDormantDetached = false;
+      }
+      piece.mesh.visible = true;
     }
     extinguishStackLights(stackId);
     if (!music.muted) {
@@ -11812,6 +11846,9 @@ function activateSmallVoxelBuilding(seedPiece, sourceHole = player) {
 const contactNonVoxelPieces = [];
 const contactVoxelPieces = [];
 const voxelContactStacks = new Map();
+const nonVoxelContactGrid = new Map();
+const NON_VOXEL_CONTACT_CELL_SIZE = 4;
+const NON_VOXEL_CONTACT_MAX_PAIRS_PER_FRAME = 1400;
 
 function resolvePhysicsStackContacts(dt) {
   contactNonVoxelPieces.length = 0;
@@ -11822,11 +11859,29 @@ function resolvePhysicsStackContacts(dt) {
     else if (!piece.stackSettled) contactNonVoxelPieces.push(piece);
   }
   const nonVoxelPieces = contactNonVoxelPieces;
+  nonVoxelContactGrid.clear();
+  for (let index = 0; index < nonVoxelPieces.length; index++) {
+    const piece = nonVoxelPieces[index];
+    const gridX = Math.floor(piece.x / NON_VOXEL_CONTACT_CELL_SIZE);
+    const gridZ = Math.floor(piece.z / NON_VOXEL_CONTACT_CELL_SIZE);
+    const key = `${piece.stackId}:${gridX}:${gridZ}`;
+    const bucket = nonVoxelContactGrid.get(key);
+    if (bucket) bucket.push(index);
+    else nonVoxelContactGrid.set(key, [index]);
+  }
+  let checkedNonVoxelPairs = 0;
   for (let i = 0; i < nonVoxelPieces.length; i++) {
     const a = nonVoxelPieces[i];
-    for (let j = i + 1; j < nonVoxelPieces.length; j++) {
-      const b = nonVoxelPieces[j];
-      if (a.stackId !== b.stackId) continue;
+    const gridX = Math.floor(a.x / NON_VOXEL_CONTACT_CELL_SIZE);
+    const gridZ = Math.floor(a.z / NON_VOXEL_CONTACT_CELL_SIZE);
+    for (let offsetX = -1; offsetX <= 1 && checkedNonVoxelPairs < NON_VOXEL_CONTACT_MAX_PAIRS_PER_FRAME; offsetX++) {
+      for (let offsetZ = -1; offsetZ <= 1 && checkedNonVoxelPairs < NON_VOXEL_CONTACT_MAX_PAIRS_PER_FRAME; offsetZ++) {
+        const candidates = nonVoxelContactGrid.get(`${a.stackId}:${gridX + offsetX}:${gridZ + offsetZ}`);
+        if (!candidates) continue;
+        for (const j of candidates) {
+          if (j <= i || checkedNonVoxelPairs >= NON_VOXEL_CONTACT_MAX_PAIRS_PER_FRAME) continue;
+          checkedNonVoxelPairs++;
+          const b = nonVoxelPieces[j];
       if (Math.abs(a.mesh.position.y - b.mesh.position.y) > (a.stackHeight + b.stackHeight) * 0.72) continue;
       const dx = b.x - a.x;
       const dz = b.z - a.z;
@@ -11845,6 +11900,8 @@ function resolvePhysicsStackContacts(dt) {
       b.avz += nx * impulse * 0.55;
       a.avx += nz * impulse * 0.55;
       b.avx -= nz * impulse * 0.55;
+        }
+      }
     }
   }
 
@@ -11859,6 +11916,10 @@ function resolvePhysicsStackContacts(dt) {
   }
   const maxPairs = STACK_PHYSICS_CONFIG.voxelContactMaxPairsPerFrame;
   for (const pieces of byStack.values()) {
+    // A fully sleeping pile cannot generate a contact response: the pair loop
+    // below already skips settled/settled pairs. Avoid sorting and revisiting
+    // all 4,560 pairs of a settled 96-block imported building every frame.
+    if (!pieces.some(piece => !piece.stackSettled)) continue;
     let checkedPairs = 0;
     pieces.sort((a, b) => a.mesh.position.y - b.mesh.position.y);
     for (let i = 0; i < pieces.length && checkedPairs < maxPairs; i++) {
@@ -12047,22 +12108,32 @@ function sleepPhysicsStackPiece(piece) {
 
 function updatePhysicsStackPieces(dt) {
   const inactiveScanBucket = inactiveStackScanFrame++ % INACTIVE_STACK_SCAN_STRIDE;
+  const gameplayNow = getGameplayNow();
   for (let pieceIndex = 0; pieceIndex < physicsStackPieces.length; pieceIndex++) {
     const piece = physicsStackPieces[pieceIndex];
     if (piece.consumed || piece.falling || piece.jammedInHole) continue;
 
     if (!piece.stackActive) {
+      // Every imported floor repeats the same 4x4 footprint. One ground-floor
+      // trigger per column is sufficient because contact activates the whole
+      // stack; scanning all six floors multiplied idle proximity work by six.
+      if (piece.isOfflineConvertedAsset && piece.stackIndex > 0) continue;
       if (pieceIndex % INACTIVE_STACK_SCAN_STRIDE !== inactiveScanBucket) continue;
       for (const h of holes) {
         if (!h.alive) continue;
-        const d = Math.hypot(piece.x - h.x, piece.z - h.z);
+        const dx = piece.x - h.x;
+        const dz = piece.z - h.z;
+        const distanceSquared = dx * dx + dz * dz;
         if (piece.isVoxelBuildingCube) {
-          if (d < h.radius + piece.size + STACK_PHYSICS_CONFIG.voxelTriggerPadding) {
+          const triggerRadius = h.radius + piece.size + STACK_PHYSICS_CONFIG.voxelTriggerPadding;
+          if (distanceSquared < triggerRadius * triggerRadius) {
             if (piece.stackKind === 'smallVoxel') activateSmallVoxelBuilding(piece, h);
             else activateVoxelBuildingColumn(piece, h);
             break;
           }
-        } else if (d < h.radius + STACK_PHYSICS_CONFIG.triggerPadding) {
+        } else {
+          const triggerRadius = h.radius + STACK_PHYSICS_CONFIG.triggerPadding;
+          if (distanceSquared >= triggerRadius * triggerRadius) continue;
           const collapsed = activatePhysicsStack(piece.stackId, h, piece);
           if (collapsed && h.isPlayer) showStagePop('SKYSCRAPER COLLAPSE!', 1250);
           break;
@@ -12072,7 +12143,7 @@ function updatePhysicsStackPieces(dt) {
     }
 
     if (piece.stackSettled) continue;
-    const collapseElapsed = Math.max(0, (getGameplayNow() - (piece.stackCollapsedAt || 0)) / 1000);
+    const collapseElapsed = Math.max(0, (gameplayNow - (piece.stackCollapsedAt || 0)) / 1000);
     if (collapseElapsed < (piece.stackDelaySeconds || 0)) continue;
     if (piece.isVoxelBuildingCube && !piece.stackReleased) updateUnreleasedVoxelMotion(piece, dt);
     if (piece.isVoxelBuildingCube && !ensureVoxelPieceReleased(piece)) continue;
