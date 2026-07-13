@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 148;
+export const BUILD_SUB = 149;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.149',
+    title: 'Mobile layout repair and mandatory-wave briefing',
+    notes: [
+      'Stacks mobile menu actions and prevents horizontal page scrolling.',
+      'Keeps transient boss messaging clear of the mobile Pause controls.',
+      'Freezes every wave for a concise centered Mandate-versus-optional-Goals contract, then docks both toward their HUD positions before the timer starts.',
+    ],
+  },
   {
     label: 'Master 16.148',
     title: 'Cosmetic achievement hook startup repair',

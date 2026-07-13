@@ -10,7 +10,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/holesy-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/holesy-180.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/styles.css?v=16.148" />
+  <link rel="stylesheet" href="css/styles.css?v=16.149" />
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -44,6 +44,20 @@
     </div>
   </div>
 </div>
+<div id="wave-contract" class="hidden" role="dialog" aria-modal="true" aria-labelledby="wave-contract-title">
+  <div id="wave-contract-title">THE CITY HAS TERMS</div>
+  <section class="wave-contract-card required">
+    <strong>MANDATE — DO THIS OR THE RUN ENDS</strong>
+    <span>No pressure. Except the fatal kind.</span>
+    <div id="wave-contract-mandates"></div>
+  </section>
+  <section class="wave-contract-card optional">
+    <strong>RUN GOALS — OPTIONAL, BUT SHINY</strong>
+    <span>Skip them and live. Finish them for buffs, mastery, and unlocks.</span>
+    <div id="wave-contract-goals"></div>
+  </section>
+  <div class="wave-contract-countdown">Wave begins after these dock.</div>
+</div>
 <div id="mini-lb" class="hidden"></div>
 <button id="mobile-hud-toggle" class="hidden" type="button" aria-pressed="false">HUD</button>
 
@@ -59,7 +73,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-      <button id="build-version" type="button" aria-label="Show build notes">Master 16.148</button>
+      <button id="build-version" type="button" aria-label="Show build notes">Master 16.149</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -152,7 +166,7 @@
 <div id="pause-overlay" class="hidden">
   <h2>Paused</h2>
   <div class="pause-sub">Take a breather, then jump back in or return to the game mode selector.</div>
-    <div class="pause-version" id="pause-version-label">Master 16.148</div>
+    <div class="pause-version" id="pause-version-label">Master 16.149</div>
   <div class="pause-status" id="pause-status-message" role="status" aria-live="polite"></div>
   <div class="pause-btns">
     <button class="pause-resume" id="pause-resume-btn" type="button">Resume</button>
@@ -232,7 +246,7 @@
 }
 </script>
 
-<script type="module" src="js/main.js?v=16.148"></script>
+<script type="module" src="js/main.js?v=16.149"></script>
 </body>
 </html>
 

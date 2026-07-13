@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.148';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.149';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -3832,6 +3832,10 @@ const runObjectivesEl = document.getElementById('run-objectives');
 const mandatePanelEl = document.getElementById('mandate-panel');
 const mandateDotsEl = document.getElementById('mandate-dots');
 const mandateLabelEl = document.getElementById('mandate-label');
+const waveContractEl = document.getElementById('wave-contract');
+const waveContractMandatesEl = document.getElementById('wave-contract-mandates');
+const waveContractGoalsEl = document.getElementById('wave-contract-goals');
+let waveContractToken = 0;
 const adaptiveAssistIndicatorEl = document.getElementById('adaptive-assist-indicator');
 const mobileHudToggleBtn = document.getElementById('mobile-hud-toggle');
 const hapticTestBtn = document.getElementById('haptic-test-btn');
@@ -9428,6 +9432,30 @@ function resetHoleSizesForEndlessWorldShift() {
 
 // Starts or advances a wave. waveNum is 1-based. Called from startGame (wave 1)
 // and from the wave-end path for 2+.
+function presentWaveContract(waveNum, onDocked) {
+  if (!waveContractEl) { onDocked(); return; }
+  const token = ++waveContractToken;
+  waveContractMandatesEl.innerHTML = mandateTargets.length
+    ? mandateTargets.map(target => `<div>☠ ${escapeHtml(`${target.verb} ${target.required} ${target.label}`)}</div>`).join('')
+    : '<div>☠ Survive the containment terms.</div>';
+  waveContractGoalsEl.innerHTML = activeRunObjectives.length
+    ? activeRunObjectives.map(goal => `<div>★ ${escapeHtml(goal.label)}</div>`).join('')
+    : '<div>★ Optional goals arrive with the district.</div>';
+  waveContractEl.classList.remove('hidden', 'docking');
+  hud.style.opacity = '0.28';
+  setTimeout(() => {
+    if (token !== waveContractToken) return;
+    waveContractEl.classList.add('docking');
+    hud.style.opacity = '1';
+  }, 2800);
+  setTimeout(() => {
+    if (token !== waveContractToken) return;
+    waveContractEl.classList.add('hidden');
+    waveContractEl.classList.remove('docking');
+    onDocked();
+  }, 3700);
+}
+
 function startWave(waveNum) {
   document.body.classList.remove('mandate-screen-warning');
   unfreezeGameplayTime();
@@ -9441,15 +9469,17 @@ function startWave(waveNum) {
   refreshRunObjectivesForWave(waveNum);
   scheduleWaveAidDrop();
   wavesTransitioning = false;
-  running = true;
-  restoreGameplayAudioMix();
+  running = false;
   setGameState(GAME_STATES.PLAYING);
-  lastT = performance.now();
   updateHUD();
-  // Banner to announce the wave briefly
-  triggerHaptic(shouldWaveSpawnArmyBoss(waveNum) ? 'bossInbound' : 'waveStart');
-  showWaveBanner(waveNum);
+  presentWaveContract(waveNum, () => {
+    running = true;
+    restoreGameplayAudioMix();
+    lastT = performance.now();
+    triggerHaptic(shouldWaveSpawnArmyBoss(waveNum) ? 'bossInbound' : 'waveStart');
+    showWaveBanner(waveNum);
     showEventBanner(waveThreatBriefing(waveNum), worldShift ? 8200 : HOLESY_CONFIG.eventMessaging.waveBriefingDurationMs);
+  });
 }
 
 // Called when the wave timer hits zero in Waves mode. Either advances to
