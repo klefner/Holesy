@@ -1,8 +1,9 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 149;
+export const BUILD_SUB = 150;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  { label: 'Master 16.150', title: 'HUD+ mobile default', notes: ['Starts mobile players with the expanded HUD and saves their explicit HUD+/HUD- preference locally.'] },
   {
     label: 'Master 16.149',
     title: 'Mobile layout repair and mandatory-wave briefing',

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.149';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.150';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -3330,6 +3330,11 @@ const input = {
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 input.isTouch = isTouchDevice;
 const mobileHudMedia = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
+const MOBILE_HUD_STORAGE_KEY = 'holesy.mobileHudExpanded.v1';
+let mobileHudExpandedPreference = (() => {
+  try { const saved = localStorage.getItem(MOBILE_HUD_STORAGE_KEY); return saved === null ? true : saved === 'true'; }
+  catch { return true; }
+})();
 
 function isMobileHudAvailable() {
   return isTouchDevice || !!mobileHudMedia?.matches;
@@ -3340,9 +3345,8 @@ function ensureMobileHudMode() {
     document.body.classList.remove('mobile-hud-compact', 'mobile-hud-expanded');
     return;
   }
-  if (!document.body.classList.contains('mobile-hud-expanded')) {
-    document.body.classList.add('mobile-hud-compact');
-  }
+  document.body.classList.toggle('mobile-hud-expanded', mobileHudExpandedPreference);
+  document.body.classList.toggle('mobile-hud-compact', !mobileHudExpandedPreference);
 }
 
 document.body.classList.toggle('touch-device', isTouchDevice);
@@ -10133,6 +10137,8 @@ function syncMobileHudToggle() {
 }
 
 function setMobileHudExpanded(expanded) {
+  mobileHudExpandedPreference = !!expanded;
+  try { localStorage.setItem(MOBILE_HUD_STORAGE_KEY, String(mobileHudExpandedPreference)); } catch {}
   document.body.classList.toggle('mobile-hud-expanded', expanded);
   document.body.classList.toggle('mobile-hud-compact', !expanded);
   syncMobileHudToggle();
