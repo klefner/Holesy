@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 155;
+export const BUILD_SUB = 156;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.156',
+    title: 'Longer centered wave briefing',
+    notes: [
+      'Keeps the required Mandate and optional Run Goals centered for 5.5 seconds before docking them into the HUD.',
+      'Keeps gameplay and the wave timer frozen through the full 6.5-second briefing and docking sequence.',
+    ],
+  },
   {
     label: 'Master 16.155',
     title: 'First offline-converted destructible kit building',

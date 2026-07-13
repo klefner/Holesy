@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.155';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.156';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -9633,13 +9633,13 @@ function presentWaveContract(waveNum, onDocked) {
     if (token !== waveContractToken) return;
     waveContractEl.classList.add('docking');
     hud.style.opacity = '1';
-  }, 2800);
+  }, 5500);
   setTimeout(() => {
     if (token !== waveContractToken) return;
     waveContractEl.classList.add('hidden');
     waveContractEl.classList.remove('docking');
     onDocked();
-  }, 3700);
+  }, 6500);
 }
 
 function startWave(waveNum) {
