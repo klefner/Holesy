@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 153;
+export const BUILD_SUB = 154;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.154',
+    title: 'Mandate success state and staged warning arrow',
+    notes: [
+      'Turns a completed Mandate card light green with high-contrast dark text.',
+      'Replaces an active red deadline border with a four-second green card-and-screen confirmation pulse when the Mandate is solved.',
+      'Explodes the warning arrow into the screen center, sends it to the Mandate card, then begins five synchronized flashes and alert sounds.',
+    ],
+  },
   {
     label: 'Master 16.153',
     title: 'Ten animated full-parcel parks',

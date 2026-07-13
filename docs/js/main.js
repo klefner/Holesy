@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.153';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.154';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -6205,6 +6205,42 @@ function recordMandateSoldierConsume(h, soldier) {
 
 let mandateWarningWasActive = false;
 let mandateWarningArrowTimer = null;
+let mandateHudWasComplete = false;
+let mandateSuccessPulseTimer = null;
+
+function removeMandateWarningArrow() {
+  document.getElementById('mandate-warning-arrow')?.remove();
+  if (mandateWarningArrowTimer) clearTimeout(mandateWarningArrowTimer);
+  mandateWarningArrowTimer = null;
+}
+
+function showMandateWarningArrow() {
+  removeMandateWarningArrow();
+  const rect = mandatePanelEl.getBoundingClientRect();
+  const arrow = document.createElement('div');
+  arrow.id = 'mandate-warning-arrow';
+  arrow.setAttribute('aria-hidden', 'true');
+  arrow.style.setProperty('--mandate-arrow-x', `${Math.max(92, rect.left - 70)}px`);
+  arrow.style.setProperty('--mandate-arrow-y', `${Math.min(window.innerHeight - 92, rect.bottom + 70)}px`);
+  arrow.innerHTML = '<span>↗</span>';
+  document.body.appendChild(arrow);
+  mandateWarningArrowTimer = setTimeout(removeMandateWarningArrow, 6800);
+}
+
+function startMandateSuccessPulse() {
+  document.body.classList.remove('mandate-screen-warning');
+  document.body.classList.add('mandate-screen-success');
+  mandatePanelEl.classList.remove('mandate-warn');
+  mandatePanelEl.classList.add('mandate-success-pulse');
+  removeMandateWarningArrow();
+  if (mandateSuccessPulseTimer) clearTimeout(mandateSuccessPulseTimer);
+  mandateSuccessPulseTimer = setTimeout(() => {
+    document.body.classList.remove('mandate-screen-success');
+    mandatePanelEl?.classList.remove('mandate-success-pulse');
+    mandateSuccessPulseTimer = null;
+  }, 4000);
+}
+
 function updateMandateHUD() {
   if (!mandatePanelEl || !mandateDotsEl || !mandateLabelEl) return;
   mandatePanelEl.style.display = isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION) ? '' : 'none';
@@ -6245,20 +6281,25 @@ function updateMandateHUD() {
   });
 
   const remaining = Math.max(0, mandateTargets.length - mandateCollected);
+  const isComplete = remaining === 0 && mandateTargets.length > 0;
   mandateLabelEl.textContent = remaining === 0 && mandateTargets.length > 0 ? 'Complete!' : `${remaining || MANDATE_COUNT} left`;
+  mandatePanelEl.classList.toggle('mandate-complete', isComplete);
+  if (isComplete && !mandateHudWasComplete && mandateWarningWasActive) startMandateSuccessPulse();
+  if (!isComplete && mandateHudWasComplete) {
+    document.body.classList.remove('mandate-screen-success');
+    mandatePanelEl.classList.remove('mandate-success-pulse');
+  }
+  mandateHudWasComplete = isComplete;
   const warnActive = remaining > 0 && gameTime > 0 && gameTime <= 15 && !mandateComplete;
   if (warnActive && !mandateWarningWasActive) {
     playMandateDeadlineWarning();
-    playMandateArrowFlashAlerts();
+    playMandateArrowFlashAlerts(1.1);
     document.body.classList.add('mandate-screen-warning');
-    mandatePanelEl.classList.remove('mandate-warn-start');
-    void mandatePanelEl.offsetWidth;
-    mandatePanelEl.classList.add('mandate-warn-start');
-    if (mandateWarningArrowTimer) clearTimeout(mandateWarningArrowTimer);
-    mandateWarningArrowTimer = setTimeout(() => { mandatePanelEl.classList.remove('mandate-warn-start'); mandateWarningArrowTimer = null; }, 5800);
+    showMandateWarningArrow();
   }
   mandateWarningWasActive = warnActive;
   mandatePanelEl.classList.toggle('mandate-warn', warnActive);
+  if (!warnActive && !isComplete) document.body.classList.remove('mandate-screen-warning');
 }
 
 function markMandateFailureRows() {
@@ -7483,13 +7524,13 @@ function playMandateDeadlineWarning() {
   });
 }
 
-function playMandateArrowFlashAlerts() {
+function playMandateArrowFlashAlerts(delaySeconds = 0) {
   initMusicContext();
   if (!music.ctx || !isGameplayAudioAllowed()) return;
   if (music.ctx.state === 'suspended') music.ctx.resume().catch(() => {});
   const ctx = music.ctx;
   for (let flash = 0; flash < 5; flash++) {
-    const start = ctx.currentTime + flash * 1.1;
+    const start = ctx.currentTime + delaySeconds + flash * 1.1;
     const osc = ctx.createOscillator();
     const wobble = ctx.createOscillator();
     const wobbleDepth = ctx.createGain();
@@ -7946,6 +7987,8 @@ function applyWaveConfig(cfg) {
 
 async function enterWaveTransition(nextWave) {
   document.body.classList.remove('mandate-screen-warning');
+  document.body.classList.remove('mandate-screen-success');
+  removeMandateWarningArrow();
   wavesTransitioning = true;
   running = false;
   freezeGameplayTime();
@@ -9614,6 +9657,10 @@ function presentWaveContract(waveNum, onDocked) {
 
 function startWave(waveNum) {
   document.body.classList.remove('mandate-screen-warning');
+  document.body.classList.remove('mandate-screen-success');
+  mandatePanelEl?.classList.remove('mandate-success-pulse');
+  removeMandateWarningArrow();
+  if (mandateSuccessPulseTimer) { clearTimeout(mandateSuccessPulseTimer); mandateSuccessPulseTimer = null; }
   unfreezeGameplayTime();
   currentWave = waveNum;
   setEndlessPressureForWave(waveNum);
