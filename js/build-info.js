@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 162;
+export const BUILD_SUB = 163;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.163',
+    title: 'Wave briefing shows only unfinished work',
+    notes: [
+      'Removes completed Run Goals and satisfied Mandate targets from the large centered wave-start briefing.',
+      'Hides an entire briefing card when that category has no unfinished items, while preserving the full progress HUD during play.',
+    ],
+  },
   {
     label: 'Master 16.162',
     title: 'Post-breach MegaKit skin visibility repair',

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.162';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.163';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -9758,12 +9758,16 @@ function resetHoleSizesForEndlessWorldShift() {
 function presentWaveContract(waveNum, onDocked) {
   if (!waveContractEl) { onDocked(); return; }
   const token = ++waveContractToken;
-  waveContractMandatesEl.innerHTML = mandateTargets.length
-    ? mandateTargets.map(target => `<div>☠ ${escapeHtml(`${target.verb} ${target.required} ${target.label}`)}</div>`).join('')
-    : '<div>☠ Survive the containment terms.</div>';
-  waveContractGoalsEl.innerHTML = activeRunObjectives.length
-    ? activeRunObjectives.map(goal => `<div>★ ${escapeHtml(goal.label)}</div>`).join('')
-    : '<div>★ Optional goals arrive with the district.</div>';
+  const pendingMandates = mandateTargets.filter(target => target.progress < target.required || target.failed);
+  const pendingGoals = activeRunObjectives.filter(goal => !goal.complete);
+  const mandateCard = waveContractMandatesEl?.closest('.wave-contract-card');
+  const goalsCard = waveContractGoalsEl?.closest('.wave-contract-card');
+  mandateCard?.classList.toggle('hidden', pendingMandates.length === 0);
+  goalsCard?.classList.toggle('hidden', pendingGoals.length === 0);
+  waveContractMandatesEl.innerHTML = pendingMandates
+    .map(target => `<div>☠ ${escapeHtml(`${target.verb} ${target.required} ${target.label}`)}</div>`).join('');
+  waveContractGoalsEl.innerHTML = pendingGoals
+    .map(goal => `<div>★ ${escapeHtml(goal.label)}</div>`).join('');
   waveContractEl.classList.remove('hidden', 'docking');
   hud.style.opacity = '0.28';
   setTimeout(() => {
