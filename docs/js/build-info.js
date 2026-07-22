@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 175;
+export const BUILD_SUB = 176;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.176',
+    title: 'Pack-authored Medieval town and detailed destruction',
+    notes: [
+      'Rebuilds Medieval Village so roughly 90 percent of its parcels use the authored village pack and roughly 10 percent retain native Holesy buildings or objects.',
+      'Replaces oversized flat debris with smaller exterior-shell pieces carrying roof, timber, wall, stone, and window detail.',
+      'Classifies imported buildings by their actual rendered proportions, so short village landmarks no longer count as skyscraper-caliber.',
+      'Labels blocked devours as building, tower, or skyscraper according to the structure that was actually touched.',
+    ],
+  },
   {
     label: 'Master 16.175',
     title: 'Skip arbitrary presentation waits',

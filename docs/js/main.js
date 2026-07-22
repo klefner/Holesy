@@ -1123,6 +1123,7 @@ const medievalBuildingCache = new Map();
 const medievalEnvironmentMeshes = [];
 let medievalEnvironmentGeneration = 0;
 let medievalRosterOffset = 0;
+const medievalNativeParcelKeys = new Set();
 const MEDIEVAL_BUILDINGS = Object.freeze([
   { sourceBase: 'House_1', footprint: 8.5, height: 7.5, floors: 3, color: 0x8f7145 },
   { sourceBase: 'Blacksmith', footprint: 10.5, height: 8.5, floors: 4, color: 0x6d5943 },
@@ -1250,19 +1251,39 @@ function addMedievalProp(name, x, z, kind) {
 function addMedievalDestructionStack(definition, x, z, rotation, intactShell) {
   const stackId = nextPhysicsStackId++;
   megakitIntactShellsByStack.set(stackId, intactShell);
-  const grid = definition.footprint >= 11 ? 4 : 3;
-  const floors = definition.floors;
+  const grid = definition.footprint >= 11 ? 6 : 5;
+  const floors = Math.max(definition.floors, Math.ceil(definition.renderedHeight / 2.2));
   const cellW = definition.footprint / grid;
-  const cellH = definition.height / floors;
-  const material = sharedBoxMat(definition.color);
+  const cellH = definition.renderedHeight / floors;
+  const wallMaterials = [
+    sharedBoxMat(definition.color),
+    sharedBoxMat(new THREE.Color(definition.color).offsetHSL(0, -0.03, 0.08).getHex()),
+    sharedBoxMat(new THREE.Color(definition.color).offsetHSL(0, 0.02, -0.09).getHex()),
+  ];
+  const timberMaterial = sharedBoxMat(0x4a3122);
+  const windowMaterial = sharedBoxMat(0x26323a);
+  const roofMaterial = sharedBoxMat(0x4b3430);
+  const piecesPerFloor = grid * 4 - 4;
   for (let floor = 0; floor < floors; floor++) {
     for (let gx = 0; gx < grid; gx++) {
       for (let gz = 0; gz < grid; gz++) {
+        const perimeter = gx === 0 || gx === grid - 1 || gz === 0 || gz === grid - 1;
+        if (!perimeter) continue;
         const localX = (gx - (grid - 1) / 2) * cellW;
         const localZ = (gz - (grid - 1) / 2) * cellW;
         const rotatedX = localX * Math.cos(rotation) - localZ * Math.sin(rotation);
         const rotatedZ = localX * Math.sin(rotation) + localZ * Math.cos(rotation);
-        const piece = new THREE.Mesh(sharedBoxGeometry(cellW * 0.94, cellH * 0.94, cellW * 0.94), material);
+        const isRoof = floor === floors - 1;
+        const isCorner = (gx === 0 || gx === grid - 1) && (gz === 0 || gz === grid - 1);
+        const isWindow = !isRoof && floor > 0 && !isCorner && (gx + gz + floor) % 3 === 0;
+        const material = isRoof
+          ? roofMaterial
+          : isCorner || (floor > 0 && (gx + gz) % 4 === 0)
+            ? timberMaterial
+            : isWindow
+              ? windowMaterial
+              : wallMaterials[(gx + gz + floor) % wallMaterials.length];
+        const piece = new THREE.Mesh(sharedBoxGeometry(cellW * 0.88, cellH * 0.90, cellW * 0.88), material);
         piece.castShadow = true;
         piece.receiveShadow = true;
         const object = makeObject(piece, cellW * 0.52, 1, 6, {
@@ -1271,7 +1292,9 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell) {
           y: floor * cellH + cellH / 2,
         });
         object.isBuilding = true;
-        object.buildingSize = definition.sourceBase === 'Bell_Tower' ? 'large' : 'mid';
+        const skyscraperCaliber = definition.renderedHeight >= 18 && definition.renderedHeight >= definition.footprint * 1.65;
+        object.buildingSize = skyscraperCaliber ? 'large' : 'mid';
+        object.isSkyscraperChunk = skyscraperCaliber;
         object.mandateKind = definition.sourceBase === 'Bell_Tower' ? 'tower' : 'building';
         object.isMedievalAsset = true;
         object.physicsStackPiece = true;
@@ -1282,7 +1305,7 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell) {
         object.stackRestTimer = 0;
         object.stackIndex = floor;
         object.stackFloorCount = floors;
-        object.stackPieceCount = grid * grid;
+        object.stackPieceCount = piecesPerFloor;
         object.stackCollapseSize = Math.max(3.8, definition.footprint * 0.43);
         object.stackCenterX = x;
         object.stackCenterZ = z;
@@ -1307,6 +1330,8 @@ async function populateMedievalVillage() {
   clearMedievalEnvironmentMeshes();
   const generation = medievalEnvironmentGeneration;
   document.documentElement.setAttribute('data-holesy-medieval-models', '0');
+  document.documentElement.setAttribute('data-holesy-medieval-pack-percent', '90');
+  document.documentElement.setAttribute('data-holesy-medieval-native-parcels', String(medievalNativeParcelKeys.size));
   showEventBanner('DISTRICT: Medieval Village', 2200);
   addMedievalStreetDetails();
   const propSites = [
@@ -1320,9 +1345,8 @@ async function populateMedievalVillage() {
     Math.abs(bp.z) < currentArenaHalf - 10 &&
     !reservedParcelKeys.has(parcelKey(bp))
   );
-  const parcelIndexes = [0, Math.floor(eligibleParcels.length * 0.25), Math.floor(eligibleParcels.length * 0.5), Math.floor(eligibleParcels.length * 0.75), eligibleParcels.length - 1];
-  const sites = [...new Set(parcelIndexes)].map((index, order) => ({
-    bp: eligibleParcels[Math.max(0, Math.min(eligibleParcels.length - 1, index))],
+  const sites = eligibleParcels.map((bp, order) => ({
+    bp,
     definition: MEDIEVAL_BUILDINGS[(medievalRosterOffset + order) % MEDIEVAL_BUILDINGS.length],
   }));
   medievalRosterOffset = (medievalRosterOffset + sites.length) % MEDIEVAL_BUILDINGS.length;
@@ -1351,12 +1375,16 @@ async function populateMedievalVillage() {
     });
     const intactShell = new THREE.Group();
     intactShell.add(authoredVisual);
-    intactShell.scale.setScalar(definition.footprint / (Math.max(dimensions.x, dimensions.z) || 1));
+    const authoredScale = definition.footprint / (Math.max(dimensions.x, dimensions.z) || 1);
+    intactShell.scale.setScalar(authoredScale);
     intactShell.rotation.y = Math.atan2(player.x - bp.x, player.z - bp.z);
     intactShell.position.set(bp.x, 0, bp.z);
     scene.add(intactShell);
     medievalEnvironmentMeshes.push(intactShell);
-    addMedievalDestructionStack(definition, bp.x, bp.z, intactShell.rotation.y, intactShell);
+    addMedievalDestructionStack({
+      ...definition,
+      renderedHeight: Math.max(3, dimensions.y * authoredScale),
+    }, bp.x, bp.z, intactShell.rotation.y, intactShell);
     loadedModelCount++;
     document.documentElement.setAttribute('data-holesy-medieval-models', String(loadedModelCount));
   }
@@ -3473,25 +3501,37 @@ function populateParcelDetails(bp, parcelUse, blockBounds) {
 
 async function populateCity() {
   chooseEnvironmentForNextCity();
+  const isMedievalVillage = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE;
   const economy = getEffectiveDifficultyProfile();
   const buildingBlockDensity = economy.buildingBlockDensityMult || 1;
   const skyscraperChance = 0.35 * (economy.skyscraperChanceMult || 1);
   const midBuildingChance = 0.30;
   const smallBuildingChance = 0.85 * (economy.smallBuildingDensityMult || 1);
   const sidewalkAssetDensity = economy.sidewalkAssetDensityMult || 1;
-  const carCount = Math.max(8, Math.round(35 * (economy.carDensityMult || 1)));
-  const parkAssetCount = Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
+  const carCount = isMedievalVillage ? 4 : Math.max(8, Math.round(35 * (economy.carDensityMult || 1)));
+  const parkAssetCount = isMedievalVillage ? 4 : Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
   const personChance = economy.personChanceMult || 1;
-  const governmentBlock = blockPositions[Math.floor(Math.random() * blockPositions.length)];
+  medievalNativeParcelKeys.clear();
+  if (isMedievalVillage) {
+    const nativeParcelCount = Math.max(1, Math.round(blockPositions.length * 0.10));
+    const shuffledNativeParcels = [...blockPositions].sort(() => Math.random() - 0.5);
+    for (const bp of shuffledNativeParcels.slice(0, nativeParcelCount)) medievalNativeParcelKeys.add(parcelKey(bp));
+  }
+  const governmentBlock = isMedievalVillage ? null : blockPositions[Math.floor(Math.random() * blockPositions.length)];
   // Keep parks special and legible: every regenerated town gets exactly one
   // or two park parcels, never the previous four-to-six-parcel flood.
-  const parkCount = Math.random() < 0.5 ? 1 : 2;
+  const parkCount = isMedievalVillage ? 1 : (Math.random() < 0.5 ? 1 : 2);
   const parkParcels = new Map();
-  const shuffledParkCandidates = blockPositions.filter(bp => bp !== governmentBlock).sort(() => Math.random() - 0.5);
+  const shuffledParkCandidates = blockPositions.filter(bp =>
+    bp !== governmentBlock && (!isMedievalVillage || medievalNativeParcelKeys.has(parcelKey(bp)))
+  ).sort(() => Math.random() - 0.5);
   const shuffledFullParcel = [...FULL_PARCEL_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
   const shuffledCompact = [...COMPACT_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
   reservedParcelKeys.clear();
   if (governmentBlock) reservedParcelKeys.add(parcelKey(governmentBlock));
+  if (isMedievalVillage) {
+    for (const key of medievalNativeParcelKeys) reservedParcelKeys.add(key);
+  }
   for (let i = 0; i < parkCount; i++) {
     // Most parks present one full-parcel attraction. Mixed parks combine four
     // compact attractions; a smaller chance lets one compact attraction enjoy
@@ -3511,6 +3551,12 @@ async function populateCity() {
   // Place buildings on block corners/edges, small stuff around perimeter
   let populatedBlockCount = 0;
   for (const bp of blockPositions) {
+    const isNativeMedievalParcel = isMedievalVillage && medievalNativeParcelKeys.has(parcelKey(bp));
+    if (isMedievalVillage && !isNativeMedievalParcel) {
+      populatedBlockCount++;
+      if (populatedBlockCount % 4 === 0) await yieldCityBuildFrame();
+      continue;
+    }
     // Decide block type
     const t = Math.random();
     let parcelUse = 'standard';
@@ -12103,7 +12149,14 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
     if (sourceHole.isPlayer && consumedPiece) {
       const distToPiece = Math.hypot(consumedPiece.x - sourceHole.x, consumedPiece.z - sourceHole.z);
       const insideHole = distToPiece < sourceHole.radius + Math.min(consumedPiece.size || 0, 0.35);
-      if (insideHole) showStagePop('TOO SMALL FOR SKYSCRAPER', 900);
+      if (insideHole) {
+        const structureLabel = consumedPiece.buildingSize === 'large'
+          ? 'SKYSCRAPER'
+          : consumedPiece.mandateKind === 'tower'
+            ? 'TOWER'
+            : 'BUILDING';
+        showStagePop(`TOO SMALL FOR ${structureLabel}`, 900);
+      }
     }
     return false;
   }
