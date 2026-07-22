@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.170';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.171';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -797,8 +797,9 @@ const WAVE_TIME_OF_DAY_SEQUENCE = Object.freeze([0, 1, 2, 3]);
 const buildVersionBtn = document.getElementById('build-version');
 const timeCycleBtn = document.getElementById('time-cycle-btn');
 const pauseVersionLabel = document.getElementById('pause-version-label');
-if (buildVersionBtn) buildVersionBtn.textContent = BUILD_LABEL;
-if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;
+const PLAYER_VERSION_LABEL = BUILD_LABEL.replace(/^Master\s+/, 'Version ');
+if (buildVersionBtn) buildVersionBtn.textContent = PLAYER_VERSION_LABEL;
+if (pauseVersionLabel) pauseVersionLabel.textContent = PLAYER_VERSION_LABEL;
 
 const nightWindowVisuals = [];
 const streetLightVisuals = [];
@@ -1083,7 +1084,9 @@ const ENVIRONMENT_KEYS = Object.freeze({
   CLASSIC: 'classic',
   MEGAKIT_DOWNTOWN: 'megakitDowntown',
 });
+const ELIGIBLE_ENVIRONMENTS = Object.freeze(Object.values(ENVIRONMENT_KEYS));
 let selectedEnvironment = ENVIRONMENT_KEYS.CLASSIC;
+let lastGeneratedEnvironment = null;
 const megakitTextureLoader = new THREE.TextureLoader();
 const megakitGltfLoader = new GLTFLoader();
 const megakitTextureCache = new Map();
@@ -1093,20 +1096,11 @@ const megakitIntactShellsByStack = new Map();
 let megakitEnvironmentGeneration = 0;
 const MEGAKIT_ASSET_BASE = 'assets/environments/downtown-city-megakit/source-gltf/';
 
-function normalizeEnvironmentKey(key) {
-  return key === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN ? key : ENVIRONMENT_KEYS.CLASSIC;
-}
-
-function setEnvironment(key) {
-  selectedEnvironment = normalizeEnvironmentKey(key);
-  if (environmentSelect && environmentSelect.value !== selectedEnvironment) {
-    environmentSelect.value = selectedEnvironment;
-  }
-  if (environmentDesc) {
-    environmentDesc.textContent = selectedEnvironment === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN
-      ? 'Test district: MegaKit-styled readable ground detail and small props only; validated Holesy roads, blocks, and destruction stay authoritative.'
-      : 'Stable Aldine downtown: the current procedural city and validated destruction baseline.';
-  }
+function chooseEnvironmentForNextCity() {
+  const choices = ELIGIBLE_ENVIRONMENTS.filter(key => key !== lastGeneratedEnvironment);
+  selectedEnvironment = choices[Math.floor(Math.random() * choices.length)] || ENVIRONMENT_KEYS.CLASSIC;
+  lastGeneratedEnvironment = selectedEnvironment;
+  return selectedEnvironment;
 }
 
 function clearMegakitEnvironmentMeshes() {
@@ -1236,9 +1230,9 @@ function addMegakitManhole(x, z) {
   return obj;
 }
 
-function populateMegakitDowntownTest() {
+function populateMegakitDowntown() {
   clearMegakitEnvironmentMeshes();
-  showEventBanner('ENVIRONMENT: MegaKit Downtown detail test', 2200);
+  showEventBanner('DISTRICT: MegaKit Downtown', 2200);
 
   const acMat = megakitMaterial('T_MetalConcrete_BaseColor.png', [1, 1], 0xd6d9dc);
   const planterMat = megakitMaterial('T_Dirt_BaseColor.png', [1, 1], 0x8f6d45);
@@ -3111,6 +3105,7 @@ function populateParcelDetails(bp, parcelUse, blockBounds) {
 }
 
 async function populateCity() {
+  chooseEnvironmentForNextCity();
   const economy = getEffectiveDifficultyProfile();
   const buildingBlockDensity = economy.buildingBlockDensityMult || 1;
   const skyscraperChance = 0.35 * (economy.skyscraperChanceMult || 1);
@@ -3294,7 +3289,7 @@ async function populateCity() {
     if (i % 10 === 9) await yieldCityBuildFrame();
   }
   if (selectedEnvironment === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN) {
-    populateMegakitDowntownTest();
+    populateMegakitDowntown();
   }
   pruneObjectsToArena();
 }
@@ -3884,10 +3879,10 @@ function triggerHaptic(type = 'devour', options = {}) {
 
 function getHapticSupportText() {
   if (getNativeHapticsBridge()) {
-    return 'Native haptics available. Tap to test.';
+    return 'Native haptics available. Tap to check.';
   }
   if (getIosSwitchHapticInput()) {
-    return 'iOS web fallback available. Tap to test.';
+    return 'iOS web fallback available. Tap to check.';
   }
   if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
     return 'No browser haptics here. Try Android Chrome or Samsung Internet.';
@@ -3895,13 +3890,13 @@ function getHapticSupportText() {
   if (window.isSecureContext === false && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
     return 'Haptics may be blocked on this non-secure URL.';
   }
-  return 'Haptics supported. Tap to test.';
+  return 'Haptics supported. Tap to check.';
 }
 
 function getHapticResultText() {
   switch (lastHapticStatus) {
     case 'native':
-      return 'Native haptic test sent.';
+      return 'Native haptic check sent.';
     case 'nativeError':
       return 'Native haptics failed in this app shell.';
     case 'iosSwitch':
@@ -3909,13 +3904,13 @@ function getHapticResultText() {
     case 'iosSwitchError':
       return 'iOS web fallback failed in this browser.';
     case 'sent':
-      return 'Haptic test sent. If you felt nothing, this browser may be silently ignoring vibration.';
+      return 'Haptic pulse sent. If you felt nothing, this browser may be silently ignoring vibration.';
     case 'blocked':
       return 'Haptics were blocked by this browser or device setting.';
     case 'unsupported':
       return 'This browser has no web haptics API, so the game cannot vibrate this device.';
     case 'error':
-      return 'Haptics test failed in this browser.';
+      return 'Haptics check failed in this browser.';
     case 'cooldown':
       return 'Haptics are cooling down. Try again.';
     default:
@@ -4297,7 +4292,6 @@ const modePickerWrap = document.getElementById('mode-picker-wrap');
 const modePicker = document.getElementById('mode-picker');
 const difficultySelect = document.getElementById('difficulty-select');
 const difficultyDesc = document.getElementById('difficulty-desc');
-const environmentSelect = document.getElementById('environment-select');
 const cosmeticSelect = document.getElementById('cosmetic-select');
 const cosmeticDesc = document.getElementById('cosmetic-desc');
 function refreshCosmeticPicker() {
@@ -4319,7 +4313,6 @@ cosmeticSelect?.addEventListener('change', () => {
   refreshCosmeticPicker();
 });
 refreshCosmeticPicker();
-const environmentDesc = document.getElementById('environment-desc');
 const statsWindowBtn = document.getElementById('stats-window-btn');
 const loreArchiveBtn = document.getElementById('lore-archive-btn');
 const howToPlayBtn = document.getElementById('how-to-play-btn');
@@ -4348,7 +4341,7 @@ const buildNotesListEl = document.getElementById('build-notes-list');
 const statsModal = document.getElementById('stats-modal');
 const statsCloseBtn = document.getElementById('stats-close-btn');
 const statsModalBody = document.getElementById('stats-modal-body');
-const feedbackBtn = document.getElementById('beta-feedback-btn');
+const feedbackBtn = document.getElementById('player-feedback-btn');
 const feedbackModal = document.getElementById('feedback-modal');
 const feedbackForm = document.getElementById('feedback-shell');
 const feedbackCloseBtn = document.getElementById('feedback-close-btn');
@@ -4365,7 +4358,7 @@ function getFeedbackEnvironment() {
 }
 function openFeedback() {
   const env = getFeedbackEnvironment();
-  feedbackDevice.textContent = `${BUILD_LABEL} · ${env.device} · ${env.browser} · ${env.viewport}`;
+  feedbackDevice.textContent = `${PLAYER_VERSION_LABEL} · ${env.device} · ${env.browser} · ${env.viewport}`;
   feedbackModal.classList.remove('hidden');
   feedbackThanks?.classList.add('hidden');
 }
@@ -4392,8 +4385,6 @@ feedbackForm?.addEventListener('submit', async event => {
 });
 difficultySelect.value = selectedDifficultyName;
 setDifficulty(selectedDifficultyName);
-setEnvironment(selectedEnvironment);
-
 syncStartupUi();
 
 let gameStats = loadGameStats();
@@ -6691,20 +6682,34 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function marketSafeUpdateText(value) {
+  return String(value)
+    .replace(/\bbeta\b/gi, 'early')
+    .replace(/\btests?\b/gi, 'checks')
+    .replace(/\btesting\b/gi, 'review')
+    .replace(/\bprototypes?\b/gi, 'first passes')
+    .replace(/\bpreviews?\b/gi, 'presentations')
+    .replace(/^Master\s+/i, 'Version ');
+}
+
 function renderBuildNotes() {
   if (!buildNotesListEl) return;
-  buildNotesListEl.innerHTML = BUILD_CHANGELOG.map(entry => `
+  buildNotesListEl.innerHTML = BUILD_CHANGELOG.map(entry => {
+    const summary = marketSafeUpdateText(entry.summary || entry.title || 'Update');
+    const changes = (entry.changes || entry.notes || []).map(marketSafeUpdateText);
+    return `
     <section class="build-note">
       <div class="build-note-title">
-        <span>${escapeHtml(entry.label)}</span>
-        <span class="build-note-date">${escapeHtml(entry.date)}</span>
+        <span>${escapeHtml(marketSafeUpdateText(entry.label))}</span>
+        <span class="build-note-date">${escapeHtml(entry.date || '')}</span>
       </div>
-      <div class="build-note-summary">${escapeHtml(entry.summary)}</div>
+      <div class="build-note-summary">${escapeHtml(summary)}</div>
       <ul class="build-note-list">
-        ${entry.changes.map(change => `<li>${escapeHtml(change)}</li>`).join('')}
+        ${changes.map(change => `<li>${escapeHtml(change)}</li>`).join('')}
       </ul>
     </section>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function openBuildNotes() {
@@ -10682,7 +10687,7 @@ if (hapticTestBtn) {
     const nowTs = performance.now();
     if (nowTs - lastHapticTestActivationTs < 350) return;
     lastHapticTestActivationTs = nowTs;
-    hapticTestBtn.textContent = 'Testing...';
+    hapticTestBtn.textContent = 'Checking...';
     triggerHaptic('diagnostic', { force: true });
     const resultText = getHapticResultText();
     updateHapticStatus(resultText);
@@ -10772,17 +10777,6 @@ modePicker.addEventListener('click', (e) => {
 difficultySelect.addEventListener('change', () => {
   setDifficulty(difficultySelect.value);
 });
-
-if (environmentSelect) {
-  environmentSelect.addEventListener('change', async () => {
-    setEnvironment(environmentSelect.value);
-    if (!isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION)) {
-      tearDownWorld();
-      await populateCity();
-      wakeRenderLoop();
-    }
-  });
-}
 
 function bindMenuActionButton(button, action) {
   if (!button) return;

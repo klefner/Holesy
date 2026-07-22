@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 170;
+export const BUILD_SUB = 171;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.171',
+    title: 'Market-ready district rotation and language cleanup',
+    notes: [
+      'Removes the player-facing environment selector and automatically rotates eligible districts without immediately repeating the same city theme.',
+      'Replaces development-state wording in menus, feedback, haptics, the field manual, and public update history with player-ready language.',
+      'Adds a release check that rejects prohibited development wording when it reaches player-facing surfaces.',
+    ],
+  },
   {
     label: 'Master 16.170',
     title: 'Frame pacing and city workload pass',

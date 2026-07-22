@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<meta name="holesy-build" content="Master 16.171" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 <title>Downtown Devour</title>
   <meta name="theme-color" content="#071326" />
@@ -10,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/holesy-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/holesy-180.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/styles.css?v=16.170" />
+  <link rel="stylesheet" href="css/styles.css?v=16.171" />
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -73,7 +74,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-      <button id="build-version" type="button" aria-label="Show build notes">Master 16.170</button>
+      <button id="build-version" type="button" aria-label="Show update notes">Version 16.171</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -86,14 +87,6 @@
       <option value="ultra">Ultra</option>
     </select>
     <p id="difficulty-desc"></p>
-  </div>
-  <div id="environment-wrap">
-    <label id="environment-label" for="environment-select">Environment</label>
-    <select id="environment-select" aria-label="Environment">
-      <option value="classic">Classic Aldine</option>
-      <option value="megakitDowntown">MegaKit Downtown</option>
-    </select>
-    <p id="environment-desc"></p>
   </div>
   <div id="mode-picker">
       <button class="mode-option selected flagship" type="button" data-mode="endless" aria-pressed="true">
@@ -118,7 +111,7 @@
   <div id="menu-action-row">
     <button class="menu-action-btn" id="stats-window-btn" type="button">Stats</button>
     <button class="menu-action-btn" id="lore-archive-btn" type="button">Archive</button>
-    <button class="menu-action-btn" id="beta-feedback-btn" type="button">Beta Feedback</button>
+    <button class="menu-action-btn" id="player-feedback-btn" type="button">Feedback</button>
     <button class="menu-action-btn" id="how-to-play-btn" type="button">How to Play</button>
     <button class="menu-action-btn" id="haptic-test-btn" type="button">Haptics</button>
     <button class="menu-action-btn" id="load-endless-save-btn" type="button" disabled>Load Endless</button>
@@ -166,7 +159,7 @@
 <div id="pause-overlay" class="hidden">
   <h2>Paused</h2>
   <div class="pause-sub">Take a breather, then jump back in or return to the game mode selector.</div>
-    <div class="pause-version" id="pause-version-label">Master 16.170</div>
+    <div class="pause-version" id="pause-version-label">Version 16.171</div>
   <div class="pause-status" id="pause-status-message" role="status" aria-live="polite"></div>
   <div class="pause-btns">
     <button class="pause-resume" id="pause-resume-btn" type="button">Resume</button>
@@ -202,10 +195,10 @@
   <div id="build-notes-shell">
     <div class="build-notes-head">
       <div>
-        <div class="build-notes-eyebrow">Recovered Build Notes</div>
-        <h2 id="build-notes-title">Patch Notes</h2>
+        <div class="build-notes-eyebrow">Recovered Dispatches</div>
+        <h2 id="build-notes-title">Update Notes</h2>
       </div>
-      <button id="build-notes-close-btn" type="button" aria-label="Close build notes">Close</button>
+      <button id="build-notes-close-btn" type="button" aria-label="Close update notes">Close</button>
     </div>
     <div id="build-notes-list"></div>
   </div>
@@ -213,7 +206,7 @@
 
 <div id="feedback-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
   <form id="feedback-shell">
-    <div class="feedback-head"><div><div class="feedback-eyebrow">Quick Beta Report</div><h2 id="feedback-title">Help improve Holesy</h2></div><button id="feedback-close-btn" type="button">Close</button></div>
+    <div class="feedback-head"><div><div class="feedback-eyebrow">Field Report</div><h2 id="feedback-title">Tell us about your run</h2></div><button id="feedback-close-btn" type="button">Close</button></div>
     <div id="feedback-device"></div>
     <fieldset class="feedback-stars"><legend>Rate the game</legend><div><input id="star5" name="rating" value="5" type="radio" checked><label for="star5">★</label><input id="star4" name="rating" value="4" type="radio"><label for="star4">★</label><input id="star3" name="rating" value="3" type="radio"><label for="star3">★</label><input id="star2" name="rating" value="2" type="radio"><label for="star2">★</label><input id="star1" name="rating" value="1" type="radio"><label for="star1">★</label></div></fieldset>
     <label>What should we add?<textarea id="feedback-add" maxlength="400" placeholder="One idea"></textarea></label>
@@ -246,7 +239,7 @@
 }
 </script>
 
-<script type="module" src="js/main.js?v=16.170"></script>
+<script type="module" src="js/main.js?v=16.171"></script>
 </body>
 </html>
 
