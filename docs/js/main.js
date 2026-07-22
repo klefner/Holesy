@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.179';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.180';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1121,6 +1121,7 @@ const MEDIEVAL_ASSET_BASE = 'assets/environments/medieval-village/runtime/';
 const medievalGltfLoader = new GLTFLoader();
 const medievalBuildingCache = new Map();
 const medievalEnvironmentMeshes = [];
+const medievalAmbientActors = [];
 let medievalEnvironmentGeneration = 0;
 let medievalRosterOffset = 0;
 const medievalNativeParcelKeys = new Set();
@@ -1136,6 +1137,7 @@ const MEDIEVAL_BUILDINGS = Object.freeze([
   { sourceBase: 'Sawmill', footprint: 11, height: 8, floors: 3, color: 0x795739 },
   { sourceBase: 'Stable', footprint: 11.5, height: 8, floors: 3, color: 0x87613b },
 ]);
+const MEDIEVAL_COMMONS_ARCHETYPES = Object.freeze(['farm', 'pasture', 'barnyard', 'training_yard']);
 
 function chooseEnvironmentForNextCity() {
   if (ELIGIBLE_ENVIRONMENTS.includes(selectedEnvironmentOverride)) {
@@ -1288,6 +1290,117 @@ function addMedievalProp(name, x, z, kind) {
   return obj;
 }
 
+function makeMedievalConsumable(name, mesh, size, value, x, z, y = 0) {
+  mesh.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+  const obj = makeObject(mesh, size, 0, value, { x, z, y });
+  obj.isMedievalAsset = true;
+  obj.medievalAssetName = name;
+  obj.mandateKind = 'prop';
+  return obj;
+}
+
+function makeMedievalAnimal(kind, x, z, bounds) {
+  const group = new THREE.Group();
+  const profile = kind === 'cow'
+    ? { body: [1.45, 0.82, 0.62], color: 0x5b3b28, size: 0.82, value: 36, speed: 0.45 }
+    : kind === 'sheep'
+      ? { body: [1.0, 0.72, 0.58], color: 0xe5dfcf, size: 0.62, value: 24, speed: 0.6 }
+      : { body: [0.46, 0.42, 0.34], color: 0xb96f32, size: 0.28, value: 10, speed: 0.95 };
+  const [bw, bh, bd] = profile.body;
+  const body = new THREE.Mesh(sharedBoxGeometry(bw, bh, bd), sharedBoxMat(profile.color));
+  body.position.y = bh * 0.72;
+  group.add(body);
+  const head = new THREE.Mesh(sharedBoxGeometry(bh * 0.58, bh * 0.58, bd * 0.82), sharedBoxMat(kind === 'cow' ? 0x8b684e : profile.color));
+  head.position.set(bw * 0.52, bh * 0.92, 0);
+  group.add(head);
+  for (const sx of [-0.32, 0.32]) for (const sz of [-0.26, 0.26]) {
+    const leg = new THREE.Mesh(sharedBoxGeometry(Math.max(0.1, bw * 0.11), bh * 0.65, Math.max(0.1, bd * 0.15)), sharedBoxMat(0x4a3528));
+    leg.position.set(sx * bw, bh * 0.32, sz * bd);
+    group.add(leg);
+  }
+  const obj = makeMedievalConsumable(`Medieval ${kind}`, group, profile.size, profile.value, x, z, 0);
+  obj.mandateKind = 'animal';
+  medievalAmbientActors.push({ type: 'animal', obj, bounds, direction: Math.random() * Math.PI * 2, speed: profile.speed, timer: 1 + Math.random() * 3 });
+  return obj;
+}
+
+function makeMedievalVillager(x, z, bounds, role) {
+  const person = makePerson({ x, z }, role === 'fighter' ? null : bounds);
+  person.isMedievalAsset = true;
+  person.medievalRole = role;
+  if (role === 'torch') {
+    if (!person.moving) {
+      person.moving = true;
+      person.bounds = bounds;
+      person.walkDir = Math.random() * Math.PI * 2;
+      person.walkSpeed = 0.8 + Math.random() * 0.8;
+      person.panicSpeed = 3 + Math.random();
+      person.walkTimer = 1 + Math.random() * 3;
+      person.panicking = false;
+      movingPeople.push(person);
+    }
+    const handle = new THREE.Mesh(sharedBoxGeometry(0.08, 0.95, 0.08), sharedBoxMat(0x5b3822));
+    handle.position.set(0.46, 0.9, 0);
+    const flame = new THREE.Mesh(new THREE.SphereGeometry(0.14, 7, 5), new THREE.MeshBasicMaterial({ color: 0xffa126 }));
+    flame.position.set(0.46, 1.43, 0);
+    person.mesh.add(handle, flame);
+    medievalAmbientActors.push({ type: 'torch', obj: person, flame, phase: Math.random() * Math.PI * 2 });
+  } else {
+    const sword = new THREE.Mesh(sharedBoxGeometry(0.08, 1.15, 0.12), sharedBoxMat(0xb7bec4));
+    sword.position.set(0.46, 0.95, 0);
+    sword.rotation.z = role === 'fighter' ? -0.65 : -0.2;
+    person.mesh.add(sword);
+    medievalAmbientActors.push({ type: 'fighter', obj: person, sword, phase: Math.random() * Math.PI * 2 });
+  }
+  return person;
+}
+
+function populateMedievalCommonsParcel(bp, archetype) {
+  const bounds = { minX: bp.x - 8.8, maxX: bp.x + 8.8, minZ: bp.z - 8.8, maxZ: bp.z + 8.8 };
+  addMedievalGroundPlane(bp.x, bp.z, 18.5, 18.5, archetype === 'farm' ? 0x665139 : 0x50633a);
+  if (archetype === 'farm') {
+    const cropColors = [0x6f9c3d, 0xa34b35, 0xd2a33b, 0x7f4f91];
+    for (let row = 0; row < 5; row++) for (let col = 0; col < 6; col++) {
+      const crop = new THREE.Mesh(new THREE.SphereGeometry(0.25, 7, 5), sharedBoxMat(cropColors[row % cropColors.length]));
+      makeMedievalConsumable('vegetable crop', crop, 0.24, 5, bp.x - 6.2 + col * 2.45, bp.z - 5 + row * 2.45, 0.24);
+    }
+  } else if (archetype === 'pasture') {
+    for (let i = 0; i < 5; i++) makeMedievalAnimal(i < 3 ? 'cow' : 'sheep', bp.x + randomBetween(-6, 6), bp.z + randomBetween(-6, 6), bounds);
+  } else if (archetype === 'barnyard') {
+    for (const [dx, dz, kind] of [[-5,-5,'hay'],[-2,-5,'barrel'],[2,-5,'crate'],[5,-5,'cart'],[-5,5,'sack'],[5,5,'hay']]) addMedievalProp(`Barnyard ${kind}`, bp.x + dx, bp.z + dz, kind);
+    for (let i = 0; i < 6; i++) makeMedievalAnimal(i < 2 ? 'sheep' : 'chicken', bp.x + randomBetween(-6, 6), bp.z + randomBetween(-3, 5), bounds);
+  } else {
+    makeMedievalVillager(bp.x - 2.2, bp.z, bounds, 'fighter');
+    makeMedievalVillager(bp.x + 2.2, bp.z, bounds, 'fighter');
+    makeMedievalVillager(bp.x, bp.z - 3.2, bounds, 'fighter');
+    makeMedievalVillager(bp.x, bp.z + 3.2, bounds, 'fighter');
+    for (const dx of [-6, 6]) addMedievalProp('Training hay target', bp.x + dx, bp.z, 'hay');
+  }
+}
+
+function updateMedievalAmbientActors(dt) {
+  const now = performance.now() * 0.001;
+  for (const actor of medievalAmbientActors) {
+    const obj = actor.obj;
+    if (!obj || obj.consumed || obj.falling || !obj.mesh) continue;
+    if (actor.type === 'animal') {
+      actor.timer -= dt;
+      if (actor.timer <= 0) { actor.direction += randomBetween(-1.2, 1.2); actor.timer = 1.5 + Math.random() * 3; }
+      let nx = obj.x + Math.cos(actor.direction) * actor.speed * dt;
+      let nz = obj.z + Math.sin(actor.direction) * actor.speed * dt;
+      if (nx < actor.bounds.minX || nx > actor.bounds.maxX) { actor.direction = Math.PI - actor.direction; nx = THREE.MathUtils.clamp(nx, actor.bounds.minX, actor.bounds.maxX); }
+      if (nz < actor.bounds.minZ || nz > actor.bounds.maxZ) { actor.direction = -actor.direction; nz = THREE.MathUtils.clamp(nz, actor.bounds.minZ, actor.bounds.maxZ); }
+      obj.x = nx; obj.z = nz; obj.mesh.position.x = nx; obj.mesh.position.z = nz; obj.mesh.rotation.y = -actor.direction;
+    } else if (actor.type === 'fighter') {
+      obj.mesh.rotation.y = Math.sin(now * 1.7 + actor.phase) * 0.42;
+      actor.sword.rotation.z = -0.65 + Math.sin(now * 4.2 + actor.phase) * 0.52;
+    } else if (actor.type === 'torch') {
+      const pulse = 0.82 + Math.sin(now * 9 + actor.phase) * 0.18;
+      actor.flame.scale.setScalar(pulse);
+    }
+  }
+}
+
 function addMedievalDestructionStack(definition, x, z, rotation, intactShell) {
   const stackId = nextPhysicsStackId++;
   megakitIntactShellsByStack.set(stackId, intactShell);
@@ -1367,7 +1480,6 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell) {
 }
 
 async function populateMedievalVillage() {
-  clearMedievalEnvironmentMeshes();
   const generation = medievalEnvironmentGeneration;
   document.documentElement.setAttribute('data-holesy-medieval-models', '0');
   document.documentElement.setAttribute('data-holesy-medieval-pack-percent', '90');
@@ -1443,6 +1555,20 @@ async function populateMedievalVillage() {
     if (parcelIndex % 4 === 3) await yieldCityBuildFrame();
   }
   document.documentElement.setAttribute('data-holesy-medieval-edibles', String(edibleCount));
+  const ambientParcels = [...eligibleParcels].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < Math.min(12, ambientParcels.length); i++) {
+    const bp = ambientParcels[i];
+    const bounds = { minX: bp.x - 8.6, maxX: bp.x + 8.6, minZ: bp.z - 8.6, maxZ: bp.z + 8.6 };
+    if (i < 6) makeMedievalAnimal(['chicken', 'sheep', 'cow'][i % 3], bp.x + randomBetween(-7, 7), bp.z + randomBetween(-7, 7), bounds);
+    else makeMedievalVillager(bp.x + randomBetween(-7, 7), bp.z + randomBetween(-7, 7), bounds, 'torch');
+  }
+  for (let i = 12; i < Math.min(18, ambientParcels.length); i += 2) {
+    const bp = ambientParcels[i];
+    const bounds = { minX: bp.x - 8.6, maxX: bp.x + 8.6, minZ: bp.z - 8.6, maxZ: bp.z + 8.6 };
+    makeMedievalVillager(bp.x - 1.2, bp.z, bounds, 'fighter');
+    makeMedievalVillager(bp.x + 1.2, bp.z, bounds, 'fighter');
+  }
+  document.documentElement.setAttribute('data-holesy-medieval-ambient-actors', String(medievalAmbientActors.length));
   wakeRenderLoop();
 }
 
@@ -3557,6 +3683,7 @@ function populateParcelDetails(bp, parcelUse, blockBounds) {
 async function populateCity() {
   chooseEnvironmentForNextCity();
   const isMedievalVillage = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE;
+  if (isMedievalVillage) clearMedievalEnvironmentMeshes();
   const economy = getEffectiveDifficultyProfile();
   const buildingBlockDensity = economy.buildingBlockDensityMult || 1;
   const skyscraperChance = 0.35 * (economy.skyscraperChanceMult || 1);
@@ -3575,13 +3702,14 @@ async function populateCity() {
   const governmentBlock = isMedievalVillage ? null : blockPositions[Math.floor(Math.random() * blockPositions.length)];
   // Keep parks special and legible: every regenerated town gets exactly one
   // or two park parcels, never the previous four-to-six-parcel flood.
-  const parkCount = isMedievalVillage ? 1 : (Math.random() < 0.5 ? 1 : 2);
+  const parkCount = isMedievalVillage ? 2 : (Math.random() < 0.5 ? 1 : 2);
   const parkParcels = new Map();
   const shuffledParkCandidates = blockPositions.filter(bp =>
     bp !== governmentBlock && (!isMedievalVillage || medievalNativeParcelKeys.has(parcelKey(bp)))
   ).sort(() => Math.random() - 0.5);
   const shuffledFullParcel = [...FULL_PARCEL_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
   const shuffledCompact = [...COMPACT_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
+  const shuffledMedievalCommons = [...MEDIEVAL_COMMONS_ARCHETYPES].sort(() => Math.random() - 0.5);
   reservedParcelKeys.clear();
   if (governmentBlock) reservedParcelKeys.add(parcelKey(governmentBlock));
   if (isMedievalVillage) {
@@ -3592,15 +3720,22 @@ async function populateCity() {
     // compact attractions; a smaller chance lets one compact attraction enjoy
     // a spacious showcase parcel of its own.
     const roll = Math.random();
-    const archetype = roll < 0.25
-      ? 'mixed_compact'
-      : roll < 0.42
-        ? shuffledCompact[i % shuffledCompact.length]
-        : shuffledFullParcel[i % shuffledFullParcel.length];
+    const archetype = isMedievalVillage
+      ? 'medieval_commons'
+      : roll < 0.25
+        ? 'mixed_compact'
+        : roll < 0.42
+          ? shuffledCompact[i % shuffledCompact.length]
+          : shuffledFullParcel[i % shuffledFullParcel.length];
     parkParcels.set(shuffledParkCandidates[i], {
       archetype,
-      variant: PARK_VARIANTS[Math.floor(Math.random() * PARK_VARIANTS.length)],
+      variant: isMedievalVillage
+        ? shuffledMedievalCommons[i % shuffledMedievalCommons.length]
+        : PARK_VARIANTS[Math.floor(Math.random() * PARK_VARIANTS.length)],
     });
+  }
+  if (isMedievalVillage) {
+    document.documentElement.setAttribute('data-holesy-medieval-commons', [...parkParcels.values()].map(park => park.variant).join(','));
   }
   for (const bp of parkParcels.keys()) reservedParcelKeys.add(parcelKey(bp));
   // Place buildings on block corners/edges, small stuff around perimeter
@@ -3621,7 +3756,8 @@ async function populateCity() {
     } else if (parkParcels.has(bp)) {
       const park = parkParcels.get(bp);
       parcelUse = `park_${park.archetype}_${park.variant}`;
-      populateParkParcel(bp, park.archetype, park.variant);
+      if (park.archetype === 'medieval_commons') populateMedievalCommonsParcel(bp, park.variant);
+      else populateParkParcel(bp, park.archetype, park.variant);
     } else if (Math.random() > buildingBlockDensity) {
       // Scarcer difficulties leave more blocks lightly populated.
     } else if (t < skyscraperChance) {
@@ -10247,6 +10383,7 @@ function tearDownWorld() {
   governmentPhysics.clear();
   movingCars.length = 0;
   movingPeople.length = 0;
+  medievalAmbientActors.length = 0;
   animatedParkObjects.length = 0;
   nightWindowVisuals.length = 0;
   streetLightVisuals.length = 0;
@@ -15937,6 +16074,7 @@ function animate(frameNow = performance.now()) {
     updateTrafficLights(dt);
     updateMovingCars(dt);
     updateMovingPeople(dt);
+    updateMedievalAmbientActors(dt);
     updateParkAnimations(dt);
 
     // --- Military simulation ---

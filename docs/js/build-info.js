@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 179;
+export const BUILD_SUB = 180;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.180',
+    title: 'Living Medieval commons and street life',
+    notes: [
+      'Replaces modern Medieval park parcels with two rotating farms, pastures, barnyards, or sword-training yards.',
+      'Adds edible vegetable rows, cows, sheep, chickens, hay, carts, barrels, training targets, and sparring villagers.',
+      'Populates the wider village with roaming animals, torch walkers, and additional sword-fighting pairs while preserving the 32/4 pack-to-native parcel mix.',
+    ],
+  },
   {
     label: 'Master 16.179',
     title: 'Resilient Medieval asset loading',
