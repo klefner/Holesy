@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.178';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.179';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1170,10 +1170,28 @@ function clearMedievalEnvironmentMeshes() {
 
 function loadMedievalBuilding(sourceBase) {
   if (!medievalBuildingCache.has(sourceBase)) {
-    const promise = medievalGltfLoader.loadAsync(`${MEDIEVAL_ASSET_BASE}${sourceBase}.glb`).then(gltf => gltf.scene);
+    const promise = medievalGltfLoader.loadAsync(`${MEDIEVAL_ASSET_BASE}${sourceBase}.glb`)
+      .then(gltf => gltf.scene)
+      .catch(error => {
+        medievalBuildingCache.delete(sourceBase);
+        throw error;
+      });
     medievalBuildingCache.set(sourceBase, promise);
   }
   return medievalBuildingCache.get(sourceBase);
+}
+
+async function loadMedievalBuildingWithRetry(sourceBase, maxAttempts = 3) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await loadMedievalBuilding(sourceBase);
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts) await yieldCityBuildFrame();
+    }
+  }
+  throw lastError;
 }
 
 function addMedievalGroundPlane(x, z, w, d, color, rotation = 0) {
@@ -1371,7 +1389,13 @@ async function populateMedievalVillage() {
   let loadedModelCount = 0;
   for (const { bp, definition } of sites) {
     if (selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
-    const authoredSource = await loadMedievalBuilding(definition.sourceBase);
+    let authoredSource = null;
+    try {
+      authoredSource = await loadMedievalBuildingWithRetry(definition.sourceBase);
+    } catch (error) {
+      console.warn(`[Holesy] Medieval asset unavailable after retries: ${definition.sourceBase}`, error);
+      continue;
+    }
     await yieldCityBuildFrame();
     if (selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
     for (const object of [...objects]) {

@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 178;
+export const BUILD_SUB = 179;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.179',
+    title: 'Resilient Medieval asset loading',
+    notes: [
+      'Retries each Medieval model independently when the host returns a transient loading error.',
+      'Continues building the rest of the village if one model remains unavailable.',
+      'Always completes the 192-object growth ladder instead of aborting the town on one failed model request.',
+    ],
+  },
   {
     label: 'Master 16.178',
     title: 'Medieval growth ladder and physical-fit building entry',
