@@ -7634,6 +7634,18 @@ function awardEndlessWaveLoreDrop() {
 let audioBanksLoaded = false;
 let audioBankWarmupTimer = null;
 const activeNonMusicSources = new Set();
+const MAX_SIMULTANEOUS_BUILDING_SOUNDS = 5;
+let activeBuildingAudioVoices = 0;
+
+function reserveBuildingAudioVoice() {
+  if (activeBuildingAudioVoices >= MAX_SIMULTANEOUS_BUILDING_SOUNDS) return false;
+  activeBuildingAudioVoices++;
+  return true;
+}
+
+function releaseBuildingAudioVoice() {
+  activeBuildingAudioVoices = Math.max(0, activeBuildingAudioVoices - 1);
+}
 
 function scheduleAudioBankWarmup(delayMs = 2500) {
   if (audioBanksLoaded || audioBankWarmupTimer || !music.ctx) return;
@@ -7718,6 +7730,7 @@ function stopActiveNonMusicSources() {
     try { src.disconnect(); } catch (e) {}
   }
   activeNonMusicSources.clear();
+  activeBuildingAudioVoices = 0;
 }
 
 // Play scream for a person using their voice profile
@@ -7766,6 +7779,7 @@ function playBuildingSound(buildingSize, volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.buildings.filter(b => b);
   if (loaded.length === 0) return;
+  if (!reserveBuildingAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   // Scale pitch by building size: large buildings sound deeper (slower playback),
   // small ones sound snappier. Base pitch wobble ±5% for variety within each size.
@@ -7777,7 +7791,26 @@ function playBuildingSound(buildingSize, volumeScale = 1.0) {
   const gain = (baseGain + (Math.random() - 0.5) * 0.1) * volumeScale;
   // Bigger buildings get more reverb for spatial depth
   const reverbMix = buildingSize === 'large' ? 0.28 : (buildingSize === 'mid' ? 0.22 : 0.15);
-  playSample(buf, rate, gain, reverbMix);
+  const ctx = music.ctx;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  const g = ctx.createGain();
+  g.gain.value = gain;
+  src.connect(g);
+  g.connect(getSfxDestination());
+  if (music.reverb && reverbMix > 0) {
+    const rev = ctx.createGain();
+    rev.gain.value = reverbMix;
+    g.connect(rev);
+    rev.connect(music.reverb);
+  }
+  activeNonMusicSources.add(src);
+  src.onended = () => {
+    activeNonMusicSources.delete(src);
+    releaseBuildingAudioVoice();
+  };
+  src.start();
 }
 
 function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId = 'global') {
@@ -7791,6 +7824,7 @@ function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId
   const state = skyscraperImpactAudioState.get(key) || { active: 0, lastAt: 0 };
   if (state.active >= STACK_PHYSICS_CONFIG.skyscraperAudioMaxVoicesPerStack) return;
   if (now - state.lastAt < STACK_PHYSICS_CONFIG.skyscraperAudioMinIntervalMs) return;
+  if (!reserveBuildingAudioVoice()) return;
   state.active += 1;
   state.lastAt = now;
   skyscraperImpactAudioState.set(key, state);
@@ -7818,6 +7852,7 @@ function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId
     activeNonMusicSources.delete(src);
     const latest = skyscraperImpactAudioState.get(key);
     if (latest) latest.active = Math.max(0, latest.active - 1);
+    releaseBuildingAudioVoice();
   };
   src.start(startAt);
   try { src.stop(stopAt + 0.02); } catch (e) {}
@@ -7834,6 +7869,7 @@ function playSkyscraperChunkSound(volumeScale = 1.0, obj = null) {
   const state = skyscraperImpactAudioState.get(key) || { active: 0, lastAt: 0 };
   if (state.active >= STACK_PHYSICS_CONFIG.skyscraperAudioMaxVoicesPerStack) return;
   if (now - state.lastAt < STACK_PHYSICS_CONFIG.skyscraperAudioMinIntervalMs) return;
+  if (!reserveBuildingAudioVoice()) return;
   state.active += 1;
   state.lastAt = now;
   skyscraperImpactAudioState.set(key, state);
@@ -7854,6 +7890,7 @@ function playSkyscraperChunkSound(volumeScale = 1.0, obj = null) {
     activeNonMusicSources.delete(src);
     const latest = skyscraperImpactAudioState.get(key);
     if (latest) latest.active = Math.max(0, latest.active - 1);
+    releaseBuildingAudioVoice();
   };
   src.start(startAt);
   try { src.stop(stopAt + 0.02); } catch (e) {}

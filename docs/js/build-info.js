@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 176;
+export const BUILD_SUB = 177;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.177',
+    title: 'Five-voice building destruction audio cap',
+    notes: [
+      'Limits all simultaneous building destruction sounds to five across the whole city.',
+      'Applies the shared cap to ordinary building bites, imported-building collapse hits, and individual chunk impacts.',
+      'Keeps the existing per-building cooldown underneath the global cap so dense collapses remain readable.',
+    ],
+  },
   {
     label: 'Master 16.176',
     title: 'Pack-authored Medieval town and detailed destruction',
