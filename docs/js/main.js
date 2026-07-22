@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.171';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.172';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1083,23 +1083,70 @@ const ROAD_W = HOLESY_CONFIG.world.roadWidth;
 const ENVIRONMENT_KEYS = Object.freeze({
   CLASSIC: 'classic',
   MEGAKIT_DOWNTOWN: 'megakitDowntown',
+  MEDIEVAL_VILLAGE: 'medievalVillage',
+});
+const CITY_PACK_KEYS = Object.freeze({
+  MEGAKIT_DISTRICT: 'megakitDistrict',
+  MEGAKIT_STREETS: 'megakitStreets',
+  MEDIEVAL_VILLAGE: 'medievalVillage',
+});
+// A city is a recipe, not an asset-pack assumption. Recipes may use no packs,
+// one pack, or several packs; future city types should be added here and to
+// ENVIRONMENT_KEYS without adding another special-case population branch.
+const CITY_RECIPES = Object.freeze({
+  [ENVIRONMENT_KEYS.CLASSIC]: Object.freeze({ label: 'Classic City', packs: Object.freeze([]) }),
+  [ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN]: Object.freeze({
+    label: 'MegaKit Downtown',
+    packs: Object.freeze([CITY_PACK_KEYS.MEGAKIT_DISTRICT, CITY_PACK_KEYS.MEGAKIT_STREETS]),
+  }),
+  [ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE]: Object.freeze({
+    label: 'Medieval Village',
+    packs: Object.freeze([CITY_PACK_KEYS.MEDIEVAL_VILLAGE]),
+  }),
 });
 const ELIGIBLE_ENVIRONMENTS = Object.freeze(Object.values(ENVIRONMENT_KEYS));
 let selectedEnvironment = ENVIRONMENT_KEYS.CLASSIC;
 let lastGeneratedEnvironment = null;
+let selectedEnvironmentOverride = 'auto';
 const megakitTextureLoader = new THREE.TextureLoader();
 const megakitGltfLoader = new GLTFLoader();
 const megakitTextureCache = new Map();
 const megakitMaterialCache = new Map();
+const megakitSceneAssetCache = new Map();
 const megakitEnvironmentMeshes = [];
 const megakitIntactShellsByStack = new Map();
 let megakitEnvironmentGeneration = 0;
 const MEGAKIT_ASSET_BASE = 'assets/environments/downtown-city-megakit/source-gltf/';
+const MEDIEVAL_ASSET_BASE = 'assets/environments/medieval-village/runtime/';
+const medievalGltfLoader = new GLTFLoader();
+const medievalBuildingCache = new Map();
+const medievalEnvironmentMeshes = [];
+let medievalEnvironmentGeneration = 0;
+let medievalRosterOffset = 0;
+const MEDIEVAL_BUILDINGS = Object.freeze([
+  { sourceBase: 'House_1', footprint: 8.5, height: 7.5, floors: 3, color: 0x8f7145 },
+  { sourceBase: 'Blacksmith', footprint: 10.5, height: 8.5, floors: 4, color: 0x6d5943 },
+  { sourceBase: 'Inn', footprint: 12, height: 10, floors: 4, color: 0xa17d4c },
+  { sourceBase: 'Mill', footprint: 12, height: 12, floors: 5, color: 0x8a6840 },
+  { sourceBase: 'Bell_Tower', footprint: 10.5, height: 15, floors: 6, color: 0x777169 },
+  { sourceBase: 'House_2', footprint: 9.5, height: 8.5, floors: 3, color: 0x9b7847 },
+  { sourceBase: 'House_3', footprint: 8.5, height: 7.5, floors: 3, color: 0x80633f },
+  { sourceBase: 'House_4', footprint: 8.5, height: 7.0, floors: 3, color: 0x99764d },
+  { sourceBase: 'Sawmill', footprint: 11, height: 8, floors: 3, color: 0x795739 },
+  { sourceBase: 'Stable', footprint: 11.5, height: 8, floors: 3, color: 0x87613b },
+]);
 
 function chooseEnvironmentForNextCity() {
-  const choices = ELIGIBLE_ENVIRONMENTS.filter(key => key !== lastGeneratedEnvironment);
-  selectedEnvironment = choices[Math.floor(Math.random() * choices.length)] || ENVIRONMENT_KEYS.CLASSIC;
+  if (ELIGIBLE_ENVIRONMENTS.includes(selectedEnvironmentOverride)) {
+    selectedEnvironment = selectedEnvironmentOverride;
+  } else {
+    const choices = ELIGIBLE_ENVIRONMENTS.filter(key => key !== lastGeneratedEnvironment);
+    selectedEnvironment = choices[Math.floor(Math.random() * choices.length)] || ENVIRONMENT_KEYS.CLASSIC;
+  }
   lastGeneratedEnvironment = selectedEnvironment;
+  document.documentElement.setAttribute('data-holesy-environment', selectedEnvironment);
+  const recipe = CITY_RECIPES[selectedEnvironment] || CITY_RECIPES[ENVIRONMENT_KEYS.CLASSIC];
+  document.documentElement.setAttribute('data-holesy-city-packs', recipe.packs.join(','));
   return selectedEnvironment;
 }
 
@@ -1110,6 +1157,210 @@ function clearMegakitEnvironmentMeshes() {
   }
   megakitEnvironmentMeshes.length = 0;
   megakitIntactShellsByStack.clear();
+}
+
+function clearMedievalEnvironmentMeshes() {
+  medievalEnvironmentGeneration++;
+  for (const mesh of medievalEnvironmentMeshes) {
+    if (mesh && mesh.parent) scene.remove(mesh);
+  }
+  medievalEnvironmentMeshes.length = 0;
+}
+
+function loadMedievalBuilding(sourceBase) {
+  if (!medievalBuildingCache.has(sourceBase)) {
+    const promise = medievalGltfLoader.loadAsync(`${MEDIEVAL_ASSET_BASE}${sourceBase}.glb`).then(gltf => gltf.scene);
+    medievalBuildingCache.set(sourceBase, promise);
+  }
+  return medievalBuildingCache.get(sourceBase);
+}
+
+function addMedievalGroundPlane(x, z, w, d, color, rotation = 0) {
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, d),
+    new THREE.MeshLambertMaterial({ color })
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.rotation.z = rotation;
+  mesh.position.set(x, 0.034, z);
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  medievalEnvironmentMeshes.push(mesh);
+}
+
+function addMedievalStreetDetails() {
+  const earth = 0x766347;
+  const stone = 0x8b8374;
+  for (const roadIndex of [-3, -2, -1, 0, 1, 2, 3]) {
+    const roadCenter = roadIndex * BLOCK;
+    addMedievalGroundPlane(roadCenter, 0, ROAD_W * 0.72, WORLD_SIZE, earth);
+    addMedievalGroundPlane(0, roadCenter, WORLD_SIZE, ROAD_W * 0.72, earth);
+  }
+  for (const bp of blockPositions) {
+    const edge = (BLOCK - ROAD_W) / 2 + 0.25;
+    addMedievalGroundPlane(bp.x, bp.z - edge, BLOCK - ROAD_W, 0.45, stone);
+    addMedievalGroundPlane(bp.x, bp.z + edge, BLOCK - ROAD_W, 0.45, stone);
+  }
+}
+
+function addMedievalProp(name, x, z, kind) {
+  const group = new THREE.Group();
+  const wood = sharedBoxMat(0x6f4728);
+  const dark = sharedBoxMat(0x30271f);
+  const straw = sharedBoxMat(0xc6a052);
+  if (kind === 'barrel') {
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 1.25, 10), wood);
+    body.position.y = 0.625;
+    group.add(body);
+  } else if (kind === 'hay') {
+    const bale = new THREE.Mesh(sharedBoxGeometry(1.5, 0.85, 0.9), straw);
+    bale.position.y = 0.425;
+    group.add(bale);
+  } else if (kind === 'cart') {
+    const bed = new THREE.Mesh(sharedBoxGeometry(2.2, 0.45, 1.2), wood);
+    bed.position.y = 0.85;
+    group.add(bed);
+    for (const wheelX of [-0.85, 0.85]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.18, 10), dark);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(wheelX, 0.48, 0.68);
+      group.add(wheel);
+    }
+  } else {
+    const counter = new THREE.Mesh(sharedBoxGeometry(2.4, 0.25, 1.2), wood);
+    counter.position.y = 1.05;
+    group.add(counter);
+    for (const px of [-1, 1]) {
+      const post = new THREE.Mesh(sharedBoxGeometry(0.15, 2.2, 0.15), dark);
+      post.position.set(px, 1.1, 0);
+      group.add(post);
+    }
+    const canopy = new THREE.Mesh(sharedBoxGeometry(2.8, 0.18, 1.55), sharedBoxMat(0x8f2937));
+    canopy.position.y = 2.15;
+    group.add(canopy);
+  }
+  group.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+  const obj = makeObject(group, kind === 'cart' || kind === 'stall' ? 1.5 : 0.8, 0, kind === 'cart' ? 45 : 24, { x, z, y: 0 });
+  obj.isMedievalAsset = true;
+  obj.medievalAssetName = name;
+  obj.mandateKind = 'prop';
+  return obj;
+}
+
+function addMedievalDestructionStack(definition, x, z, rotation, intactShell) {
+  const stackId = nextPhysicsStackId++;
+  megakitIntactShellsByStack.set(stackId, intactShell);
+  const grid = definition.footprint >= 11 ? 4 : 3;
+  const floors = definition.floors;
+  const cellW = definition.footprint / grid;
+  const cellH = definition.height / floors;
+  const material = sharedBoxMat(definition.color);
+  for (let floor = 0; floor < floors; floor++) {
+    for (let gx = 0; gx < grid; gx++) {
+      for (let gz = 0; gz < grid; gz++) {
+        const localX = (gx - (grid - 1) / 2) * cellW;
+        const localZ = (gz - (grid - 1) / 2) * cellW;
+        const rotatedX = localX * Math.cos(rotation) - localZ * Math.sin(rotation);
+        const rotatedZ = localX * Math.sin(rotation) + localZ * Math.cos(rotation);
+        const piece = new THREE.Mesh(sharedBoxGeometry(cellW * 0.94, cellH * 0.94, cellW * 0.94), material);
+        piece.castShadow = true;
+        piece.receiveShadow = true;
+        const object = makeObject(piece, cellW * 0.52, 1, 6, {
+          x: x + rotatedX,
+          z: z + rotatedZ,
+          y: floor * cellH + cellH / 2,
+        });
+        object.isBuilding = true;
+        object.buildingSize = definition.sourceBase === 'Bell_Tower' ? 'large' : 'mid';
+        object.mandateKind = definition.sourceBase === 'Bell_Tower' ? 'tower' : 'building';
+        object.isMedievalAsset = true;
+        object.physicsStackPiece = true;
+        object.usesBoxStackContacts = true;
+        object.stackId = stackId;
+        object.stackActive = false;
+        object.stackSettled = false;
+        object.stackRestTimer = 0;
+        object.stackIndex = floor;
+        object.stackFloorCount = floors;
+        object.stackPieceCount = grid * grid;
+        object.stackCollapseSize = Math.max(3.8, definition.footprint * 0.43);
+        object.stackCenterX = x;
+        object.stackCenterZ = z;
+        object.stackLocalX = rotatedX;
+        object.stackLocalZ = rotatedZ;
+        object.stackFloorY = cellH / 2;
+        object.stackHeight = cellH;
+        object.stackPieceW = cellW;
+        object.stackPieceD = cellW;
+        object.vx = 0; object.vy = 0; object.vz = 0;
+        object.avx = 0; object.avy = 0; object.avz = 0;
+        object.medievalAssetName = `${definition.sourceBase} structural block`;
+        scene.remove(piece);
+        object.megakitDormantDetached = true;
+        physicsStackPieces.push(object);
+      }
+    }
+  }
+}
+
+async function populateMedievalVillage() {
+  clearMedievalEnvironmentMeshes();
+  const generation = medievalEnvironmentGeneration;
+  document.documentElement.setAttribute('data-holesy-medieval-models', '0');
+  showEventBanner('DISTRICT: Medieval Village', 2200);
+  addMedievalStreetDetails();
+  const propSites = [
+    [-28, -12, 'barrel'], [-23, -13, 'hay'], [26, 13, 'cart'], [11, -14, 'stall'],
+    [-10, 14, 'stall'], [38, -11, 'barrel'], [-40, 12, 'hay'],
+  ];
+  for (const [x, z, kind] of propSites) addMedievalProp(`Medieval ${kind}`, x, z, kind);
+
+  const eligibleParcels = blockPositions.filter(bp =>
+    Math.abs(bp.x) < currentArenaHalf - 10 &&
+    Math.abs(bp.z) < currentArenaHalf - 10 &&
+    !reservedParcelKeys.has(parcelKey(bp))
+  );
+  const parcelIndexes = [0, Math.floor(eligibleParcels.length * 0.25), Math.floor(eligibleParcels.length * 0.5), Math.floor(eligibleParcels.length * 0.75), eligibleParcels.length - 1];
+  const sites = [...new Set(parcelIndexes)].map((index, order) => ({
+    bp: eligibleParcels[Math.max(0, Math.min(eligibleParcels.length - 1, index))],
+    definition: MEDIEVAL_BUILDINGS[(medievalRosterOffset + order) % MEDIEVAL_BUILDINGS.length],
+  }));
+  medievalRosterOffset = (medievalRosterOffset + sites.length) % MEDIEVAL_BUILDINGS.length;
+
+  let loadedModelCount = 0;
+  for (const { bp, definition } of sites) {
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
+    const authoredSource = await loadMedievalBuilding(definition.sourceBase);
+    await yieldCityBuildFrame();
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
+    for (const object of [...objects]) {
+      if (Math.hypot(object.x - bp.x, object.z - bp.z) > 10.25) continue;
+      if (object.mesh?.parent) scene.remove(object.mesh);
+      removeObjectFromActiveLists(object);
+    }
+    const authoredVisual = authoredSource.clone(true);
+    authoredVisual.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(authoredVisual);
+    const dimensions = bounds.getSize(new THREE.Vector3());
+    const center = bounds.getCenter(new THREE.Vector3());
+    authoredVisual.position.set(-center.x, -bounds.min.y, -center.z);
+    authoredVisual.traverse(child => {
+      if (!child.isMesh) return;
+      child.castShadow = true;
+      child.receiveShadow = true;
+    });
+    const intactShell = new THREE.Group();
+    intactShell.add(authoredVisual);
+    intactShell.scale.setScalar(definition.footprint / (Math.max(dimensions.x, dimensions.z) || 1));
+    intactShell.rotation.y = Math.atan2(player.x - bp.x, player.z - bp.z);
+    intactShell.position.set(bp.x, 0, bp.z);
+    scene.add(intactShell);
+    medievalEnvironmentMeshes.push(intactShell);
+    addMedievalDestructionStack(definition, bp.x, bp.z, intactShell.rotation.y, intactShell);
+    loadedModelCount++;
+    document.documentElement.setAttribute('data-holesy-medieval-models', String(loadedModelCount));
+  }
+  wakeRenderLoop();
 }
 
 function loadMegakitTexture(fileName, repeat = [1, 1]) {
@@ -1169,6 +1420,104 @@ function addMegakitTrimPlane(x, z, w, d, color, opacity = 1) {
   scene.add(mesh);
   megakitEnvironmentMeshes.push(mesh);
   return mesh;
+}
+
+function loadMegakitSceneAsset(sourceBase) {
+  if (!megakitSceneAssetCache.has(sourceBase)) {
+    megakitSceneAssetCache.set(
+      sourceBase,
+      megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}${sourceBase}.gltf`).then(gltf => gltf.scene)
+    );
+  }
+  return megakitSceneAssetCache.get(sourceBase);
+}
+
+async function addMegakitSceneAsset(sourceBase, x, z, targetSpan, rotation = 0, options = {}) {
+  const generation = megakitEnvironmentGeneration;
+  const source = await loadMegakitSceneAsset(sourceBase);
+  if (generation !== megakitEnvironmentGeneration || selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN) return null;
+  const visual = source.clone(true);
+  visual.updateMatrixWorld(true);
+  const sourceBounds = new THREE.Box3().setFromObject(visual);
+  const dimensions = sourceBounds.getSize(new THREE.Vector3());
+  const longestGroundAxis = Math.max(dimensions.x, dimensions.z) || 1;
+  visual.scale.setScalar(targetSpan / longestGroundAxis);
+  visual.updateMatrixWorld(true);
+  const scaledBounds = new THREE.Box3().setFromObject(visual);
+  const center = scaledBounds.getCenter(new THREE.Vector3());
+  visual.position.set(-center.x, (options.height || 0.045) - scaledBounds.min.y, -center.z);
+  visual.traverse(child => {
+    if (!child.isMesh) return;
+    if (sourceBase.startsWith('Decal_')) {
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      const tuned = materials.map(material => {
+        const copy = material.clone();
+        copy.transparent = true;
+        copy.alphaTest = 0.12;
+        copy.depthWrite = false;
+        copy.side = THREE.DoubleSide;
+        copy.polygonOffset = true;
+        copy.polygonOffsetFactor = -4;
+        copy.polygonOffsetUnits = -4;
+        copy.toneMapped = false;
+        copy.needsUpdate = true;
+        return copy;
+      });
+      child.material = Array.isArray(child.material) ? tuned : tuned[0];
+    }
+    child.castShadow = options.castShadow !== false;
+    child.receiveShadow = true;
+    child.renderOrder = options.renderOrder || 2;
+  });
+  const placement = new THREE.Group();
+  placement.add(visual);
+  placement.position.set(x, 0, z);
+  placement.rotation.y = rotation;
+  scene.add(placement);
+  if (options.consumable) {
+    const object = makeObject(placement, options.size || 0.65, 0, options.value || 15, { x, z, y: 0 });
+    object.isMegakitAsset = true;
+    object.megakitAssetName = options.name || sourceBase;
+  } else {
+    megakitEnvironmentMeshes.push(placement);
+  }
+  return placement;
+}
+
+async function populateMegakitStreetPack() {
+  const generation = megakitEnvironmentGeneration;
+  const markings = [
+    ['Decal_Crosswalk', 0, -5.1, 6.2, 0],
+    ['Decal_Crosswalk', 0, 5.1, 6.2, 0],
+    ['Decal_Crosswalk', -5.1, 0, 6.2, Math.PI / 2],
+    ['Decal_Crosswalk', 5.1, 0, 6.2, Math.PI / 2],
+    ['Decal_ArrowStraight', -2.1, -11, 3.0, 0],
+    ['Decal_ArrowTurnLeft', 2.1, 11, 3.0, Math.PI],
+    ['Decal_ArrowTurnRight', -11, 2.1, 3.0, Math.PI / 2],
+    ['Decal_Stop', 11, -2.1, 3.2, -Math.PI / 2],
+    ['Decal_Slow', -2.1, 28, 3.2, Math.PI],
+    ['Decal_Bikelane', 2.75, -28, 3.0, 0],
+  ];
+  for (const [sourceBase, x, z, span, rotation] of markings) {
+    await addMegakitSceneAsset(sourceBase, x, z, span, rotation, { castShadow: false, renderOrder: 3 });
+    await yieldCityBuildFrame();
+    if (generation !== megakitEnvironmentGeneration) return;
+  }
+  const drains = [[3.35, -18, 0], [-3.35, 18, Math.PI], [18, 3.35, Math.PI / 2], [-18, -3.35, -Math.PI / 2]];
+  for (const [x, z, rotation] of drains) {
+    await addMegakitSceneAsset('Prop_Drain', x, z, 1.8, rotation, {
+      consumable: true, size: 0.65, value: 18, name: 'MegaKit street drain',
+    });
+  }
+  const entrances = [[-16, -11.25, 0], [16, 11.25, Math.PI], [-11.25, 16, Math.PI / 2], [11.25, -16, -Math.PI / 2]];
+  for (let i = 0; i < entrances.length; i++) {
+    const [x, z, rotation] = entrances[i];
+    await addMegakitSceneAsset(i % 2 ? 'Entrance_Concrete_2x2' : 'Entrance_Concrete_2x1', x, z, 3.4, rotation, {
+      consumable: true, size: 1.1, value: 28, name: 'MegaKit concrete entrance',
+    });
+  }
+  document.documentElement.setAttribute('data-holesy-megakit-street-assets', String(markings.length + drains.length + entrances.length));
+  wakeRenderLoop();
 }
 
 function addMegakitBlockEdgeDetail() {
@@ -1245,6 +1594,24 @@ function populateMegakitDowntown() {
   addMegakitConsumableBox('MegaKit planter', 21, -28, 2.0, 0.75, 2.0, planterMat, 1.25, 35);
   [-11, -7, 7, 11].forEach((x, i) => addMegakitConsumableBox('MegaKit bollard', x, i < 2 ? -13 : 13, 0.35, 1.2, 0.35, metalMat, 0.45, 12));
   addMegakitBuildingSkinTest(megakitEnvironmentGeneration);
+}
+
+const CITY_PACK_POPULATORS = Object.freeze({
+  [CITY_PACK_KEYS.MEGAKIT_DISTRICT]: populateMegakitDowntown,
+  [CITY_PACK_KEYS.MEGAKIT_STREETS]: populateMegakitStreetPack,
+  [CITY_PACK_KEYS.MEDIEVAL_VILLAGE]: populateMedievalVillage,
+});
+
+async function populateSelectedCityPacks() {
+  const recipe = CITY_RECIPES[selectedEnvironment] || CITY_RECIPES[ENVIRONMENT_KEYS.CLASSIC];
+  for (const packKey of recipe.packs) {
+    const populatePack = CITY_PACK_POPULATORS[packKey];
+    if (!populatePack) {
+      console.warn(`[Holesy] City recipe references unknown pack: ${packKey}`);
+      continue;
+    }
+    await populatePack();
+  }
 }
 
 async function addMegakitBuildingSkinTest(generation) {
@@ -3288,9 +3655,7 @@ async function populateCity() {
     else makeTree(p);
     if (i % 10 === 9) await yieldCityBuildFrame();
   }
-  if (selectedEnvironment === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN) {
-    populateMegakitDowntown();
-  }
+  await populateSelectedCityPacks();
   pruneObjectsToArena();
 }
 
@@ -4222,8 +4587,10 @@ let roundRunId = 0;
 let pendingWaveStartTimer = null;
 let pendingWaveStartWave = null;
 let pendingWaveStartDueAt = 0;
+let pendingWaveSkipToken = null;
 let playerConsumedFadeTimer = null;
 let playerConsumedReturnTimer = null;
+let playerConsumedSkipToken = null;
 let pausedWaveTransitionRemainingMs = null;
 let pausedWaveTransitionNextWave = null;
 let pausedStateBeforePause = null;
@@ -4261,8 +4628,12 @@ const waveContractEl = document.getElementById('wave-contract');
 const waveContractMandatesEl = document.getElementById('wave-contract-mandates');
 const waveContractGoalsEl = document.getElementById('wave-contract-goals');
 let waveContractToken = 0;
+let waveContractDockTimer = null;
+let waveContractCompleteTimer = null;
+let waveContractSkipToken = null;
 const adaptiveAssistIndicatorEl = document.getElementById('adaptive-assist-indicator');
 const mobileHudToggleBtn = document.getElementById('mobile-hud-toggle');
+const skipWaitBtn = document.getElementById('skip-wait-btn');
 const hapticTestBtn = document.getElementById('haptic-test-btn');
 const hapticStatusEl = document.getElementById('haptic-status');
 const playBtn = document.getElementById('play-btn');
@@ -4281,6 +4652,39 @@ const pauseExitBtn = document.getElementById('pause-exit-btn');
 const pauseStatusMessage = document.getElementById('pause-status-message');
 eventBannerBackdrop.style.background = `rgba(6, 9, 18, ${HOLESY_CONFIG.eventMessaging.backdropOpacity})`;
 
+let skippableWaitSequence = 0;
+let activeSkippableWait = null;
+
+function beginSkippableWait(label, onSkip) {
+  clearSkippableWait();
+  const token = ++skippableWaitSequence;
+  activeSkippableWait = { token, label, onSkip };
+  skipWaitBtn.textContent = '<Skip>';
+  skipWaitBtn.setAttribute('aria-label', `Skip ${label}`);
+  skipWaitBtn.title = `Skip ${label}`;
+  skipWaitBtn.classList.remove('hidden');
+  document.documentElement.setAttribute('data-holesy-skippable-wait', label);
+  return token;
+}
+
+function clearSkippableWait(token = null) {
+  if (token !== null && activeSkippableWait?.token !== token) return;
+  activeSkippableWait = null;
+  skipWaitBtn.classList.add('hidden');
+  skipWaitBtn.setAttribute('aria-label', 'Skip presentation wait');
+  skipWaitBtn.removeAttribute('title');
+  document.documentElement.removeAttribute('data-holesy-skippable-wait');
+}
+
+function skipActiveWait() {
+  if (!activeSkippableWait) return;
+  const wait = activeSkippableWait;
+  clearSkippableWait(wait.token);
+  wait.onSkip?.();
+}
+
+skipWaitBtn.addEventListener('click', skipActiveWait);
+
 // LMS choice modal — shown when timer hits zero if player is still alive
 const lmsChoice = document.getElementById('lms-choice');
 const lmsCurrentScore = document.getElementById('lms-current-score');
@@ -4292,6 +4696,8 @@ const modePickerWrap = document.getElementById('mode-picker-wrap');
 const modePicker = document.getElementById('mode-picker');
 const difficultySelect = document.getElementById('difficulty-select');
 const difficultyDesc = document.getElementById('difficulty-desc');
+const environmentSelect = document.getElementById('environment-select');
+const environmentDesc = document.getElementById('environment-desc');
 const cosmeticSelect = document.getElementById('cosmetic-select');
 const cosmeticDesc = document.getElementById('cosmetic-desc');
 function refreshCosmeticPicker() {
@@ -4385,6 +4791,15 @@ feedbackForm?.addEventListener('submit', async event => {
 });
 difficultySelect.value = selectedDifficultyName;
 setDifficulty(selectedDifficultyName);
+environmentSelect?.addEventListener('change', () => {
+  selectedEnvironmentOverride = environmentSelect.value;
+  const recipe = CITY_RECIPES[selectedEnvironmentOverride];
+  environmentDesc.textContent = recipe
+    ? `${recipe.label} will be used for every generated city. Temporary control — remove before release.`
+    : 'Cities rotate automatically without immediate repeats. Temporary control — remove before release.';
+  document.documentElement.setAttribute('data-holesy-environment-override', selectedEnvironmentOverride);
+});
+environmentSelect?.dispatchEvent(new Event('change'));
 syncStartupUi();
 
 let gameStats = loadGameStats();
@@ -8059,11 +8474,14 @@ function showEventBanner(text, durationMs = HOLESY_CONFIG.aidDrops.flashDuration
 }
 
 function clearPendingWaveStart() {
-  if (!pendingWaveStartTimer) return;
-  clearTimeout(pendingWaveStartTimer);
+  if (pendingWaveStartTimer) clearTimeout(pendingWaveStartTimer);
   pendingWaveStartTimer = null;
   pendingWaveStartWave = null;
   pendingWaveStartDueAt = 0;
+  if (pendingWaveSkipToken !== null) {
+    clearSkippableWait(pendingWaveSkipToken);
+    pendingWaveSkipToken = null;
+  }
 }
 
 function clearPlayerConsumedReturn() {
@@ -8076,6 +8494,10 @@ function clearPlayerConsumedReturn() {
     playerConsumedReturnTimer = null;
   }
   spectatorFadeEl.classList.remove('show');
+  if (playerConsumedSkipToken !== null) {
+    clearSkippableWait(playerConsumedSkipToken);
+    playerConsumedSkipToken = null;
+  }
 }
 
 function schedulePlayerConsumedReturn(eater) {
@@ -8098,9 +8520,25 @@ function schedulePlayerConsumedReturn(eater) {
     playerConsumedReturnTimer = null;
     endGame();
   }, 5000);
+  playerConsumedSkipToken = beginSkippableWait('consumed replay', () => {
+    clearPlayerConsumedReturn();
+    endGame();
+  });
 }
 
 function clearTransientRoundUi() {
+  waveContractToken++;
+  if (waveContractDockTimer) clearTimeout(waveContractDockTimer);
+  if (waveContractCompleteTimer) clearTimeout(waveContractCompleteTimer);
+  waveContractDockTimer = null;
+  waveContractCompleteTimer = null;
+  if (waveContractSkipToken !== null) {
+    clearSkippableWait(waveContractSkipToken);
+    waveContractSkipToken = null;
+  }
+  waveContractEl?.classList.add('hidden');
+  waveContractEl?.classList.remove('docking');
+  hud.style.opacity = '1';
   if (stagePopTimer) {
     clearTimeout(stagePopTimer);
     stagePopTimer = null;
@@ -8181,14 +8619,21 @@ function scheduleNextWaveStart(nextWave, delayMs = HOLESY_CONFIG.eventMessaging.
   const scheduledRoundId = roundRunId;
   pendingWaveStartWave = nextWave;
   pendingWaveStartDueAt = performance.now() + delayMs;
-  pendingWaveStartTimer = setTimeout(() => {
+  const startScheduledWave = () => {
+    if (pendingWaveStartTimer) clearTimeout(pendingWaveStartTimer);
     pendingWaveStartTimer = null;
     pendingWaveStartWave = null;
     pendingWaveStartDueAt = 0;
+    if (pendingWaveSkipToken !== null) {
+      clearSkippableWait(pendingWaveSkipToken);
+      pendingWaveSkipToken = null;
+    }
     if (scheduledRoundId !== roundRunId) return;
     if (!isWaveBasedMode() || !isGameState(GAME_STATES.WAVE_TRANSITION)) return;
     startWave(nextWave);
-  }, delayMs);
+  };
+  pendingWaveStartTimer = setTimeout(startScheduledWave, delayMs);
+  pendingWaveSkipToken = beginSkippableWait('district briefing', startScheduledWave);
 }
 
 // =========================================================================
@@ -9649,6 +10094,7 @@ function cashoutFromLmsChoice() {
 // in-flight bonuses no longer apply.
 function tearDownWorld() {
   clearMegakitEnvironmentMeshes();
+  clearMedievalEnvironmentMeshes();
   // Consumables (people, cars, trees, buildings, props, lamps). Also includes
   // any object currently mid-fall (the animate loop handles falling objects
   // whether consumed or not, and removes them from scene at y < -5).
@@ -9922,6 +10368,26 @@ function resetHoleSizesForEndlessWorldShift() {
 function presentWaveContract(waveNum, onDocked) {
   if (!waveContractEl) { onDocked(); return; }
   const token = ++waveContractToken;
+  if (waveContractDockTimer) clearTimeout(waveContractDockTimer);
+  if (waveContractCompleteTimer) clearTimeout(waveContractCompleteTimer);
+  if (waveContractSkipToken !== null) clearSkippableWait(waveContractSkipToken);
+  let completed = false;
+  const finishContract = () => {
+    if (completed || token !== waveContractToken) return;
+    completed = true;
+    if (waveContractDockTimer) clearTimeout(waveContractDockTimer);
+    if (waveContractCompleteTimer) clearTimeout(waveContractCompleteTimer);
+    waveContractDockTimer = null;
+    waveContractCompleteTimer = null;
+    if (waveContractSkipToken !== null) {
+      clearSkippableWait(waveContractSkipToken);
+      waveContractSkipToken = null;
+    }
+    waveContractEl.classList.add('hidden');
+    waveContractEl.classList.remove('docking');
+    hud.style.opacity = '1';
+    onDocked();
+  };
   const pendingMandates = mandateTargets.filter(target => target.progress < target.required || target.failed);
   const pendingGoals = activeRunObjectives.filter(goal => !goal.complete);
   const mandateCard = waveContractMandatesEl?.closest('.wave-contract-card');
@@ -9934,17 +10400,13 @@ function presentWaveContract(waveNum, onDocked) {
     .map(goal => `<div>★ ${escapeHtml(goal.label)}</div>`).join('');
   waveContractEl.classList.remove('hidden', 'docking');
   hud.style.opacity = '0.28';
-  setTimeout(() => {
+  waveContractDockTimer = setTimeout(() => {
     if (token !== waveContractToken) return;
     waveContractEl.classList.add('docking');
     hud.style.opacity = '1';
   }, 5500);
-  setTimeout(() => {
-    if (token !== waveContractToken) return;
-    waveContractEl.classList.add('hidden');
-    waveContractEl.classList.remove('docking');
-    onDocked();
-  }, 6500);
+  waveContractCompleteTimer = setTimeout(finishContract, 6500);
+  waveContractSkipToken = beginSkippableWait(`wave ${waveNum} contract`, finishContract);
 }
 
 function startWave(waveNum) {

@@ -1,6 +1,6 @@
 # Holesy Modular Package Manifest
 
-Build label: `Master 16.171`
+Build label: `Master 16.175`
 
 Purpose: enumerate the complete governed modular package so release and upload work no longer treats `index.html` as the whole game.
 
@@ -16,7 +16,8 @@ Purpose: enumerate the complete governed modular package so release and upload w
 - `js/government-physics.js`
 - `data/lore-documents.js`
 - `assets/images/how-to-play-game-summary.svg`
-- `assets/environments/downtown-city-megakit/` runtime assets for the automatically selected MegaKit Downtown district
+- `assets/environments/downtown-city-megakit/` building and composable street-pack assets for the automatically selected MegaKit Downtown district
+- `assets/environments/medieval-village/runtime/` optimized CC0 GLB models for the automatically selected Medieval Village district
 
 ## Required Package Directories
 

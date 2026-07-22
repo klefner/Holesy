@@ -1,8 +1,44 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 171;
+export const BUILD_SUB = 175;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.175',
+    title: 'Skip arbitrary presentation waits',
+    notes: [
+      'Adds one in-game <Skip> HUD control whenever presentation timing is the only thing preventing play from continuing.',
+      'Covers wave-contract docking, rebuilt-district briefings, and the consumed-player return delay.',
+      'Preserves round, Mandate, boss, aid, cooldown, and asset-loading clocks because those affect gameplay or real readiness.',
+    ],
+  },
+  {
+    label: 'Master 16.174',
+    title: 'Temporary city override control',
+    notes: [
+      'Restores a start-menu city selector so the current city recipes can be called up directly during review.',
+      'Includes Automatic Rotation, Classic City, MegaKit Downtown, and Medieval Village choices.',
+      'Marks the selector as temporary and keeps the release-language gate blocking publication until the control is removed again.',
+    ],
+  },
+  {
+    label: 'Master 16.173',
+    title: 'Composable city packs and MegaKit streets',
+    notes: [
+      'Introduces city recipes that can use no asset packs, one pack, or several packs as the city roster grows.',
+      'Adds MegaKit crosswalks, lane arrows, STOP and SLOW markings, bike-lane art, drains, and concrete entrances to MegaKit Downtown.',
+      'Keeps the new street layer stagger-loaded and independently removable so future packs can be combined without changing the core city generator.',
+    ],
+  },
+  {
+    label: 'Master 16.172',
+    title: 'Medieval Village district rotation',
+    notes: [
+      'Adds Medieval Village as the third automatically rotated district without allowing the same city theme twice in a row.',
+      'Stages five rotating CC0 village landmarks from the ten-building Quaternius roster and adds lightweight barrels, hay, carts, stalls, earth roads, and stone edges.',
+      'Keeps imported village shells intact until breached, then transfers them into Holesy solid-block destruction and collision behavior.',
+    ],
+  },
   {
     label: 'Master 16.171',
     title: 'Market-ready district rotation and language cleanup',
