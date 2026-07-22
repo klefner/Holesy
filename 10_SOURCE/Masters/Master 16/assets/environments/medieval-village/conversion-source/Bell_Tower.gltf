@@ -1,0 +1,776 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.4.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_0_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3946,
+      "max": [
+        0.7598919868469238,
+        3.700155019760132,
+        1.0661250352859497
+      ],
+      "min": [
+        -0.7598919868469238,
+        0.0002680000034160912,
+        -0.823091983795166
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_0_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3946,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_0_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3946,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_0_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 5946,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_1_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 13182,
+      "bufferView": 1,
+      "byteOffset": 11892
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_2_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 8652,
+      "bufferView": 1,
+      "byteOffset": 38256
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_3_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 36,
+      "bufferView": 1,
+      "byteOffset": 55560
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_4_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 492,
+      "bufferView": 1,
+      "byteOffset": 55632
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_5_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 84,
+      "bufferView": 1,
+      "byteOffset": 56616
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_6_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 564,
+      "bufferView": 1,
+      "byteOffset": 56784
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_7_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2337,
+      "bufferView": 1,
+      "byteOffset": 57912
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_8_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2580,
+      "bufferView": 1,
+      "byteOffset": 62588
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_9_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1524,
+      "bufferView": 1,
+      "byteOffset": 67748
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_1_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8612,
+      "max": [
+        0.7627059817314148,
+        3.7200770378112793,
+        1.0420650243759155
+      ],
+      "min": [
+        -0.7627059817314148,
+        0.0002680000034160912,
+        -0.8349530100822449
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_1_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 8612,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_1_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 8612,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_2_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4564,
+      "max": [
+        0.9684680104255676,
+        4.760505199432373,
+        1.1033270359039307
+      ],
+      "min": [
+        -0.9684680104255676,
+        -0.00010399999882793054,
+        -1.1251920461654663
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_2_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4564,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_2_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4564,
+      "bufferView": 3,
+      "byteOffset": 24
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_3_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 24,
+      "max": [
+        0.6899319887161255,
+        4.617609024047852,
+        0.8268219828605652
+      ],
+      "min": [
+        -0.6750749945640564,
+        3.678359031677246,
+        -0.8267899751663208
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_3_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 24,
+      "bufferView": 4,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_3_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 24,
+      "bufferView": 4,
+      "byteOffset": 24
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_4_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 328,
+      "max": [
+        0.9684680104255676,
+        4.598730087280273,
+        1.0574419498443604
+      ],
+      "min": [
+        -0.9684680104255676,
+        0.8651679754257202,
+        -1.0574419498443604
+      ],
+      "bufferView": 5,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_4_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 328,
+      "bufferView": 5,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_4_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 328,
+      "bufferView": 5,
+      "byteOffset": 24
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_5_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "max": [
+        0.5457680225372314,
+        4.287080764770508,
+        0.8479920029640198
+      ],
+      "min": [
+        -0.5454559922218323,
+        3.8899590969085693,
+        -0.8479589819908142
+      ],
+      "bufferView": 6,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_5_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "bufferView": 6,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_5_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 36,
+      "bufferView": 6,
+      "byteOffset": 24
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_6_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 300,
+      "max": [
+        0.5718029737472534,
+        4.2914910316467285,
+        0.8611360192298889
+      ],
+      "min": [
+        -0.571491003036499,
+        0.21500100195407867,
+        -0.8611029982566833
+      ],
+      "bufferView": 7,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_6_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 300,
+      "bufferView": 7,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_6_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 300,
+      "bufferView": 7,
+      "byteOffset": 24
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_7_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 575,
+      "max": [
+        0.3240010142326355,
+        3.500251054763794,
+        0.31658899784088135
+      ],
+      "min": [
+        -0.309143990278244,
+        2.767738103866577,
+        -0.31655600666999817
+      ],
+      "bufferView": 8,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_7_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 575,
+      "bufferView": 8,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_7_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 575,
+      "bufferView": 8,
+      "byteOffset": 24
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_8_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1272,
+      "max": [
+        0.8328930139541626,
+        4.672797203063965,
+        0.9893419742584229
+      ],
+      "min": [
+        -0.8325809836387634,
+        3.5608859062194824,
+        -0.9893090128898621
+      ],
+      "bufferView": 9,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_8_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1272,
+      "bufferView": 9,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_8_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1272,
+      "bufferView": 9,
+      "byteOffset": 24
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_9_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 482,
+      "max": [
+        0.7365469932556152,
+        3.6476969718933105,
+        0.7939119935035706
+      ],
+      "min": [
+        -0.7365469932556152,
+        0.0002680000034160912,
+        -0.7939119935035706
+      ],
+      "bufferView": 10,
+      "byteOffset": 0
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_9_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 482,
+      "bufferView": 10,
+      "byteOffset": 12
+    },
+    {
+      "name": "Bell_Tower_Cube.296-Mesh_9_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 482,
+      "bufferView": 10,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 126272,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 126272,
+      "byteLength": 70796,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 197068,
+      "byteLength": 275584,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 472652,
+      "byteLength": 146048,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 618700,
+      "byteLength": 768,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 619468,
+      "byteLength": 10496,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 629964,
+      "byteLength": 1152,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 631116,
+      "byteLength": 9600,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 640716,
+      "byteLength": 18400,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 659116,
+      "byteLength": 40704,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 699820,
+      "byteLength": 15424,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "name": "Bell_Tower",
+      "uri": "Bell_Tower.bin",
+      "byteLength": 715244
+    }
+  ],
+  "materials": [
+    {
+      "name": "Stone_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.177224,
+          0.211411,
+          0.230634,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Dark",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.123762,
+          0.14618,
+          0.181264,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.122341,
+          0.054783,
+          0.019326,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Beige",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.343378,
+          0.323983,
+          0.183595,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Side",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.307496,
+          0.227094,
+          0.099591,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Windows",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.028173,
+          0.028173,
+          0.028173,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.213407,
+          0.09224,
+          0.03175,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Bell",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.430576,
+          0.220044,
+          0.037309,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "RoofTiles",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.015384,
+          0.096705,
+          0.117848,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.077633,
+          0.081879,
+          0.095419,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Bell_Tower_Cube.296-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        },
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 16,
+            "NORMAL": 17,
+            "TEXCOORD_0": 18
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 5
+        },
+        {
+          "attributes": {
+            "POSITION": 19,
+            "NORMAL": 20,
+            "TEXCOORD_0": 21
+          },
+          "mode": 4,
+          "material": 3,
+          "indices": 6
+        },
+        {
+          "attributes": {
+            "POSITION": 22,
+            "NORMAL": 23,
+            "TEXCOORD_0": 24
+          },
+          "mode": 4,
+          "material": 4,
+          "indices": 7
+        },
+        {
+          "attributes": {
+            "POSITION": 25,
+            "NORMAL": 26,
+            "TEXCOORD_0": 27
+          },
+          "mode": 4,
+          "material": 5,
+          "indices": 8
+        },
+        {
+          "attributes": {
+            "POSITION": 28,
+            "NORMAL": 29,
+            "TEXCOORD_0": 30
+          },
+          "mode": 4,
+          "material": 6,
+          "indices": 9
+        },
+        {
+          "attributes": {
+            "POSITION": 31,
+            "NORMAL": 32,
+            "TEXCOORD_0": 33
+          },
+          "mode": 4,
+          "material": 7,
+          "indices": 10
+        },
+        {
+          "attributes": {
+            "POSITION": 34,
+            "NORMAL": 35,
+            "TEXCOORD_0": 36
+          },
+          "mode": 4,
+          "material": 8,
+          "indices": 11
+        },
+        {
+          "attributes": {
+            "POSITION": 37,
+            "NORMAL": 38,
+            "TEXCOORD_0": 39
+          },
+          "mode": 4,
+          "material": 9,
+          "indices": 12
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Bell_Tower_Cube.296",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

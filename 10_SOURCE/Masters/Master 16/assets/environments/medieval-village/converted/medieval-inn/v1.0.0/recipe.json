@@ -1,0 +1,38 @@
+{
+  "packId": "medieval-village-quaternius",
+  "modelId": "inn",
+  "assetId": "medieval-inn",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/medieval-village/conversion-source/Inn.gltf",
+  "sourceSha256": "4db6409a4e773a79ee9b88395c83ce3d728adba669945d986ff8d6e1a53a61ca",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16180,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 12,
+    "depth": 12,
+    "height": 10.397923847827501
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "Plaster",
+    "topFaces": "RoofTiles_Red",
+    "cutFaces": "Stone_Dark",
+    "coreVisualScale": 0.96
+  },
+  "progressionClass": "medium_structure",
+  "collapseSize": 5.25,
+  "unusualElements": [],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}

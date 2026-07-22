@@ -1,0 +1,557 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.4.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "name": "Inn_Cube.393-Mesh_0_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3246,
+      "max": [
+        2.010875940322876,
+        3.485524892807007,
+        1.9404540061950684
+      ],
+      "min": [
+        -2.0182371139526367,
+        -0.005675999913364649,
+        -1.9404540061950684
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_0_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3246,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_0_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3246,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_0_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 6180,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_1_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 5304,
+      "bufferView": 1,
+      "byteOffset": 12360
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_2_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 8016,
+      "bufferView": 1,
+      "byteOffset": 22968
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_3_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 282,
+      "bufferView": 1,
+      "byteOffset": 39000
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_4_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2184,
+      "bufferView": 1,
+      "byteOffset": 39564
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_5_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 132,
+      "bufferView": 1,
+      "byteOffset": 43932
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_6_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1170,
+      "bufferView": 1,
+      "byteOffset": 44196
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_1_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3280,
+      "max": [
+        1.3590600490570068,
+        1.897642970085144,
+        1.447072982788086
+      ],
+      "min": [
+        -1.406013011932373,
+        0.0047969999723136425,
+        -1.447072982788086
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_1_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3280,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_1_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3280,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_2_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4084,
+      "max": [
+        1.8325899839401245,
+        3.3218259811401367,
+        2.010680913925171
+      ],
+      "min": [
+        -1.8121540546417236,
+        0.9307870268821716,
+        -2.010680913925171
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_2_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4084,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_2_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4084,
+      "bufferView": 3,
+      "byteOffset": 24
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_3_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 174,
+      "max": [
+        1.471369981765747,
+        3.2214488983154297,
+        1.24036705493927
+      ],
+      "min": [
+        -1.5183229446411133,
+        0.01855199970304966,
+        -1.2275350093841553
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_3_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 174,
+      "bufferView": 4,
+      "byteOffset": 12
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_3_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 174,
+      "bufferView": 4,
+      "byteOffset": 24
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_4_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1424,
+      "max": [
+        1.3438010215759277,
+        1.4254080057144165,
+        1.4711329936981201
+      ],
+      "min": [
+        -1.390753984451294,
+        0.0047969999723136425,
+        -1.4711329936981201
+      ],
+      "bufferView": 5,
+      "byteOffset": 0
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_4_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1424,
+      "bufferView": 5,
+      "byteOffset": 12
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_4_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1424,
+      "bufferView": 5,
+      "byteOffset": 24
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_5_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 60,
+      "max": [
+        1.5329569578170776,
+        2.2354490756988525,
+        1.1226810216903687
+      ],
+      "min": [
+        -1.5507129430770874,
+        1.8825169801712036,
+        -1.1226810216903687
+      ],
+      "bufferView": 6,
+      "byteOffset": 0
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_5_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 60,
+      "bufferView": 6,
+      "byteOffset": 12
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_5_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 60,
+      "bufferView": 6,
+      "byteOffset": 24
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_6_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 628,
+      "max": [
+        1.5698699951171875,
+        3.177963972091675,
+        1.2426940202713013
+      ],
+      "min": [
+        -1.9189759492874146,
+        0.0047969999723136425,
+        -1.2341059446334839
+      ],
+      "bufferView": 7,
+      "byteOffset": 0
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_6_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 628,
+      "bufferView": 7,
+      "byteOffset": 12
+    },
+    {
+      "name": "Inn_Cube.393-Mesh_6_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 628,
+      "bufferView": 7,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 103872,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 103872,
+      "byteLength": 46536,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 150408,
+      "byteLength": 104960,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 255368,
+      "byteLength": 130688,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 386056,
+      "byteLength": 5568,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 391624,
+      "byteLength": 45568,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 437192,
+      "byteLength": 1920,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 439112,
+      "byteLength": 20096,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "name": "Inn",
+      "uri": "Inn.bin",
+      "byteLength": 459208
+    }
+  ],
+  "materials": [
+    {
+      "name": "Wood",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.122341,
+          0.054783,
+          0.019326,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Dark",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.123762,
+          0.14618,
+          0.181264,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "RoofTiles_Red",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.117847,
+          0.021406,
+          0.012257,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Plaster",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.343378,
+          0.323983,
+          0.183595,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.177224,
+          0.211411,
+          0.230634,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Windows",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.028173,
+          0.028173,
+          0.028173,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.213407,
+          0.09224,
+          0.03175,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Inn_Cube.393-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        },
+        {
+          "attributes": {
+            "POSITION": 10,
+            "NORMAL": 11,
+            "TEXCOORD_0": 12
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 5
+        },
+        {
+          "attributes": {
+            "POSITION": 16,
+            "NORMAL": 17,
+            "TEXCOORD_0": 18
+          },
+          "mode": 4,
+          "material": 3,
+          "indices": 6
+        },
+        {
+          "attributes": {
+            "POSITION": 19,
+            "NORMAL": 20,
+            "TEXCOORD_0": 21
+          },
+          "mode": 4,
+          "material": 4,
+          "indices": 7
+        },
+        {
+          "attributes": {
+            "POSITION": 22,
+            "NORMAL": 23,
+            "TEXCOORD_0": 24
+          },
+          "mode": 4,
+          "material": 5,
+          "indices": 8
+        },
+        {
+          "attributes": {
+            "POSITION": 25,
+            "NORMAL": 26,
+            "TEXCOORD_0": 27
+          },
+          "mode": 4,
+          "material": 6,
+          "indices": 9
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Inn_Cube.393",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

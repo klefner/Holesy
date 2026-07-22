@@ -1,0 +1,38 @@
+{
+  "packId": "medieval-village-quaternius",
+  "modelId": "bell-tower",
+  "assetId": "medieval-bell-tower",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/medieval-village/conversion-source/Bell_Tower.gltf",
+  "sourceSha256": "5bce13caf370eedb40ef2ec607ab5ed621220d6086594c570fdefbf73e3cf4fa",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16180,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 8,
+    "blockCount": 128,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 10.5,
+    "depth": 10.5,
+    "height": 22.430320205115933
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "Stone_Light",
+    "topFaces": "RoofTiles",
+    "cutFaces": "Wood_Side",
+    "coreVisualScale": 0.96
+  },
+  "progressionClass": "tower_structure",
+  "collapseSize": 6.5,
+  "unusualElements": [],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}

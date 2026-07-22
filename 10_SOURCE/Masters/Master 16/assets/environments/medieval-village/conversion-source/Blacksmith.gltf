@@ -1,0 +1,630 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.4.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "name": "Blacksmith_Cube.000-Mesh_0_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 52,
+      "max": [
+        1.0055999755859375,
+        2.610177993774414,
+        1.218214988708496
+      ],
+      "min": [
+        -1.0055999755859375,
+        0,
+        -1.218214988708496
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_0_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 52,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_0_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 52,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_0_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 90,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_1_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2412,
+      "bufferView": 1,
+      "byteOffset": 180
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_2_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 366,
+      "bufferView": 1,
+      "byteOffset": 5004
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_3_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 9402,
+      "bufferView": 1,
+      "byteOffset": 5736
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_4_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2907,
+      "bufferView": 1,
+      "byteOffset": 24540
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_5_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 4800,
+      "bufferView": 1,
+      "byteOffset": 30356
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_6_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 72,
+      "bufferView": 1,
+      "byteOffset": 39956
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_7_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2928,
+      "bufferView": 1,
+      "byteOffset": 40100
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_1_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1036,
+      "max": [
+        0.15601900219917297,
+        1.8603869676589966,
+        1.6171740293502808
+      ],
+      "min": [
+        -2.228316068649292,
+        -0.0009929999941959977,
+        -1.268772006034851
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_1_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1036,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_1_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1036,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_2_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 194,
+      "max": [
+        1.0259519815444946,
+        2.5747408866882324,
+        1.6135050058364868
+      ],
+      "min": [
+        -1.5479539632797241,
+        -0.0039470000192523,
+        -1.5447239875793457
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_2_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 194,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_2_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 194,
+      "bufferView": 3,
+      "byteOffset": 24
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_3_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 6116,
+      "max": [
+        1.0542360544204712,
+        2.999466896057129,
+        1.562082052230835
+      ],
+      "min": [
+        -2.566214084625244,
+        -0.0039470000192523,
+        -1.187474012374878
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_3_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 6116,
+      "bufferView": 4,
+      "byteOffset": 12
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_3_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 6116,
+      "bufferView": 4,
+      "byteOffset": 24
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_4_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1491,
+      "max": [
+        0.24431300163269043,
+        1.25232994556427,
+        1.5495909452438354
+      ],
+      "min": [
+        -2.301194906234741,
+        -0.0039470000192523,
+        -0.22419199347496033
+      ],
+      "bufferView": 5,
+      "byteOffset": 0
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_4_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1491,
+      "bufferView": 5,
+      "byteOffset": 12
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_4_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1491,
+      "bufferView": 5,
+      "byteOffset": 24
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_5_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2359,
+      "max": [
+        1.3238110542297363,
+        2.8253860473632812,
+        1.6256159543991089
+      ],
+      "min": [
+        -2.3319098949432373,
+        -0.0039470000192523,
+        -1.6578810214996338
+      ],
+      "bufferView": 6,
+      "byteOffset": 0
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_5_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2359,
+      "bufferView": 6,
+      "byteOffset": 12
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_5_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2359,
+      "bufferView": 6,
+      "byteOffset": 24
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_6_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 30,
+      "max": [
+        0.17646600306034088,
+        1.883370041847229,
+        1.2494059801101685
+      ],
+      "min": [
+        -1.0057669878005981,
+        0.49186500906944275,
+        -1.2494059801101685
+      ],
+      "bufferView": 7,
+      "byteOffset": 0
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_6_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 30,
+      "bufferView": 7,
+      "byteOffset": 12
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_6_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 30,
+      "bufferView": 7,
+      "byteOffset": 24
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_7_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1488,
+      "max": [
+        1.2370519638061523,
+        2.6961569786071777,
+        1.457671046257019
+      ],
+      "min": [
+        -2.1548140048980713,
+        1.0461399555206299,
+        -1.457669973373413
+      ],
+      "bufferView": 8,
+      "byteOffset": 0
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_7_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1488,
+      "bufferView": 8,
+      "byteOffset": 12
+    },
+    {
+      "name": "Blacksmith_Cube.000-Mesh_7_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1488,
+      "bufferView": 8,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 1664,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1664,
+      "byteLength": 45956,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 47620,
+      "byteLength": 33152,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 80772,
+      "byteLength": 6208,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 86980,
+      "byteLength": 195712,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 282692,
+      "byteLength": 47712,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 330404,
+      "byteLength": 75488,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 405892,
+      "byteLength": 960,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 406852,
+      "byteLength": 47616,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "name": "Blacksmith",
+      "uri": "Blacksmith.bin",
+      "byteLength": 454468
+    }
+  ],
+  "materials": [
+    {
+      "name": "Plaster",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.343378,
+          0.323983,
+          0.183595,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.213407,
+          0.09224,
+          0.03175,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Side",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.307496,
+          0.227094,
+          0.099591,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.177224,
+          0.211411,
+          0.230634,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Dark",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.123762,
+          0.14618,
+          0.181264,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.122341,
+          0.054783,
+          0.019326,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Windows",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.028173,
+          0.028173,
+          0.028173,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "RoofTiles_Red",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.117847,
+          0.021406,
+          0.012257,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Blacksmith_Cube.000-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        },
+        {
+          "attributes": {
+            "POSITION": 11,
+            "NORMAL": 12,
+            "TEXCOORD_0": 13
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 14,
+            "NORMAL": 15,
+            "TEXCOORD_0": 16
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 5
+        },
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 3,
+          "indices": 6
+        },
+        {
+          "attributes": {
+            "POSITION": 20,
+            "NORMAL": 21,
+            "TEXCOORD_0": 22
+          },
+          "mode": 4,
+          "material": 4,
+          "indices": 7
+        },
+        {
+          "attributes": {
+            "POSITION": 23,
+            "NORMAL": 24,
+            "TEXCOORD_0": 25
+          },
+          "mode": 4,
+          "material": 5,
+          "indices": 8
+        },
+        {
+          "attributes": {
+            "POSITION": 26,
+            "NORMAL": 27,
+            "TEXCOORD_0": 28
+          },
+          "mode": 4,
+          "material": 6,
+          "indices": 9
+        },
+        {
+          "attributes": {
+            "POSITION": 29,
+            "NORMAL": 30,
+            "TEXCOORD_0": 31
+          },
+          "mode": 4,
+          "material": 7,
+          "indices": 10
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Blacksmith_Cube.000",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

@@ -1,0 +1,703 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.4.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "name": "House_2_Cylinder.021-Mesh_0_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 48,
+      "max": [
+        0.8436009883880615,
+        3.0743870735168457,
+        1.0190449953079224
+      ],
+      "min": [
+        -0.7849760055541992,
+        0.9607840180397034,
+        -1.8697270154953003
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_0_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 48,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_0_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 48,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_0_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 72,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_1_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 6030,
+      "bufferView": 1,
+      "byteOffset": 144
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_2_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 6156,
+      "bufferView": 1,
+      "byteOffset": 12204
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_3_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 144,
+      "bufferView": 1,
+      "byteOffset": 24516
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_4_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 924,
+      "bufferView": 1,
+      "byteOffset": 24804
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_5_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 3648,
+      "bufferView": 1,
+      "byteOffset": 26652
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_6_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 4224,
+      "bufferView": 1,
+      "byteOffset": 33948
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_7_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 240,
+      "bufferView": 1,
+      "byteOffset": 42396
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_8_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 48,
+      "bufferView": 1,
+      "byteOffset": 42876
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_1_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3662,
+      "max": [
+        1.101274013519287,
+        3.2486519813537598,
+        1.3489400148391724
+      ],
+      "min": [
+        -1.0426490306854248,
+        0.00011999999696854502,
+        -2.0710840225219727
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_1_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3662,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_1_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3662,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_2_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4092,
+      "max": [
+        0.8528429865837097,
+        2.982637882232666,
+        0.8675439953804016
+      ],
+      "min": [
+        -1.118886947631836,
+        -0.0017010000301524997,
+        -1.0494359731674194
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_2_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4092,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_2_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 4092,
+      "bufferView": 3,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_3_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 66,
+      "max": [
+        0.8320109844207764,
+        2.675239086151123,
+        1.044303059577942
+      ],
+      "min": [
+        -0.5652549862861633,
+        1.2756619453430176,
+        -1.8926030397415161
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_3_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 66,
+      "bufferView": 4,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_3_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 66,
+      "bufferView": 4,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_4_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 584,
+      "max": [
+        0.8413410186767578,
+        2.6805009841918945,
+        1.0599839687347412
+      ],
+      "min": [
+        -0.5963159799575806,
+        0.21471700072288513,
+        -1.9082839488983154
+      ],
+      "bufferView": 5,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_4_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 584,
+      "bufferView": 5,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_4_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 584,
+      "bufferView": 5,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_5_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2284,
+      "max": [
+        1.0228430032730103,
+        3.1563730239868164,
+        1.2129449844360352
+      ],
+      "min": [
+        -0.9642189741134644,
+        1.8173960447311401,
+        -1.8768470287322998
+      ],
+      "bufferView": 6,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_5_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2284,
+      "bufferView": 6,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_5_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2284,
+      "bufferView": 6,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_6_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2798,
+      "max": [
+        0.7892040014266968,
+        2.8727800846099854,
+        0.8556820154190063
+      ],
+      "min": [
+        -1.118886947631836,
+        -0.0017010000301524997,
+        -1.033534049987793
+      ],
+      "bufferView": 7,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_6_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2798,
+      "bufferView": 7,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_6_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2798,
+      "bufferView": 7,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_7_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 160,
+      "max": [
+        0.9977800250053406,
+        3.0456910133361816,
+        1.283437967300415
+      ],
+      "min": [
+        -0.9391549825668335,
+        0.8648830056190491,
+        -1.9720109701156616
+      ],
+      "bufferView": 8,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_7_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 160,
+      "bufferView": 8,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_7_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 160,
+      "bufferView": 8,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_8_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 26,
+      "max": [
+        0.7658590078353882,
+        1.0757579803466797,
+        0.8265029788017273
+      ],
+      "min": [
+        -0.7072340250015259,
+        0.00011999999696854502,
+        -0.761322021484375
+      ],
+      "bufferView": 9,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_8_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 26,
+      "bufferView": 9,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_2_Cylinder.021-Mesh_8_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 26,
+      "bufferView": 9,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 1536,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1536,
+      "byteLength": 42972,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 44508,
+      "byteLength": 117184,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 161692,
+      "byteLength": 130944,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 292636,
+      "byteLength": 2112,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 294748,
+      "byteLength": 18688,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 313436,
+      "byteLength": 73088,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 386524,
+      "byteLength": 89536,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 476060,
+      "byteLength": 5120,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 481180,
+      "byteLength": 832,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "name": "House_2",
+      "uri": "House_2.bin",
+      "byteLength": 482012
+    }
+  ],
+  "materials": [
+    {
+      "name": "Beige",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.343378,
+          0.323983,
+          0.183595,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.122341,
+          0.054783,
+          0.019326,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Dark",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.123762,
+          0.14618,
+          0.181264,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Windows",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.028173,
+          0.028173,
+          0.028173,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.213407,
+          0.09224,
+          0.03175,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "RoofTiles",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.015384,
+          0.096705,
+          0.117848,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.177224,
+          0.211411,
+          0.230634,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Side",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.307496,
+          0.227094,
+          0.099591,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.077633,
+          0.081879,
+          0.095419,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "House_2_Cylinder.021-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        },
+        {
+          "attributes": {
+            "POSITION": 12,
+            "NORMAL": 13,
+            "TEXCOORD_0": 14
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 15,
+            "NORMAL": 16,
+            "TEXCOORD_0": 17
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 5
+        },
+        {
+          "attributes": {
+            "POSITION": 18,
+            "NORMAL": 19,
+            "TEXCOORD_0": 20
+          },
+          "mode": 4,
+          "material": 3,
+          "indices": 6
+        },
+        {
+          "attributes": {
+            "POSITION": 21,
+            "NORMAL": 22,
+            "TEXCOORD_0": 23
+          },
+          "mode": 4,
+          "material": 4,
+          "indices": 7
+        },
+        {
+          "attributes": {
+            "POSITION": 24,
+            "NORMAL": 25,
+            "TEXCOORD_0": 26
+          },
+          "mode": 4,
+          "material": 5,
+          "indices": 8
+        },
+        {
+          "attributes": {
+            "POSITION": 27,
+            "NORMAL": 28,
+            "TEXCOORD_0": 29
+          },
+          "mode": 4,
+          "material": 6,
+          "indices": 9
+        },
+        {
+          "attributes": {
+            "POSITION": 30,
+            "NORMAL": 31,
+            "TEXCOORD_0": 32
+          },
+          "mode": 4,
+          "material": 7,
+          "indices": 10
+        },
+        {
+          "attributes": {
+            "POSITION": 33,
+            "NORMAL": 34,
+            "TEXCOORD_0": 35
+          },
+          "mode": 4,
+          "material": 8,
+          "indices": 11
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "House_2_Cylinder.021",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

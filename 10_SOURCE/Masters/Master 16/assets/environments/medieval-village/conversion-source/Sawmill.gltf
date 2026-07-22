@@ -1,0 +1,776 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.4.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "name": "Sawmill_Cube.047-Mesh_0_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1404,
+      "max": [
+        1.9414340257644653,
+        2.700270891189575,
+        1.466549038887024
+      ],
+      "min": [
+        -1.2364970445632935,
+        1.0431230068206787,
+        -1.4487919807434082
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_0_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1404,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_0_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1404,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_0_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2118,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_1_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 90,
+      "bufferView": 1,
+      "byteOffset": 4236
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_2_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 624,
+      "bufferView": 1,
+      "byteOffset": 4416
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_3_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 168,
+      "bufferView": 1,
+      "byteOffset": 5664
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_4_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 348,
+      "bufferView": 1,
+      "byteOffset": 6000
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_5_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 84,
+      "bufferView": 1,
+      "byteOffset": 6696
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_6_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 4380,
+      "bufferView": 1,
+      "byteOffset": 6864
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_7_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1800,
+      "bufferView": 1,
+      "byteOffset": 15624
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_8_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1815,
+      "bufferView": 1,
+      "byteOffset": 19224
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_9_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1578,
+      "bufferView": 1,
+      "byteOffset": 22856
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_1_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 56,
+      "max": [
+        1.00615394115448,
+        2.5954339504241943,
+        1.227092981338501
+      ],
+      "min": [
+        -1.005046010017395,
+        -0.014743000268936157,
+        -1.2093369960784912
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_1_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 56,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_1_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 56,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_2_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 336,
+      "max": [
+        3.0758330821990967,
+        2.8106420040130615,
+        1.6344939470291138
+      ],
+      "min": [
+        -1.0253980159759521,
+        -0.04927999898791313,
+        -1.649003028869629
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_2_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 336,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_2_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 336,
+      "bufferView": 3,
+      "byteOffset": 24
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_3_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 112,
+      "max": [
+        2.599208116531372,
+        0.5415740013122559,
+        0.6392310261726379
+      ],
+      "min": [
+        1.8939100503921509,
+        0.00011999999696854502,
+        -0.6709830164909363
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_3_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 112,
+      "bufferView": 4,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_3_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 112,
+      "bufferView": 4,
+      "byteOffset": 24
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_4_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 180,
+      "max": [
+        2.577223062515259,
+        0.5214909911155701,
+        0.6826469898223877
+      ],
+      "min": [
+        2.0724289417266846,
+        0.023005999624729156,
+        0.4382689893245697
+      ],
+      "bufferView": 5,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_4_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 180,
+      "bufferView": 5,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_4_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 180,
+      "bufferView": 5,
+      "byteOffset": 24
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_5_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "max": [
+        0.9895380139350891,
+        1.8686259984970093,
+        1.2582839727401733
+      ],
+      "min": [
+        -1.0052130222320557,
+        0.4771209955215454,
+        -1.2405279874801636
+      ],
+      "bufferView": 6,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_5_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 36,
+      "bufferView": 6,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_5_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 36,
+      "bufferView": 6,
+      "byteOffset": 24
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_6_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2704,
+      "max": [
+        2.1782660484313965,
+        2.8106420040130615,
+        1.6344939470291138
+      ],
+      "min": [
+        -1.3232569694519043,
+        -0.03488200157880783,
+        -1.649003028869629
+      ],
+      "bufferView": 7,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_6_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2704,
+      "bufferView": 7,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_6_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2704,
+      "bufferView": 7,
+      "byteOffset": 24
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_7_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1168,
+      "max": [
+        3.0758330821990967,
+        1.8456430435180664,
+        1.2776509523391724
+      ],
+      "min": [
+        -1.0199429988861084,
+        -0.051830001175403595,
+        -1.2598940134048462
+      ],
+      "bufferView": 8,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_7_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1168,
+      "bufferView": 8,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_7_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1168,
+      "bufferView": 8,
+      "byteOffset": 24
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_8_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1197,
+      "max": [
+        1.0224260091781616,
+        0.7597150206565857,
+        1.5584690570831299
+      ],
+      "min": [
+        -1.0381009578704834,
+        -0.024539999663829803,
+        -0.21531400084495544
+      ],
+      "bufferView": 9,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_8_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1197,
+      "bufferView": 9,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_8_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1197,
+      "bufferView": 9,
+      "byteOffset": 24
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_9_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1020,
+      "max": [
+        0.24411199986934662,
+        0.7619990110397339,
+        1.5709600448608398
+      ],
+      "min": [
+        -0.4108709990978241,
+        -0.024539999663829803,
+        1.0507349967956543
+      ],
+      "bufferView": 10,
+      "byteOffset": 0
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_9_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1020,
+      "bufferView": 10,
+      "byteOffset": 12
+    },
+    {
+      "name": "Sawmill_Cube.047-Mesh_9_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1020,
+      "bufferView": 10,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 44928,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 44928,
+      "byteLength": 26012,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 70940,
+      "byteLength": 1792,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72732,
+      "byteLength": 10752,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 83484,
+      "byteLength": 3584,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 87068,
+      "byteLength": 5760,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 92828,
+      "byteLength": 1152,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 93980,
+      "byteLength": 86528,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 180508,
+      "byteLength": 37376,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 217884,
+      "byteLength": 38304,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 256188,
+      "byteLength": 32640,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "name": "Sawmill",
+      "uri": "Sawmill.bin",
+      "byteLength": 288828
+    }
+  ],
+  "materials": [
+    {
+      "name": "RoofTiles_Red",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.117847,
+          0.021406,
+          0.012257,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Plaster",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.343378,
+          0.323983,
+          0.183595,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Side",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.307496,
+          0.227094,
+          0.099591,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "DarkWood",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.06971,
+          0.032237,
+          0.01208,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Metal",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.077633,
+          0.081879,
+          0.095419,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Windows",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.028173,
+          0.028173,
+          0.028173,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.122341,
+          0.054783,
+          0.019326,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.213407,
+          0.09224,
+          0.03175,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Dark",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.123762,
+          0.14618,
+          0.181264,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.177224,
+          0.211411,
+          0.230634,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Sawmill_Cube.047-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        },
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 16,
+            "NORMAL": 17,
+            "TEXCOORD_0": 18
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 5
+        },
+        {
+          "attributes": {
+            "POSITION": 19,
+            "NORMAL": 20,
+            "TEXCOORD_0": 21
+          },
+          "mode": 4,
+          "material": 3,
+          "indices": 6
+        },
+        {
+          "attributes": {
+            "POSITION": 22,
+            "NORMAL": 23,
+            "TEXCOORD_0": 24
+          },
+          "mode": 4,
+          "material": 4,
+          "indices": 7
+        },
+        {
+          "attributes": {
+            "POSITION": 25,
+            "NORMAL": 26,
+            "TEXCOORD_0": 27
+          },
+          "mode": 4,
+          "material": 5,
+          "indices": 8
+        },
+        {
+          "attributes": {
+            "POSITION": 28,
+            "NORMAL": 29,
+            "TEXCOORD_0": 30
+          },
+          "mode": 4,
+          "material": 6,
+          "indices": 9
+        },
+        {
+          "attributes": {
+            "POSITION": 31,
+            "NORMAL": 32,
+            "TEXCOORD_0": 33
+          },
+          "mode": 4,
+          "material": 7,
+          "indices": 10
+        },
+        {
+          "attributes": {
+            "POSITION": 34,
+            "NORMAL": 35,
+            "TEXCOORD_0": 36
+          },
+          "mode": 4,
+          "material": 8,
+          "indices": 11
+        },
+        {
+          "attributes": {
+            "POSITION": 37,
+            "NORMAL": 38,
+            "TEXCOORD_0": 39
+          },
+          "mode": 4,
+          "material": 9,
+          "indices": 12
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Sawmill_Cube.047",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

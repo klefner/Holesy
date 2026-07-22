@@ -26,6 +26,90 @@ Outcome:
 
 - created a website-ready `index.html` package sourced from the approved master
 
+### P0.3 Remove player city/theme selection
+
+Status:
+
+- completed in `Master 16.171`
+
+Outcome target:
+
+- remove the city/environment selector from the player-facing menu
+- automatically choose an eligible city theme whenever a wave city is generated
+- populate the selected city from that theme's validated asset roster without requiring player configuration
+- avoid immediately repeating the same city when more than one eligible theme is available
+- retain any manual city override only as a developer-only diagnostic, never in the market build UI
+
+Completion evidence:
+
+- the player-facing environment selector is removed
+- each generated city automatically selects an eligible environment
+- when more than one environment is eligible, the prior environment is excluded from the next selection
+- Classic Aldine and MegaKit Downtown continue to use their validated asset and destruction paths
+
+### P0.4 Remove player-facing test language
+
+Status:
+
+- completed in `Master 16.171`
+
+Outcome target:
+
+- audit every menu, banner, transient message, build note exposed during play, and accessibility label for `test`, `testing`, `prototype`, `preview`, and similar development language
+- replace necessary messages with in-world or production-ready wording and delete messages that exist only to explain development state
+- keep technical diagnostics in developer tooling or the console rather than displaying them to players
+- add a release check that fails when prohibited development wording appears in player-facing runtime strings
+
+Completion evidence:
+
+- menu, feedback, haptics, district banners, field-manual copy, accessibility labels, and public update-history presentation use player-ready language
+- internal build metadata and developer-only diagnostics remain available without leaking development-state wording into normal player surfaces
+- `scripts/check-player-facing-language.mjs` fails on prohibited player-facing wording or a restored environment selector
+
+### P0.5 Add third city type: Medieval Village
+
+Status:
+
+- completed in `Master 16.172`
+
+Completion evidence:
+
+- Medieval Village participates in automatic district selection without immediate repeats
+- all ten Quaternius building sources are converted to browser-ready GLB runtime assets rather than loading raw OBJ, FBX, or Blender files
+- five landmarks rotate through the complete roster across successive medieval generations
+- earth roads, stone edges, barrels, hay, carts, and market stalls establish a readable village identity
+- imported shells transfer into authored-surface, closed-core fragments on breach under the reusable imported-city destruction standard (`Master 16.181`)
+- browser QA confirms the medieval environment, five loaded landmark models, clean console output, and intact source/release parity
+
+### P0.6 Establish composable city packs and MegaKit street identity
+
+Status:
+
+- completed in `Master 16.173`
+
+Completion evidence:
+
+- city recipes can declare zero, one, or multiple ordered asset packs
+- Classic City is explicitly pack-free, MegaKit Downtown composes two packs, and Medieval Village uses one pack
+- MegaKit Downtown adds authored crosswalks, arrows, STOP/SLOW/bike markings, drains, and concrete entrances
+- imported street assets are cached, cloned, scale-normalized, stagger-loaded, and cancelled when their city generation becomes obsolete
+- the browser diagnostics confirm all three pack-list shapes and 18 completed MegaKit street assets without console warnings or errors
+- future city recipes can combine original Holesy content with zero or more compatible packs without expanding the main city-population branch
+
+### P0.7 Skip arbitrary presentation waits
+
+Status:
+
+- completed in `Master 16.175`
+
+Completion evidence:
+
+- one compact in-game `<Skip>` HUD control appears only when presentation timing is blocking continuation
+- wave-contract docking, rebuilt-district briefings, and consumed-player return delays use the shared contract
+- each skip path cancels its scheduled timer before advancing, preventing duplicate starts or results transitions
+- round, wave, Mandate, boss, aid, buff, cooldown, and real loading clocks remain authoritative
+- browser QA confirms immediate Wave 1 contract advancement, HUD cleanup, timer start, and no delayed duplicate callback or console error
+
 ## Completed Foundation — Codebase Stabilization
 
 Goal: make the code safer to change, easier to reason about, and less likely to regress.
@@ -1162,6 +1246,8 @@ Acceptance criteria:
 
 ### P2B.5 Add persistent achievement rewards and Inventory management
 
+First visible slice implemented in `Master 16.142` and corrected in `Master 16.146`: completing all Run Goals and the Mandate in the same wave permanently unlocks and auto-equips the locally persisted `Prism Orbit` hole cosmetic. The earlier one-goal prototype entitlement is migrated away. Inventory/equip controls, additional earned cosmetics, achievement reward mappings, titles, sound packs, and commercial cosmetic readiness remain in this backlog item.
+
 Intent:
 
 - achievements can unlock permanent rewards that the player can equip or review later
@@ -1181,28 +1267,65 @@ Acceptance criteria:
 Intent:
 
 - create an architecture that can swap the playfield's visual, audio, object, road/path, collectible, and environment rules without harming performance
-- keep the current downtown as one theme, then allow future themes such as sci-fi city, hellscape, wild west town, medieval settlement, space colony, prehistoric settlement, cartoon town, black-and-white town, and modified downtown variants
-- themes remain town-centered, but they should not require perfect-grid roads
+- keep the current downtown as one theme, then allow future themes such as urban downtown, medieval town, moon city, 8-bit downtown, waterworld island towns, sci-fi city, hellscape, wild west town, space colony, prehistoric settlement, cartoon town, black-and-white town, and modified downtown variants
+- themes remain town-centered, but they should not require perfect-grid roads; each theme may define its own routes, blocks, parcels, docks, paths, bridges, plazas, or islands
 - future progression can rotate worlds after a number of completed waves / levels / wins to keep the game fresh
 
 Design notes:
 
-- theme packs should define object families, collectible categories, sounds, ambient music cues, palette, terrain/path generation, road/trail rules, props, readable lore labels, and spawn budgets
+- add a `theme registry` / factory layer before adding more environment packs to gameplay
+- each theme entry should define:
+  - `themeId`, display name, menu preview art, unlock rules, and allowed modes
+  - asset-bundle paths for optimized runtime assets, not raw source-pack imports
+  - palette, time-of-day overrides, lighting accents, fog/background color, music, ambient loops, and UI flavor text
+  - layout generator, route/path rules, block/parcel definitions, safe spawn zones, and camera framing limits
+  - object-family factories for buildings, people, vehicles, props, pickups, hazards, and decorations
+  - destruction-profile mappings so every building-like visual uses an existing validated breakable family or a newly tested destructible family
+  - prop dressing rules, collectible categories, readable lore labels, spawn budgets, active-object caps, and performance budgets
+- keep a separate `layout contract` from the art theme:
+  - classic/urban downtown can use the current block-and-road grid
+  - medieval can use streets, plazas, market lanes, farms, walls, and bridges
+  - moon city can use domes, habitat modules, rover lanes, craters, landing pads, and low-gravity flavored debris
+  - 8-bit downtown can use the same geometry contracts with pixelated materials, chunky silhouettes, and chiptune audio
+  - waterworld can use island parcels, docks, bridges, canals, boats, and floating debris while preserving reliable navigation
+- every layout must expose route lanes, buildable parcels, decoration-only zones, object spawn zones, rival/people/car pathing lanes, and no-decoration hole safety margins
+- no theme may add fake ground planes, visual-only roads, or decorative patches that can cover or obscure holes
+- no theme may add non-breakable building-shaped scenery; if it looks like a building, it must either be outside the playable field or use a validated destructible object family
+- decorative ground detail should render below the hole mouth and rim, stay non-colliding unless deliberately authored as an object, and never become the source of truth for gameplay placement
+- asset organization should separate source packs from runtime assets:
+  - raw downloads stay documented under requirements/intake and source-pack folders
+  - optimized shipping assets live under `assets/environments/<themeId>/runtime/`
+  - theme manifests map stable keys to optimized GLB / glTF / texture / audio files
+  - inactive theme bundles are not loaded into active scene memory
+- source-only environment intake exists for future validation: Quaternius medieval village and Quaternius streets pack are documented in `00_ADMIN/Requirements/MEDIEVAL_VILLAGE_AND_STREETS_ASSET_INTAKE.md`; do not wire raw source files into gameplay until selected assets are optimized and performance-tested
 - examples:
+  - classic Aldine: current validated Holesy downtown baseline
+  - MegaKit urban: safer city dressing, manholes, trim, AC units, planters, bollards, and later breakable themed buildings routed through validated destruction systems
   - wild west: trails, mountains, tumbleweeds, cactus, old towns, camps, desert creatures
   - medieval: castles, hovels, hay bales, horses, market stalls, farms
+  - moon city / lunar colony: habitat blocks, domes, rovers, antennas, moon rocks, craters, landing pads, and oxygen tanks
+  - 8-bit downtown: pixel materials, blocky silhouettes, arcade pickups, simplified signs, chiptune music, and chunky debris
+  - waterworld island towns: islands, docks, boats, bridges, floating barrels, boardwalks, canals, and waterfront houses
   - sci-fi / space: habitat modules, drones, shuttles, alien crowds, reactors
   - prehistoric: camps, bones, flora, large creatures, stone structures
   - hellscape: infernal roads, ruins, fire-lit props, corrupted townsfolk
+  - noir / black-and-white town: grayscale palette, hard shadows, old cars, street signs, and detective-document styling
+  - overgrown city: cracked roads, vines, trees, abandoned cars, mossy buildings, and nature-reclaimed props
+  - snowbound town: plowed paths, snowbanks, ice props, holiday lights, and low-visibility weather variants after performance-safe weather exists again
 - architecture must support progressive theme transitions during long-form modes such as future Endless mode
 
 Acceptance criteria:
 
 - theme data is modular and loaded through a registry / factory layer
 - theme swaps do not require rewriting core consumption, scoring, AI, or wave logic
-- each theme can define a non-grid town layout while preserving reliable navigation and collision
+- each theme can define a non-grid town layout while preserving reliable navigation, collision, object spawning, and readable hole visibility
+- Classic Aldine remains the default until a new theme passes live-play validation
+- a debug/test selector can load one theme at a time and show theme id, active asset count, object count, and frame-rate health
+- every building-like theme asset has a validated destruction mapping or is excluded from the playable field
+- visual-only ground/detail layers are proven not to cover holes at morning, mid day, evening, and night
 - inactive theme assets are not kept in active scene memory
 - performance budget is measured before adding multiple heavy theme packs
+- QA includes at least Classic Aldine plus one optional theme on desktop and mobile before theme work is called done
 
 ### P2B.7 Make difficulty influence document drops and achievement eligibility
 
@@ -1241,7 +1364,9 @@ Goal: make learning, configuration, and device-capability feedback consistent ac
 
 Status:
 
-- backlog delta accepted; not yet implemented
+- browser settings/haptics capability work implemented through `Master 16.117`
+- native iOS haptics packaging and distribution paused on 2026-07-10 and returned to the backlog because Apple Developer Program enrollment adds a recurring $99/year commercialization cost
+- retain the browser-safe unsupported-device UX; resume the native iOS path only when paid Apple distribution is explicitly approved
 
 Product / technical alignment:
 
@@ -1441,6 +1566,35 @@ Acceptance criteria:
 - WHEN a building or vehicle is consumed THEN a light haptic pattern can fire
 - WHEN people, trees, or other small objects are consumed THEN no haptic pattern fires
 - WHEN a gamepad supports haptic actuators THEN the same settings gate applies to gamepad haptics
+
+### PB-HAP-005 — Native iOS Haptics Packaging And Distribution
+
+Priority:
+
+- Deferred commercialization option
+
+Status:
+
+- Paused / backlog as of 2026-07-10
+
+Dependencies:
+
+- explicit approval of the recurring Apple Developer Program cost
+- Apple signing identity, registered test device, and provisioning profile
+- a supported macOS or cloud iOS build/signing path
+
+Description:
+
+- preserve the `Master 16.117` Capacitor shell and centralized native-haptics bridge as the implementation baseline
+- finish native iOS signing, packaging, device installation, and haptic validation only when the project chooses to fund Apple distribution
+- do not block browser commercialization or the flagship Endless polish plan on native iOS haptics
+
+Acceptance criteria:
+
+- WHEN the native iOS path resumes THEN the signed app installs on a registered iPhone
+- WHEN Holesy runs inside the native shell THEN the Haptics control reports `Native`
+- WHEN a mapped gameplay event fires THEN the installed app produces physical iPhone haptic feedback
+- WHEN Holesy runs in an unsupported browser THEN the existing disabled/explanatory fallback remains accurate
 
 ### PB-UI-001 — Settings Menu
 
@@ -1879,6 +2033,14 @@ Backlog items:
 - challenge variants
 - alternative mode rules
 - session goals
+- object-family mastery / run-goal system
+  - `Master 16.82` implements the first playable slice: three visible per-run goals and local object-family mastery feedback
+  - `Master 16.83` repairs the first-slice performance regression, expands to 50 larger goals, selects three different object families per set, and adds the visible Goal Sweep reward
+  - mastery is feedback-only for now and must not become unchecked permanent power growth
+  - future investment design should preserve the loop: the hole grows to progress, but defenses scale/catch up so the player must keep seeking new growth
+  - buildings are not bosses; future boss-style pressure should come from the army
+  - candidate army boss: larger red soldier, about 2x normal soldier size, dedicated sound, rockets instead of bullets, fires every 1 to 3 seconds while any hole is in range
+  - candidate reward: bounded lightning ability from the hole that can kill nearby soldiers/rival holes and knock down buildings at limited range
 
 ## Priority 6 — Traversal, Verticality, And Cross-Platform UX
 
@@ -1913,7 +2075,7 @@ Backlog items:
 
 ## Current Recommendation
 
-1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.87` as the current governed production-test baseline.
+1. Treat `10_SOURCE/Masters/Master 16/` with in-game label `Master 16.93` as the current governed production-test baseline.
 2. Treat `index.html` as the entry point for the modular package, not the whole game package; the full `/holesy/` folder remains the governed release baseline, while routine GoDaddy uploads should use a changed-files-only delta package when live is already on the previous master.
 3. Before any further gameplay feature work, run the Product Intent Gate and the Release Source Of Truth Manifest checks so the next action preserves approved architecture, backlog, handoff, and issue-log state.
 4. Treat `QA-006`, `QA-007`, `QA-016`, and the `Master 16.28` traffic/soldier-growth regression set as user-validated closed as of 2026-05-28; continue the new lore-clarity backlog item as product improvement, not as an open QA defect.
@@ -1927,7 +2089,8 @@ Backlog items:
 12. `Master 16.81` repairs MegaKit Downtown detail visibility with wider/brighter non-colliding block-edge trim and larger road manholes while keeping fake ground patches and non-breakable showcase buildings out; future themed buildings must use validated breakable/destruction paths before returning.
 13. `Master 16.82` adds visible run goals and feedback-only object-family mastery; hold permanent hole-growth/equipment systems until the defense catch-up loop is designed so progression remains earned instead of making the game too easy.
 14. `Master 16.83` repairs the `Master 16.82` goal-HUD performance defect, expands goals so they represent meaningful run-scale objectives, and makes the all-goals benefit explicit with Goal Sweep.
-15. The daily-QA publication-control defect is currently resolved through commit `561ce3a`; the next scheduled audit should verify the local automation repair by producing a fresh automation-memory entry from `C:\Users\KentLefner\Desktop\game-repo\Holesy`.
+15. The daily-QA publication-control defect is currently resolved through commit `561ce3a`; the 2026-06-24 scheduled audit confirmed the local automation repair still fires from `C:\Users\KentLefner\Desktop\game-repo\Holesy`, and future audits should compare governed reports, automation memory, and supplied last-run metadata before closing cadence health.
+16. The 2026-06-24 daily audit found stale `Master 16.87` baseline references still lingering in the startup protocol, active handoff, and backlog recommendation even though the current basis, source/release entry points, and release manifest already govern around `Master 16.93`; those corrections were applied locally, and branch-visible publication remains blocked where the same files already contain unrelated local edits.
 
 The next active engineering task is:
 

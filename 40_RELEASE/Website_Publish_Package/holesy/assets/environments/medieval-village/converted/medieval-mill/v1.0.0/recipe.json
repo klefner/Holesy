@@ -1,0 +1,43 @@
+{
+  "packId": "medieval-village-quaternius",
+  "modelId": "mill",
+  "assetId": "medieval-mill",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/medieval-village/conversion-source/Mill.gltf",
+  "sourceSha256": "734390f4318ce71c8f8a229c8def6a8a8cb0ae50cf242a3bf2dea07a5694da76",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16180,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 12,
+    "depth": 12,
+    "height": 16.97022049761715
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "Plaster",
+    "topFaces": "RoofTiles",
+    "cutFaces": "Wood_Side",
+    "coreVisualScale": 0.96
+  },
+  "progressionClass": "large_structure",
+  "collapseSize": 6,
+  "unusualElements": [
+    {
+      "node": "Mill_Blades_Cube.007",
+      "handling": "clip_with_owning_fragments"
+    }
+  ],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}

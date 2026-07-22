@@ -32,12 +32,22 @@ const failures = [];
 let blockCount = 0;
 let overhangingPrimitiveCount = 0;
 let overhangingVertexCount = 0;
+let authenticPrimitiveCount = 0;
+let authenticTriangleCount = 0;
+let blocksMissingAuthenticSurface = 0;
+let blocksMissingClosedCore = 0;
 
 for (const node of gltf.nodes || []) {
   if (!node.extras?.holesyBlock || node.mesh == null) continue;
   blockCount++;
   const half = [node.extras.blockWidth, node.extras.blockHeight, node.extras.blockDepth].map(value => value / 2 + tolerance);
   const mesh = gltf.meshes[node.mesh];
+  const authenticPrimitives = mesh.primitives.filter(primitive => primitive.extras?.holesyAuthenticSurface);
+  const corePrimitives = mesh.primitives.filter(primitive => primitive.extras?.holesyCoreSurface);
+  authenticPrimitiveCount += authenticPrimitives.length;
+  authenticTriangleCount += authenticPrimitives.reduce((sum, primitive) => sum + gltf.accessors[primitive.indices].count / 3, 0);
+  if (!authenticPrimitives.length) blocksMissingAuthenticSurface++;
+  if (!corePrimitives.length || node.extras.closedFaces !== 6) blocksMissingClosedCore++;
   for (let primitiveIndex = 0; primitiveIndex < mesh.primitives.length; primitiveIndex++) {
     const primitive = mesh.primitives[primitiveIndex];
     const positions = readAccessor(primitive.attributes.POSITION);
@@ -50,12 +60,16 @@ for (const node of gltf.nodes || []) {
 }
 
 const report = {
-  valid: failures.length === 0,
+  valid: failures.length === 0 && authenticPrimitiveCount > 0 && blocksMissingClosedCore === 0,
   input,
   blockCount,
   tolerance,
   overhangingPrimitiveCount,
   overhangingVertexCount,
+  authenticPrimitiveCount,
+  authenticTriangleCount,
+  blocksMissingAuthenticSurface,
+  blocksMissingClosedCore,
   failures: failures.slice(0, 25),
 };
 console.log(JSON.stringify(report, null, 2));

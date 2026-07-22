@@ -1,0 +1,38 @@
+{
+  "packId": "medieval-village-quaternius",
+  "modelId": "blacksmith",
+  "assetId": "medieval-blacksmith",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/medieval-village/conversion-source/Blacksmith.gltf",
+  "sourceSha256": "0747837373e97856bcb1e9b5f190fcdcfc3b8f7f0b9750193b0bbd39211650fe",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16180,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 10.5,
+    "depth": 10.5,
+    "height": 8.106848871954721
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "Plaster",
+    "topFaces": "RoofTiles_Red",
+    "cutFaces": "Wood_Side",
+    "coreVisualScale": 0.96
+  },
+  "progressionClass": "medium_structure",
+  "collapseSize": 5.25,
+  "unusualElements": [],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}

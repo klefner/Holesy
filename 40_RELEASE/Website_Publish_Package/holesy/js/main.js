@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.170';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.181';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -797,8 +797,9 @@ const WAVE_TIME_OF_DAY_SEQUENCE = Object.freeze([0, 1, 2, 3]);
 const buildVersionBtn = document.getElementById('build-version');
 const timeCycleBtn = document.getElementById('time-cycle-btn');
 const pauseVersionLabel = document.getElementById('pause-version-label');
-if (buildVersionBtn) buildVersionBtn.textContent = BUILD_LABEL;
-if (pauseVersionLabel) pauseVersionLabel.textContent = BUILD_LABEL;
+const PLAYER_VERSION_LABEL = BUILD_LABEL.replace(/^Master\s+/, 'Version ');
+if (buildVersionBtn) buildVersionBtn.textContent = PLAYER_VERSION_LABEL;
+if (pauseVersionLabel) pauseVersionLabel.textContent = PLAYER_VERSION_LABEL;
 
 const nightWindowVisuals = [];
 const streetLightVisuals = [];
@@ -1082,31 +1083,75 @@ const ROAD_W = HOLESY_CONFIG.world.roadWidth;
 const ENVIRONMENT_KEYS = Object.freeze({
   CLASSIC: 'classic',
   MEGAKIT_DOWNTOWN: 'megakitDowntown',
+  MEDIEVAL_VILLAGE: 'medievalVillage',
 });
+const CITY_PACK_KEYS = Object.freeze({
+  MEGAKIT_DISTRICT: 'megakitDistrict',
+  MEGAKIT_STREETS: 'megakitStreets',
+  MEDIEVAL_VILLAGE: 'medievalVillage',
+});
+// A city is a recipe, not an asset-pack assumption. Recipes may use no packs,
+// one pack, or several packs; future city types should be added here and to
+// ENVIRONMENT_KEYS without adding another special-case population branch.
+const CITY_RECIPES = Object.freeze({
+  [ENVIRONMENT_KEYS.CLASSIC]: Object.freeze({ label: 'Classic City', packs: Object.freeze([]) }),
+  [ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN]: Object.freeze({
+    label: 'MegaKit Downtown',
+    packs: Object.freeze([CITY_PACK_KEYS.MEGAKIT_DISTRICT, CITY_PACK_KEYS.MEGAKIT_STREETS]),
+  }),
+  [ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE]: Object.freeze({
+    label: 'Medieval Village',
+    packs: Object.freeze([CITY_PACK_KEYS.MEDIEVAL_VILLAGE]),
+  }),
+});
+const ELIGIBLE_ENVIRONMENTS = Object.freeze(Object.values(ENVIRONMENT_KEYS));
 let selectedEnvironment = ENVIRONMENT_KEYS.CLASSIC;
+let lastGeneratedEnvironment = null;
+let selectedEnvironmentOverride = 'auto';
 const megakitTextureLoader = new THREE.TextureLoader();
 const megakitGltfLoader = new GLTFLoader();
 const megakitTextureCache = new Map();
 const megakitMaterialCache = new Map();
+const megakitSceneAssetCache = new Map();
 const megakitEnvironmentMeshes = [];
 const megakitIntactShellsByStack = new Map();
 let megakitEnvironmentGeneration = 0;
 const MEGAKIT_ASSET_BASE = 'assets/environments/downtown-city-megakit/source-gltf/';
+const MEDIEVAL_ASSET_BASE = 'assets/environments/medieval-village/runtime/';
+const medievalGltfLoader = new GLTFLoader();
+const medievalBuildingCache = new Map();
+const medievalDestructibleCache = new Map();
+const medievalEnvironmentMeshes = [];
+const medievalAmbientActors = [];
+let medievalEnvironmentGeneration = 0;
+let medievalRosterOffset = 0;
+const medievalNativeParcelKeys = new Set();
+const MEDIEVAL_BUILDINGS = Object.freeze([
+  { sourceBase: 'House_1', assetId: 'medieval-house-1', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
+  { sourceBase: 'Blacksmith', assetId: 'medieval-blacksmith', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
+  { sourceBase: 'Inn', assetId: 'medieval-inn', footprint: 12, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
+  { sourceBase: 'Mill', assetId: 'medieval-mill', footprint: 12, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, unusualElement: 'mill_blades' },
+  { sourceBase: 'Bell_Tower', assetId: 'medieval-bell-tower', footprint: 10.5, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128 },
+  { sourceBase: 'House_2', assetId: 'medieval-house-2', footprint: 9.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
+  { sourceBase: 'House_3', assetId: 'medieval-house-3', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
+  { sourceBase: 'House_4', assetId: 'medieval-house-4', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
+  { sourceBase: 'Sawmill', assetId: 'medieval-sawmill', footprint: 11, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
+  { sourceBase: 'Stable', assetId: 'medieval-stable', footprint: 11.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
+]);
+const MEDIEVAL_COMMONS_ARCHETYPES = Object.freeze(['farm', 'pasture', 'barnyard', 'training_yard']);
 
-function normalizeEnvironmentKey(key) {
-  return key === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN ? key : ENVIRONMENT_KEYS.CLASSIC;
-}
-
-function setEnvironment(key) {
-  selectedEnvironment = normalizeEnvironmentKey(key);
-  if (environmentSelect && environmentSelect.value !== selectedEnvironment) {
-    environmentSelect.value = selectedEnvironment;
+function chooseEnvironmentForNextCity() {
+  if (ELIGIBLE_ENVIRONMENTS.includes(selectedEnvironmentOverride)) {
+    selectedEnvironment = selectedEnvironmentOverride;
+  } else {
+    const choices = ELIGIBLE_ENVIRONMENTS.filter(key => key !== lastGeneratedEnvironment);
+    selectedEnvironment = choices[Math.floor(Math.random() * choices.length)] || ENVIRONMENT_KEYS.CLASSIC;
   }
-  if (environmentDesc) {
-    environmentDesc.textContent = selectedEnvironment === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN
-      ? 'Test district: MegaKit-styled readable ground detail and small props only; validated Holesy roads, blocks, and destruction stay authoritative.'
-      : 'Stable Aldine downtown: the current procedural city and validated destruction baseline.';
-  }
+  lastGeneratedEnvironment = selectedEnvironment;
+  document.documentElement.setAttribute('data-holesy-environment', selectedEnvironment);
+  const recipe = CITY_RECIPES[selectedEnvironment] || CITY_RECIPES[ENVIRONMENT_KEYS.CLASSIC];
+  document.documentElement.setAttribute('data-holesy-city-packs', recipe.packs.join(','));
+  return selectedEnvironment;
 }
 
 function clearMegakitEnvironmentMeshes() {
@@ -1116,6 +1161,471 @@ function clearMegakitEnvironmentMeshes() {
   }
   megakitEnvironmentMeshes.length = 0;
   megakitIntactShellsByStack.clear();
+}
+
+function clearMedievalEnvironmentMeshes() {
+  medievalEnvironmentGeneration++;
+  for (const mesh of medievalEnvironmentMeshes) {
+    if (mesh && mesh.parent) scene.remove(mesh);
+  }
+  medievalEnvironmentMeshes.length = 0;
+}
+
+function loadMedievalBuilding(sourceBase) {
+  if (!medievalBuildingCache.has(sourceBase)) {
+    const promise = medievalGltfLoader.loadAsync(`${MEDIEVAL_ASSET_BASE}${sourceBase}.glb`)
+      .then(gltf => gltf.scene)
+      .catch(error => {
+        medievalBuildingCache.delete(sourceBase);
+        throw error;
+      });
+    medievalBuildingCache.set(sourceBase, promise);
+  }
+  return medievalBuildingCache.get(sourceBase);
+}
+
+function loadMedievalDestructible(definition) {
+  if (!medievalDestructibleCache.has(definition.assetId)) {
+    const asset = `${MEDIEVAL_ASSET_BASE}../converted/${definition.assetId}/v1.0.0/${definition.sourceBase}_destructible.gltf`;
+    const promise = medievalGltfLoader.loadAsync(asset).then(gltf => {
+      gltf.scene.updateMatrixWorld(true);
+      const blockTemplates = [];
+      gltf.scene.traverse(child => {
+        if (!child.userData?.holesyBlock) return;
+        let hasRenderedMesh = false;
+        child.traverse(descendant => { if (descendant.isMesh) hasRenderedMesh = true; });
+        if (!hasRenderedMesh) return;
+        const visual = child.clone(true);
+        visual.position.set(0, 0, 0);
+        visual.quaternion.identity();
+        blockTemplates.push({
+          name: child.name,
+          visual,
+          position: child.getWorldPosition(new THREE.Vector3()),
+          scale: child.getWorldScale(new THREE.Vector3()),
+          blockWidth: child.userData.blockWidth,
+          blockHeight: child.userData.blockHeight,
+          blockDepth: child.userData.blockDepth,
+          floor: child.userData.floor || 0,
+        });
+      });
+      if (blockTemplates.length !== definition.blockCount) {
+        throw new Error(`${definition.sourceBase} expected ${definition.blockCount} converted fragments; received ${blockTemplates.length}.`);
+      }
+      return blockTemplates;
+    }).catch(error => {
+      medievalDestructibleCache.delete(definition.assetId);
+      throw error;
+    });
+    medievalDestructibleCache.set(definition.assetId, promise);
+  }
+  return medievalDestructibleCache.get(definition.assetId);
+}
+
+async function loadMedievalBuildingWithRetry(sourceBase, maxAttempts = 3) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await loadMedievalBuilding(sourceBase);
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts) await yieldCityBuildFrame();
+    }
+  }
+  throw lastError;
+}
+
+async function loadMedievalDestructibleWithRetry(definition, maxAttempts = 3) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await loadMedievalDestructible(definition);
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts) await yieldCityBuildFrame();
+    }
+  }
+  throw lastError;
+}
+
+function addMedievalGroundPlane(x, z, w, d, color, rotation = 0) {
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, d),
+    new THREE.MeshLambertMaterial({ color })
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.rotation.z = rotation;
+  mesh.position.set(x, 0.034, z);
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  medievalEnvironmentMeshes.push(mesh);
+}
+
+function addMedievalStreetDetails() {
+  const earth = 0x766347;
+  const stone = 0x8b8374;
+  for (const roadIndex of [-3, -2, -1, 0, 1, 2, 3]) {
+    const roadCenter = roadIndex * BLOCK;
+    addMedievalGroundPlane(roadCenter, 0, ROAD_W * 0.72, WORLD_SIZE, earth);
+    addMedievalGroundPlane(0, roadCenter, WORLD_SIZE, ROAD_W * 0.72, earth);
+  }
+  for (const bp of blockPositions) {
+    const edge = (BLOCK - ROAD_W) / 2 + 0.25;
+    addMedievalGroundPlane(bp.x, bp.z - edge, BLOCK - ROAD_W, 0.45, stone);
+    addMedievalGroundPlane(bp.x, bp.z + edge, BLOCK - ROAD_W, 0.45, stone);
+  }
+}
+
+function addMedievalProp(name, x, z, kind) {
+  const group = new THREE.Group();
+  const wood = sharedBoxMat(0x6f4728);
+  const dark = sharedBoxMat(0x30271f);
+  const straw = sharedBoxMat(0xc6a052);
+  if (kind === 'basket') {
+    const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.42, 0.38, 8), sharedBoxMat(0xa97942));
+    basket.position.y = 0.19;
+    group.add(basket);
+  } else if (kind === 'sack') {
+    const sack = new THREE.Mesh(new THREE.SphereGeometry(0.34, 8, 6), sharedBoxMat(0xbba67a));
+    sack.scale.set(0.8, 1.15, 0.72);
+    sack.position.y = 0.32;
+    group.add(sack);
+  } else if (kind === 'crate') {
+    const crate = new THREE.Mesh(sharedBoxGeometry(0.72, 0.62, 0.72), wood);
+    crate.position.y = 0.31;
+    group.add(crate);
+  } else if (kind === 'barrel') {
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 1.25, 10), wood);
+    body.position.y = 0.625;
+    group.add(body);
+  } else if (kind === 'hay') {
+    const bale = new THREE.Mesh(sharedBoxGeometry(1.5, 0.85, 0.9), straw);
+    bale.position.y = 0.425;
+    group.add(bale);
+  } else if (kind === 'cart') {
+    const bed = new THREE.Mesh(sharedBoxGeometry(2.2, 0.45, 1.2), wood);
+    bed.position.y = 0.85;
+    group.add(bed);
+    for (const wheelX of [-0.85, 0.85]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.18, 10), dark);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(wheelX, 0.48, 0.68);
+      group.add(wheel);
+    }
+  } else {
+    const counter = new THREE.Mesh(sharedBoxGeometry(2.4, 0.25, 1.2), wood);
+    counter.position.y = 1.05;
+    group.add(counter);
+    for (const px of [-1, 1]) {
+      const post = new THREE.Mesh(sharedBoxGeometry(0.15, 2.2, 0.15), dark);
+      post.position.set(px, 1.1, 0);
+      group.add(post);
+    }
+    const canopy = new THREE.Mesh(sharedBoxGeometry(2.8, 0.18, 1.55), sharedBoxMat(0x8f2937));
+    canopy.position.y = 2.15;
+    group.add(canopy);
+  }
+  group.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+  const propProfile = {
+    basket: { size: 0.32, value: 8 },
+    sack: { size: 0.34, value: 9 },
+    crate: { size: 0.48, value: 13 },
+    barrel: { size: 0.68, value: 22 },
+    hay: { size: 0.72, value: 24 },
+    cart: { size: 1.35, value: 45 },
+    stall: { size: 1.5, value: 45 },
+  }[kind] || { size: 0.6, value: 18 };
+  const obj = makeObject(group, propProfile.size, 0, propProfile.value, { x, z, y: 0 });
+  obj.isMedievalAsset = true;
+  obj.medievalAssetName = name;
+  obj.mandateKind = 'prop';
+  return obj;
+}
+
+function makeMedievalConsumable(name, mesh, size, value, x, z, y = 0) {
+  mesh.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+  const obj = makeObject(mesh, size, 0, value, { x, z, y });
+  obj.isMedievalAsset = true;
+  obj.medievalAssetName = name;
+  obj.mandateKind = 'prop';
+  return obj;
+}
+
+function makeMedievalAnimal(kind, x, z, bounds) {
+  const group = new THREE.Group();
+  const profile = kind === 'cow'
+    ? { body: [1.45, 0.82, 0.62], color: 0x5b3b28, size: 0.82, value: 36, speed: 0.45 }
+    : kind === 'sheep'
+      ? { body: [1.0, 0.72, 0.58], color: 0xe5dfcf, size: 0.62, value: 24, speed: 0.6 }
+      : { body: [0.46, 0.42, 0.34], color: 0xb96f32, size: 0.28, value: 10, speed: 0.95 };
+  const [bw, bh, bd] = profile.body;
+  const body = new THREE.Mesh(sharedBoxGeometry(bw, bh, bd), sharedBoxMat(profile.color));
+  body.position.y = bh * 0.72;
+  group.add(body);
+  const head = new THREE.Mesh(sharedBoxGeometry(bh * 0.58, bh * 0.58, bd * 0.82), sharedBoxMat(kind === 'cow' ? 0x8b684e : profile.color));
+  head.position.set(bw * 0.52, bh * 0.92, 0);
+  group.add(head);
+  for (const sx of [-0.32, 0.32]) for (const sz of [-0.26, 0.26]) {
+    const leg = new THREE.Mesh(sharedBoxGeometry(Math.max(0.1, bw * 0.11), bh * 0.65, Math.max(0.1, bd * 0.15)), sharedBoxMat(0x4a3528));
+    leg.position.set(sx * bw, bh * 0.32, sz * bd);
+    group.add(leg);
+  }
+  const obj = makeMedievalConsumable(`Medieval ${kind}`, group, profile.size, profile.value, x, z, 0);
+  obj.mandateKind = 'animal';
+  medievalAmbientActors.push({ type: 'animal', obj, bounds, direction: Math.random() * Math.PI * 2, speed: profile.speed, timer: 1 + Math.random() * 3 });
+  return obj;
+}
+
+function makeMedievalVillager(x, z, bounds, role) {
+  const person = makePerson({ x, z }, role === 'fighter' ? null : bounds);
+  person.isMedievalAsset = true;
+  person.medievalRole = role;
+  if (role === 'torch') {
+    if (!person.moving) {
+      person.moving = true;
+      person.bounds = bounds;
+      person.walkDir = Math.random() * Math.PI * 2;
+      person.walkSpeed = 0.8 + Math.random() * 0.8;
+      person.panicSpeed = 3 + Math.random();
+      person.walkTimer = 1 + Math.random() * 3;
+      person.panicking = false;
+      movingPeople.push(person);
+    }
+    const handle = new THREE.Mesh(sharedBoxGeometry(0.08, 0.95, 0.08), sharedBoxMat(0x5b3822));
+    handle.position.set(0.46, 0.9, 0);
+    const flame = new THREE.Mesh(new THREE.SphereGeometry(0.14, 7, 5), new THREE.MeshBasicMaterial({ color: 0xffa126 }));
+    flame.position.set(0.46, 1.43, 0);
+    person.mesh.add(handle, flame);
+    medievalAmbientActors.push({ type: 'torch', obj: person, flame, phase: Math.random() * Math.PI * 2 });
+  } else {
+    const sword = new THREE.Mesh(sharedBoxGeometry(0.08, 1.15, 0.12), sharedBoxMat(0xb7bec4));
+    sword.position.set(0.46, 0.95, 0);
+    sword.rotation.z = role === 'fighter' ? -0.65 : -0.2;
+    person.mesh.add(sword);
+    medievalAmbientActors.push({ type: 'fighter', obj: person, sword, phase: Math.random() * Math.PI * 2 });
+  }
+  return person;
+}
+
+function populateMedievalCommonsParcel(bp, archetype) {
+  const bounds = { minX: bp.x - 8.8, maxX: bp.x + 8.8, minZ: bp.z - 8.8, maxZ: bp.z + 8.8 };
+  addMedievalGroundPlane(bp.x, bp.z, 18.5, 18.5, archetype === 'farm' ? 0x665139 : 0x50633a);
+  if (archetype === 'farm') {
+    const cropColors = [0x6f9c3d, 0xa34b35, 0xd2a33b, 0x7f4f91];
+    for (let row = 0; row < 5; row++) for (let col = 0; col < 6; col++) {
+      const crop = new THREE.Mesh(new THREE.SphereGeometry(0.25, 7, 5), sharedBoxMat(cropColors[row % cropColors.length]));
+      makeMedievalConsumable('vegetable crop', crop, 0.24, 5, bp.x - 6.2 + col * 2.45, bp.z - 5 + row * 2.45, 0.24);
+    }
+  } else if (archetype === 'pasture') {
+    for (let i = 0; i < 5; i++) makeMedievalAnimal(i < 3 ? 'cow' : 'sheep', bp.x + randomBetween(-6, 6), bp.z + randomBetween(-6, 6), bounds);
+  } else if (archetype === 'barnyard') {
+    for (const [dx, dz, kind] of [[-5,-5,'hay'],[-2,-5,'barrel'],[2,-5,'crate'],[5,-5,'cart'],[-5,5,'sack'],[5,5,'hay']]) addMedievalProp(`Barnyard ${kind}`, bp.x + dx, bp.z + dz, kind);
+    for (let i = 0; i < 6; i++) makeMedievalAnimal(i < 2 ? 'sheep' : 'chicken', bp.x + randomBetween(-6, 6), bp.z + randomBetween(-3, 5), bounds);
+  } else {
+    makeMedievalVillager(bp.x - 2.2, bp.z, bounds, 'fighter');
+    makeMedievalVillager(bp.x + 2.2, bp.z, bounds, 'fighter');
+    makeMedievalVillager(bp.x, bp.z - 3.2, bounds, 'fighter');
+    makeMedievalVillager(bp.x, bp.z + 3.2, bounds, 'fighter');
+    for (const dx of [-6, 6]) addMedievalProp('Training hay target', bp.x + dx, bp.z, 'hay');
+  }
+}
+
+function updateMedievalAmbientActors(dt) {
+  const now = performance.now() * 0.001;
+  for (const actor of medievalAmbientActors) {
+    const obj = actor.obj;
+    if (!obj || obj.consumed || obj.falling || !obj.mesh) continue;
+    if (actor.type === 'animal') {
+      actor.timer -= dt;
+      if (actor.timer <= 0) { actor.direction += randomBetween(-1.2, 1.2); actor.timer = 1.5 + Math.random() * 3; }
+      let nx = obj.x + Math.cos(actor.direction) * actor.speed * dt;
+      let nz = obj.z + Math.sin(actor.direction) * actor.speed * dt;
+      if (nx < actor.bounds.minX || nx > actor.bounds.maxX) { actor.direction = Math.PI - actor.direction; nx = THREE.MathUtils.clamp(nx, actor.bounds.minX, actor.bounds.maxX); }
+      if (nz < actor.bounds.minZ || nz > actor.bounds.maxZ) { actor.direction = -actor.direction; nz = THREE.MathUtils.clamp(nz, actor.bounds.minZ, actor.bounds.maxZ); }
+      obj.x = nx; obj.z = nz; obj.mesh.position.x = nx; obj.mesh.position.z = nz; obj.mesh.rotation.y = -actor.direction;
+    } else if (actor.type === 'fighter') {
+      obj.mesh.rotation.y = Math.sin(now * 1.7 + actor.phase) * 0.42;
+      actor.sword.rotation.z = -0.65 + Math.sin(now * 4.2 + actor.phase) * 0.52;
+    } else if (actor.type === 'torch') {
+      const pulse = 0.82 + Math.sin(now * 9 + actor.phase) * 0.18;
+      actor.flame.scale.setScalar(pulse);
+    }
+  }
+}
+
+function addMedievalDestructionStack(definition, x, z, rotation, intactShell, blockTemplates) {
+  const stackId = nextPhysicsStackId++;
+  megakitIntactShellsByStack.set(stackId, intactShell);
+  const floorCount = Math.max(...blockTemplates.map(template => template.floor), 0) + 1;
+  const piecesPerFloor = Math.ceil(blockTemplates.length / floorCount);
+  const buildingSize = definition.progressionClass === 'small_structure'
+    ? 'small'
+    : definition.progressionClass === 'medium_structure' ? 'mid' : 'large';
+  for (const template of blockTemplates) {
+    const rotatedX = template.position.x * Math.cos(rotation) - template.position.z * Math.sin(rotation);
+    const rotatedZ = template.position.x * Math.sin(rotation) + template.position.z * Math.cos(rotation);
+    const pieceW = template.blockWidth;
+    const pieceH = template.blockHeight;
+    const pieceD = template.blockDepth;
+    const piece = template.visual.clone(true);
+    piece.visible = false;
+    piece.scale.copy(template.scale);
+    piece.rotation.y = rotation;
+    piece.traverse(descendant => {
+      if (!descendant.isMesh) return;
+      descendant.castShadow = true;
+      descendant.receiveShadow = true;
+      if (descendant.geometry?.userData?.holesyAuthenticSurface || descendant.userData?.holesyAuthenticSurface) {
+        const materials = Array.isArray(descendant.material) ? descendant.material : [descendant.material];
+        const raisedMaterials = materials.map(material => {
+          const raised = material.clone();
+          raised.polygonOffset = true;
+          raised.polygonOffsetFactor = -2;
+          raised.polygonOffsetUnits = -2;
+          return raised;
+        });
+        descendant.material = Array.isArray(descendant.material) ? raisedMaterials : raisedMaterials[0];
+        descendant.renderOrder = 2;
+      }
+    });
+    const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
+      x: x + rotatedX,
+      z: z + rotatedZ,
+      y: template.position.y,
+    });
+    object.isBuilding = true;
+    object.buildingSize = buildingSize;
+    object.isSkyscraperChunk = false;
+    object.mandateKind = definition.progressionClass === 'tower_structure' ? 'tower' : 'building';
+    object.isMedievalAsset = true;
+    object.isOfflineConvertedAsset = true;
+    object.physicsStackPiece = true;
+    object.usesBoxStackContacts = true;
+    object.convertedAssetId = definition.assetId;
+    object.convertedBlockName = template.name;
+    object.stackId = stackId;
+    object.stackActive = false;
+    object.stackSettled = false;
+    object.stackRestTimer = 0;
+    object.stackIndex = template.floor;
+    object.stackFloorCount = floorCount;
+    object.stackPieceCount = piecesPerFloor;
+    object.stackCollapseSize = definition.collapseSize;
+    object.stackCollapseLabel = definition.progressionClass === 'tower_structure'
+      ? 'TOWER COLLAPSE!'
+      : 'BUILDING COLLAPSE!';
+    object.stackCenterX = x;
+    object.stackCenterZ = z;
+    object.stackLocalX = rotatedX;
+    object.stackLocalZ = rotatedZ;
+    object.stackFloorY = pieceH / 2;
+    object.stackHeight = pieceH;
+    object.stackPieceW = pieceW;
+    object.stackPieceD = pieceD;
+    object.vx = 0; object.vy = 0; object.vz = 0;
+    object.avx = 0; object.avy = 0; object.avz = 0;
+    object.medievalAssetName = `Authored ${definition.sourceBase} fragment`;
+    scene.remove(piece);
+    object.megakitDormantDetached = true;
+    physicsStackPieces.push(object);
+  }
+}
+
+async function populateMedievalVillage() {
+  const generation = medievalEnvironmentGeneration;
+  document.documentElement.setAttribute('data-holesy-medieval-models', '0');
+  document.documentElement.setAttribute('data-holesy-medieval-pack-percent', '90');
+  document.documentElement.setAttribute('data-holesy-medieval-native-parcels', String(medievalNativeParcelKeys.size));
+  showEventBanner('DISTRICT: Medieval Village', 2200);
+  addMedievalStreetDetails();
+
+  const eligibleParcels = blockPositions.filter(bp =>
+    Math.abs(bp.x) < currentArenaHalf - 10 &&
+    Math.abs(bp.z) < currentArenaHalf - 10 &&
+    !reservedParcelKeys.has(parcelKey(bp))
+  );
+  const sites = eligibleParcels.map((bp, order) => ({
+    bp,
+    definition: MEDIEVAL_BUILDINGS[(medievalRosterOffset + order) % MEDIEVAL_BUILDINGS.length],
+  }));
+  medievalRosterOffset = (medievalRosterOffset + sites.length) % MEDIEVAL_BUILDINGS.length;
+
+  let loadedModelCount = 0;
+  for (const { bp, definition } of sites) {
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
+    let authoredSource = null;
+    let blockTemplates = null;
+    try {
+      authoredSource = await loadMedievalBuildingWithRetry(definition.sourceBase);
+      await yieldCityBuildFrame();
+      blockTemplates = await loadMedievalDestructibleWithRetry(definition);
+    } catch (error) {
+      console.warn(`[Holesy] Medieval authored or destructible asset unavailable after retries: ${definition.sourceBase}`, error);
+      continue;
+    }
+    await yieldCityBuildFrame();
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
+    for (const object of [...objects]) {
+      if (Math.hypot(object.x - bp.x, object.z - bp.z) > 10.25) continue;
+      if (object.mesh?.parent) scene.remove(object.mesh);
+      removeObjectFromActiveLists(object);
+    }
+    const authoredVisual = authoredSource.clone(true);
+    authoredVisual.updateMatrixWorld(true);
+    const bounds = new THREE.Box3().setFromObject(authoredVisual);
+    const dimensions = bounds.getSize(new THREE.Vector3());
+    const center = bounds.getCenter(new THREE.Vector3());
+    authoredVisual.position.set(-center.x, -bounds.min.y, -center.z);
+    authoredVisual.traverse(child => {
+      if (!child.isMesh) return;
+      child.castShadow = true;
+      child.receiveShadow = true;
+    });
+    const intactShell = new THREE.Group();
+    intactShell.add(authoredVisual);
+    const authoredScale = definition.footprint / (Math.max(dimensions.x, dimensions.z) || 1);
+    intactShell.scale.setScalar(authoredScale);
+    intactShell.rotation.y = Math.atan2(player.x - bp.x, player.z - bp.z);
+    intactShell.position.set(bp.x, 0, bp.z);
+    scene.add(intactShell);
+    medievalEnvironmentMeshes.push(intactShell);
+    addMedievalDestructionStack(definition, bp.x, bp.z, intactShell.rotation.y, intactShell, blockTemplates);
+    loadedModelCount++;
+    document.documentElement.setAttribute('data-holesy-medieval-models', String(loadedModelCount));
+  }
+  const edibleKinds = ['basket', 'sack', 'crate', 'basket', 'barrel', 'hay'];
+  const edibleOffsets = [
+    [-7.8, -7.1], [-4.7, -7.7], [0, -8], [4.8, -7.6], [7.8, -6.9],
+    [-8, -3.5], [8, -3.1], [-8.1, 2.9], [8.1, 3.4],
+    [-7.7, 7], [-4.4, 7.8], [0.4, 8], [4.7, 7.7], [7.7, 6.8],
+  ];
+  let edibleCount = 0;
+  for (let parcelIndex = 0; parcelIndex < eligibleParcels.length; parcelIndex++) {
+    const bp = eligibleParcels[parcelIndex];
+    for (let propIndex = 0; propIndex < edibleOffsets.length; propIndex++) {
+      const [dx, dz] = edibleOffsets[propIndex];
+      const kind = edibleKinds[(parcelIndex + propIndex) % edibleKinds.length];
+      addMedievalProp(`Medieval ${kind}`, bp.x + dx + randomBetween(-0.35, 0.35), bp.z + dz + randomBetween(-0.35, 0.35), kind);
+      edibleCount++;
+    }
+    if (parcelIndex % 4 === 3) await yieldCityBuildFrame();
+  }
+  document.documentElement.setAttribute('data-holesy-medieval-edibles', String(edibleCount));
+  const ambientParcels = [...eligibleParcels].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < Math.min(12, ambientParcels.length); i++) {
+    const bp = ambientParcels[i];
+    const bounds = { minX: bp.x - 8.6, maxX: bp.x + 8.6, minZ: bp.z - 8.6, maxZ: bp.z + 8.6 };
+    if (i < 6) makeMedievalAnimal(['chicken', 'sheep', 'cow'][i % 3], bp.x + randomBetween(-7, 7), bp.z + randomBetween(-7, 7), bounds);
+    else makeMedievalVillager(bp.x + randomBetween(-7, 7), bp.z + randomBetween(-7, 7), bounds, 'torch');
+  }
+  for (let i = 12; i < Math.min(18, ambientParcels.length); i += 2) {
+    const bp = ambientParcels[i];
+    const bounds = { minX: bp.x - 8.6, maxX: bp.x + 8.6, minZ: bp.z - 8.6, maxZ: bp.z + 8.6 };
+    makeMedievalVillager(bp.x - 1.2, bp.z, bounds, 'fighter');
+    makeMedievalVillager(bp.x + 1.2, bp.z, bounds, 'fighter');
+  }
+  document.documentElement.setAttribute('data-holesy-medieval-ambient-actors', String(medievalAmbientActors.length));
+  wakeRenderLoop();
 }
 
 function loadMegakitTexture(fileName, repeat = [1, 1]) {
@@ -1177,6 +1687,104 @@ function addMegakitTrimPlane(x, z, w, d, color, opacity = 1) {
   return mesh;
 }
 
+function loadMegakitSceneAsset(sourceBase) {
+  if (!megakitSceneAssetCache.has(sourceBase)) {
+    megakitSceneAssetCache.set(
+      sourceBase,
+      megakitGltfLoader.loadAsync(`${MEGAKIT_ASSET_BASE}${sourceBase}.gltf`).then(gltf => gltf.scene)
+    );
+  }
+  return megakitSceneAssetCache.get(sourceBase);
+}
+
+async function addMegakitSceneAsset(sourceBase, x, z, targetSpan, rotation = 0, options = {}) {
+  const generation = megakitEnvironmentGeneration;
+  const source = await loadMegakitSceneAsset(sourceBase);
+  if (generation !== megakitEnvironmentGeneration || selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN) return null;
+  const visual = source.clone(true);
+  visual.updateMatrixWorld(true);
+  const sourceBounds = new THREE.Box3().setFromObject(visual);
+  const dimensions = sourceBounds.getSize(new THREE.Vector3());
+  const longestGroundAxis = Math.max(dimensions.x, dimensions.z) || 1;
+  visual.scale.setScalar(targetSpan / longestGroundAxis);
+  visual.updateMatrixWorld(true);
+  const scaledBounds = new THREE.Box3().setFromObject(visual);
+  const center = scaledBounds.getCenter(new THREE.Vector3());
+  visual.position.set(-center.x, (options.height || 0.045) - scaledBounds.min.y, -center.z);
+  visual.traverse(child => {
+    if (!child.isMesh) return;
+    if (sourceBase.startsWith('Decal_')) {
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      const tuned = materials.map(material => {
+        const copy = material.clone();
+        copy.transparent = true;
+        copy.alphaTest = 0.12;
+        copy.depthWrite = false;
+        copy.side = THREE.DoubleSide;
+        copy.polygonOffset = true;
+        copy.polygonOffsetFactor = -4;
+        copy.polygonOffsetUnits = -4;
+        copy.toneMapped = false;
+        copy.needsUpdate = true;
+        return copy;
+      });
+      child.material = Array.isArray(child.material) ? tuned : tuned[0];
+    }
+    child.castShadow = options.castShadow !== false;
+    child.receiveShadow = true;
+    child.renderOrder = options.renderOrder || 2;
+  });
+  const placement = new THREE.Group();
+  placement.add(visual);
+  placement.position.set(x, 0, z);
+  placement.rotation.y = rotation;
+  scene.add(placement);
+  if (options.consumable) {
+    const object = makeObject(placement, options.size || 0.65, 0, options.value || 15, { x, z, y: 0 });
+    object.isMegakitAsset = true;
+    object.megakitAssetName = options.name || sourceBase;
+  } else {
+    megakitEnvironmentMeshes.push(placement);
+  }
+  return placement;
+}
+
+async function populateMegakitStreetPack() {
+  const generation = megakitEnvironmentGeneration;
+  const markings = [
+    ['Decal_Crosswalk', 0, -5.1, 6.2, 0],
+    ['Decal_Crosswalk', 0, 5.1, 6.2, 0],
+    ['Decal_Crosswalk', -5.1, 0, 6.2, Math.PI / 2],
+    ['Decal_Crosswalk', 5.1, 0, 6.2, Math.PI / 2],
+    ['Decal_ArrowStraight', -2.1, -11, 3.0, 0],
+    ['Decal_ArrowTurnLeft', 2.1, 11, 3.0, Math.PI],
+    ['Decal_ArrowTurnRight', -11, 2.1, 3.0, Math.PI / 2],
+    ['Decal_Stop', 11, -2.1, 3.2, -Math.PI / 2],
+    ['Decal_Slow', -2.1, 28, 3.2, Math.PI],
+    ['Decal_Bikelane', 2.75, -28, 3.0, 0],
+  ];
+  for (const [sourceBase, x, z, span, rotation] of markings) {
+    await addMegakitSceneAsset(sourceBase, x, z, span, rotation, { castShadow: false, renderOrder: 3 });
+    await yieldCityBuildFrame();
+    if (generation !== megakitEnvironmentGeneration) return;
+  }
+  const drains = [[3.35, -18, 0], [-3.35, 18, Math.PI], [18, 3.35, Math.PI / 2], [-18, -3.35, -Math.PI / 2]];
+  for (const [x, z, rotation] of drains) {
+    await addMegakitSceneAsset('Prop_Drain', x, z, 1.8, rotation, {
+      consumable: true, size: 0.65, value: 18, name: 'MegaKit street drain',
+    });
+  }
+  const entrances = [[-16, -11.25, 0], [16, 11.25, Math.PI], [-11.25, 16, Math.PI / 2], [11.25, -16, -Math.PI / 2]];
+  for (let i = 0; i < entrances.length; i++) {
+    const [x, z, rotation] = entrances[i];
+    await addMegakitSceneAsset(i % 2 ? 'Entrance_Concrete_2x2' : 'Entrance_Concrete_2x1', x, z, 3.4, rotation, {
+      consumable: true, size: 1.1, value: 28, name: 'MegaKit concrete entrance',
+    });
+  }
+  document.documentElement.setAttribute('data-holesy-megakit-street-assets', String(markings.length + drains.length + entrances.length));
+  wakeRenderLoop();
+}
+
 function addMegakitBlockEdgeDetail() {
   const padSize = BLOCK - ROAD_W + 0.5;
   const edge = padSize / 2;
@@ -1236,9 +1844,9 @@ function addMegakitManhole(x, z) {
   return obj;
 }
 
-function populateMegakitDowntownTest() {
+function populateMegakitDowntown() {
   clearMegakitEnvironmentMeshes();
-  showEventBanner('ENVIRONMENT: MegaKit Downtown detail test', 2200);
+  showEventBanner('DISTRICT: MegaKit Downtown', 2200);
 
   const acMat = megakitMaterial('T_MetalConcrete_BaseColor.png', [1, 1], 0xd6d9dc);
   const planterMat = megakitMaterial('T_Dirt_BaseColor.png', [1, 1], 0x8f6d45);
@@ -1251,6 +1859,24 @@ function populateMegakitDowntownTest() {
   addMegakitConsumableBox('MegaKit planter', 21, -28, 2.0, 0.75, 2.0, planterMat, 1.25, 35);
   [-11, -7, 7, 11].forEach((x, i) => addMegakitConsumableBox('MegaKit bollard', x, i < 2 ? -13 : 13, 0.35, 1.2, 0.35, metalMat, 0.45, 12));
   addMegakitBuildingSkinTest(megakitEnvironmentGeneration);
+}
+
+const CITY_PACK_POPULATORS = Object.freeze({
+  [CITY_PACK_KEYS.MEGAKIT_DISTRICT]: populateMegakitDowntown,
+  [CITY_PACK_KEYS.MEGAKIT_STREETS]: populateMegakitStreetPack,
+  [CITY_PACK_KEYS.MEDIEVAL_VILLAGE]: populateMedievalVillage,
+});
+
+async function populateSelectedCityPacks() {
+  const recipe = CITY_RECIPES[selectedEnvironment] || CITY_RECIPES[ENVIRONMENT_KEYS.CLASSIC];
+  for (const packKey of recipe.packs) {
+    const populatePack = CITY_PACK_POPULATORS[packKey];
+    if (!populatePack) {
+      console.warn(`[Holesy] City recipe references unknown pack: ${packKey}`);
+      continue;
+    }
+    await populatePack();
+  }
 }
 
 async function addMegakitBuildingSkinTest(generation) {
@@ -3111,44 +3737,72 @@ function populateParcelDetails(bp, parcelUse, blockBounds) {
 }
 
 async function populateCity() {
+  chooseEnvironmentForNextCity();
+  const isMedievalVillage = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE;
+  if (isMedievalVillage) clearMedievalEnvironmentMeshes();
   const economy = getEffectiveDifficultyProfile();
   const buildingBlockDensity = economy.buildingBlockDensityMult || 1;
   const skyscraperChance = 0.35 * (economy.skyscraperChanceMult || 1);
   const midBuildingChance = 0.30;
   const smallBuildingChance = 0.85 * (economy.smallBuildingDensityMult || 1);
   const sidewalkAssetDensity = economy.sidewalkAssetDensityMult || 1;
-  const carCount = Math.max(8, Math.round(35 * (economy.carDensityMult || 1)));
-  const parkAssetCount = Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
+  const carCount = isMedievalVillage ? 4 : Math.max(8, Math.round(35 * (economy.carDensityMult || 1)));
+  const parkAssetCount = isMedievalVillage ? 4 : Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
   const personChance = economy.personChanceMult || 1;
-  const governmentBlock = blockPositions[Math.floor(Math.random() * blockPositions.length)];
+  medievalNativeParcelKeys.clear();
+  if (isMedievalVillage) {
+    const nativeParcelCount = Math.max(1, Math.round(blockPositions.length * 0.10));
+    const shuffledNativeParcels = [...blockPositions].sort(() => Math.random() - 0.5);
+    for (const bp of shuffledNativeParcels.slice(0, nativeParcelCount)) medievalNativeParcelKeys.add(parcelKey(bp));
+  }
+  const governmentBlock = isMedievalVillage ? null : blockPositions[Math.floor(Math.random() * blockPositions.length)];
   // Keep parks special and legible: every regenerated town gets exactly one
   // or two park parcels, never the previous four-to-six-parcel flood.
-  const parkCount = Math.random() < 0.5 ? 1 : 2;
+  const parkCount = isMedievalVillage ? 2 : (Math.random() < 0.5 ? 1 : 2);
   const parkParcels = new Map();
-  const shuffledParkCandidates = blockPositions.filter(bp => bp !== governmentBlock).sort(() => Math.random() - 0.5);
+  const shuffledParkCandidates = blockPositions.filter(bp =>
+    bp !== governmentBlock && (!isMedievalVillage || medievalNativeParcelKeys.has(parcelKey(bp)))
+  ).sort(() => Math.random() - 0.5);
   const shuffledFullParcel = [...FULL_PARCEL_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
   const shuffledCompact = [...COMPACT_PARK_ARCHETYPES].sort(() => Math.random() - 0.5);
+  const shuffledMedievalCommons = [...MEDIEVAL_COMMONS_ARCHETYPES].sort(() => Math.random() - 0.5);
   reservedParcelKeys.clear();
   if (governmentBlock) reservedParcelKeys.add(parcelKey(governmentBlock));
+  if (isMedievalVillage) {
+    for (const key of medievalNativeParcelKeys) reservedParcelKeys.add(key);
+  }
   for (let i = 0; i < parkCount; i++) {
     // Most parks present one full-parcel attraction. Mixed parks combine four
     // compact attractions; a smaller chance lets one compact attraction enjoy
     // a spacious showcase parcel of its own.
     const roll = Math.random();
-    const archetype = roll < 0.25
-      ? 'mixed_compact'
-      : roll < 0.42
-        ? shuffledCompact[i % shuffledCompact.length]
-        : shuffledFullParcel[i % shuffledFullParcel.length];
+    const archetype = isMedievalVillage
+      ? 'medieval_commons'
+      : roll < 0.25
+        ? 'mixed_compact'
+        : roll < 0.42
+          ? shuffledCompact[i % shuffledCompact.length]
+          : shuffledFullParcel[i % shuffledFullParcel.length];
     parkParcels.set(shuffledParkCandidates[i], {
       archetype,
-      variant: PARK_VARIANTS[Math.floor(Math.random() * PARK_VARIANTS.length)],
+      variant: isMedievalVillage
+        ? shuffledMedievalCommons[i % shuffledMedievalCommons.length]
+        : PARK_VARIANTS[Math.floor(Math.random() * PARK_VARIANTS.length)],
     });
+  }
+  if (isMedievalVillage) {
+    document.documentElement.setAttribute('data-holesy-medieval-commons', [...parkParcels.values()].map(park => park.variant).join(','));
   }
   for (const bp of parkParcels.keys()) reservedParcelKeys.add(parcelKey(bp));
   // Place buildings on block corners/edges, small stuff around perimeter
   let populatedBlockCount = 0;
   for (const bp of blockPositions) {
+    const isNativeMedievalParcel = isMedievalVillage && medievalNativeParcelKeys.has(parcelKey(bp));
+    if (isMedievalVillage && !isNativeMedievalParcel) {
+      populatedBlockCount++;
+      if (populatedBlockCount % 4 === 0) await yieldCityBuildFrame();
+      continue;
+    }
     // Decide block type
     const t = Math.random();
     let parcelUse = 'standard';
@@ -3158,7 +3812,8 @@ async function populateCity() {
     } else if (parkParcels.has(bp)) {
       const park = parkParcels.get(bp);
       parcelUse = `park_${park.archetype}_${park.variant}`;
-      populateParkParcel(bp, park.archetype, park.variant);
+      if (park.archetype === 'medieval_commons') populateMedievalCommonsParcel(bp, park.variant);
+      else populateParkParcel(bp, park.archetype, park.variant);
     } else if (Math.random() > buildingBlockDensity) {
       // Scarcer difficulties leave more blocks lightly populated.
     } else if (t < skyscraperChance) {
@@ -3293,9 +3948,7 @@ async function populateCity() {
     else makeTree(p);
     if (i % 10 === 9) await yieldCityBuildFrame();
   }
-  if (selectedEnvironment === ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN) {
-    populateMegakitDowntownTest();
-  }
+  await populateSelectedCityPacks();
   pruneObjectsToArena();
 }
 
@@ -3884,10 +4537,10 @@ function triggerHaptic(type = 'devour', options = {}) {
 
 function getHapticSupportText() {
   if (getNativeHapticsBridge()) {
-    return 'Native haptics available. Tap to test.';
+    return 'Native haptics available. Tap to check.';
   }
   if (getIosSwitchHapticInput()) {
-    return 'iOS web fallback available. Tap to test.';
+    return 'iOS web fallback available. Tap to check.';
   }
   if (typeof navigator === 'undefined' || typeof navigator.vibrate !== 'function') {
     return 'No browser haptics here. Try Android Chrome or Samsung Internet.';
@@ -3895,13 +4548,13 @@ function getHapticSupportText() {
   if (window.isSecureContext === false && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
     return 'Haptics may be blocked on this non-secure URL.';
   }
-  return 'Haptics supported. Tap to test.';
+  return 'Haptics supported. Tap to check.';
 }
 
 function getHapticResultText() {
   switch (lastHapticStatus) {
     case 'native':
-      return 'Native haptic test sent.';
+      return 'Native haptic check sent.';
     case 'nativeError':
       return 'Native haptics failed in this app shell.';
     case 'iosSwitch':
@@ -3909,13 +4562,13 @@ function getHapticResultText() {
     case 'iosSwitchError':
       return 'iOS web fallback failed in this browser.';
     case 'sent':
-      return 'Haptic test sent. If you felt nothing, this browser may be silently ignoring vibration.';
+      return 'Haptic pulse sent. If you felt nothing, this browser may be silently ignoring vibration.';
     case 'blocked':
       return 'Haptics were blocked by this browser or device setting.';
     case 'unsupported':
       return 'This browser has no web haptics API, so the game cannot vibrate this device.';
     case 'error':
-      return 'Haptics test failed in this browser.';
+      return 'Haptics check failed in this browser.';
     case 'cooldown':
       return 'Haptics are cooling down. Try again.';
     default:
@@ -4227,8 +4880,10 @@ let roundRunId = 0;
 let pendingWaveStartTimer = null;
 let pendingWaveStartWave = null;
 let pendingWaveStartDueAt = 0;
+let pendingWaveSkipToken = null;
 let playerConsumedFadeTimer = null;
 let playerConsumedReturnTimer = null;
+let playerConsumedSkipToken = null;
 let pausedWaveTransitionRemainingMs = null;
 let pausedWaveTransitionNextWave = null;
 let pausedStateBeforePause = null;
@@ -4266,8 +4921,12 @@ const waveContractEl = document.getElementById('wave-contract');
 const waveContractMandatesEl = document.getElementById('wave-contract-mandates');
 const waveContractGoalsEl = document.getElementById('wave-contract-goals');
 let waveContractToken = 0;
+let waveContractDockTimer = null;
+let waveContractCompleteTimer = null;
+let waveContractSkipToken = null;
 const adaptiveAssistIndicatorEl = document.getElementById('adaptive-assist-indicator');
 const mobileHudToggleBtn = document.getElementById('mobile-hud-toggle');
+const skipWaitBtn = document.getElementById('skip-wait-btn');
 const hapticTestBtn = document.getElementById('haptic-test-btn');
 const hapticStatusEl = document.getElementById('haptic-status');
 const playBtn = document.getElementById('play-btn');
@@ -4286,6 +4945,39 @@ const pauseExitBtn = document.getElementById('pause-exit-btn');
 const pauseStatusMessage = document.getElementById('pause-status-message');
 eventBannerBackdrop.style.background = `rgba(6, 9, 18, ${HOLESY_CONFIG.eventMessaging.backdropOpacity})`;
 
+let skippableWaitSequence = 0;
+let activeSkippableWait = null;
+
+function beginSkippableWait(label, onSkip) {
+  clearSkippableWait();
+  const token = ++skippableWaitSequence;
+  activeSkippableWait = { token, label, onSkip };
+  skipWaitBtn.textContent = '<Skip>';
+  skipWaitBtn.setAttribute('aria-label', `Skip ${label}`);
+  skipWaitBtn.title = `Skip ${label}`;
+  skipWaitBtn.classList.remove('hidden');
+  document.documentElement.setAttribute('data-holesy-skippable-wait', label);
+  return token;
+}
+
+function clearSkippableWait(token = null) {
+  if (token !== null && activeSkippableWait?.token !== token) return;
+  activeSkippableWait = null;
+  skipWaitBtn.classList.add('hidden');
+  skipWaitBtn.setAttribute('aria-label', 'Skip presentation wait');
+  skipWaitBtn.removeAttribute('title');
+  document.documentElement.removeAttribute('data-holesy-skippable-wait');
+}
+
+function skipActiveWait() {
+  if (!activeSkippableWait) return;
+  const wait = activeSkippableWait;
+  clearSkippableWait(wait.token);
+  wait.onSkip?.();
+}
+
+skipWaitBtn.addEventListener('click', skipActiveWait);
+
 // LMS choice modal — shown when timer hits zero if player is still alive
 const lmsChoice = document.getElementById('lms-choice');
 const lmsCurrentScore = document.getElementById('lms-current-score');
@@ -4298,6 +4990,7 @@ const modePicker = document.getElementById('mode-picker');
 const difficultySelect = document.getElementById('difficulty-select');
 const difficultyDesc = document.getElementById('difficulty-desc');
 const environmentSelect = document.getElementById('environment-select');
+const environmentDesc = document.getElementById('environment-desc');
 const cosmeticSelect = document.getElementById('cosmetic-select');
 const cosmeticDesc = document.getElementById('cosmetic-desc');
 function refreshCosmeticPicker() {
@@ -4319,7 +5012,6 @@ cosmeticSelect?.addEventListener('change', () => {
   refreshCosmeticPicker();
 });
 refreshCosmeticPicker();
-const environmentDesc = document.getElementById('environment-desc');
 const statsWindowBtn = document.getElementById('stats-window-btn');
 const loreArchiveBtn = document.getElementById('lore-archive-btn');
 const howToPlayBtn = document.getElementById('how-to-play-btn');
@@ -4348,7 +5040,7 @@ const buildNotesListEl = document.getElementById('build-notes-list');
 const statsModal = document.getElementById('stats-modal');
 const statsCloseBtn = document.getElementById('stats-close-btn');
 const statsModalBody = document.getElementById('stats-modal-body');
-const feedbackBtn = document.getElementById('beta-feedback-btn');
+const feedbackBtn = document.getElementById('player-feedback-btn');
 const feedbackModal = document.getElementById('feedback-modal');
 const feedbackForm = document.getElementById('feedback-shell');
 const feedbackCloseBtn = document.getElementById('feedback-close-btn');
@@ -4365,7 +5057,7 @@ function getFeedbackEnvironment() {
 }
 function openFeedback() {
   const env = getFeedbackEnvironment();
-  feedbackDevice.textContent = `${BUILD_LABEL} · ${env.device} · ${env.browser} · ${env.viewport}`;
+  feedbackDevice.textContent = `${PLAYER_VERSION_LABEL} · ${env.device} · ${env.browser} · ${env.viewport}`;
   feedbackModal.classList.remove('hidden');
   feedbackThanks?.classList.add('hidden');
 }
@@ -4392,8 +5084,15 @@ feedbackForm?.addEventListener('submit', async event => {
 });
 difficultySelect.value = selectedDifficultyName;
 setDifficulty(selectedDifficultyName);
-setEnvironment(selectedEnvironment);
-
+environmentSelect?.addEventListener('change', () => {
+  selectedEnvironmentOverride = environmentSelect.value;
+  const recipe = CITY_RECIPES[selectedEnvironmentOverride];
+  environmentDesc.textContent = recipe
+    ? `${recipe.label} will be used for every generated city. Temporary control — remove before release.`
+    : 'Cities rotate automatically without immediate repeats. Temporary control — remove before release.';
+  document.documentElement.setAttribute('data-holesy-environment-override', selectedEnvironmentOverride);
+});
+environmentSelect?.dispatchEvent(new Event('change'));
 syncStartupUi();
 
 let gameStats = loadGameStats();
@@ -6691,20 +7390,34 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function marketSafeUpdateText(value) {
+  return String(value)
+    .replace(/\bbeta\b/gi, 'early')
+    .replace(/\btests?\b/gi, 'checks')
+    .replace(/\btesting\b/gi, 'review')
+    .replace(/\bprototypes?\b/gi, 'first passes')
+    .replace(/\bpreviews?\b/gi, 'presentations')
+    .replace(/^Master\s+/i, 'Version ');
+}
+
 function renderBuildNotes() {
   if (!buildNotesListEl) return;
-  buildNotesListEl.innerHTML = BUILD_CHANGELOG.map(entry => `
+  buildNotesListEl.innerHTML = BUILD_CHANGELOG.map(entry => {
+    const summary = marketSafeUpdateText(entry.summary || entry.title || 'Update');
+    const changes = (entry.changes || entry.notes || []).map(marketSafeUpdateText);
+    return `
     <section class="build-note">
       <div class="build-note-title">
-        <span>${escapeHtml(entry.label)}</span>
-        <span class="build-note-date">${escapeHtml(entry.date)}</span>
+        <span>${escapeHtml(marketSafeUpdateText(entry.label))}</span>
+        <span class="build-note-date">${escapeHtml(entry.date || '')}</span>
       </div>
-      <div class="build-note-summary">${escapeHtml(entry.summary)}</div>
+      <div class="build-note-summary">${escapeHtml(summary)}</div>
       <ul class="build-note-list">
-        ${entry.changes.map(change => `<li>${escapeHtml(change)}</li>`).join('')}
+        ${changes.map(change => `<li>${escapeHtml(change)}</li>`).join('')}
       </ul>
     </section>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function openBuildNotes() {
@@ -7168,6 +7881,18 @@ function awardEndlessWaveLoreDrop() {
 let audioBanksLoaded = false;
 let audioBankWarmupTimer = null;
 const activeNonMusicSources = new Set();
+const MAX_SIMULTANEOUS_BUILDING_SOUNDS = 5;
+let activeBuildingAudioVoices = 0;
+
+function reserveBuildingAudioVoice() {
+  if (activeBuildingAudioVoices >= MAX_SIMULTANEOUS_BUILDING_SOUNDS) return false;
+  activeBuildingAudioVoices++;
+  return true;
+}
+
+function releaseBuildingAudioVoice() {
+  activeBuildingAudioVoices = Math.max(0, activeBuildingAudioVoices - 1);
+}
 
 function scheduleAudioBankWarmup(delayMs = 2500) {
   if (audioBanksLoaded || audioBankWarmupTimer || !music.ctx) return;
@@ -7252,6 +7977,7 @@ function stopActiveNonMusicSources() {
     try { src.disconnect(); } catch (e) {}
   }
   activeNonMusicSources.clear();
+  activeBuildingAudioVoices = 0;
 }
 
 // Play scream for a person using their voice profile
@@ -7300,6 +8026,7 @@ function playBuildingSound(buildingSize, volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.buildings.filter(b => b);
   if (loaded.length === 0) return;
+  if (!reserveBuildingAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   // Scale pitch by building size: large buildings sound deeper (slower playback),
   // small ones sound snappier. Base pitch wobble ±5% for variety within each size.
@@ -7311,7 +8038,26 @@ function playBuildingSound(buildingSize, volumeScale = 1.0) {
   const gain = (baseGain + (Math.random() - 0.5) * 0.1) * volumeScale;
   // Bigger buildings get more reverb for spatial depth
   const reverbMix = buildingSize === 'large' ? 0.28 : (buildingSize === 'mid' ? 0.22 : 0.15);
-  playSample(buf, rate, gain, reverbMix);
+  const ctx = music.ctx;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  src.playbackRate.value = rate;
+  const g = ctx.createGain();
+  g.gain.value = gain;
+  src.connect(g);
+  g.connect(getSfxDestination());
+  if (music.reverb && reverbMix > 0) {
+    const rev = ctx.createGain();
+    rev.gain.value = reverbMix;
+    g.connect(rev);
+    rev.connect(music.reverb);
+  }
+  activeNonMusicSources.add(src);
+  src.onended = () => {
+    activeNonMusicSources.delete(src);
+    releaseBuildingAudioVoice();
+  };
+  src.start();
 }
 
 function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId = 'global') {
@@ -7325,6 +8071,7 @@ function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId
   const state = skyscraperImpactAudioState.get(key) || { active: 0, lastAt: 0 };
   if (state.active >= STACK_PHYSICS_CONFIG.skyscraperAudioMaxVoicesPerStack) return;
   if (now - state.lastAt < STACK_PHYSICS_CONFIG.skyscraperAudioMinIntervalMs) return;
+  if (!reserveBuildingAudioVoice()) return;
   state.active += 1;
   state.lastAt = now;
   skyscraperImpactAudioState.set(key, state);
@@ -7352,6 +8099,7 @@ function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId
     activeNonMusicSources.delete(src);
     const latest = skyscraperImpactAudioState.get(key);
     if (latest) latest.active = Math.max(0, latest.active - 1);
+    releaseBuildingAudioVoice();
   };
   src.start(startAt);
   try { src.stop(stopAt + 0.02); } catch (e) {}
@@ -7368,6 +8116,7 @@ function playSkyscraperChunkSound(volumeScale = 1.0, obj = null) {
   const state = skyscraperImpactAudioState.get(key) || { active: 0, lastAt: 0 };
   if (state.active >= STACK_PHYSICS_CONFIG.skyscraperAudioMaxVoicesPerStack) return;
   if (now - state.lastAt < STACK_PHYSICS_CONFIG.skyscraperAudioMinIntervalMs) return;
+  if (!reserveBuildingAudioVoice()) return;
   state.active += 1;
   state.lastAt = now;
   skyscraperImpactAudioState.set(key, state);
@@ -7388,6 +8137,7 @@ function playSkyscraperChunkSound(volumeScale = 1.0, obj = null) {
     activeNonMusicSources.delete(src);
     const latest = skyscraperImpactAudioState.get(key);
     if (latest) latest.active = Math.max(0, latest.active - 1);
+    releaseBuildingAudioVoice();
   };
   src.start(startAt);
   try { src.stop(stopAt + 0.02); } catch (e) {}
@@ -8054,11 +8804,14 @@ function showEventBanner(text, durationMs = HOLESY_CONFIG.aidDrops.flashDuration
 }
 
 function clearPendingWaveStart() {
-  if (!pendingWaveStartTimer) return;
-  clearTimeout(pendingWaveStartTimer);
+  if (pendingWaveStartTimer) clearTimeout(pendingWaveStartTimer);
   pendingWaveStartTimer = null;
   pendingWaveStartWave = null;
   pendingWaveStartDueAt = 0;
+  if (pendingWaveSkipToken !== null) {
+    clearSkippableWait(pendingWaveSkipToken);
+    pendingWaveSkipToken = null;
+  }
 }
 
 function clearPlayerConsumedReturn() {
@@ -8071,6 +8824,10 @@ function clearPlayerConsumedReturn() {
     playerConsumedReturnTimer = null;
   }
   spectatorFadeEl.classList.remove('show');
+  if (playerConsumedSkipToken !== null) {
+    clearSkippableWait(playerConsumedSkipToken);
+    playerConsumedSkipToken = null;
+  }
 }
 
 function schedulePlayerConsumedReturn(eater) {
@@ -8093,9 +8850,25 @@ function schedulePlayerConsumedReturn(eater) {
     playerConsumedReturnTimer = null;
     endGame();
   }, 5000);
+  playerConsumedSkipToken = beginSkippableWait('consumed replay', () => {
+    clearPlayerConsumedReturn();
+    endGame();
+  });
 }
 
 function clearTransientRoundUi() {
+  waveContractToken++;
+  if (waveContractDockTimer) clearTimeout(waveContractDockTimer);
+  if (waveContractCompleteTimer) clearTimeout(waveContractCompleteTimer);
+  waveContractDockTimer = null;
+  waveContractCompleteTimer = null;
+  if (waveContractSkipToken !== null) {
+    clearSkippableWait(waveContractSkipToken);
+    waveContractSkipToken = null;
+  }
+  waveContractEl?.classList.add('hidden');
+  waveContractEl?.classList.remove('docking');
+  hud.style.opacity = '1';
   if (stagePopTimer) {
     clearTimeout(stagePopTimer);
     stagePopTimer = null;
@@ -8176,14 +8949,21 @@ function scheduleNextWaveStart(nextWave, delayMs = HOLESY_CONFIG.eventMessaging.
   const scheduledRoundId = roundRunId;
   pendingWaveStartWave = nextWave;
   pendingWaveStartDueAt = performance.now() + delayMs;
-  pendingWaveStartTimer = setTimeout(() => {
+  const startScheduledWave = () => {
+    if (pendingWaveStartTimer) clearTimeout(pendingWaveStartTimer);
     pendingWaveStartTimer = null;
     pendingWaveStartWave = null;
     pendingWaveStartDueAt = 0;
+    if (pendingWaveSkipToken !== null) {
+      clearSkippableWait(pendingWaveSkipToken);
+      pendingWaveSkipToken = null;
+    }
     if (scheduledRoundId !== roundRunId) return;
     if (!isWaveBasedMode() || !isGameState(GAME_STATES.WAVE_TRANSITION)) return;
     startWave(nextWave);
-  }, delayMs);
+  };
+  pendingWaveStartTimer = setTimeout(startScheduledWave, delayMs);
+  pendingWaveSkipToken = beginSkippableWait('district briefing', startScheduledWave);
 }
 
 // =========================================================================
@@ -9644,6 +10424,7 @@ function cashoutFromLmsChoice() {
 // in-flight bonuses no longer apply.
 function tearDownWorld() {
   clearMegakitEnvironmentMeshes();
+  clearMedievalEnvironmentMeshes();
   // Consumables (people, cars, trees, buildings, props, lamps). Also includes
   // any object currently mid-fall (the animate loop handles falling objects
   // whether consumed or not, and removes them from scene at y < -5).
@@ -9658,6 +10439,7 @@ function tearDownWorld() {
   governmentPhysics.clear();
   movingCars.length = 0;
   movingPeople.length = 0;
+  medievalAmbientActors.length = 0;
   animatedParkObjects.length = 0;
   nightWindowVisuals.length = 0;
   streetLightVisuals.length = 0;
@@ -9917,6 +10699,26 @@ function resetHoleSizesForEndlessWorldShift() {
 function presentWaveContract(waveNum, onDocked) {
   if (!waveContractEl) { onDocked(); return; }
   const token = ++waveContractToken;
+  if (waveContractDockTimer) clearTimeout(waveContractDockTimer);
+  if (waveContractCompleteTimer) clearTimeout(waveContractCompleteTimer);
+  if (waveContractSkipToken !== null) clearSkippableWait(waveContractSkipToken);
+  let completed = false;
+  const finishContract = () => {
+    if (completed || token !== waveContractToken) return;
+    completed = true;
+    if (waveContractDockTimer) clearTimeout(waveContractDockTimer);
+    if (waveContractCompleteTimer) clearTimeout(waveContractCompleteTimer);
+    waveContractDockTimer = null;
+    waveContractCompleteTimer = null;
+    if (waveContractSkipToken !== null) {
+      clearSkippableWait(waveContractSkipToken);
+      waveContractSkipToken = null;
+    }
+    waveContractEl.classList.add('hidden');
+    waveContractEl.classList.remove('docking');
+    hud.style.opacity = '1';
+    onDocked();
+  };
   const pendingMandates = mandateTargets.filter(target => target.progress < target.required || target.failed);
   const pendingGoals = activeRunObjectives.filter(goal => !goal.complete);
   const mandateCard = waveContractMandatesEl?.closest('.wave-contract-card');
@@ -9929,17 +10731,13 @@ function presentWaveContract(waveNum, onDocked) {
     .map(goal => `<div>★ ${escapeHtml(goal.label)}</div>`).join('');
   waveContractEl.classList.remove('hidden', 'docking');
   hud.style.opacity = '0.28';
-  setTimeout(() => {
+  waveContractDockTimer = setTimeout(() => {
     if (token !== waveContractToken) return;
     waveContractEl.classList.add('docking');
     hud.style.opacity = '1';
   }, 5500);
-  setTimeout(() => {
-    if (token !== waveContractToken) return;
-    waveContractEl.classList.add('hidden');
-    waveContractEl.classList.remove('docking');
-    onDocked();
-  }, 6500);
+  waveContractCompleteTimer = setTimeout(finishContract, 6500);
+  waveContractSkipToken = beginSkippableWait(`wave ${waveNum} contract`, finishContract);
 }
 
 function startWave(waveNum) {
@@ -10682,7 +11480,7 @@ if (hapticTestBtn) {
     const nowTs = performance.now();
     if (nowTs - lastHapticTestActivationTs < 350) return;
     lastHapticTestActivationTs = nowTs;
-    hapticTestBtn.textContent = 'Testing...';
+    hapticTestBtn.textContent = 'Checking...';
     triggerHaptic('diagnostic', { force: true });
     const resultText = getHapticResultText();
     updateHapticStatus(resultText);
@@ -10772,17 +11570,6 @@ modePicker.addEventListener('click', (e) => {
 difficultySelect.addEventListener('change', () => {
   setDifficulty(difficultySelect.value);
 });
-
-if (environmentSelect) {
-  environmentSelect.addEventListener('change', async () => {
-    setEnvironment(environmentSelect.value);
-    if (!isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION)) {
-      tearDownWorld();
-      await populateCity();
-      wakeRenderLoop();
-    }
-  });
-}
 
 function bindMenuActionButton(button, action) {
   if (!button) return;
@@ -11647,7 +12434,14 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
     if (sourceHole.isPlayer && consumedPiece) {
       const distToPiece = Math.hypot(consumedPiece.x - sourceHole.x, consumedPiece.z - sourceHole.z);
       const insideHole = distToPiece < sourceHole.radius + Math.min(consumedPiece.size || 0, 0.35);
-      if (insideHole) showStagePop('TOO SMALL FOR SKYSCRAPER', 900);
+      if (insideHole) {
+        const structureLabel = consumedPiece.buildingSize === 'large'
+          ? 'SKYSCRAPER'
+          : consumedPiece.mandateKind === 'tower'
+            ? 'TOWER'
+            : 'BUILDING';
+        showStagePop(`TOO SMALL FOR ${structureLabel}`, 900);
+      }
     }
     return false;
   }
@@ -12135,7 +12929,7 @@ function updatePhysicsStackPieces(dt) {
           const triggerRadius = h.radius + STACK_PHYSICS_CONFIG.triggerPadding;
           if (distanceSquared >= triggerRadius * triggerRadius) continue;
           const collapsed = activatePhysicsStack(piece.stackId, h, piece);
-          if (collapsed && h.isPlayer) showStagePop('SKYSCRAPER COLLAPSE!', 1250);
+          if (collapsed && h.isPlayer) showStagePop(piece.stackCollapseLabel || 'BUILDING COLLAPSE!', 1250);
           break;
         }
       }
@@ -15336,6 +16130,7 @@ function animate(frameNow = performance.now()) {
     updateTrafficLights(dt);
     updateMovingCars(dt);
     updateMovingPeople(dt);
+    updateMedievalAmbientActors(dt);
     updateParkAnimations(dt);
 
     // --- Military simulation ---

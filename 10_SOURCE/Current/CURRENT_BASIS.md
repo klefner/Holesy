@@ -6,8 +6,98 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current in-game label is `Master 16.75`
-- `Master 16.75` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.181` and player-facing surfaces show `Version 16.181`
+- `Master 16.181` is the current governed source basis and includes:
+  - a reusable, manifest-driven destruction standard for all cities using externally authored models
+  - authentic clipped surfaces plus closed inset structural cores for all ten Medieval building models
+  - governed small, medium, large, and tower breach thresholds plus the established fragment fit/jam rules
+  - an explicit windmill-blade conversion exception that does not alter the shared city pipeline
+  - fourteen loose edible props per normal Medieval parcel, up from six, before commons and ambient-object populations
+  - all prior `Master 16.180` Medieval commons work
+- `Master 16.180` includes:
+  - Medieval-specific farms, pastures, barnyards, and training yards in place of modern sports/park parcels
+  - edible crops and livestock plus roaming animals, torch walkers, and animated sword sparring
+  - retry-and-continue Medieval GLB loading so transient host errors cannot abort the village or its edible ladder
+  - 192 staged Medieval loose edibles across pack-building parcels, restoring a starter-to-building growth ladder
+  - original-city physical-fit behavior for non-skyscraper Medieval façade pieces instead of a whole-footprint percentage gate
+  - a global five-voice ceiling shared by ordinary, imported-collapse, and imported-chunk building destruction sounds
+  - an approximately 90/10 Medieval Village parcel mix: 32 Quaternius pack buildings and four native Holesy parcels
+  - smaller 5x5/6x6 exterior-shell destruction pieces that retain roof, timber, masonry, and window cues after breach
+  - actual rendered-height/proportion classification so short imported landmarks are not treated as skyscrapers
+  - one reusable in-game `<Skip>` HUD control for arbitrary presentation waits
+  - skip coverage for wave-contract docking, post-rebuild district briefings, and consumed-player return delay
+  - explicit protection for gameplay-rule clocks and real asset-loading readiness
+  - all prior `Master 16.174` directed city-review work
+- `Master 16.174` includes:
+  - a temporary start-menu city override for directed city-recipe review
+  - Automatic Rotation, Classic City, MegaKit Downtown, and Medieval Village options
+  - an intentional release-gate failure until the selector is removed before publication
+  - all prior `Master 16.173` composable city-pack work
+- `Master 16.173` includes:
+  - declarative city recipes that support zero, one, or multiple independently reusable asset packs
+  - Classic City as the first explicit no-pack recipe, MegaKit Downtown as a two-pack recipe, and Medieval Village as a one-pack recipe
+  - authored MegaKit crosswalks, arrows, STOP/SLOW/bike markings, drains, and concrete entrances
+  - all prior `Master 16.172` Medieval Village work
+- `Master 16.172` includes:
+  - Medieval Village as the third automatically rotated city type
+  - ten optimized CC0 GLB village buildings, with five landmarks rotated into each medieval generation
+  - earth roads, stone edges, medieval street props, and solid-block breach/destruction behavior
+  - automatic eligible-district selection with no immediate environment repeat
+  - removal of player-facing development-state wording plus an automated release-language check
+  - user acceptance of the `Master 16.170` performance pass and `Master 16.169` MegaKit building/park presentation
+  - all prior `Master 16.125` objective-label and street-object work
+
+- `Master 16.123` includes:
+  - time-safe priority messaging with no delayed queue, shorter copy, and smaller mobile banners
+  - boss UI-audio ducking plus a reduced, non-refreshing unit-clear speed boost to interrupt the runaway soldier-chain loop
+  - all prior `Master 16.121` Run Goal reward work and `Master 16.122` boss spectacle work
+
+- `Master 16.121` includes:
+  - individual Run Goal completion glow/chime feedback and a materially larger Goal Sweep stinger/rim/camera reward moment
+  - all prior `Master 16.120` audio-start and Mandate-row reward repairs
+
+- `Master 16.120` includes:
+  - immediate start-gesture recorded-audio decoding remains required for perceived audio-start timing and reward feel.
+  - transparent first-run adaptive assistance with a small red timer-side indicator and persistent/exportable adjustment reasoning
+  - a bounded Endless Wave 1 assistance rule that grants a short 10% movement boost only after 20 active seconds with under 250 points and no objective progress
+  - all prior `Master 16.118` Wave 1 military Mandate repair work
+
+- `Master 16.118` includes:
+  - the Wave 1 soldier-free Mandate repair: every difficulty now preserves the designed no-soldier opening wave, so Wave 1 cannot offer an impossible Soldier or Military Unit Mandate
+  - all prior `Master 16.117` native-shell work remains present but native iOS signing/distribution is deferred in the backlog
+
+- `Master 16.117` includes:
+  - the `Master 16.117` Capacitor native app shell scaffold: root Capacitor config, iOS and Android shell folders, and `@capacitor/haptics` are now present so the existing native haptics bridge can run in a real app shell
+  - the `Master 16.116` iOS web haptic fallback attempt: Holesy now tries a hidden iOS WebKit switch-control tick after native haptics and before browser vibration reports unsupported, with the Haptics button reporting `iOS Tick` when triggered
+  - the `Master 16.115` native haptics bridge pass: `triggerHaptic()` now tries Capacitor Haptics or a `HolesyNativeHaptics` custom bridge before browser vibration, so the existing gameplay haptic events can work in a native iOS/Android shell
+  - the `Master 16.114` unsupported haptics clarity pass: the Haptics button now reports `No Haptics` instead of `No API` when the browser lacks `navigator.vibrate`, and the status text explains that the browser cannot vibrate the device
+  - the `Master 16.113` stable latest URL and stronger haptic diagnostics pass: mobile testing can use `latest.html` without manually changing URL version numbers, the Haptics test button reports the result directly, and supported vibration browsers receive stronger diagnostic/devour pulses
+  - the `Master 16.112` mobile haptics test and mute placement repair: the Haptics menu button now uses touch-safe activation with visible status for sent/blocked/unsupported attempts, and Music moves to the active mobile play bottom-left stack above `HUD+`
+  - the `Master 16.111` randomized Mandate variety pass: Mandates now draw from a larger pool of people, street-prop, tree, car, building, rival-hole, soldier, military-unit, and boss objectives; early waves ask for one target type, then later waves randomly scale toward the five-row maximum with randomized supply-capped counts
+  - the `Master 16.110` mobile playfield HUD and haptic diagnostics pass: mobile play now defaults to a compact field-first HUD with expandable objective details, and the menu exposes a Haptics test/status path for browsers that support `navigator.vibrate`
+  - the `Master 16.109` Mandate fairness/scaling repair: first-wave people and car counts are no longer near-total category sweeps, Mandates now use a clearer per-wave count curve, and each requirement is capped against actual spawned supply so scarce categories remain achievable
+  - the `Master 16.108` mobile haptic feedback pass: supported mobile browsers now get vibration pings for player devours plus distinct haptic patterns for Mandates, Run Goals, Goal Sweep, powerups, wave transitions, boss warnings/defeats, unit clears, rival devours, and player damage/death
+  - the `Master 16.107` mandatory Mandates and wave-long reward repair: wave-based Mandates now end the run if incomplete when the wave timer expires, while completing all Mandate rows grants the score bonus plus a Mandate Surge speed/protection reward that lasts until the wave ends
+  - the `Master 16.106` Endless flagship and boss pressure repair: Endless Waves is now the default selected flagship run, true bosses require more player mass and cleaner center coverage to swallow, speed boost no longer makes boss eating trivial, and bosses hit harder at close range while kiting away from nearby holes to keep firing
+  - the `Master 16.105` building weight and voxel fall repair: building debris uses heavier gravity/fall tuning with less artificial upward hop and bounce, and medium-building voxel cubes no longer settle to the floor until they actually reach ground height
+  - the `Master 16.104` mobile mode picker button repair: the four visible game-mode choices are now real `button` controls with touch-friendly styling and pressed-state updates, preserving the existing layout while making mobile selection reliably tappable
+  - the `Master 16.103` Mandate pressure tuning: count requirements now use a larger share of the live district inventory and increase by wave, so Mandates should stay urgent across most of the wave timer instead of completing in the first 15-20 seconds
+  - the `Master 16.102` Mandate font readability repair: Mandate objective rows and progress counts now match the Run Goals row font scale while preserving the count-based Mandate rules
+  - the `Master 16.101` count-based Mandate clarity repair: the Mandate panel now lives lower under the timer/control cluster and shows explicit category counts such as `Eat People 0/8`, `Eat Props 0/7`, `Eat Cars 0/2`, `Eat Offices 0/2`, and `Eat Towers 0/1`; any matching object advances the listed row and order does not matter
+  - the `Master 16.99` Devour Mandate target-system slice: each newly populated district or wave selects one person, prop, car, mid-building, and skyscraper target, displays five HUD dots, awards the completion bonus, and shows failure feedback when a round ends incomplete
+  - the `Master 16.98` nonlinear offensive pressure and stats-panel repair: offensive unit wave scaling now uses a stronger wave-pressure curve instead of a straight line, and Game Stats open in an in-page modal that does not depend on popup permissions
+  - the `Master 16.97` rival score persistence and offensive-unit escalation repair: Endless rival respawns no longer reduce scores, rival AI difficulty rolls once per game, rivals remember and collect their own collapse rubble, and offensive units gain distinct speed tiers plus wave-scaled speed/damage
+  - the `Master 16.96` boss swallow visibility and boss spotlight repair: consumed soldiers and boss-derived offensive units now visibly fall into the hole instead of disappearing on contact, while true fifth-wave bosses are 40% larger and carry a red neon glow for immediate identification
+  - the `Master 16.95` ten-boss roster and Endless reset cadence repair: expands the boss roster to ten archetypes and fixes world-shift resizing so each block has five growth waves, the boss appears on the fifth wave, and the reset happens on the sixth wave
+  - the `Master 16.94` boss roster and offensive-drop progression change: removes temporary tank-every-level testing, adds Siege Tank, Twin-Gun Mech, and Shield Commander boss archetypes, spawns one random boss every fifth Endless wave, and unlocks revealed boss archetypes as later-wave random drops at half boss damage
+  - the `Master 16.93` skyscraper outward debris repair: collapse chunks now launch from the building center toward the hit/source side instead of receiving an inward center-seeking shove before scatter
+  - the `Master 16.92` wave-start corner randomization change: each alive hole gets a randomized corner assignment at wave start and avoids repeating its previous corner when another corner is available
+  - the `Master 16.91` temporary tank testing visibility change: the green tank army boss is forced into every playable mode and wave so player testing can see it immediately; this is intentionally temporary and should be removed after validation
+  - the `Master 16.90` army boss tank conversion: the former red command-unit boss is now a green tank about twice a car footprint that can drive across road and off-road terrain, push loose objects, and trigger progressive building collapse through tank pressure
+  - the `Master 16.89` Wave 1 to Wave 2 lock fix correcting the army boss late-mode trigger so Wave 2 soldier deployment no longer throws a runtime error
+  - the `Master 16.88` army boss escalation: a three-times-deadlier boss that appears every fifth Endless wave and also appears late in Timed, Waves, and Last Man Standing endgames
+  - the `Master 16.87` comprehensive runtime pass covering geometry/material reuse, lighting and object-scan reductions, deferred audio decoding, idle physics, lighter gameplay overlays, and sustained-slow-frame renderer fallback
+  - the `Master 16.86` startup/frame-pacing repair that removes the duplicate menu-time city build, yields city generation across animation frames, and caps HUD/live-score DOM refreshes at 10 Hz
   - the full approved `Master 15` gameplay baseline
   - the idle lifecycle cleanup candidate lineage from `Master 15.39`
   - the playable Archive / found-document / lore-achievement-buff system from `Master 15.40`
@@ -37,7 +127,7 @@ Current status:
   - the `Master 16.37` save/audio/tuning repair that compacts Endless save object records, rate-limits skyscraper collapse audio, and makes medium-office cubes drop faster with more sideways debris spread
   - the `Master 16.38` `PERF-012` Phase 2 extraction that moves build metadata, patch notes, difficulty profiles, and Archive lore data into separate ES modules
   - the `Master 16.39` startup blocker repair that restores game-mode selection and Begin after correcting the `PERF-012` extraction boundary
-  - the `Master 16.40` same-side hole descent-path refinement, the `Master 16.41` fixed-point vertical descent refinement, the `Master 16.42` visible well-depth refinement, the `Master 16.43` hole-mouth visibility mask, the `Master 16.44` active-voxel hole-miss cleanup, the `Master 16.45` projected screen-space mouth clipping that stops visible falling artifacts outside the black disk, the rejected `Master 16.46` recessed-well visual attempt, the rejected `Master 16.47` abyss-texture attempt, the rejected `Master 16.48` deeper-shaft attempt, the `Master 16.49` restoration of the original flat black hole with colored rim, the `Master 16.50` medium-office cube impact hop/outward kick, the `Master 16.51` stronger medium-office cube pool-break collision tuning, the `Master 16.52` local impact jarring plus solid settled-cube collision participation that reduces overlapping debris, the `Master 16.53` desktop mouse-exit steering carry, the `Master 16.54` medium-office continuous-flow correction, the `Master 16.55` Endless score-continuity / flat-cube-settle repair, the `Master 16.56` government-building separate-physics prototype, the `Master 16.57` government-building spy/tuxedo visibility pass, the `Master 16.58` government-building touch-crash fix, the `Master 16.59` government-building column-shock collapse tuning, the `Master 16.60` time-of-day lighting pass, the `Master 16.61` in-game time/weather preview controls plus weather effects, the `Master 16.62` removal of Ash from the weather cycle while preserving the richer Rain/Snow visuals, the `Master 16.63` government-building shake/topple/impulse collision pass, the `Master 16.64` weather performance rollback that removes the Weather button and particle frame-update path while keeping Time cycling, the `Master 16.65` government-debris escape-window and stronger contact-impulse visibility pass, the `Master 16.66` evening/night street-light, sparse-window, and car-light visual pass, the `Master 16.67` destroyed-building light extinguish cleanup, the `Master 16.68` wave time-of-day sequence lock, the `Master 16.69` Time button cycle repair, the `Master 16.70` streetlamp power-off polish, the `Master 16.71` local test cache refresh, the `Master 16.72` building-window power-off flicker, the `Master 16.73` short one-to-three-flicker building-window power cutoff, the `Master 16.74` PERF-012 modular package completion evidence, and the `Master 16.75` natural skyscraper debris spread repair
+  - the `Master 16.40` same-side hole descent-path refinement, the `Master 16.41` fixed-point vertical descent refinement, the `Master 16.42` visible well-depth refinement, the `Master 16.43` hole-mouth visibility mask, the `Master 16.44` active-voxel hole-miss cleanup, the `Master 16.45` projected screen-space mouth clipping that stops visible falling artifacts outside the black disk, the rejected `Master 16.46` recessed-well visual attempt, the rejected `Master 16.47` abyss-texture attempt, the rejected `Master 16.48` deeper-shaft attempt, the `Master 16.49` restoration of the original flat black hole with colored rim, the `Master 16.50` medium-office cube impact hop/outward kick, the `Master 16.51` stronger medium-office cube pool-break collision tuning, the `Master 16.52` local impact jarring plus solid settled-cube collision participation that reduces overlapping debris, the `Master 16.53` desktop mouse-exit steering carry, the `Master 16.54` medium-office continuous-flow correction, the `Master 16.55` Endless score-continuity / flat-cube-settle repair, the `Master 16.56` government-building separate-physics prototype, the `Master 16.57` government-building spy/tuxedo visibility pass, the `Master 16.58` government-building touch-crash fix, the `Master 16.59` government-building column-shock collapse tuning, the `Master 16.60` time-of-day lighting pass, the `Master 16.61` in-game time/weather preview controls plus weather effects, the `Master 16.62` removal of Ash from the weather cycle while preserving the richer Rain/Snow visuals, the `Master 16.63` government-building shake/topple/impulse collision pass, the `Master 16.64` weather performance rollback that removes the Weather button and particle frame-update path while keeping Time cycling, the `Master 16.65` government-debris escape-window and stronger contact-impulse visibility pass, the `Master 16.66` evening/night street-light, sparse-window, and car-light visual pass, the `Master 16.67` destroyed-building light extinguish cleanup, the `Master 16.68` wave time-of-day sequence lock, the `Master 16.69` Time button cycle repair, the `Master 16.70` streetlamp power-off polish, the `Master 16.71` local test cache refresh, the `Master 16.72` building-window power-off flicker, the `Master 16.73` short one-to-three-flicker building-window power cutoff, the `Master 16.74` PERF-012 modular package completion evidence, the `Master 16.75` natural skyscraper debris spread repair, the `Master 16.77` government/house debris breakup pass, the `Master 16.78` optional MegaKit Downtown test environment, the `Master 16.79` MegaKit safety rollback that removes visual-only ground patches and non-breakable showcase buildings, the `Master 16.80` MegaKit readable-detail pass, the `Master 16.81` visibility repair that widens/brightens block-edge trim and enlarges road manholes while keeping holes visually authoritative, the `Master 16.82` run-goal/object-family mastery slice that adds readable per-run objectives plus local mastery feedback without permanent power growth, the `Master 16.83` goal tuning/performance repair that batches HUD updates, expands to 50 larger goals, and adds the Goal Sweep reward, the `Master 16.84` hotfix that batches mastery persistence and avoids per-bite work for non-active goal families, and the `Master 16.85` readable Run Goal instruction tooltips
 - New candidate work should branch from `Master 16` unless a newer file is explicitly promoted
 - The last approved candidate lineage that became this master was `20_TESTS/Candidate_Builds/Master 15.45 - in-game-build-notes.html`
 
@@ -45,5 +135,3 @@ When a future candidate is approved as the active working basis, either:
 
 - place that package in this folder, or
 - update this note to name the new active package basis clearly
-
-

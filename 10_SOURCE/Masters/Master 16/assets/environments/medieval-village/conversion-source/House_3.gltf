@@ -1,0 +1,430 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.4.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "name": "House_3_Cube.305-Mesh_0_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4688,
+      "max": [
+        0.7540289759635925,
+        1.9837160110473633,
+        1.0420650243759155
+      ],
+      "min": [
+        -0.7713829874992371,
+        0.0002479999966453761,
+        -0.8349530100822449
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_0_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 4688,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_0_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 7038,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_1_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 612,
+      "bufferView": 1,
+      "byteOffset": 14076
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_2_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2700,
+      "bufferView": 1,
+      "byteOffset": 15300
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_3_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 216,
+      "bufferView": 1,
+      "byteOffset": 20700
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_4_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 312,
+      "bufferView": 1,
+      "byteOffset": 21132
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_5_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 3126,
+      "bufferView": 1,
+      "byteOffset": 21756
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_1_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 394,
+      "max": [
+        0.727869987487793,
+        2.062119960784912,
+        0.8733959794044495
+      ],
+      "min": [
+        -0.7452239990234375,
+        0.0002479999966453761,
+        -0.7939119935035706
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_1_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 394,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_2_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1744,
+      "max": [
+        0.9597910046577454,
+        2.08923602104187,
+        1.0574419498443604
+      ],
+      "min": [
+        -0.9771450161933899,
+        0.0002479999966453761,
+        -1.0574419498443604
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_2_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1744,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_3_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 144,
+      "max": [
+        0.9597910046577454,
+        2.08923602104187,
+        1.0574419498443604
+      ],
+      "min": [
+        -0.9771450161933899,
+        0.8651679754257202,
+        -1.0574419498443604
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_3_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 144,
+      "bufferView": 4,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_4_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 176,
+      "max": [
+        0.14789600670337677,
+        0.5029879808425903,
+        0.8370950222015381
+      ],
+      "min": [
+        -0.1652500033378601,
+        0.21500100195407867,
+        0.8238570094108582
+      ],
+      "bufferView": 5,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_4_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 176,
+      "bufferView": 5,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_5_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2066,
+      "max": [
+        0.7512149810791016,
+        1.8258119821548462,
+        1.0661250352859497
+      ],
+      "min": [
+        -0.7685689926147461,
+        0.0002479999966453761,
+        -0.823091983795166
+      ],
+      "bufferView": 6,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_3_Cube.305-Mesh_5_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2066,
+      "bufferView": 6,
+      "byteOffset": 12
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 112512,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 112512,
+      "byteLength": 28008,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 140520,
+      "byteLength": 9456,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 149976,
+      "byteLength": 41856,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 191832,
+      "byteLength": 3456,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 195288,
+      "byteLength": 4224,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 199512,
+      "byteLength": 49584,
+      "byteStride": 24,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "name": "House_3",
+      "uri": "House_3.bin",
+      "byteLength": 249096
+    }
+  ],
+  "materials": [
+    {
+      "name": "Stone_Dark",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.123762,
+          0.14618,
+          0.181264,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.077633,
+          0.081879,
+          0.095419,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.122341,
+          0.054783,
+          0.019326,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Side",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.307496,
+          0.227094,
+          0.099591,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.213407,
+          0.09224,
+          0.03175,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.177224,
+          0.211411,
+          0.230634,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "House_3_Cube.305-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 2
+        },
+        {
+          "attributes": {
+            "POSITION": 8,
+            "NORMAL": 9
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 3
+        },
+        {
+          "attributes": {
+            "POSITION": 10,
+            "NORMAL": 11
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 12,
+            "NORMAL": 13
+          },
+          "mode": 4,
+          "material": 3,
+          "indices": 5
+        },
+        {
+          "attributes": {
+            "POSITION": 14,
+            "NORMAL": 15
+          },
+          "mode": 4,
+          "material": 4,
+          "indices": 6
+        },
+        {
+          "attributes": {
+            "POSITION": 16,
+            "NORMAL": 17
+          },
+          "mode": 4,
+          "material": 5,
+          "indices": 7
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "House_3_Cube.305",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

@@ -1,0 +1,28 @@
+{
+  "packId": "medieval-village-quaternius",
+  "recipeVersion": "1.0.0",
+  "seed": 16180,
+  "runtimeSourceDir": "10_SOURCE/Masters/Master 16/assets/environments/medieval-village/runtime",
+  "normalizedSourceDir": "10_SOURCE/Masters/Master 16/assets/environments/medieval-village/conversion-source",
+  "convertedOutputDir": "10_SOURCE/Masters/Master 16/assets/environments/medieval-village/converted",
+  "relativeTexturePrefix": "../../../conversion-source/",
+  "defaultGrid": { "cols": 4, "rows": 4, "floors": 6 },
+  "coreVisualScale": 0.96,
+  "materials": {
+    "facade": ["Plaster", "Stone", "Wood"],
+    "roof": ["RoofTiles", "Roof", "Wood"],
+    "interior": ["Wood_Side", "Stone_Dark", "Wood"]
+  },
+  "models": [
+    { "id": "house-1", "sourceBase": "House_1", "assetId": "medieval-house-1", "footprint": 8.5, "progressionClass": "small_structure", "collapseSize": 4.25 },
+    { "id": "house-2", "sourceBase": "House_2", "assetId": "medieval-house-2", "footprint": 9.5, "progressionClass": "small_structure", "collapseSize": 4.25 },
+    { "id": "house-3", "sourceBase": "House_3", "assetId": "medieval-house-3", "footprint": 8.5, "progressionClass": "small_structure", "collapseSize": 4.25 },
+    { "id": "house-4", "sourceBase": "House_4", "assetId": "medieval-house-4", "footprint": 8.5, "progressionClass": "small_structure", "collapseSize": 4.25 },
+    { "id": "blacksmith", "sourceBase": "Blacksmith", "assetId": "medieval-blacksmith", "footprint": 10.5, "progressionClass": "medium_structure", "collapseSize": 5.25 },
+    { "id": "inn", "sourceBase": "Inn", "assetId": "medieval-inn", "footprint": 12, "progressionClass": "medium_structure", "collapseSize": 5.25 },
+    { "id": "sawmill", "sourceBase": "Sawmill", "assetId": "medieval-sawmill", "footprint": 11, "progressionClass": "medium_structure", "collapseSize": 5.25 },
+    { "id": "stable", "sourceBase": "Stable", "assetId": "medieval-stable", "footprint": 11.5, "progressionClass": "medium_structure", "collapseSize": 5.25 },
+    { "id": "mill", "sourceBase": "Mill", "assetId": "medieval-mill", "footprint": 12, "progressionClass": "large_structure", "collapseSize": 6, "meshIndexes": [0, 1], "unusualElements": [{ "node": "Mill_Blades_Cube.007", "handling": "clip_with_owning_fragments" }] },
+    { "id": "bell-tower", "sourceBase": "Bell_Tower", "assetId": "medieval-bell-tower", "footprint": 10.5, "progressionClass": "tower_structure", "collapseSize": 6.5, "grid": { "cols": 4, "rows": 4, "floors": 8 } }
+  ]
+}

@@ -1,0 +1,1042 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.4.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "name": "Mill_Cube.128-Mesh_0_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2252,
+      "max": [
+        1.6842279434204102,
+        3.911659002304077,
+        1.1803549528121948
+      ],
+      "min": [
+        -1.6725109815597534,
+        0.6570670008659363,
+        -1.1803549528121948
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_0_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2252,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_0_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2252,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_0_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 3492,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_1_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2490,
+      "bufferView": 1,
+      "byteOffset": 6984
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_2_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 5910,
+      "bufferView": 1,
+      "byteOffset": 11964
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_3_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 6516,
+      "bufferView": 1,
+      "byteOffset": 23784
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_4_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 132,
+      "bufferView": 1,
+      "byteOffset": 36816
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_5_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 804,
+      "bufferView": 1,
+      "byteOffset": 37080
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_6_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 66,
+      "bufferView": 1,
+      "byteOffset": 38688
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_7_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 252,
+      "bufferView": 1,
+      "byteOffset": 38820
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_8_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1344,
+      "bufferView": 1,
+      "byteOffset": 39324
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_9_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 48,
+      "bufferView": 1,
+      "byteOffset": 42012
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_0_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2976,
+      "bufferView": 1,
+      "byteOffset": 42108
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_1_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 264,
+      "bufferView": 1,
+      "byteOffset": 48060
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_2_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 24,
+      "bufferView": 1,
+      "byteOffset": 48588
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_3_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 60,
+      "bufferView": 1,
+      "byteOffset": 48636
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_1_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1642,
+      "max": [
+        0.765749990940094,
+        4.036602973937988,
+        1.0661250352859497
+      ],
+      "min": [
+        -0.7540339827537537,
+        0.000097999996796716,
+        -0.9523159861564636
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_1_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1642,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_1_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1642,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_2_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3928,
+      "max": [
+        0.9376670122146606,
+        4.143428802490234,
+        1.0420650243759155
+      ],
+      "min": [
+        -0.9259499907493591,
+        0.000097999996796716,
+        -0.9615619778633118
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_2_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3928,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_2_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3928,
+      "bufferView": 3,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_3_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3968,
+      "max": [
+        1.7042490243911743,
+        4.016303062438965,
+        1.2757400274276733
+      ],
+      "min": [
+        -1.692531943321228,
+        0.000097999996796716,
+        -1.3424760103225708
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_3_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 3968,
+      "bufferView": 4,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_3_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 3968,
+      "bufferView": 4,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_4_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 60,
+      "max": [
+        0.8195539712905884,
+        3.3848659992218018,
+        1.0117119550704956
+      ],
+      "min": [
+        -0.8078370094299316,
+        1.2949819564819336,
+        -1.0117119550704956
+      ],
+      "bufferView": 5,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_4_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 60,
+      "bufferView": 5,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_4_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 60,
+      "bufferView": 5,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_5_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 504,
+      "max": [
+        0.8342829942703247,
+        3.390126943588257,
+        1.0273940563201904
+      ],
+      "min": [
+        -0.8225659728050232,
+        0.21500200033187866,
+        -1.0273940563201904
+      ],
+      "bufferView": 6,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_5_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 504,
+      "bufferView": 6,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_5_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 504,
+      "bufferView": 6,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_6_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 44,
+      "max": [
+        0.8201469779014587,
+        3.855483055114746,
+        0.9864550232887268
+      ],
+      "min": [
+        -0.808430016040802,
+        0.9610689878463745,
+        -0.9864550232887268
+      ],
+      "bufferView": 7,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_6_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 44,
+      "bufferView": 7,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_6_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 44,
+      "bufferView": 7,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_7_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 168,
+      "max": [
+        1.6976219415664673,
+        3.826786994934082,
+        1.2508469820022583
+      ],
+      "min": [
+        -1.6859049797058105,
+        0.5461289882659912,
+        -1.2508469820022583
+      ],
+      "bufferView": 8,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_7_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 168,
+      "bufferView": 8,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_7_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 168,
+      "bufferView": 8,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_8_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 656,
+      "max": [
+        0.9302330017089844,
+        2.1372220516204834,
+        0.23750099539756775
+      ],
+      "min": [
+        -0.918516993522644,
+        1.2394150495529175,
+        -0.23067300021648407
+      ],
+      "bufferView": 9,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_8_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 656,
+      "bufferView": 9,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_8_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 656,
+      "bufferView": 9,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_9_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 26,
+      "max": [
+        0.7424049973487854,
+        1.0760430097579956,
+        0.7939119935035706
+      ],
+      "min": [
+        -0.7306879758834839,
+        0.000097999996796716,
+        -0.7939119935035706
+      ],
+      "bufferView": 10,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_9_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 26,
+      "bufferView": 10,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Cube.128-Mesh_9_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 26,
+      "bufferView": 10,
+      "byteOffset": 24
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_0_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1856,
+      "max": [
+        1.6849620342254639,
+        4.803774833679199,
+        1.3265730142593384
+      ],
+      "min": [
+        -1.6732449531555176,
+        1.4455679655075073,
+        1.2565690279006958
+      ],
+      "bufferView": 11,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_0_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1856,
+      "bufferView": 11,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_1_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 88,
+      "max": [
+        1.6200720071792603,
+        4.738885879516602,
+        1.2918920516967773
+      ],
+      "min": [
+        -1.6083550453186035,
+        1.510457992553711,
+        1.2912030220031738
+      ],
+      "bufferView": 12,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_1_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 88,
+      "bufferView": 12,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_2_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 10,
+      "max": [
+        0.07281199842691422,
+        3.1883480548858643,
+        1.388316035270691
+      ],
+      "min": [
+        -0.06109499931335449,
+        3.0609960556030273,
+        1.388316035270691
+      ],
+      "bufferView": 13,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_2_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 10,
+      "bufferView": 13,
+      "byteOffset": 12
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_3_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 40,
+      "max": [
+        0.07281199842691422,
+        3.1883480548858643,
+        1.388316035270691
+      ],
+      "min": [
+        -0.06109499931335449,
+        3.0609960556030273,
+        0.8710500001907349
+      ],
+      "bufferView": 14,
+      "byteOffset": 0
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh_3_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 40,
+      "bufferView": 14,
+      "byteOffset": 12
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 72064,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 72064,
+      "byteLength": 48756,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 120820,
+      "byteLength": 52544,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 173364,
+      "byteLength": 125696,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 299060,
+      "byteLength": 126976,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 426036,
+      "byteLength": 1920,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 427956,
+      "byteLength": 16128,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 444084,
+      "byteLength": 1408,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 445492,
+      "byteLength": 5376,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 450868,
+      "byteLength": 20992,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 471860,
+      "byteLength": 832,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 472692,
+      "byteLength": 44544,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 517236,
+      "byteLength": 2112,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 519348,
+      "byteLength": 240,
+      "byteStride": 24,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 519588,
+      "byteLength": 960,
+      "byteStride": 24,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "name": "Mill",
+      "uri": "Mill.bin",
+      "byteLength": 520548
+    }
+  ],
+  "materials": [
+    {
+      "name": "RoofTiles",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.015384,
+          0.096705,
+          0.117848,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.177224,
+          0.211411,
+          0.230634,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Dark",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.123762,
+          0.14618,
+          0.181264,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.122341,
+          0.054783,
+          0.019326,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Windows",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.028173,
+          0.028173,
+          0.028173,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.213407,
+          0.09224,
+          0.03175,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Plaster",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.343378,
+          0.323983,
+          0.183595,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Side",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.307496,
+          0.227094,
+          0.099591,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Green",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.066358,
+          0.117846,
+          0.028293,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.077633,
+          0.081879,
+          0.095419,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood-2",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.122341,
+          0.054783,
+          0.019326,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Plaster-2",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.343378,
+          0.323983,
+          0.183595,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Side-2",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.307496,
+          0.227094,
+          0.099591,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Light-2",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.213407,
+          0.09224,
+          0.03175,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Mill_Cube.128-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        },
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 20,
+            "NORMAL": 21,
+            "TEXCOORD_0": 22
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 5
+        },
+        {
+          "attributes": {
+            "POSITION": 23,
+            "NORMAL": 24,
+            "TEXCOORD_0": 25
+          },
+          "mode": 4,
+          "material": 3,
+          "indices": 6
+        },
+        {
+          "attributes": {
+            "POSITION": 26,
+            "NORMAL": 27,
+            "TEXCOORD_0": 28
+          },
+          "mode": 4,
+          "material": 4,
+          "indices": 7
+        },
+        {
+          "attributes": {
+            "POSITION": 29,
+            "NORMAL": 30,
+            "TEXCOORD_0": 31
+          },
+          "mode": 4,
+          "material": 5,
+          "indices": 8
+        },
+        {
+          "attributes": {
+            "POSITION": 32,
+            "NORMAL": 33,
+            "TEXCOORD_0": 34
+          },
+          "mode": 4,
+          "material": 6,
+          "indices": 9
+        },
+        {
+          "attributes": {
+            "POSITION": 35,
+            "NORMAL": 36,
+            "TEXCOORD_0": 37
+          },
+          "mode": 4,
+          "material": 7,
+          "indices": 10
+        },
+        {
+          "attributes": {
+            "POSITION": 38,
+            "NORMAL": 39,
+            "TEXCOORD_0": 40
+          },
+          "mode": 4,
+          "material": 8,
+          "indices": 11
+        },
+        {
+          "attributes": {
+            "POSITION": 41,
+            "NORMAL": 42,
+            "TEXCOORD_0": 43
+          },
+          "mode": 4,
+          "material": 9,
+          "indices": 12
+        }
+      ]
+    },
+    {
+      "name": "Mill_Blades_Cube.007-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 44,
+            "NORMAL": 45
+          },
+          "mode": 4,
+          "material": 10,
+          "indices": 13
+        },
+        {
+          "attributes": {
+            "POSITION": 46,
+            "NORMAL": 47
+          },
+          "mode": 4,
+          "material": 11,
+          "indices": 14
+        },
+        {
+          "attributes": {
+            "POSITION": 48,
+            "NORMAL": 49
+          },
+          "mode": 4,
+          "material": 12,
+          "indices": 15
+        },
+        {
+          "attributes": {
+            "POSITION": 50,
+            "NORMAL": 51
+          },
+          "mode": 4,
+          "material": 13,
+          "indices": 16
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Mill_Cube.128",
+      "mesh": 0
+    },
+    {
+      "name": "Mill_Blades_Cube.007",
+      "mesh": 1
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ],
+  "scene": 0
+}

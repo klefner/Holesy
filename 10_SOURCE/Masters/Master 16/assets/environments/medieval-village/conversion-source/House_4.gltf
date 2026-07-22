@@ -1,0 +1,411 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.4.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "name": "House_4_Cube.037-Mesh_0_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1234,
+      "max": [
+        0.7598919868469238,
+        0.7762249708175659,
+        1.0661250352859497
+      ],
+      "min": [
+        -0.7598919868469238,
+        0.0002680000034160912,
+        -0.823091983795166
+      ],
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_0_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1234,
+      "bufferView": 0,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_0_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1234,
+      "bufferView": 0,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_0_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 1878,
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_1_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 4314,
+      "bufferView": 1,
+      "byteOffset": 3756
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_2_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 2148,
+      "bufferView": 1,
+      "byteOffset": 12384
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_3_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 120,
+      "bufferView": 1,
+      "byteOffset": 16680
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_4_indices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 612,
+      "bufferView": 1,
+      "byteOffset": 16920
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_1_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2868,
+      "max": [
+        0.7627059817314148,
+        0.9439780116081238,
+        1.0420650243759155
+      ],
+      "min": [
+        -0.7627059817314148,
+        0.0002680000034160912,
+        -0.8349530100822449
+      ],
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_1_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 2868,
+      "bufferView": 2,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_1_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 2868,
+      "bufferView": 2,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_2_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1192,
+      "max": [
+        0.9684680104255676,
+        1.0731979608535767,
+        1.0574419498443604
+      ],
+      "min": [
+        -0.9684680104255676,
+        -0.00010399999882793054,
+        -1.0574419498443604
+      ],
+      "bufferView": 3,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_2_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 1192,
+      "bufferView": 3,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_2_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 1192,
+      "bufferView": 3,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_3_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 80,
+      "max": [
+        0.9684680104255676,
+        1.0731979608535767,
+        1.0574419498443604
+      ],
+      "min": [
+        -0.9684680104255676,
+        0.8651679754257202,
+        -1.0574419498443604
+      ],
+      "bufferView": 4,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_3_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 80,
+      "bufferView": 4,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_3_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 80,
+      "bufferView": 4,
+      "byteOffset": 24
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_4_positions",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 250,
+      "max": [
+        0.7365469932556152,
+        1.0473530292510986,
+        0.8733959794044495
+      ],
+      "min": [
+        -0.7365469932556152,
+        0.0002680000034160912,
+        -0.7939119935035706
+      ],
+      "bufferView": 5,
+      "byteOffset": 0
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_4_normals",
+      "type": "VEC3",
+      "componentType": 5126,
+      "count": 250,
+      "bufferView": 5,
+      "byteOffset": 12
+    },
+    {
+      "name": "House_4_Cube.037-Mesh_4_texcoords",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 250,
+      "bufferView": 5,
+      "byteOffset": 24
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 39488,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 39488,
+      "byteLength": 18144,
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 57632,
+      "byteLength": 91776,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 149408,
+      "byteLength": 38144,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 187552,
+      "byteLength": 2560,
+      "byteStride": 32,
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 190112,
+      "byteLength": 8000,
+      "byteStride": 32,
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "name": "House_4",
+      "uri": "House_4.bin",
+      "byteLength": 198112
+    }
+  ],
+  "materials": [
+    {
+      "name": "Stone_Light",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.177224,
+          0.211411,
+          0.230634,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone_Dark",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.123762,
+          0.14618,
+          0.181264,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.122341,
+          0.054783,
+          0.019326,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Wood_Side",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.307496,
+          0.227094,
+          0.099591,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    },
+    {
+      "name": "Stone",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.077633,
+          0.081879,
+          0.095419,
+          1
+        ],
+        "roughnessFactor": 0.903921569,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "House_4_Cube.037-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1,
+            "TEXCOORD_0": 2
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 3
+        },
+        {
+          "attributes": {
+            "POSITION": 8,
+            "NORMAL": 9,
+            "TEXCOORD_0": 10
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 11,
+            "NORMAL": 12,
+            "TEXCOORD_0": 13
+          },
+          "mode": 4,
+          "material": 2,
+          "indices": 5
+        },
+        {
+          "attributes": {
+            "POSITION": 14,
+            "NORMAL": 15,
+            "TEXCOORD_0": 16
+          },
+          "mode": 4,
+          "material": 3,
+          "indices": 6
+        },
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "mode": 4,
+          "material": 4,
+          "indices": 7
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "House_4_Cube.037",
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0
+}

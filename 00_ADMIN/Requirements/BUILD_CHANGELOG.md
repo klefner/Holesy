@@ -2,6 +2,582 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.181 - 2026-07-22
+
+Reusable imported-city model destruction.
+
+- Replaces Medieval Village's procedural colored destruction blocks with validated fragments clipped from all ten authored building models.
+- Preserves original materials and distinctive surfaces over closed inset cores throughout breach, collapse, and settled debris.
+- Restores whole-building progression gates at 4.25 for houses, 5.25 for medium structures, 6.00 for the mill, and 6.50 for the bell tower; exposed fragments retain the shared fit and jam rules.
+- Increases normal Medieval parcel edibles from six to fourteen and preserves windmill blades with an explicit model-only conversion override.
+- Establishes the governed manifest, normalization, conversion, runtime, and validation procedure for future imported-model cities.
+
+## Master 16.180 - 2026-07-22
+
+Living Medieval commons and street life.
+
+- Replaces both modern park/sports parcels in Medieval Village with two distinct rotating commons selected from farms, cow/sheep pastures, barnyards, and sword-training yards.
+- Adds edible colored vegetable rows, cows, sheep, chickens, hay, barrels, crates, carts, and training targets.
+- Adds animated free-roaming animals, torch-bearing walkers, and sparring villagers across the broader town.
+- Keeps the authored Blacksmith and Stable in the pack-building rotation and preserves the established 32 pack parcels / four non-pack parcels composition.
+- Uses bounded lightweight animation and shared geometry/material caches to control browser cost.
+
+## Master 16.179 - 2026-07-22
+
+Resilient Medieval asset loading.
+
+- Retries each Medieval GLB independently up to three times after transient host failures.
+- Evicts rejected cache entries so a retry performs a real new request.
+- Continues loading the remaining town if one model stays unavailable and still completes the 192-object edible ladder.
+
+## Master 16.178 - 2026-07-22
+
+Medieval growth ladder and physical-fit building entry.
+
+- Adds six medieval edibles around every one of the 32 pack-building parcels: baskets, sacks, crates, barrels, and hay.
+- Supplies 192 themed loose objects across the pack-authored portion of the town, staged from starter-hole food to larger mid-run objects.
+- Removes the arbitrary 43-percent-of-whole-footprint gate from non-skyscraper Medieval structures.
+- Matches original-city small and medium building behavior: proximity exposes the façade pieces, then the established physical-fit check measures each piece's width, depth, height, and size against the hole.
+- Preserves the jam/eject behavior when a specific piece does not physically fit; only genuinely skyscraper-caliber imported structures retain a whole-building collapse threshold.
+
+## Master 16.177 - 2026-07-22
+
+Five-voice building destruction audio cap.
+
+- Adds one global maximum of five simultaneous building destruction sounds.
+- Covers ordinary building consumption, imported-building collapse starts, and individual imported chunk impacts.
+- Retains the narrower per-stack cooldown so multiple collapsing buildings cannot each claim their own five-voice allowance.
+
+## Master 16.176 - 2026-07-22
+
+Pack-authored Medieval town and detailed imported-building destruction.
+
+- Rebuilds Medieval Village with 32 authored pack-building parcels and four native Holesy parcels, an approximately 90/10 visual mix.
+- Reduces native traffic and loose native scenery in the Medieval recipe so the pack remains visually dominant.
+- Replaces solid 3x3 and 4x4 proxy volumes with smaller 5x5 and 6x6 exterior-shell pieces.
+- Carries roof, timber frame, wall-tone, stone-tone, and window-dark details into the damaged state.
+- Uses measured rendered height and proportions for building classification instead of treating a named bell tower as skyscraper-caliber.
+- Corrects the shared size-gate message so ordinary imported buildings and towers are no longer described as skyscrapers.
+
+## Master 16.175 - 2026-07-22
+
+Universal HUD skip for arbitrary presentation waits.
+
+- Adds a compact `<Skip>` HUD action backed by a single reusable skippable-wait contract.
+- Makes the 6.5-second wave-contract dock immediately skippable.
+- Makes the post-rebuild district briefing delay immediately skippable.
+- Makes the five-second consumed-player return delay immediately skippable.
+- Clears scheduled callbacks before advancing so clicking Skip cannot double-start a wave or end screen.
+- Keeps gameplay-rule clocks authoritative: round and wave timers, Mandates, boss deployment, aid timing, buffs, cooldowns, and real asset loading are not skippable.
+
+## Master 16.174 - 2026-07-22
+
+Temporary city override for directed review.
+
+- Restores a start-menu city selector with Automatic Rotation, Classic City, MegaKit Downtown, and Medieval Village.
+- A specific selection remains active for every newly generated city during that run so a reviewer can repeatedly inspect one recipe.
+- Labels the control for removal before release.
+- Intentionally leaves the market-language release gate failing on the exposed environment selector, preventing accidental publication as a market candidate.
+
+## Master 16.173 - 2026-07-22
+
+Composable city-pack architecture and MegaKit street layer.
+
+- Adds declarative city recipes whose pack list may contain zero, one, or multiple asset packs.
+- Defines Classic as a no-pack city, MegaKit Downtown as a two-pack city, and Medieval Village as a one-pack city.
+- Adds ten authored MegaKit road markings: four crosswalks, straight and turn arrows, STOP, SLOW, and bike-lane art.
+- Adds four authored street drains and four concrete entrance/stair pieces as consumable street-scale assets.
+- Stagger-loads imported street assets and cancels obsolete loads when a city is torn down.
+- Adds runtime diagnostics for the selected recipe packs and completed MegaKit street-asset count.
+
+## Master 16.172 - 2026-07-22
+
+Third-city Medieval Village rotation.
+
+- Adds Medieval Village to automatic district selection while preserving the no-immediate-repeat rule.
+- Converts all ten CC0 Quaternius village buildings from source OBJ/MTL into 4.07 MB of browser-ready GLB runtime assets.
+- Places five rotating village landmarks per generation, so successive medieval districts cycle through the complete building roster.
+- Adds earth roads, stone edges, barrels, hay bales, carts, and market stalls with Holesy's existing lightweight geometry.
+- Preserves intact imported shells until breach, then transfers destruction to solid coarse-block physics proxies.
+- Adds invisible runtime diagnostics for selected district and completed medieval-model count.
+
+## Master 16.171 - 2026-07-22
+
+Market-ready district rotation and language cleanup.
+
+- Removed the player-facing environment selector.
+- Added automatic eligible-district selection with no immediate environment repeat.
+- Replaced development-state language in normal player surfaces with production-ready copy.
+- Added `scripts/check-player-facing-language.mjs` as a repeatable release gate.
+- Recorded user acceptance of the `Master 16.170` performance pass and the `Master 16.169` MegaKit building/park presentation.
+
+## Master 16.158 - 2026-07-12
+
+Authoritative Mandate completion visuals, giant warning arrow, and readable boss names.
+
+- Recalculates Mandate completion from the target rows every time the HUD updates instead of trusting cached counters.
+- Makes early completion immediately and persistently turn the Mandate card light green with dark text.
+- Makes late completion immediately replace red card/game borders with exactly four bright green pulses across four seconds.
+- Enlarges the center-screen arrow to 360px, explodes it into view, moves and shrinks it to the existing pointer position, then begins five synchronized flashes and sounds.
+- Keeps the critical arrow motion active even when the operating system requests reduced motion.
+- Triples boss-name label dimensions and doubles their texture resolution for legibility.
+- Replaces the plain brick-box conversion with all 18,344 original model triangles, original UVs, and all 13 original materials distributed across 96 solid physical blocks.
+- Places a smaller closed visual core inside every block while retaining a full-size box collision proxy, preventing the core from hiding the authentic facade.
+- Reduces park-object growth value by 80 percent; park people now award 3 growth points and balls award 4.
+- Turns each completed Run Goal green and turns the containing Run Goals panel green when every Goal is complete.
+
+## Master 16.157 - 2026-07-12
+
+Smaller closed MegaKit blocks with skyscraper collapse behavior.
+
+- Re-converts `Building_Small_1` from 12 large blocks into 96 smaller cubes: four columns, four rows, and six floors.
+- Corrects triangle winding on every cube face so front-facing geometry points outward.
+- Forces every retained kit material to render two-sided as a defensive guarantee against disappearing exposed faces.
+- Keeps six closed physical faces, roof material, interior underside, and box collision metadata on every block.
+- Uses the skyscraper collapse planner's randomized topple, pancake, split, and twist behavior.
+
+## Master 16.156 - 2026-07-12
+
+Longer centered Mandate and Run Goals briefing.
+
+- Increases the fully centered reading period from 2.8 seconds to 5.5 seconds.
+- Preserves the existing one-second docking motion into the HUD.
+- Keeps movement, combat, and the wave timer frozen for the complete 6.5-second sequence.
+
+## Master 16.155 - 2026-07-12
+
+First reproducible offline-converted destructible kit building.
+
+- Converts MegaKit `Building_Small_1` into a prebuilt 12-block glTF before the game runs.
+- Each physical block has six closed faces, a roof cap, a textured facade, an exposed-interior underside, and box-collision metadata.
+- Records the exact source SHA-256, pipeline version, fixed seed, subdivision, dimensions, materials, and physics preset in `recipe.json`.
+- Ships a validation record and requires exactly 12 named blocks at runtime.
+- Loads only this converted building and duplicates it across five parcels for focused destruction testing.
+
+## Master 16.154 - 2026-07-12
+
+Mandate completion state and staged warning arrow.
+
+- Completed Mandates turn the full card light green with high-contrast dark typography.
+- Solving a Mandate during the red deadline warning immediately replaces red with a four-second green card-and-game-border pulse.
+- The warning arrow now explodes into the center, travels to its Mandate pointer position, and then flashes five times.
+- The five comic alert sounds wait for arrival and synchronize with the arrow flashes.
+- Reduced-motion users receive the destination arrow and static success treatment without the travel or pulse animations.
+
+## Master 16.153 - 2026-07-12
+
+Ten animated full-parcel park archetypes.
+
+- Randomly reserves four to six complete parcels per city as parks instead of placing buildings on them.
+- Adds playground, basketball, baseball, tennis, running-track, swimming-pool, picnic/BBQ, fountain-garden, dog, and skate parks.
+- Gives every park a normal, rundown, or fancy presentation.
+- Adds individually consumable turf, fences, courts, equipment, stands, lights, maintenance structures, tables, grills, planters, litter, and valet cars.
+- Adds distinct animation for athletes, bouncing balls, cheering fans, swimmers, runners, dogs, smoke, and fountain water.
+
+## Master 16.152 - 2026-07-12
+
+Solid imported building blocks and permanent boss names.
+
+- Replaced hollow clipped MegaKit shells with closed cubic pieces carrying the kit model's mapped materials.
+- Added solid top and bottom faces so every imported building has a roof and no visible hollow interior.
+- Reserved irregular collapse pieces for skyscrapers unless another building receives an explicit exception.
+- Added one permanent name per boss skin above the boss and in its incoming announcement.
+
+## Master 16.151 - 2026-07-12
+
+Debris sleep and starting-hole precision.
+
+- Grounded building pieces now stop all rotation after a short low-speed settling window.
+- Tiny contacts no longer repeatedly wake already-settled building debris.
+- Starting-hole mouse and touch steering uses a nearer target and softer short-drag response without changing movement speed.
+
+## Master 16.125 - 2026-07-11
+
+Plain-language objectives and expanded street objects.
+
+- Replaced themed Run Goal labels with direct `Eat [count] [object]` instructions.
+- Renamed unclear Mandate targets such as `Edge People` to explicit location language such as `People Near Border`.
+- Added street kiosks, bollards, concrete planters, wood pallets, shopping carts, alarm boxes, scooters, cafe tables, construction drums, and parcel lockers.
+
+## Master 16.121 - 2026-07-10
+
+Run Goal and Goal Sweep reward pass.
+
+- Added a brief objective-row glow/pop and distinct three-note chime for individual Run Goal completion.
+- Strengthened Goal Sweep with the major stinger, player-rim pulse, and short camera kick while preserving its score and speed reward.
+
+## Master 16.120 - 2026-07-10
+
+Immediate game audio and earned Mandate-row rewards.
+
+- Began recorded-sound decoding immediately from the player's start gesture rather than one second after world construction finishes.
+- Added a 250-point reward, compact score pop, and crisp two-note tick when an individual Mandate row is completed.
+
+## Master 16.119 - 2026-07-10
+
+Transparent first-run adaptive assistance.
+
+- Added a small red square beside the timer whenever player-performance data triggers an adjustment.
+- Added persistent browser logging with date/time, version, adjustment, and reason; clicking the square exports the history as a local `.txt` file.
+- Added one bounded rule for testing: after 20 active seconds in Endless Wave 1 with under 250 points and no objective progress, grant a 10% movement boost for 10 seconds.
+
+## Master 16.118 - 2026-07-10
+
+Wave 1 soldier-free Mandate repair.
+
+- Disabled Ultra's unintended Wave 1 soldier override so every difficulty preserves the designed soldier-free opening wave.
+- Kept military Mandates gated until a wave can actually supply soldiers.
+
+## Master 16.117 - 2026-07-09
+
+Capacitor native app shell.
+
+- Added a root Capacitor project pointing at `40_RELEASE/Website_Publish_Package/holesy`.
+- Installed `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios`, `@capacitor/android`, and `@capacitor/haptics`.
+- Generated native `ios/` and `android/` shell projects.
+- Added Android `VIBRATE` permission and documented the native app workflow in `00_ADMIN/Requirements/NATIVE_APP_CAPACITOR_WORKFLOW.md`.
+
+## Master 16.116 - 2026-07-09
+
+iOS web haptic fallback attempt.
+
+- Added a last-resort iOS WebKit switch-control haptic fallback after native haptics and before browser vibration reports unsupported.
+- Changed the Haptics test result to report `iOS Tick` when this fallback is triggered.
+- Preserved the native haptics bridge as the required commercial iPhone haptics path.
+
+## Master 16.115 - 2026-07-09
+
+Native haptics bridge.
+
+- Added a native haptics bridge path so `triggerHaptic()` tries Capacitor Haptics before falling back to browser vibration.
+- Mapped existing gameplay haptic events to native impact, notification, or vibrate calls without changing each gameplay call site.
+- Added support for an optional `window.HolesyNativeHaptics` custom bridge for a non-Capacitor native wrapper.
+- Documented the native haptics bridge contract in `00_ADMIN/Requirements/NATIVE_HAPTICS_BRIDGE.md`.
+
+## Master 16.114 - 2026-07-09
+
+Unsupported haptics clarity.
+
+- Changed the unsupported mobile haptics result from `No API` to `No Haptics`.
+- Updated the status text to explain that browsers without `navigator.vibrate` cannot make the device vibrate.
+- Preserved `latest.html` as the stable mobile test entry point.
+
+## Master 16.113 - 2026-07-09
+
+Stable latest URL and stronger haptic diagnostics.
+
+- Added `latest.html` as a stable cache-refresh launcher that reads `js/build-info.js` and opens the current build automatically.
+- Strengthened the explicit Haptics test pulse and made the button itself report `Sent`, `No API`, `Blocked`, or `Failed`.
+- Increased ordinary devour and heavy-object vibration durations so supported Android browsers should feel gameplay haptic events more clearly.
+- Documented that if the button reports `Sent` but no vibration is felt, the browser/device is likely silently ignoring the Vibration API.
+
+## Master 16.112 - 2026-07-09
+
+Mobile haptics test and mute placement repair.
+
+- Made the Haptics menu test respond through click, pointer, and touch activation instead of relying on desktop-style click only.
+- Added visible status for haptic test outcomes: sent, blocked, unsupported, cooldown, or failed.
+- Bypassed the haptic cooldown for the explicit test button so a tap always attempts the diagnostic pulse.
+- Moved the Music mute control to the bottom-left mobile gameplay control stack just above `HUD+`, while keeping it in the menu corner outside active play.
+
+## Master 16.111 - 2026-07-09
+
+Randomized Mandate variety.
+
+- Randomized Mandates instead of repeating the same fixed People/Props/Cars/Offices/Towers contract every wave.
+- Added a larger Mandate target pool across people variants, street props, trees, cars, buildings, rival holes, soldiers, military units, and boss units.
+- Ramped active Mandate row count by wave tier: early waves ask for one target type, later waves randomly grow toward the five-row maximum.
+- Randomized required counts inside supply-capped limits so scarcity-sensitive targets such as moving cars, soldiers, and bosses stay achievable when selected.
+
+## Master 16.110 - 2026-07-09
+
+Mobile playfield HUD and haptic diagnostics.
+
+- Added a compact mobile HUD default that keeps the playfield clear by showing only tier, timer, and Mandate summary during active play.
+- Added a mobile `HUD+` / `HUD-` toggle so Run Goals, Mandate details, and other dense HUD information are available without permanently covering the board.
+- Added a Haptics menu test/status control and loosened vibration dispatch to use `navigator.vibrate` whenever the browser exposes it.
+- Documented that unsupported mobile browsers or non-secure LAN URLs may still block vibration even when the game sends haptic events.
+
+## Master 16.109 - 2026-07-06
+
+Mandate fairness and scaling repair.
+
+- Retuned Mandate counts away from high first-wave category-inventory percentages so people and car requirements are achievable with focused play.
+- Added a clearer per-wave count curve with actual-supply caps so Mandates scale upward without over-demanding scarce categories on harder difficulties.
+- Kept Mandates mandatory while making wave 1 a fair survival contract instead of a near-total category sweep.
+
+## Master 16.108 - 2026-07-06
+
+Mobile haptic feedback pass.
+
+- Added mobile vibration haptic pings for every player object devour, with heavier pulses for building-like object consumption.
+- Added distinct haptic patterns for Mandate completion/failure, Run Goal completion, Goal Sweep, powerups, wave starts/transitions, boss inbound/defeated, unit clears, rival devours, and player damage/death.
+- Guarded haptics with `navigator.vibrate` feature detection and cooldowns so unsupported browsers safely no-op and dense consumption does not over-vibrate.
+
+## Master 16.107 - 2026-07-06
+
+Mandatory Mandates and wave-long reward.
+
+- Made wave-based Mandates truly mandatory: if the wave timer expires before every Mandate row is complete, the run ends as `Mandate Failed`.
+- Completing all Mandate rows now grants the score bonus plus a Mandate Surge speed/protection reward that lasts until the wave ends.
+- Updated player-facing guidance so Mandates are the required survival contract and Run Goals remain optional reward goals.
+
+## Master 16.106 - 2026-07-06
+
+Endless flagship and boss pressure.
+
+- Made Endless Waves the default selected flagship mode on the title screen.
+- Raised true-boss eat requirements and added extra resistance when the player is under a speed boost.
+- Added close-range boss damage scaling so getting greedy under a boss is dangerous.
+- Added boss kiting while firing so bosses backpedal and strafe to stay in shooting range instead of waiting to be swallowed.
+
+## Master 16.105 - 2026-06-30
+
+Building weight and medium-voxel fall repair.
+
+- Increased building debris gravity and terminal fall speed so objects read heavier during collapse.
+- Reduced medium-building voxel upward hop, release delay, teeter time, and ground bounce.
+- Prevented the missed-hole medium-voxel settle path from snapping a cube to the ground until the cube has actually reached ground height.
+- Mirrored the updated runtime package to the release folder for PC/mobile parity.
+
+## Master 16.104 - 2026-06-30
+
+Mobile mode picker button repair.
+
+- Changed the four visible game-mode choices from clickable cards into real `button` controls.
+- Added pressed-state updates so mobile taps, keyboard activation, and accessibility state all select the same mode.
+- Preserved the existing title-screen layout and styling while making the game-mode choices behave like actual buttons.
+
+## Master 16.103 - 2026-06-26
+
+Mandate pressure tuning.
+
+- Raised Mandate counts from small fixed targets to pressure targets based on a large share of the live district inventory.
+- Added wave-based Mandate pressure growth so later waves demand more of each listed category.
+- Preserved the count-based Mandate HUD and readable font sizing from `Master 16.101` and `Master 16.102`.
+
+## Master 16.102 - 2026-06-26
+
+Mandate font readability repair.
+
+- Increased Mandate row labels and progress counts to match the Run Goals row font scale.
+- Widened the Mandate panel slightly so the larger count text remains readable without crowding.
+- Preserved the `Master 16.101` count-based Mandate behavior.
+
+## Master 16.101 - 2026-06-26
+
+Count-based Mandate clarity.
+
+- Changed Mandates from hidden exact-object targets into explicit category counts.
+- The Mandate panel now shows rows such as `Eat People 0/8`, `Eat Props 0/7`, `Eat Cars 0/2`, `Eat Offices 0/2`, and `Eat Towers 0/1`.
+- Any matching object in the listed category advances the row; order does not matter.
+- Moved the Mandate panel lower in the right HUD stack so the title and instructions stay readable under the timer/control cluster.
+
+## Master 16.99 - 2026-06-25
+
+Devour Mandate target system.
+
+- Added a five-target Devour Mandate selected from the freshly populated district: one person, one prop, one car, one mid building, and one skyscraper.
+- Added a centered Mandate HUD panel with five dots, remaining-count text, amber collection state, and red warning pulse when two or more targets remain under 45 seconds.
+- Awarded a +2,500 score bonus and `MANDATE COMPLETE` feedback when all targets are consumed by the player.
+- Added incomplete-Mandate failure feedback on round end while leaving Locator Pulse, city transition, failure modal, and settings preferences to later PBIs.
+
+## Master 16.98 - 2026-06-24
+
+Nonlinear offensive pressure and stats panel.
+
+- Replaced the straight offensive-unit wave ramp with a stronger nonlinear wave-pressure curve.
+- Kept soldiers slower while letting vehicles and boss-derived units reach higher speed and damage caps as waves climb.
+- Moved Game Stats into an in-page modal so the Stats button works without popup permissions and refreshes after recorded runs.
+
+## Master 16.97 - 2026-06-24
+
+Rival score persistence and offensive-unit escalation.
+
+- Removed the Endless rival respawn score penalty so player and rival scores never go down mid-run.
+- Added per-run randomized rival AI difficulty so the three rival holes vary by game, not by wave.
+- Retuned offensive units so soldiers are slowest, vehicles and boss-derived units move faster, and speed/damage increase as wave number rises.
+- Added rival collapse-focus behavior so AI holes remember buildings they just demolished and stay near the rubble long enough to collect pieces.
+
+## Master 16.96 - 2026-06-24
+
+Boss swallow visibility and boss spotlight.
+
+- Keeps consumed soldiers and boss-derived offensive units visible as they fall into the hole instead of disappearing on first contact.
+- Makes true fifth-wave boss forms 40% larger than their later random-drop versions.
+- Adds a red neon boss glow to the fifth-wave boss form so players can immediately identify the featured boss archetype.
+
+## Master 16.95 - 2026-06-24
+
+Ten-boss roster and reset cadence repair.
+
+- Expanded the boss roster to ten archetypes: Siege Tank, Twin-Gun Mech, Shield Commander, Mortar Carrier, Rail Sniper, Drone Marshal, Grenade Captain, Flame Rig, Railgun Tripod, and Shock Bruiser.
+- Added distinct visual variants and combat tuning for the seven new bosses, including splash rounds, long-range heavy shots, fast laser pressure, short-range flame pressure, charged rail shots, and close-range shock pulses.
+- Corrected Endless world-shift resizing so each block has five waves of growth, the boss appears on the fifth wave, and the hole reset happens on the sixth wave.
+
+## Master 16.94 - 2026-06-24
+
+Boss roster and offensive drops.
+
+- Removed the temporary tank-every-level testing flag.
+- Added three distinct boss archetypes: Siege Tank with slow cannon fire, Twin-Gun Mech with dual heavy machine guns, and Shield Commander with heavy bursts and armor.
+- Every fifth Endless wave now drops one randomly selected boss by itself.
+- Each revealed boss archetype becomes a later-wave random plane-drop option at half boss damage, while Wave 1 stays soldier-free and Waves 2 through 4 remain soldier-led.
+- Updated the How to Play build label from stale `Master 16.55` to `Master 16.94`.
+
+## Master 16.93 - 2026-06-23
+
+Skyscraper outward debris repair.
+
+- Corrects skyscraper collapse direction so chunks launch from the building center toward the hit/source side.
+- Removes the reversed inward shove that made large debris appear to arc out and then return toward the footprint.
+- Keeps medium-office voxel containment, existing lateral scatter, and temporary tank-testing visibility intact.
+
+## Master 16.92 - 2026-06-23
+
+Randomized wave start corners.
+
+- Randomizes each alive hole's corner assignment at the start of every wave.
+- Avoids placing a hole back into its previous wave-start corner when another corner is available.
+- Preserves score, radius, wave-state reset, and temporary `Master 16.91` tank-testing behavior.
+
+## Master 16.91 - 2026-06-23
+
+Temporary tank testing visibility.
+
+- Temporarily forces the green tank army boss into every playable mode and wave so player testing can see it immediately.
+- Shortens the first testing deployment delay while the temporary tank test flag is enabled.
+- Keeps the `Master 16.90` tank model, push behavior, and building-pressure collapse behavior intact.
+- This change is intentionally temporary and should be removed after tank validation.
+
+## Master 16.90 - 2026-06-23
+
+Green tank army boss.
+
+- Replaced the red command-unit boss body with a green tank model sized at roughly twice a car footprint.
+- The tank keeps the army boss spawn cadence and three-times soldier bullet damage, while driving across road and off-road terrain toward holes.
+- Added tank contact behavior that pushes loose props, people, trees, and cars.
+- Added tank pressure against building pieces so deeper contact activates progressive collapse through the existing voxel, skyscraper, and government-building physics paths.
+
+## Master 16.89 - 2026-06-23
+
+Wave transition boss-trigger fix.
+
+- Fixed the Endless Wave 1 to Wave 2 lock caused by the new army boss late-mode trigger referencing a non-existent `timedMode` flag.
+- Replaced that reference with the existing selected-mode state check so Wave 2 soldier deployment can run normally.
+- Preserved the `Master 16.88` army boss behavior and refreshed player-test cache labels to `Master 16.89`.
+
+## Master 16.88 - 2026-06-23
+
+Army boss escalation.
+
+- Added a red army boss command unit that is four times larger than regular soldiers.
+- Boss bullets deal three times normal soldier bullet damage while preserving the existing soldier fire cadence.
+- Bosses appear every fifth Endless wave, late in Timed rounds, late in regular Waves, and during Last Man Standing endgames.
+- Preserved boss identity through plane deployment, parachute landing, soldier AI, devouring reward, and Endless save/load restore paths.
+
+## Master 16.87 - 2026-06-18
+
+Comprehensive runtime performance pass.
+
+- Removed per-frame vortex geometry replacement and reused stable arc geometry through transforms.
+- Replaced global window/streetlight scans with direct mesh registries and active-flicker sets.
+- Combined duplicate object-to-hole scans and removed allocation-heavy dimension checks.
+- Staggered inactive building trigger checks and removed idle government-physics/contact work.
+- Reused box materials and geometries across district objects, with geometry disposal on world rebuild.
+- Deferred embedded sample decoding and reverb construction until after input handling and world startup.
+- Reduced gameplay-overlay blur, capped expensive DOM updates, lowered default render costs, and added sustained-slow-frame resolution/shadow fallback.
+
+## Master 16.86 - 2026-06-18
+
+Startup and frame-pacing repair.
+
+- Removed the duplicate module-load city build that delayed mode-selection interaction.
+- Split city population into animation-frame batches so Begin and wave rebuilds do not monopolize the main thread.
+- Limited HUD/live-score DOM rebuilding to 10 Hz while leaving simulation and rendering uncapped.
+
+## Master 16.85 - 2026-06-18
+
+Run goal instruction tooltips.
+
+- Added a readable dark-background tooltip to every displayed Run Goal.
+- Hovering a goal title explains the exact object family, required count, and score reward.
+- Keyboard focus exposes the same instructions for accessibility.
+- Kept the implementation CSS-driven to preserve the `Master 16.84` performance hotfix.
+
+## Master 16.84 - 2026-06-15
+
+Run goal performance hotfix.
+
+- Batches object-family mastery saves so the game no longer writes local storage during every bite.
+- Limits per-object Run Goals bookkeeping to the families currently shown in the active goals.
+- Preserves the larger randomized goals and Goal Sweep reward from `Master 16.83`.
+
+## Master 16.83 - 2026-06-15
+
+Run goal tuning and performance repair.
+
+- Replaced repeated Run Goals HUD rewrites with dirty-flagged updates to remove the movement stutter introduced by `Master 16.82`.
+- Expanded the run-goal pool to 50 larger predefined goals and randomly selects three different object families per goal set.
+- Added the visible Goal Sweep reward for completing all displayed goals: bonus score plus a short speed surge.
+- Endless refreshes run goals every five waves; timed and standard wave runs receive a set at run start.
+
+## Master 16.82 - 2026-06-15
+
+Run goals and object-family mastery.
+
+- Added a Run Goals HUD panel with three active objectives per run.
+- Added local object-family mastery feedback for people, vehicles, props, trees, buildings, soldiers, and MegaKit manholes.
+- Completing a run goal grants immediate score, while mastery remains feedback-only so future defense scaling can be designed before any persistent growth loop.
+
+## Master 16.81 - 2026-06-15
+
+MegaKit detail visibility repair.
+
+- Widened and brightened MegaKit Downtown block-edge and sidewalk trim so it reads from the normal gameplay camera.
+- Enlarged MegaKit road manholes and added brighter metal rings and surface bars so they are visible during evening and night lighting.
+- Kept the detail non-colliding and below the hole render layer so holes remain visually authoritative.
+
+## Master 16.80 - 2026-06-14
+
+MegaKit readable ground detail.
+
+- Added thin non-colliding block-edge and sidewalk trim to make the MegaKit Downtown test environment read as a city grid without adding fake terrain.
+- Replaced tiny box manholes with larger circular road manholes that are normal consumable props.
+- Kept themed buildings out of MegaKit Downtown until future theme architecture routes them through validated breakable/destruction systems.
+
+## Master 16.79 - 2026-06-13
+
+MegaKit environment safety repair.
+
+- Removed MegaKit visual-only road, sidewalk, and ground patch overlays so holes cannot appear under fake terrain.
+- Removed MegaKit showcase buildings because they did not use the validated breakable building/object destruction paths.
+- Kept MegaKit Downtown as a small-props-only test until future themed buildings are rebuilt through validated voxel/destruction systems.
+
+## Master 16.78 - 2026-06-13
+
+MegaKit Downtown test environment.
+
+- Added a title-screen Environment selector while keeping Classic Aldine as the default.
+- Added a MegaKit Downtown test district that uses imported CC0 Downtown City MegaKit textures on Holesy-authored roads, props, and showcase buildings.
+- MegaKit-flavored roads, sidewalks, props, and showcase buildings render as an isolated environment test while Holesy collision and destruction physics remain on the validated baseline.
+
+## Master 16.77 - 2026-06-12
+
+Government and house voxel repair.
+
+- Government building pieces now use the same voxel-stack collapse path as medium buildings while keeping their government visual style.
+- Small house/shop buildings now wake the whole compact stack on first contact so breakup is visible immediately.
+- Government voxel pieces restore through the voxel save/load path instead of the older separate government physics world.
+
+## Master 16.76 - 2026-06-12
+
+Government and house debris breakup.
+
+- Government-building blast separation now becomes the staged physics base so pieces do not ease back toward the original grid before release.
+- Small house/shop buildings now break into compact voxel chunks instead of being swallowed as one block.
+- Endless save/load preserves restored small-building chunks as small debris pieces.
+
 ## Master 16.75 - 2026-06-12
 
 Natural skyscraper debris spread.
@@ -488,3 +1064,58 @@ Lore archive and achievement buffs.
 Idle lifecycle cleanup.
 
 - Improved pause, visibility, unload, and animation cleanup to reduce long-idle browser risk.
+# Master 16.164
+
+- Moves the converted MegaKit building to immutable asset path `v2.3.0`, preventing GitHub Pages and browser caches from retaining an older brown-lattice model under a reused filename.
+- Gives each imported test building exclusive ownership of its parcel by removing prior park, pool, fixture, and building objects before placement.
+# Master 16.165
+
+- Regenerates the immutable MegaKit model with texture URLs relative to its versioned directory.
+- Restores the kit's authentic brick, windows, doors, trim, roof, concrete, and interior materials on GitHub Pages.
+# Master 16.167
+
+- Converts the remaining MegaKit medium and large building models into the same 96-solid-piece destruction format.
+- Cycles small, medium, and large authored buildings across five test parcels and turns each building front toward the player spawn.
+# Master 16.139
+
+- Loads one authentic MegaKit small-building model five times in MegaKit Downtown for an unmistakable in-game asset evaluation.
+- Enlarges the Mandate deadline arrow and synchronizes a short comic wobble-horn alert with each of its five flashes.
+# Master 16.140
+
+- Corrects the MegaKit runtime asset base so models and textures load from the deployed `/Holesy/assets/` package on GitHub Pages.
+# Master 16.141
+
+- Doubles the Mandate deadline arrow to 184px and slows its five flashes from 3.2 seconds to 5.5 seconds.
+- Resynchronizes the comic alert so one sound plays with each slower flash.
+# Master 16.142
+
+- Adds Prism Orbit, a seven-color moving hole cosmetic permanently earned by completing the first Run Goal.
+- Persists the unlock locally and replaces vague cosmetic-progress text with the exact locked/equipped state.
+# Master 16.143
+
+- Converts every MegaKit preview building from one whole object into 36 separately consumable structural chunks.
+- Reuses the kit's authentic brick, trim, concrete, roof, and interior materials on those chunks.
+# Master 16.144
+
+- Replaces the approximated MegaKit boxes with clipped sections of the actual UV-mapped `Building_Small_1` mesh.
+- Preserves the genuine building windows, doors, brickwork, trim, roof, and silhouette while making twelve visible sections independently consumable.
+# Master 16.145
+
+- Repairs the authentic MegaKit section spawn failure caused by a stale box-grid gap reference in Master 16.144.
+# Master 16.146
+
+- Adds the approved Holesy icon as favicon, Apple touch icon, and installable web-app artwork.
+- Changes Prism Orbit into a persistent reward for completing all Run Goals and the Mandate in the same wave; resets the earlier one-goal prototype unlock.
+- Places five authentic MegaKit buildings only on reserved parcel centers and removes conflicting buildings from those parcels.
+- Routes MegaKit model sections through skyscraper collapse motion.
+- Fixes an AI hunt-speed initialization defect and makes larger rivals prioritize hunting the player when visible and in range.
+# Master 16.147
+
+- Adds substantially more trees to residential parcels.
+- Cycles authentic MegaKit small, medium, and large building archetypes across district generations while keeping a single archetype on each reserved test parcel.
+- Adds persistent selectable Tin-Foil Halo, Bellmar Seal, and Condemned Chic achievement cosmetics plus a menu selector.
+# Master 16.149
+
+- Removes mobile horizontal overflow and stacks menu action buttons vertically.
+- Reserves space between transient/boss messages and mobile Pause controls.
+- Adds a timer-frozen wave contract that presents mandatory do-or-die Mandates above optional benefit-bearing Run Goals, then animates both toward their normal HUD positions before play begins.

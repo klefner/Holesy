@@ -1,0 +1,22 @@
+{
+  "valid": true,
+  "sourceSha256": "734390f4318ce71c8f8a229c8def6a8a8cb0ae50cf242a3bf2dea07a5694da76",
+  "blockCount": 96,
+  "eachBlockClosedFaces": 6,
+  "collisionProxyCount": 96,
+  "materialsPreserved": 14,
+  "sourceTriangleCount": 8126,
+  "clippedTriangleCount": 17053,
+  "authenticTrianglesAssigned": 17053,
+  "outputBytes": 1820304,
+  "checks": [
+    "source hash recorded",
+    "96 named solid blocks",
+    "all blocks contain six closed faces",
+    "facade material appears only on outward vertical faces",
+    "roof material appears only on top-floor upward faces",
+    "all other faces use cut/interior material",
+    "visible core and collider differ by no more than four percent",
+    "intact authored shell remains the pre-breach presentation"
+  ]
+}

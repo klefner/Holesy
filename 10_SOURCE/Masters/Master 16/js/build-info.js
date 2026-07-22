@@ -1,8 +1,109 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 170;
+export const BUILD_SUB = 181;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.181',
+    title: 'Reusable authored-model destruction pipeline',
+    notes: [
+      'Replaces Medieval proxy rubble with offline-converted fragments that retain the original roofs, windows, timber, stone, and facade materials through collapse and settling.',
+      'Applies explicit small, medium, large, and tower breach thresholds while preserving the established per-fragment fit and jam rules.',
+      'Establishes one manifest-driven conversion, runtime, validation, and exception procedure for every future city built from externally authored models.',
+      'Raises normal Medieval parcel edibles from six to fourteen and preserves the windmill blades through an explicit asset-only conversion rule.',
+    ],
+  },
+  {
+    label: 'Master 16.180',
+    title: 'Living Medieval commons and street life',
+    notes: [
+      'Replaces modern Medieval park parcels with two rotating farms, pastures, barnyards, or sword-training yards.',
+      'Adds edible vegetable rows, cows, sheep, chickens, hay, carts, barrels, training targets, and sparring villagers.',
+      'Populates the wider village with roaming animals, torch walkers, and additional sword-fighting pairs while preserving the 32/4 pack-to-native parcel mix.',
+    ],
+  },
+  {
+    label: 'Master 16.179',
+    title: 'Resilient Medieval asset loading',
+    notes: [
+      'Retries each Medieval model independently when the host returns a transient loading error.',
+      'Continues building the rest of the village if one model remains unavailable.',
+      'Always completes the 192-object growth ladder instead of aborting the town on one failed model request.',
+    ],
+  },
+  {
+    label: 'Master 16.178',
+    title: 'Medieval growth ladder and physical-fit building entry',
+    notes: [
+      'Adds six staged medieval edibles around every pack-building parcel so the village supports continuous early growth.',
+      'Lets ordinary village buildings open into their smaller façade pieces like original-city small and medium buildings.',
+      'Uses the established width, depth, height, and jam checks on each exposed piece; true skyscraper-caliber structures retain a whole-building gate.',
+    ],
+  },
+  {
+    label: 'Master 16.177',
+    title: 'Five-voice building destruction audio cap',
+    notes: [
+      'Limits all simultaneous building destruction sounds to five across the whole city.',
+      'Applies the shared cap to ordinary building bites, imported-building collapse hits, and individual chunk impacts.',
+      'Keeps the existing per-building cooldown underneath the global cap so dense collapses remain readable.',
+    ],
+  },
+  {
+    label: 'Master 16.176',
+    title: 'Pack-authored Medieval town and detailed destruction',
+    notes: [
+      'Rebuilds Medieval Village so roughly 90 percent of its parcels use the authored village pack and roughly 10 percent retain native Holesy buildings or objects.',
+      'Replaces oversized flat debris with smaller exterior-shell pieces carrying roof, timber, wall, stone, and window detail.',
+      'Classifies imported buildings by their actual rendered proportions, so short village landmarks no longer count as skyscraper-caliber.',
+      'Labels blocked devours as building, tower, or skyscraper according to the structure that was actually touched.',
+    ],
+  },
+  {
+    label: 'Master 16.175',
+    title: 'Skip arbitrary presentation waits',
+    notes: [
+      'Adds one in-game <Skip> HUD control whenever presentation timing is the only thing preventing play from continuing.',
+      'Covers wave-contract docking, rebuilt-district briefings, and the consumed-player return delay.',
+      'Preserves round, Mandate, boss, aid, cooldown, and asset-loading clocks because those affect gameplay or real readiness.',
+    ],
+  },
+  {
+    label: 'Master 16.174',
+    title: 'Temporary city override control',
+    notes: [
+      'Restores a start-menu city selector so the current city recipes can be called up directly during review.',
+      'Includes Automatic Rotation, Classic City, MegaKit Downtown, and Medieval Village choices.',
+      'Marks the selector as temporary and keeps the release-language gate blocking publication until the control is removed again.',
+    ],
+  },
+  {
+    label: 'Master 16.173',
+    title: 'Composable city packs and MegaKit streets',
+    notes: [
+      'Introduces city recipes that can use no asset packs, one pack, or several packs as the city roster grows.',
+      'Adds MegaKit crosswalks, lane arrows, STOP and SLOW markings, bike-lane art, drains, and concrete entrances to MegaKit Downtown.',
+      'Keeps the new street layer stagger-loaded and independently removable so future packs can be combined without changing the core city generator.',
+    ],
+  },
+  {
+    label: 'Master 16.172',
+    title: 'Medieval Village district rotation',
+    notes: [
+      'Adds Medieval Village as the third automatically rotated district without allowing the same city theme twice in a row.',
+      'Stages five rotating CC0 village landmarks from the ten-building Quaternius roster and adds lightweight barrels, hay, carts, stalls, earth roads, and stone edges.',
+      'Keeps imported village shells intact until breached, then transfers them into Holesy solid-block destruction and collision behavior.',
+    ],
+  },
+  {
+    label: 'Master 16.171',
+    title: 'Market-ready district rotation and language cleanup',
+    notes: [
+      'Removes the player-facing environment selector and automatically rotates eligible districts without immediately repeating the same city theme.',
+      'Replaces development-state wording in menus, feedback, haptics, the field manual, and public update history with player-ready language.',
+      'Adds a release check that rejects prohibited development wording when it reaches player-facing surfaces.',
+    ],
+  },
   {
     label: 'Master 16.170',
     title: 'Frame pacing and city workload pass',
