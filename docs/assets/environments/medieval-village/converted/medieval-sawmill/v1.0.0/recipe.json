@@ -1,0 +1,38 @@
+{
+  "packId": "medieval-village-quaternius",
+  "modelId": "sawmill",
+  "assetId": "medieval-sawmill",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/medieval-village/conversion-source/Sawmill.gltf",
+  "sourceSha256": "d3a06daa4388a7faeb32066dc0e812e6aa5f7824fa949b26aba1faebdbce9c1a",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16180,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 11,
+    "depth": 11,
+    "height": 7.157660263230077
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "Plaster",
+    "topFaces": "RoofTiles_Red",
+    "cutFaces": "Wood_Side",
+    "coreVisualScale": 0.96
+  },
+  "progressionClass": "medium_structure",
+  "collapseSize": 5.25,
+  "unusualElements": [],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}

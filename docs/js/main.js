@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.180';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.181';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1120,22 +1120,23 @@ const MEGAKIT_ASSET_BASE = 'assets/environments/downtown-city-megakit/source-glt
 const MEDIEVAL_ASSET_BASE = 'assets/environments/medieval-village/runtime/';
 const medievalGltfLoader = new GLTFLoader();
 const medievalBuildingCache = new Map();
+const medievalDestructibleCache = new Map();
 const medievalEnvironmentMeshes = [];
 const medievalAmbientActors = [];
 let medievalEnvironmentGeneration = 0;
 let medievalRosterOffset = 0;
 const medievalNativeParcelKeys = new Set();
 const MEDIEVAL_BUILDINGS = Object.freeze([
-  { sourceBase: 'House_1', footprint: 8.5, height: 7.5, floors: 3, color: 0x8f7145 },
-  { sourceBase: 'Blacksmith', footprint: 10.5, height: 8.5, floors: 4, color: 0x6d5943 },
-  { sourceBase: 'Inn', footprint: 12, height: 10, floors: 4, color: 0xa17d4c },
-  { sourceBase: 'Mill', footprint: 12, height: 12, floors: 5, color: 0x8a6840 },
-  { sourceBase: 'Bell_Tower', footprint: 10.5, height: 15, floors: 6, color: 0x777169 },
-  { sourceBase: 'House_2', footprint: 9.5, height: 8.5, floors: 3, color: 0x9b7847 },
-  { sourceBase: 'House_3', footprint: 8.5, height: 7.5, floors: 3, color: 0x80633f },
-  { sourceBase: 'House_4', footprint: 8.5, height: 7.0, floors: 3, color: 0x99764d },
-  { sourceBase: 'Sawmill', footprint: 11, height: 8, floors: 3, color: 0x795739 },
-  { sourceBase: 'Stable', footprint: 11.5, height: 8, floors: 3, color: 0x87613b },
+  { sourceBase: 'House_1', assetId: 'medieval-house-1', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
+  { sourceBase: 'Blacksmith', assetId: 'medieval-blacksmith', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
+  { sourceBase: 'Inn', assetId: 'medieval-inn', footprint: 12, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
+  { sourceBase: 'Mill', assetId: 'medieval-mill', footprint: 12, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, unusualElement: 'mill_blades' },
+  { sourceBase: 'Bell_Tower', assetId: 'medieval-bell-tower', footprint: 10.5, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128 },
+  { sourceBase: 'House_2', assetId: 'medieval-house-2', footprint: 9.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
+  { sourceBase: 'House_3', assetId: 'medieval-house-3', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
+  { sourceBase: 'House_4', assetId: 'medieval-house-4', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
+  { sourceBase: 'Sawmill', assetId: 'medieval-sawmill', footprint: 11, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
+  { sourceBase: 'Stable', assetId: 'medieval-stable', footprint: 11.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
 ]);
 const MEDIEVAL_COMMONS_ARCHETYPES = Object.freeze(['farm', 'pasture', 'barnyard', 'training_yard']);
 
@@ -1183,11 +1184,62 @@ function loadMedievalBuilding(sourceBase) {
   return medievalBuildingCache.get(sourceBase);
 }
 
+function loadMedievalDestructible(definition) {
+  if (!medievalDestructibleCache.has(definition.assetId)) {
+    const asset = `${MEDIEVAL_ASSET_BASE}../converted/${definition.assetId}/v1.0.0/${definition.sourceBase}_destructible.gltf`;
+    const promise = medievalGltfLoader.loadAsync(asset).then(gltf => {
+      gltf.scene.updateMatrixWorld(true);
+      const blockTemplates = [];
+      gltf.scene.traverse(child => {
+        if (!child.userData?.holesyBlock) return;
+        let hasRenderedMesh = false;
+        child.traverse(descendant => { if (descendant.isMesh) hasRenderedMesh = true; });
+        if (!hasRenderedMesh) return;
+        const visual = child.clone(true);
+        visual.position.set(0, 0, 0);
+        visual.quaternion.identity();
+        blockTemplates.push({
+          name: child.name,
+          visual,
+          position: child.getWorldPosition(new THREE.Vector3()),
+          scale: child.getWorldScale(new THREE.Vector3()),
+          blockWidth: child.userData.blockWidth,
+          blockHeight: child.userData.blockHeight,
+          blockDepth: child.userData.blockDepth,
+          floor: child.userData.floor || 0,
+        });
+      });
+      if (blockTemplates.length !== definition.blockCount) {
+        throw new Error(`${definition.sourceBase} expected ${definition.blockCount} converted fragments; received ${blockTemplates.length}.`);
+      }
+      return blockTemplates;
+    }).catch(error => {
+      medievalDestructibleCache.delete(definition.assetId);
+      throw error;
+    });
+    medievalDestructibleCache.set(definition.assetId, promise);
+  }
+  return medievalDestructibleCache.get(definition.assetId);
+}
+
 async function loadMedievalBuildingWithRetry(sourceBase, maxAttempts = 3) {
   let lastError = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await loadMedievalBuilding(sourceBase);
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts) await yieldCityBuildFrame();
+    }
+  }
+  throw lastError;
+}
+
+async function loadMedievalDestructibleWithRetry(definition, maxAttempts = 3) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await loadMedievalDestructible(definition);
     } catch (error) {
       lastError = error;
       if (attempt < maxAttempts) await yieldCityBuildFrame();
@@ -1401,81 +1453,81 @@ function updateMedievalAmbientActors(dt) {
   }
 }
 
-function addMedievalDestructionStack(definition, x, z, rotation, intactShell) {
+function addMedievalDestructionStack(definition, x, z, rotation, intactShell, blockTemplates) {
   const stackId = nextPhysicsStackId++;
   megakitIntactShellsByStack.set(stackId, intactShell);
-  const grid = definition.footprint >= 11 ? 6 : 5;
-  const floors = Math.max(definition.floors, Math.ceil(definition.renderedHeight / 2.2));
-  const cellW = definition.footprint / grid;
-  const cellH = definition.renderedHeight / floors;
-  const wallMaterials = [
-    sharedBoxMat(definition.color),
-    sharedBoxMat(new THREE.Color(definition.color).offsetHSL(0, -0.03, 0.08).getHex()),
-    sharedBoxMat(new THREE.Color(definition.color).offsetHSL(0, 0.02, -0.09).getHex()),
-  ];
-  const timberMaterial = sharedBoxMat(0x4a3122);
-  const windowMaterial = sharedBoxMat(0x26323a);
-  const roofMaterial = sharedBoxMat(0x4b3430);
-  const piecesPerFloor = grid * 4 - 4;
-  for (let floor = 0; floor < floors; floor++) {
-    for (let gx = 0; gx < grid; gx++) {
-      for (let gz = 0; gz < grid; gz++) {
-        const perimeter = gx === 0 || gx === grid - 1 || gz === 0 || gz === grid - 1;
-        if (!perimeter) continue;
-        const localX = (gx - (grid - 1) / 2) * cellW;
-        const localZ = (gz - (grid - 1) / 2) * cellW;
-        const rotatedX = localX * Math.cos(rotation) - localZ * Math.sin(rotation);
-        const rotatedZ = localX * Math.sin(rotation) + localZ * Math.cos(rotation);
-        const isRoof = floor === floors - 1;
-        const isCorner = (gx === 0 || gx === grid - 1) && (gz === 0 || gz === grid - 1);
-        const isWindow = !isRoof && floor > 0 && !isCorner && (gx + gz + floor) % 3 === 0;
-        const material = isRoof
-          ? roofMaterial
-          : isCorner || (floor > 0 && (gx + gz) % 4 === 0)
-            ? timberMaterial
-            : isWindow
-              ? windowMaterial
-              : wallMaterials[(gx + gz + floor) % wallMaterials.length];
-        const piece = new THREE.Mesh(sharedBoxGeometry(cellW * 0.88, cellH * 0.90, cellW * 0.88), material);
-        piece.castShadow = true;
-        piece.receiveShadow = true;
-        const object = makeObject(piece, cellW * 0.52, 1, 6, {
-          x: x + rotatedX,
-          z: z + rotatedZ,
-          y: floor * cellH + cellH / 2,
+  const floorCount = Math.max(...blockTemplates.map(template => template.floor), 0) + 1;
+  const piecesPerFloor = Math.ceil(blockTemplates.length / floorCount);
+  const buildingSize = definition.progressionClass === 'small_structure'
+    ? 'small'
+    : definition.progressionClass === 'medium_structure' ? 'mid' : 'large';
+  for (const template of blockTemplates) {
+    const rotatedX = template.position.x * Math.cos(rotation) - template.position.z * Math.sin(rotation);
+    const rotatedZ = template.position.x * Math.sin(rotation) + template.position.z * Math.cos(rotation);
+    const pieceW = template.blockWidth;
+    const pieceH = template.blockHeight;
+    const pieceD = template.blockDepth;
+    const piece = template.visual.clone(true);
+    piece.visible = false;
+    piece.scale.copy(template.scale);
+    piece.rotation.y = rotation;
+    piece.traverse(descendant => {
+      if (!descendant.isMesh) return;
+      descendant.castShadow = true;
+      descendant.receiveShadow = true;
+      if (descendant.geometry?.userData?.holesyAuthenticSurface || descendant.userData?.holesyAuthenticSurface) {
+        const materials = Array.isArray(descendant.material) ? descendant.material : [descendant.material];
+        const raisedMaterials = materials.map(material => {
+          const raised = material.clone();
+          raised.polygonOffset = true;
+          raised.polygonOffsetFactor = -2;
+          raised.polygonOffsetUnits = -2;
+          return raised;
         });
-        object.isBuilding = true;
-        const skyscraperCaliber = definition.renderedHeight >= 18 && definition.renderedHeight >= definition.footprint * 1.65;
-        object.buildingSize = skyscraperCaliber ? 'large' : 'mid';
-        object.isSkyscraperChunk = skyscraperCaliber;
-        object.mandateKind = definition.sourceBase === 'Bell_Tower' ? 'tower' : 'building';
-        object.isMedievalAsset = true;
-        object.physicsStackPiece = true;
-        object.usesBoxStackContacts = true;
-        object.stackId = stackId;
-        object.stackActive = false;
-        object.stackSettled = false;
-        object.stackRestTimer = 0;
-        object.stackIndex = floor;
-        object.stackFloorCount = floors;
-        object.stackPieceCount = piecesPerFloor;
-        object.stackCollapseSize = skyscraperCaliber ? definition.footprint * 0.5 : 0;
-        object.stackCenterX = x;
-        object.stackCenterZ = z;
-        object.stackLocalX = rotatedX;
-        object.stackLocalZ = rotatedZ;
-        object.stackFloorY = cellH / 2;
-        object.stackHeight = cellH;
-        object.stackPieceW = cellW;
-        object.stackPieceD = cellW;
-        object.vx = 0; object.vy = 0; object.vz = 0;
-        object.avx = 0; object.avy = 0; object.avz = 0;
-        object.medievalAssetName = `${definition.sourceBase} structural block`;
-        scene.remove(piece);
-        object.megakitDormantDetached = true;
-        physicsStackPieces.push(object);
+        descendant.material = Array.isArray(descendant.material) ? raisedMaterials : raisedMaterials[0];
+        descendant.renderOrder = 2;
       }
-    }
+    });
+    const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
+      x: x + rotatedX,
+      z: z + rotatedZ,
+      y: template.position.y,
+    });
+    object.isBuilding = true;
+    object.buildingSize = buildingSize;
+    object.isSkyscraperChunk = false;
+    object.mandateKind = definition.progressionClass === 'tower_structure' ? 'tower' : 'building';
+    object.isMedievalAsset = true;
+    object.isOfflineConvertedAsset = true;
+    object.physicsStackPiece = true;
+    object.usesBoxStackContacts = true;
+    object.convertedAssetId = definition.assetId;
+    object.convertedBlockName = template.name;
+    object.stackId = stackId;
+    object.stackActive = false;
+    object.stackSettled = false;
+    object.stackRestTimer = 0;
+    object.stackIndex = template.floor;
+    object.stackFloorCount = floorCount;
+    object.stackPieceCount = piecesPerFloor;
+    object.stackCollapseSize = definition.collapseSize;
+    object.stackCollapseLabel = definition.progressionClass === 'tower_structure'
+      ? 'TOWER COLLAPSE!'
+      : 'BUILDING COLLAPSE!';
+    object.stackCenterX = x;
+    object.stackCenterZ = z;
+    object.stackLocalX = rotatedX;
+    object.stackLocalZ = rotatedZ;
+    object.stackFloorY = pieceH / 2;
+    object.stackHeight = pieceH;
+    object.stackPieceW = pieceW;
+    object.stackPieceD = pieceD;
+    object.vx = 0; object.vy = 0; object.vz = 0;
+    object.avx = 0; object.avy = 0; object.avz = 0;
+    object.medievalAssetName = `Authored ${definition.sourceBase} fragment`;
+    scene.remove(piece);
+    object.megakitDormantDetached = true;
+    physicsStackPieces.push(object);
   }
 }
 
@@ -1502,10 +1554,13 @@ async function populateMedievalVillage() {
   for (const { bp, definition } of sites) {
     if (selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
     let authoredSource = null;
+    let blockTemplates = null;
     try {
       authoredSource = await loadMedievalBuildingWithRetry(definition.sourceBase);
+      await yieldCityBuildFrame();
+      blockTemplates = await loadMedievalDestructibleWithRetry(definition);
     } catch (error) {
-      console.warn(`[Holesy] Medieval asset unavailable after retries: ${definition.sourceBase}`, error);
+      console.warn(`[Holesy] Medieval authored or destructible asset unavailable after retries: ${definition.sourceBase}`, error);
       continue;
     }
     await yieldCityBuildFrame();
@@ -1534,15 +1589,16 @@ async function populateMedievalVillage() {
     intactShell.position.set(bp.x, 0, bp.z);
     scene.add(intactShell);
     medievalEnvironmentMeshes.push(intactShell);
-    addMedievalDestructionStack({
-      ...definition,
-      renderedHeight: Math.max(3, dimensions.y * authoredScale),
-    }, bp.x, bp.z, intactShell.rotation.y, intactShell);
+    addMedievalDestructionStack(definition, bp.x, bp.z, intactShell.rotation.y, intactShell, blockTemplates);
     loadedModelCount++;
     document.documentElement.setAttribute('data-holesy-medieval-models', String(loadedModelCount));
   }
   const edibleKinds = ['basket', 'sack', 'crate', 'basket', 'barrel', 'hay'];
-  const edibleOffsets = [[-7.6, -6.8], [0, -7.7], [7.5, -6.6], [-7.5, 6.7], [0, 7.7], [7.6, 6.8]];
+  const edibleOffsets = [
+    [-7.8, -7.1], [-4.7, -7.7], [0, -8], [4.8, -7.6], [7.8, -6.9],
+    [-8, -3.5], [8, -3.1], [-8.1, 2.9], [8.1, 3.4],
+    [-7.7, 7], [-4.4, 7.8], [0.4, 8], [4.7, 7.7], [7.7, 6.8],
+  ];
   let edibleCount = 0;
   for (let parcelIndex = 0; parcelIndex < eligibleParcels.length; parcelIndex++) {
     const bp = eligibleParcels[parcelIndex];
@@ -12873,7 +12929,7 @@ function updatePhysicsStackPieces(dt) {
           const triggerRadius = h.radius + STACK_PHYSICS_CONFIG.triggerPadding;
           if (distanceSquared >= triggerRadius * triggerRadius) continue;
           const collapsed = activatePhysicsStack(piece.stackId, h, piece);
-          if (collapsed && h.isPlayer) showStagePop('SKYSCRAPER COLLAPSE!', 1250);
+          if (collapsed && h.isPlayer) showStagePop(piece.stackCollapseLabel || 'BUILDING COLLAPSE!', 1250);
           break;
         }
       }

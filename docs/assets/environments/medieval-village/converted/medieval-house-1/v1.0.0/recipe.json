@@ -1,0 +1,38 @@
+{
+  "packId": "medieval-village-quaternius",
+  "modelId": "house-1",
+  "assetId": "medieval-house-1",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/medieval-village/conversion-source/House_1.gltf",
+  "sourceSha256": "3f4cd30ec15a3d866f2cefa34640795f5e22099c509041aa03ed5808ea527610",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16180,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 8.5,
+    "depth": 8.5,
+    "height": 10.83749959611852
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "Plaster",
+    "topFaces": "RoofTiles",
+    "cutFaces": "Wood_Side",
+    "coreVisualScale": 0.96
+  },
+  "progressionClass": "small_structure",
+  "collapseSize": 4.25,
+  "unusualElements": [],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}

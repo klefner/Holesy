@@ -1,6 +1,6 @@
 # Medieval Village Source Pack
 
-Source-only asset intake for future Holesy theme/world work. These files are not wired into the Master 16 runtime and are not part of the current release package.
+Source asset intake for Holesy theme/world work. `Master 16.172` converts the ten complete OBJ buildings into optimized GLB runtime assets under `assets/environments/medieval-village/runtime/`; runtime code does not load these raw source files.
 
 Source:
 

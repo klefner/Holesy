@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 180;
+export const BUILD_SUB = 181;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.181',
+    title: 'Reusable authored-model destruction pipeline',
+    notes: [
+      'Replaces Medieval proxy rubble with offline-converted fragments that retain the original roofs, windows, timber, stone, and facade materials through collapse and settling.',
+      'Applies explicit small, medium, large, and tower breach thresholds while preserving the established per-fragment fit and jam rules.',
+      'Establishes one manifest-driven conversion, runtime, validation, and exception procedure for every future city built from externally authored models.',
+      'Raises normal Medieval parcel edibles from six to fourteen and preserves the windmill blades through an explicit asset-only conversion rule.',
+    ],
+  },
   {
     label: 'Master 16.180',
     title: 'Living Medieval commons and street life',
