@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.177';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.178';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1209,7 +1209,20 @@ function addMedievalProp(name, x, z, kind) {
   const wood = sharedBoxMat(0x6f4728);
   const dark = sharedBoxMat(0x30271f);
   const straw = sharedBoxMat(0xc6a052);
-  if (kind === 'barrel') {
+  if (kind === 'basket') {
+    const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.42, 0.38, 8), sharedBoxMat(0xa97942));
+    basket.position.y = 0.19;
+    group.add(basket);
+  } else if (kind === 'sack') {
+    const sack = new THREE.Mesh(new THREE.SphereGeometry(0.34, 8, 6), sharedBoxMat(0xbba67a));
+    sack.scale.set(0.8, 1.15, 0.72);
+    sack.position.y = 0.32;
+    group.add(sack);
+  } else if (kind === 'crate') {
+    const crate = new THREE.Mesh(sharedBoxGeometry(0.72, 0.62, 0.72), wood);
+    crate.position.y = 0.31;
+    group.add(crate);
+  } else if (kind === 'barrel') {
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.62, 1.25, 10), wood);
     body.position.y = 0.625;
     group.add(body);
@@ -1241,7 +1254,16 @@ function addMedievalProp(name, x, z, kind) {
     group.add(canopy);
   }
   group.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
-  const obj = makeObject(group, kind === 'cart' || kind === 'stall' ? 1.5 : 0.8, 0, kind === 'cart' ? 45 : 24, { x, z, y: 0 });
+  const propProfile = {
+    basket: { size: 0.32, value: 8 },
+    sack: { size: 0.34, value: 9 },
+    crate: { size: 0.48, value: 13 },
+    barrel: { size: 0.68, value: 22 },
+    hay: { size: 0.72, value: 24 },
+    cart: { size: 1.35, value: 45 },
+    stall: { size: 1.5, value: 45 },
+  }[kind] || { size: 0.6, value: 18 };
+  const obj = makeObject(group, propProfile.size, 0, propProfile.value, { x, z, y: 0 });
   obj.isMedievalAsset = true;
   obj.medievalAssetName = name;
   obj.mandateKind = 'prop';
@@ -1306,7 +1328,7 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell) {
         object.stackIndex = floor;
         object.stackFloorCount = floors;
         object.stackPieceCount = piecesPerFloor;
-        object.stackCollapseSize = Math.max(3.8, definition.footprint * 0.43);
+        object.stackCollapseSize = skyscraperCaliber ? definition.footprint * 0.5 : 0;
         object.stackCenterX = x;
         object.stackCenterZ = z;
         object.stackLocalX = rotatedX;
@@ -1334,11 +1356,6 @@ async function populateMedievalVillage() {
   document.documentElement.setAttribute('data-holesy-medieval-native-parcels', String(medievalNativeParcelKeys.size));
   showEventBanner('DISTRICT: Medieval Village', 2200);
   addMedievalStreetDetails();
-  const propSites = [
-    [-28, -12, 'barrel'], [-23, -13, 'hay'], [26, 13, 'cart'], [11, -14, 'stall'],
-    [-10, 14, 'stall'], [38, -11, 'barrel'], [-40, 12, 'hay'],
-  ];
-  for (const [x, z, kind] of propSites) addMedievalProp(`Medieval ${kind}`, x, z, kind);
 
   const eligibleParcels = blockPositions.filter(bp =>
     Math.abs(bp.x) < currentArenaHalf - 10 &&
@@ -1388,6 +1405,20 @@ async function populateMedievalVillage() {
     loadedModelCount++;
     document.documentElement.setAttribute('data-holesy-medieval-models', String(loadedModelCount));
   }
+  const edibleKinds = ['basket', 'sack', 'crate', 'basket', 'barrel', 'hay'];
+  const edibleOffsets = [[-7.6, -6.8], [0, -7.7], [7.5, -6.6], [-7.5, 6.7], [0, 7.7], [7.6, 6.8]];
+  let edibleCount = 0;
+  for (let parcelIndex = 0; parcelIndex < eligibleParcels.length; parcelIndex++) {
+    const bp = eligibleParcels[parcelIndex];
+    for (let propIndex = 0; propIndex < edibleOffsets.length; propIndex++) {
+      const [dx, dz] = edibleOffsets[propIndex];
+      const kind = edibleKinds[(parcelIndex + propIndex) % edibleKinds.length];
+      addMedievalProp(`Medieval ${kind}`, bp.x + dx + randomBetween(-0.35, 0.35), bp.z + dz + randomBetween(-0.35, 0.35), kind);
+      edibleCount++;
+    }
+    if (parcelIndex % 4 === 3) await yieldCityBuildFrame();
+  }
+  document.documentElement.setAttribute('data-holesy-medieval-edibles', String(edibleCount));
   wakeRenderLoop();
 }
 

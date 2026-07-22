@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 177;
+export const BUILD_SUB = 178;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.178',
+    title: 'Medieval growth ladder and physical-fit building entry',
+    notes: [
+      'Adds six staged medieval edibles around every pack-building parcel so the village supports continuous early growth.',
+      'Lets ordinary village buildings open into their smaller façade pieces like original-city small and medium buildings.',
+      'Uses the established width, depth, height, and jam checks on each exposed piece; true skyscraper-caliber structures retain a whole-building gate.',
+    ],
+  },
   {
     label: 'Master 16.177',
     title: 'Five-voice building destruction audio cap',
