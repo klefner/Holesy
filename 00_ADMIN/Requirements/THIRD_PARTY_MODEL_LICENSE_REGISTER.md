@@ -1,8 +1,11 @@
 # Third-Party Model License and Provenance Register
 
-Status date: 2026-07-27  
-Scope: all 42 ZIP archives currently under `50_ASSETS/Graphics and Art/`  
-Sources: Quaternius and Sketchfab only  
+Status date: 2026-07-27
+
+Scope: all 42 ZIP archives currently under `50_ASSETS/Graphics and Art/`
+
+Sources: Quaternius and Sketchfab only
+
 Purpose: durable production-use, attribution, provenance, and archive-identity record
 
 This is an operational compliance record, not legal advice. A listing saying "free" is not itself a license. The controlling evidence is the linked creator listing and license text captured below. Recheck the source listing before the first production promotion of an asset because an online listing or its metadata can change.
