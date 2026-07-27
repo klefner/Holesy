@@ -1264,6 +1264,13 @@ Acceptance criteria:
 
 ### P2B.6 Build theme/world architecture for major visual and audio swaps
 
+Current program:
+
+- the July 2026 model intake is allocated into eleven distinct proposed towns in `NEW_TOWN_ASSET_ALLOCATION_MATRIX.md`
+- every archive has one primary visual home, limited secondary use, a license state, and an intake decision
+- Harvest County is the recommended first vertical slice, followed by Railgate, Lockdown, Farstar Colony, and Crownlands
+- raw ZIPs remain untouched under `50_ASSETS/Graphics and Art/`; only selected, license-cleared, optimized runtime assets may enter a town package
+
 Intent:
 
 - create an architecture that can swap the playfield's visual, audio, object, road/path, collectible, and environment rules without harming performance
