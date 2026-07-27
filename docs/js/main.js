@@ -1624,6 +1624,7 @@ async function populateMedievalVillage() {
   const generation = medievalEnvironmentGeneration;
   document.documentElement.setAttribute('data-holesy-medieval-models', '0');
   document.documentElement.setAttribute('data-holesy-medieval-cars', '0');
+  document.documentElement.setAttribute('data-holesy-medieval-hydrants', '0');
   document.documentElement.setAttribute('data-holesy-medieval-pack-percent', '90');
   document.documentElement.setAttribute('data-holesy-medieval-native-parcels', String(medievalNativeParcelKeys.size));
   showEventBanner('DISTRICT: Medieval Village', 2200);
@@ -4216,7 +4217,16 @@ async function populateCity() {
           ? { x: bp.x + s.sign * edge, z: bp.z + along }
           : { x: bp.x + along, z: bp.z + s.sign * edge };
         const r = Math.random();
-        if (r < 0.25 * personChance) makePerson(pos, blockBounds);
+        if (isMedievalVillage) {
+          if (r < 0.22 * personChance) makeMedievalVillager(pos.x, pos.z, blockBounds, 'torch');
+          else if (r < 0.4) makeTree(pos);
+          else addMedievalProp(
+            'Medieval roadside prop',
+            pos.x,
+            pos.z,
+            ['basket', 'sack', 'crate', 'barrel', 'hay', 'cart'][Math.floor(Math.random() * 6)]
+          );
+        } else if (r < 0.25 * personChance) makePerson(pos, blockBounds);
         else if (r < 0.4) makeCone(pos);
         else if (r < 0.55) makeHydrant(pos);
         else if (r < 0.68) makeTrash(pos);
@@ -4295,6 +4305,9 @@ async function populateCity() {
   }
   await populateSelectedCityPacks();
   pruneObjectsToArena();
+  const liveHydrantCount = objects.filter(obj => !obj.consumed && obj.mandateKind === 'hydrant').length;
+  document.documentElement.setAttribute('data-holesy-live-hydrants', String(liveHydrantCount));
+  if (isMedievalVillage) document.documentElement.setAttribute('data-holesy-medieval-hydrants', String(liveHydrantCount));
 }
 
 function pruneObjectsToArena() {
@@ -10267,7 +10280,9 @@ function restoreSavedObject(state, now = performance.now()) {
   else if (state.type === 'powerup') obj = makePowerupFromSavedState(state);
   else if (state.type === 'lamp') obj = makeLamp({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'bench') obj = makeBench({ x: state.x, y: state.y || 0, z: state.z });
-  else if (state.type === 'hydrant') obj = makeHydrant({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'hydrant') obj = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE
+    ? addMedievalProp('Medieval barrel', state.x, state.z, 'barrel')
+    : makeHydrant({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'trash') obj = makeTrash({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'cone') obj = makeCone({ x: state.x, y: state.y || 0, z: state.z });
   else if (String(state.type || '').startsWith('fixture:')) obj = makeStreetFixture(String(state.type).slice(8), { x: state.x, y: state.y || 0, z: state.z });

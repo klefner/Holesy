@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 182;
+export const BUILD_SUB = 183;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.183',
+    title: 'Medieval roadside theme repair',
+    notes: [
+      'Removes fire hydrants and their water jets from Medieval Village while preserving hydrants in modern cities.',
+      'Replaces the wider modern roadside-prop pool on Medieval native parcels with baskets, sacks, crates, barrels, hay, carts, trees, and torch-bearing villagers.',
+      'Converts any legacy saved Medieval hydrant into a themed barrel during restoration.',
+    ],
+  },
   {
     label: 'Master 16.182',
     title: 'Harvest County and strict town themes',
