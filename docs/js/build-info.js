@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 184;
+export const BUILD_SUB = 185;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.185',
+    title: 'The hidden road to Crownlands',
+    notes: [
+      'Adds a secret-town constellation requiring First Bite, Tree Hugger, The Quiet Block, and Linden Street in one continuous game.',
+      'Counts achievement events from the current run rather than permanent achievement history.',
+      'Preserves incomplete progress only through an explicit Endless save and discards it when a new unsaved game begins.',
+      'Adds three cryptic Crownlands Archive records while keeping the unfinished town out of rotation and the selector.',
+    ],
+  },
   {
     label: 'Master 16.184',
     title: 'Town-era response profiles',
