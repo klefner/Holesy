@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.184 - 2026-07-27
+
+Town-era response profiles.
+
+- Replaces Medieval aircraft, paratroopers, soldiers, robots, vehicles, and futuristic bosses with ground-arriving swordsmen, longbow archers, mounted lancers, and the mounted Iron Reeve warlord.
+- Gives the Iron Reeve a 6.2 minimum devour gate, faster close-range pressure, and materially higher damage so it cannot be erased by an under-grown hole.
+- Removes electric streetlights from fresh and restored Medieval state while retaining the alien aid ship as the one intentional future anomaly.
+- Adds satellite crop plots and livestock across the village, raising the verified loose themed population from 448 to 544.
+- Establishes the positive town-theme profile and owned-pack composition matrix used to build future towns without inheriting incompatible modern content.
+
 ## Master 16.183 - 2026-07-27
 
 Medieval roadside theme repair.

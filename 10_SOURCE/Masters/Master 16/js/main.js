@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.183';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.184';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1110,6 +1110,22 @@ const CITY_RECIPES = Object.freeze({
     packs: Object.freeze([CITY_PACK_KEYS.HARVEST_COUNTY]),
   }),
 });
+const TOWN_THEME_PROFILES = Object.freeze({
+  [ENVIRONMENT_KEYS.CLASSIC]: Object.freeze({ era: 'modern', responseStyle: 'airdrop', streetLighting: 'electric', agricultureWeight: 0.08 }),
+  [ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN]: Object.freeze({ era: 'modern', responseStyle: 'airdrop', streetLighting: 'electric', agricultureWeight: 0.02 }),
+  [ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE]: Object.freeze({
+    era: 'medieval',
+    responseStyle: 'ground_warband',
+    streetLighting: 'none',
+    agricultureWeight: 0.58,
+    unitRoster: Object.freeze(['medieval_swordsman', 'medieval_archer', 'medieval_cavalry']),
+    bossRoster: Object.freeze(['medieval_warlord']),
+  }),
+  [ENVIRONMENT_KEYS.HARVEST_COUNTY]: Object.freeze({ era: 'modern_rural', responseStyle: 'airdrop', streetLighting: 'electric', agricultureWeight: 0.72 }),
+});
+function getCurrentTownThemeProfile() {
+  return TOWN_THEME_PROFILES[selectedEnvironment] || TOWN_THEME_PROFILES[ENVIRONMENT_KEYS.CLASSIC];
+}
 const ELIGIBLE_ENVIRONMENTS = Object.freeze(Object.values(ENVIRONMENT_KEYS));
 let selectedEnvironment = ENVIRONMENT_KEYS.CLASSIC;
 let lastGeneratedEnvironment = null;
@@ -1626,6 +1642,9 @@ async function populateMedievalVillage() {
   document.documentElement.setAttribute('data-holesy-medieval-cars', '0');
   document.documentElement.setAttribute('data-holesy-medieval-hydrants', '0');
   document.documentElement.setAttribute('data-holesy-medieval-pack-percent', '90');
+  document.documentElement.setAttribute('data-holesy-medieval-response-style', getCurrentTownThemeProfile().responseStyle);
+  document.documentElement.setAttribute('data-holesy-medieval-boss-roster', getCurrentTownThemeProfile().bossRoster.join(','));
+  document.documentElement.setAttribute('data-holesy-medieval-boss-eat-radius', String(getUnitDefinition('medieval_warlord').eatRadius));
   document.documentElement.setAttribute('data-holesy-medieval-native-parcels', String(medievalNativeParcelKeys.size));
   showEventBanner('DISTRICT: Medieval Village', 2200);
   addMedievalStreetDetails();
@@ -1697,6 +1716,30 @@ async function populateMedievalVillage() {
       const [dx, dz] = edibleOffsets[propIndex];
       const kind = edibleKinds[(parcelIndex + propIndex) % edibleKinds.length];
       addMedievalProp(`Medieval ${kind}`, bp.x + dx + randomBetween(-0.35, 0.35), bp.z + dz + randomBetween(-0.35, 0.35), kind);
+      edibleCount++;
+    }
+    // Historical settlements devote far more usable land to food and animals
+    // than modern towns. These satellite plots keep that difference visible
+    // even outside the four showcase commons parcels.
+    if (parcelIndex % 3 === 0) {
+      const cropColors = [0x6f9c3d, 0xa34b35, 0xd2a33b, 0x7f4f91];
+      for (let cropIndex = 0; cropIndex < 8; cropIndex++) {
+        const crop = new THREE.Mesh(new THREE.SphereGeometry(0.23, 7, 5), sharedBoxMat(cropColors[(parcelIndex + cropIndex) % cropColors.length]));
+        makeMedievalConsumable(
+          'village crop',
+          crop,
+          0.22,
+          5,
+          bp.x - 5.25 + (cropIndex % 4) * 1.75,
+          bp.z - 1.9 + Math.floor(cropIndex / 4) * 1.7,
+          0.23
+        );
+        edibleCount++;
+      }
+    }
+    if (parcelIndex % 4 === 1) {
+      const bounds = { minX: bp.x - 8.2, maxX: bp.x + 8.2, minZ: bp.z - 8.2, maxZ: bp.z + 8.2 };
+      makeMedievalAnimal(['chicken', 'sheep', 'cow', 'horse'][parcelIndex % 4], bp.x + randomBetween(-5.5, 5.5), bp.z + randomBetween(-5.5, 5.5), bounds);
       edibleCount++;
     }
     if (parcelIndex % 4 === 3) await yieldCityBuildFrame();
@@ -4194,7 +4237,9 @@ async function populateCity() {
     const edge = (BLOCK - ROAD_W) / 2 - 0.6;
     // Street lamps at corners
     for (const [dx, dz] of [[-edge, -edge], [edge, -edge], [-edge, edge], [edge, edge]]) {
-      if (Math.random() < 0.7 * sidewalkAssetDensity) makeLamp({ x: bp.x + dx, z: bp.z + dz });
+      if (Math.random() >= 0.7 * sidewalkAssetDensity) continue;
+      if (isMedievalVillage) addMedievalProp('Medieval roadside basket', bp.x + dx, bp.z + dz, 'basket');
+      else makeLamp({ x: bp.x + dx, z: bp.z + dz });
     }
     // Objects along each side of the block
     const sides = [
@@ -4306,8 +4351,11 @@ async function populateCity() {
   await populateSelectedCityPacks();
   pruneObjectsToArena();
   const liveHydrantCount = objects.filter(obj => !obj.consumed && obj.mandateKind === 'hydrant').length;
+  const liveLampCount = objects.filter(obj => !obj.consumed && obj.mandateKind === 'lamp').length;
   document.documentElement.setAttribute('data-holesy-live-hydrants', String(liveHydrantCount));
+  document.documentElement.setAttribute('data-holesy-live-lamps', String(liveLampCount));
   if (isMedievalVillage) document.documentElement.setAttribute('data-holesy-medieval-hydrants', String(liveHydrantCount));
+  if (isMedievalVillage) document.documentElement.setAttribute('data-holesy-medieval-lamps', String(liveLampCount));
 }
 
 function pruneObjectsToArena() {
@@ -7216,14 +7264,17 @@ function maybeUnlockPrismOrbit(hole) {
 
 function runObjectiveInstruction(objective) {
   const target = objective.target.toLocaleString();
+  const medievalTown = getCurrentTownThemeProfile().era === 'medieval';
   const instructions = {
     people: `Devour ${target} people.`,
     vehicles: `Devour ${target} cars or trucks.`,
     animals: `Devour ${target} roaming farm animals.`,
-    props: `Devour ${target} street props, such as benches, hydrants, cones, lamps, or similar objects.`,
+    props: medievalTown
+      ? `Devour ${target} village objects, such as baskets, sacks, crates, barrels, hay, or carts.`
+      : `Devour ${target} street props, such as benches, hydrants, cones, lamps, or similar objects.`,
     trees: `Devour ${target} trees.`,
     buildings: `Devour ${target} breakable building pieces.`,
-    soldiers: `Devour ${target} soldiers.`,
+    soldiers: medievalTown ? `Devour ${target} hostile fighters.` : `Devour ${target} soldiers.`,
     manholes: `Devour ${target} road manhole covers in MegaKit Downtown.`,
   };
   const cosmeticCopy = objectMastery.cosmetics.prismOrbit ? 'Prism Orbit equipped.' : 'Complete all goals and the Mandate in one wave to unlock Prism Orbit.';
@@ -10271,21 +10322,33 @@ function restoreSavedObject(state, now = performance.now()) {
   let obj;
   if (state.type === 'person') obj = makePerson({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'tree') obj = makeTree({ x: state.x, y: state.y || 0, z: state.z });
-  else if (state.type === 'car') obj = makeCar({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'car') obj = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE
+    ? addMedievalProp('Medieval cart', state.x, state.z, 'cart')
+    : makeCar({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'smallBuilding') obj = makeSavedLegacySmallBuilding(state);
   else if (state.type === 'smallVoxelCube') obj = makeSavedMidVoxelCube(state);
   else if (state.type === 'midVoxelCube') obj = makeSavedMidVoxelCube(state);
   else if (state.type === 'governmentBuildingPiece') obj = makeSavedGovernmentBuildingPiece(state);
   else if (state.type === 'midBuilding') obj = makeMidBuilding({ x: state.x, z: state.z });
   else if (state.type === 'powerup') obj = makePowerupFromSavedState(state);
-  else if (state.type === 'lamp') obj = makeLamp({ x: state.x, y: state.y || 0, z: state.z });
-  else if (state.type === 'bench') obj = makeBench({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'lamp') obj = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE
+    ? addMedievalProp('Medieval roadside basket', state.x, state.z, 'basket')
+    : makeLamp({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'bench') obj = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE
+    ? addMedievalProp('Medieval hay bale', state.x, state.z, 'hay')
+    : makeBench({ x: state.x, y: state.y || 0, z: state.z });
   else if (state.type === 'hydrant') obj = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE
     ? addMedievalProp('Medieval barrel', state.x, state.z, 'barrel')
     : makeHydrant({ x: state.x, y: state.y || 0, z: state.z });
-  else if (state.type === 'trash') obj = makeTrash({ x: state.x, y: state.y || 0, z: state.z });
-  else if (state.type === 'cone') obj = makeCone({ x: state.x, y: state.y || 0, z: state.z });
-  else if (String(state.type || '').startsWith('fixture:')) obj = makeStreetFixture(String(state.type).slice(8), { x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'trash') obj = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE
+    ? addMedievalProp('Medieval sack', state.x, state.z, 'sack')
+    : makeTrash({ x: state.x, y: state.y || 0, z: state.z });
+  else if (state.type === 'cone') obj = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE
+    ? addMedievalProp('Medieval basket', state.x, state.z, 'basket')
+    : makeCone({ x: state.x, y: state.y || 0, z: state.z });
+  else if (String(state.type || '').startsWith('fixture:')) obj = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE
+    ? addMedievalProp('Medieval crate', state.x, state.z, 'crate')
+    : makeStreetFixture(String(state.type).slice(8), { x: state.x, y: state.y || 0, z: state.z });
   else obj = makeSavedGenericObject(state);
   restoreObjectCommonState(obj, state, now);
   return obj;
@@ -10312,7 +10375,7 @@ function serializeSoldierState(s) {
 
 function restoreSoldierState(state) {
   const isArmyBoss = !!state.isArmyBoss;
-  const unitType = getUnitType(state);
+  const unitType = normalizeUnitTypeForCurrentTown(getUnitType(state), isArmyBoss);
   const mesh = makeSoldierMesh({ unitType, isArmyBoss });
   mesh.position.set(state.x, 0, state.z);
   mesh.rotation.y = state.rotY || 0;
@@ -10354,6 +10417,10 @@ function serializeParatrooperState(p) {
 }
 
 function restoreParatrooperState(state) {
+  if (getCurrentTownThemeProfile().responseStyle === 'ground_warband') {
+    restoreSoldierState({ ...state, x: state.targetX, z: state.targetZ });
+    return;
+  }
   const para = new THREE.Group();
   const isArmyBoss = !!state.isArmyBoss;
   const unitType = getUnitType(state);
@@ -10400,6 +10467,7 @@ function serializePlaneState(p) {
 }
 
 function restorePlaneState(state) {
+  if (getCurrentTownThemeProfile().responseStyle === 'ground_warband') return;
   const mesh = makePlaneMesh();
   mesh.position.set(state.x, PLANE_ALTITUDE, state.z);
   mesh.rotation.y = Math.atan2(state.endX - state.startX, state.endZ - state.startZ);
@@ -11005,6 +11073,12 @@ function shouldWaveSpawnArmyBoss(waveNum) {
 
 function pickBossUnitTypeForWave(waveNum) {
   if (currentWaveBossUnitType && shouldWaveSpawnArmyBoss(waveNum)) return currentWaveBossUnitType;
+  const townProfile = getCurrentTownThemeProfile();
+  if (townProfile.responseStyle === 'ground_warband') {
+    const pool = townProfile.bossRoster || MEDIEVAL_BOSS_UNIT_TYPES;
+    currentWaveBossUnitType = pool[Math.floor(Math.random() * pool.length)] || 'medieval_warlord';
+    return currentWaveBossUnitType;
+  }
   const locked = BOSS_UNIT_TYPES.filter(type => !unlockedBossUnitTypes.includes(type));
   const pool = locked.length ? locked : BOSS_UNIT_TYPES;
   currentWaveBossUnitType = pool[Math.floor(Math.random() * pool.length)] || 'tank';
@@ -11012,6 +11086,7 @@ function pickBossUnitTypeForWave(waveNum) {
 }
 
 function unlockBossDropType(unitType, waveNum = currentWave) {
+  if (MEDIEVAL_BOSS_UNIT_TYPES.includes(unitType)) return;
   if (!BOSS_UNIT_TYPES.includes(unitType)) return;
   if (!unlockedBossUnitTypes.includes(unitType)) unlockedBossUnitTypes.push(unitType);
   if (!bossUnlockWaveByType[unitType]) bossUnlockWaveByType[unitType] = waveNum;
@@ -11022,6 +11097,11 @@ function getUnlockedDropBossTypesForWave(waveNum = currentWave) {
 }
 
 function getRandomPostBossDropUnitType() {
+  const townProfile = getCurrentTownThemeProfile();
+  if (townProfile.responseStyle === 'ground_warband') {
+    const pool = townProfile.unitRoster || MEDIEVAL_UNIT_TYPES;
+    return pool[Math.floor(Math.random() * pool.length)] || 'medieval_swordsman';
+  }
   const pool = [UNIT_TYPE_SOLDIER, ...getUnlockedDropBossTypesForWave(currentWave)];
   return pool[Math.floor(Math.random() * pool.length)] || UNIT_TYPE_SOLDIER;
 }
@@ -14293,12 +14373,15 @@ const SOLDIER_BASE_EAT_RADIUS = 0.8;
 const SOLDIER_BASE_SCORE_VALUE = 30;
 const SOLDIER_BASE_PROGRESS_VALUE = 1;
 const UNIT_TYPE_SOLDIER = 'soldier';
+const MEDIEVAL_UNIT_TYPES = Object.freeze(['medieval_swordsman', 'medieval_archer', 'medieval_cavalry']);
+const MEDIEVAL_BOSS_UNIT_TYPES = Object.freeze(['medieval_warlord']);
 const BOSS_UNIT_TYPES = Object.freeze(['tank', 'mech', 'heavy', 'mortar', 'sniper', 'drone', 'grenadier', 'flamer', 'railgun', 'shock']);
 const BOSS_PERMANENT_NAMES = Object.freeze({
   tank: 'General Treadwell', mech: 'Major Overkill', heavy: 'Commander Bulkhead',
   mortar: 'Colonel Crater', sniper: 'Deadeye Dolores', drone: 'Marshal Buzzkill',
   grenadier: 'Captain Kaboom', flamer: 'Baron Burnside', railgun: 'Doctor Longshot',
   shock: 'Sergeant Static',
+  medieval_warlord: 'The Iron Reeve',
 });
 const OFFENSIVE_UNIT_DEFS = Object.freeze({
   soldier: Object.freeze({
@@ -14319,6 +14402,94 @@ const OFFENSIVE_UNIT_DEFS = Object.freeze({
     burstCount: SOLDIER_BURST_COUNT,
     reloadTime: SOLDIER_RELOAD_TIME,
     hitChance: [0.60, 0.40, 0.20],
+  }),
+  medieval_swordsman: Object.freeze({
+    id: 'medieval_swordsman',
+    label: 'Swordsman',
+    banner: 'WAR PARTY: SWORDSMEN CLOSING FAST.',
+    attack: 'sword',
+    bossEligible: false,
+    scale: 1.08,
+    damageMultiplier: 1.35,
+    eatRadius: 0.9,
+    scoreValue: 34,
+    progressValue: 1,
+    range: 2.8,
+    speedMult: 1.18,
+    shotsPerSecond: 1.35,
+    burstCount: 2,
+    reloadTime: 0.55,
+    hitChance: [0.92, 0.18, 0.02],
+    tracerColor: 0xf2d28b,
+    tracerY: 0.95,
+    tracerDuration: 0.07,
+  }),
+  medieval_archer: Object.freeze({
+    id: 'medieval_archer',
+    label: 'Longbow Archer',
+    banner: 'WAR PARTY: LONGBOWS TAKING POSITION.',
+    attack: 'bow',
+    bossEligible: false,
+    scale: 1,
+    damageMultiplier: 1.2,
+    eatRadius: 0.82,
+    scoreValue: 36,
+    progressValue: 1,
+    range: 24,
+    speedMult: 0.82,
+    shotsPerSecond: 0.7,
+    burstCount: 1,
+    reloadTime: 1.05,
+    hitChance: [0.86, 0.58, 0.32],
+    tracerColor: 0x8b5a2b,
+    tracerY: 1.25,
+    tracerDuration: 0.22,
+  }),
+  medieval_cavalry: Object.freeze({
+    id: 'medieval_cavalry',
+    label: 'Mounted Lancer',
+    banner: 'WAR PARTY: MOUNTED LANCERS CHARGING.',
+    attack: 'lance',
+    bossEligible: false,
+    scale: 1.35,
+    damageMultiplier: 2.15,
+    eatRadius: 2.15,
+    scoreValue: 62,
+    progressValue: 2,
+    range: 3.6,
+    speedMult: 2.65,
+    shotsPerSecond: 0.9,
+    burstCount: 1,
+    reloadTime: 0.72,
+    hitChance: [0.94, 0.22, 0.02],
+    tracerColor: 0xc7a36a,
+    tracerY: 1.35,
+    tracerDuration: 0.09,
+  }),
+  medieval_warlord: Object.freeze({
+    id: 'medieval_warlord',
+    label: 'Mounted Warlord',
+    banner: 'BOSS INBOUND: THE IRON REEVE - ARMORED CAVALRY CHARGE.',
+    attack: 'lance',
+    bossEligible: true,
+    scale: 3.4,
+    damageMultiplier: 7.2,
+    dropDamageMultiplier: 3.1,
+    eatRadius: 6.2,
+    dropEatRadius: 2.5,
+    scoreValue: 165,
+    dropScoreValue: 78,
+    progressValue: 5,
+    dropProgressValue: 2,
+    range: 4.2,
+    speedMult: 2.25,
+    shotsPerSecond: 1.05,
+    burstCount: 2,
+    reloadTime: 0.7,
+    hitChance: [0.96, 0.30, 0.02],
+    tracerColor: 0xffcf70,
+    tracerY: 1.5,
+    tracerDuration: 0.1,
   }),
   tank: Object.freeze({
     id: 'tank',
@@ -14619,6 +14790,19 @@ function getUnitType(state = {}) {
   if (state.unitType) return state.unitType;
   if (state.isArmyBoss) return 'tank';
   return UNIT_TYPE_SOLDIER;
+}
+
+function isMedievalCombatUnit(unitType) {
+  return MEDIEVAL_UNIT_TYPES.includes(unitType) || MEDIEVAL_BOSS_UNIT_TYPES.includes(unitType);
+}
+
+function normalizeUnitTypeForCurrentTown(unitType, isBoss = false) {
+  const profile = getCurrentTownThemeProfile();
+  if (profile.responseStyle !== 'ground_warband') return unitType;
+  if (isBoss) return profile.bossRoster?.[0] || 'medieval_warlord';
+  if (MEDIEVAL_UNIT_TYPES.includes(unitType)) return unitType;
+  const roster = profile.unitRoster || MEDIEVAL_UNIT_TYPES;
+  return roster[Math.abs(String(unitType || '').length) % roster.length] || 'medieval_swordsman';
 }
 
 function getBossRequiredEatRadius(def) {
@@ -15076,11 +15260,73 @@ function makeAdvancedBossMesh(unitType, isBoss = false) {
   return g;
 }
 
+function makeMedievalCombatantMesh(unitType, isBoss = false) {
+  const def = getUnitDefinition(unitType);
+  const mounted = unitType === 'medieval_cavalry' || unitType === 'medieval_warlord';
+  const archer = unitType === 'medieval_archer';
+  const g = new THREE.Group();
+  const tunicMat = sharedBoxMat(isBoss ? 0x6f1717 : archer ? 0x3f612f : 0x425a74);
+  const leatherMat = sharedBoxMat(0x5a3823);
+  const steelMat = sharedBoxMat(isBoss ? 0xe8c35a : 0xb9c2c8);
+  const skinMat = sharedBoxMat(0xd5a47b);
+
+  if (mounted) {
+    const horseBody = new THREE.Mesh(sharedBoxGeometry(1.75, 0.88, 0.68), leatherMat);
+    horseBody.position.y = 0.88;
+    g.add(horseBody);
+    const horseHead = new THREE.Mesh(sharedBoxGeometry(0.56, 0.66, 0.58), leatherMat);
+    horseHead.position.set(0, 1.22, 0.92);
+    g.add(horseHead);
+    for (const x of [-0.55, 0.55]) for (const z of [-0.22, 0.22]) {
+      const leg = new THREE.Mesh(sharedBoxGeometry(0.16, 0.78, 0.16), leatherMat);
+      leg.position.set(x, 0.38, z);
+      g.add(leg);
+    }
+  }
+
+  const riderBaseY = mounted ? 1.55 : 0;
+  const body = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierBody, tunicMat);
+  body.position.y = riderBaseY + 0.8;
+  g.add(body);
+  const legs = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierLegs, leatherMat);
+  legs.position.y = riderBaseY + 0.32;
+  g.add(legs);
+  const head = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierHead, skinMat);
+  head.position.y = riderBaseY + 1.22;
+  g.add(head);
+  const helm = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierHelmet, steelMat);
+  helm.position.y = riderBaseY + 1.43;
+  g.add(helm);
+
+  if (archer) {
+    const bow = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.045, 5, 12, Math.PI), leatherMat);
+    bow.rotation.z = Math.PI / 2;
+    bow.position.set(0.46, 0.95, 0.24);
+    g.add(bow);
+  } else {
+    const weapon = new THREE.Mesh(
+      sharedBoxGeometry(isBoss || mounted ? 0.1 : 0.12, isBoss || mounted ? 0.1 : 1.25, isBoss || mounted ? 2.6 : 0.12),
+      steelMat
+    );
+    if (mounted || isBoss) weapon.position.set(0.42, riderBaseY + 0.92, 1.25);
+    else {
+      weapon.position.set(0.44, 0.98, 0.1);
+      weapon.rotation.z = -0.62;
+    }
+    g.add(weapon);
+  }
+
+  g.userData.unitType = unitType;
+  finalizeArmyBossVisual(g, isBoss, def.scale || 1, mounted ? 2.8 : 1.2, mounted ? 2.4 : 1.6);
+  return g;
+}
+
 function makeSoldierMesh(options = {}) {
   const isArmyBoss = !!options.isArmyBoss || !!options.boss;
   const unitType = getUnitType(options);
   let bossMesh = null;
-  if (unitType === 'tank') bossMesh = makeArmyBossTankMesh(isArmyBoss);
+  if (isMedievalCombatUnit(unitType)) bossMesh = makeMedievalCombatantMesh(unitType, isArmyBoss);
+  else if (unitType === 'tank') bossMesh = makeArmyBossTankMesh(isArmyBoss);
   else if (unitType === 'mech') bossMesh = makeMechUnitMesh(isArmyBoss);
   else if (unitType === 'heavy') bossMesh = makeHeavyCommanderMesh(isArmyBoss);
   else if (unitType !== UNIT_TYPE_SOLDIER) bossMesh = makeAdvancedBossMesh(unitType, isArmyBoss);
@@ -15158,12 +15404,59 @@ function buildPlaneUnitManifest(cfg) {
     return [buildOffensiveUnitState(bossType, true)];
   }
   const soldierSpread = Math.max(0, cfg.soldierCountMax - cfg.soldierCountMin);
-  const unitCount = cfg.soldierCountMin + Math.floor(Math.random() * (soldierSpread + 1));
+  const rolledUnitCount = cfg.soldierCountMin + Math.floor(Math.random() * (soldierSpread + 1));
+  const unitCount = getCurrentTownThemeProfile().responseStyle === 'ground_warband'
+    ? Math.max(3, rolledUnitCount)
+    : rolledUnitCount;
   const manifest = [];
   for (let i = 0; i < unitCount; i++) {
     manifest.push(buildOffensiveUnitState(getRandomPostBossDropUnitType(), false));
   }
   return manifest;
+}
+
+function deployGroundWarband(unitManifest, waveId) {
+  const edge = Math.floor(Math.random() * 4);
+  const inset = Math.max(8, currentArenaHalf - 4);
+  const along = randomBetween(-currentArenaHalf + 10, currentArenaHalf - 10);
+  const origin = edge === 0 ? { x: -inset, z: along }
+    : edge === 1 ? { x: inset, z: along }
+      : edge === 2 ? { x: along, z: -inset }
+        : { x: along, z: inset };
+  const spawnedTypes = [];
+  for (let i = 0; i < unitManifest.length; i++) {
+    const unit = unitManifest[i];
+    const unitType = getUnitType(unit);
+    const isArmyBoss = !!unit.isArmyBoss;
+    const spreadAngle = Math.random() * Math.PI * 2;
+    const spread = isArmyBoss ? 1.2 : 1.5 + Math.random() * 3.5;
+    const x = origin.x + Math.cos(spreadAngle) * spread;
+    const z = origin.z + Math.sin(spreadAngle) * spread;
+    const mesh = makeSoldierMesh({ unitType, isArmyBoss });
+    mesh.position.set(x, 0, z);
+    scene.add(mesh);
+    soldiers.push({
+      mesh, x, z,
+      burstRounds: 0,
+      burstCooldown: 0,
+      reloading: false,
+      voiceCooldown: 2 + Math.random() * 4,
+      isSoldier: true,
+      alive: true,
+      waveId,
+      unitType,
+      isArmyBoss,
+      damageMultiplier: getSoldierDamageMultiplier(unit),
+      eatRadius: getSoldierEatRadius(unit),
+      scoreValue: getSoldierScoreValue(unit),
+      progressValue: getSoldierProgressValue(unit),
+    });
+    spawnedTypes.push(unitType);
+  }
+  waveRosters[waveId] = { expected: unitManifest.length, remaining: unitManifest.length, eatenBy: null };
+  document.documentElement.setAttribute('data-holesy-response-style', 'ground_warband');
+  document.documentElement.setAttribute('data-holesy-enemy-roster', [...new Set(spawnedTypes)].join(','));
+  document.documentElement.setAttribute('data-holesy-response-planes', '0');
 }
 
 function spawnWave() {
@@ -15178,6 +15471,13 @@ function spawnWave() {
   // Pick a random drop point within the city
   const dropX = randomBetween(-currentArenaHalf + 10, currentArenaHalf - 10);
   const dropZ = randomBetween(-currentArenaHalf + 10, currentArenaHalf - 10);
+  if (getCurrentTownThemeProfile().responseStyle === 'ground_warband') {
+    deployGroundWarband(unitManifest, waveId);
+    const bossUnit = unitManifest.find(unit => unit.isArmyBoss);
+    if (bossUnit) announceBossInbound(getUnitType(bossUnit));
+    else showEventBanner('THE LOCAL WAR PARTY IS ADVANCING.', HOLESY_CONFIG.eventMessaging.waveBriefingDurationMs);
+    return;
+  }
 
   // Plane enters from one of 4 edges, flies over drop point, continues to opposite edge
   const edge = Math.floor(Math.random() * 4);
@@ -15223,7 +15523,7 @@ function spawnWave() {
   waveRosters[waveId] = { expected: rosterCount, remaining: rosterCount, eatenBy: null };
 
   // Announce via a soldier voice callout for drama
-  if (!music.muted) playSoldierVoice(1.0);
+  if (!music.muted && getCurrentTownThemeProfile().era !== 'medieval') playSoldierVoice(1.0);
   if (armyBossCount) announceBossInbound(getUnitType(unitManifest.find(unit => unit.isArmyBoss)));
 }
 
@@ -15764,6 +16064,7 @@ function playOffensiveUnitWeaponAudio(s) {
   const distToPlayer = Math.hypot(s.x - player.x, s.z - player.z);
   const volScale = Math.max(0, 1 - distToPlayer / 70);
   if (music.muted || volScale <= 0) return;
+  if (isMedievalCombatUnit(getUnitType(s))) return;
   if (getUnitType(s) === 'tank' || getUnitDefinition(getUnitType(s)).cannonAudio) playCannonShot(volScale);
   else playGunshot(volScale);
 }
@@ -16310,9 +16611,14 @@ function updateWaveHudBanner() {
     const secs = Math.max(0, Math.ceil(waveTimer));
     if (secs !== lastWaveHudSecond) {
       lastWaveHudSecond = secs;
+      const medievalResponse = getCurrentTownThemeProfile().responseStyle === 'ground_warband';
       waveHudEl.textContent = armyBossPendingThisWave
-        ? `🚨 ARMY BOSS DEPLOYMENT: ${secs} SECONDS! 🚨`
-        : `🚨 NEXT TROOP DEPLOYMENT: ${secs} SECONDS! 🚨`;
+        ? medievalResponse
+          ? `⚔️ WARLORD CHARGE: ${secs} SECONDS! ⚔️`
+          : `🚨 ARMY BOSS DEPLOYMENT: ${secs} SECONDS! 🚨`
+        : medievalResponse
+          ? `🏹 NEXT WAR PARTY: ${secs} SECONDS! 🏹`
+          : `🚨 NEXT TROOP DEPLOYMENT: ${secs} SECONDS! 🚨`;
     }
     const showWaveEndWarning = gameTime > 0 && gameTime <= 3;
     const warningDisplay = showWaveEndWarning ? 'block' : 'none';

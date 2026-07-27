@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 183;
+export const BUILD_SUB = 184;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.184',
+    title: 'Town-era response profiles',
+    notes: [
+      'Replaces Medieval aircraft, paratroopers, robots, vehicles, and futuristic bosses with ground warbands of swordsmen, archers, mounted lancers, and the Iron Reeve.',
+      'Raises the Medieval boss devour gate to 6.2 and strengthens its charge pressure so bosses are meaningful progression targets.',
+      'Removes electric streetlights from fresh and saved Medieval towns while expanding agriculture to 544 loose themed edibles.',
+      'Establishes positive town-composition profiles and an owned-pack design matrix for future cities.',
+    ],
+  },
   {
     label: 'Master 16.183',
     title: 'Medieval roadside theme repair',
