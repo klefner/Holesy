@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.183 - 2026-07-27
+
+Medieval roadside theme repair.
+
+- Removes fire hydrants and their water-jet devour response from Medieval Village without changing modern-city hydrants.
+- Replaces all modern roadside-prop rolls on Medieval native parcels with baskets, sacks, crates, barrels, hay, carts, trees, and torch-bearing villagers.
+- Converts any hydrant found in a legacy Medieval save into a barrel during restoration so old state cannot reintroduce the mismatch.
+
 ## Master 16.182 - 2026-07-27
 
 Harvest County and strict town-specific content.

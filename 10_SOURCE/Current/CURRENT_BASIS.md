@@ -6,8 +6,13 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.182` and player-facing surfaces show `Version 16.182`
-- `Master 16.182` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.183` and player-facing surfaces show `Version 16.183`
+- `Master 16.183` is the current governed source basis and includes:
+  - Medieval native parcels use only theme-compatible roadside content: baskets, sacks, crates, barrels, hay, carts, trees, and torch-bearing villagers
+  - fire hydrants and their water-jet response are excluded from Medieval Village while remaining available in modern cities
+  - legacy saved Medieval hydrants restore as barrels instead of reintroducing the theme leak
+  - all prior `Master 16.182` Harvest County and strict town-theme work
+- `Master 16.182` includes:
   - Harvest County as the first July-model-intake town, with a dense crop-to-livestock-to-building consumption ladder
   - Quaternius CC0 farm buildings, crops, animals, and nature assets promoted into optimized runtime GLBs
   - six farm structures processed through the shared imported-building destruction standard
