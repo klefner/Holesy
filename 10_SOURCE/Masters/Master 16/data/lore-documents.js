@@ -269,7 +269,53 @@ We notice that you have been reading.
 We are flattered.
 
 Please continue.`
+  },
+  {
+    id: 'crn-1',
+    thread: 'Crownlands',
+    title: 'Margin Note in a Road Atlas',
+    format: 'Uncatalogued annotation',
+    rarity: 'common',
+    hint: '',
+    body: `There is no road to the Crownlands.
+
+There are only four proofs that the road has already passed beneath you:
+
+something living at the threshold,
+five witnesses wearing leaves,
+a square made perfectly quiet,
+and a bell that is never struck early.
+
+The proofs must belong to the same traveler. Old medals impress no gate.`
+  },
+  {
+    id: 'crn-2',
+    thread: 'Crownlands',
+    title: 'The Fifth Bell',
+    format: 'Damaged monastery rule',
+    rarity: 'rare',
+    hint: '',
+    body: `The porter was asked when the hidden gate should be opened.
+
+Not after the first bell, he wrote. Not after the last.
+
+Open it for the traveler who can leave a whole square empty, arrive with leaves still caught in the mouth, and take stone only when the fifth bell permits.
+
+If the traveler sleeps beside the road, preserve the tally. If the traveler abandons the road, burn it.`
+  },
+  {
+    id: 'crn-3',
+    thread: 'Crownlands',
+    title: 'A Road That Was Not There',
+    format: 'Archive routing slip',
+    rarity: 'legendary',
+    hint: '',
+    body: `The four proofs agree.
+
+The Archive has amended the map.
+
+Do not call the place discovered. It was watching the whole attempt.`
   }
 ]);
 
-export const LORE_STARTING_UNLOCKS = Object.freeze(['wit-1', 'ori-1', 'pat-2']);
+export const LORE_STARTING_UNLOCKS = Object.freeze(['wit-1', 'ori-1', 'pat-2', 'crn-1']);

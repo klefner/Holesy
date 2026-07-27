@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.184';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.185';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -7726,6 +7726,8 @@ function triggerMandateFailureGameOver() {
 // =========================================================================
 const LORE_STORAGE_KEY = 'holesy.lore.unlocked.v1';
 const ACHIEVEMENT_STORAGE_KEY = 'holesy.achievements.v1';
+const SECRET_TOWN_STORAGE_KEY = 'holesy.secret-town.crownlands.v1';
+const CROWNLANDS_CONSTELLATION = Object.freeze(['first_bite', 'tree_hugger', 'quiet_block', 'linden_street']);
 const LORE_DOC_BY_ID = new Map(LORE_DOCUMENTS.map(doc => [doc.id, doc]));
 const LORE_DROP_BASE_CHANCE = 0.16;
 const LORE_DROP_WIN_BONUS = 0.08;
@@ -7864,6 +7866,7 @@ function unlockAchievement(id, announce = true) {
   const def = ACHIEVEMENT_DEFS[id];
   if (!def) return false;
   const isNew = !achievementUnlocked.has(id);
+  recordRunConstellationAchievement(id);
   if (isNew) {
     achievementUnlocked.add(id);
     saveIdSet(ACHIEVEMENT_STORAGE_KEY, achievementUnlocked);
@@ -7876,6 +7879,25 @@ function unlockAchievement(id, announce = true) {
   const cosmeticId = Object.keys(COSMETIC_REWARDS).find(key => COSMETIC_REWARDS[key].achievement === id);
   if (cosmeticId) grantCosmetic(cosmeticId, isNew);
   return isNew;
+}
+
+function isCrownlandsUnlocked() {
+  try { return localStorage.getItem(SECRET_TOWN_STORAGE_KEY) === 'unlocked'; } catch { return false; }
+}
+
+function recordRunConstellationAchievement(id) {
+  if (!roundLoreState || !CROWNLANDS_CONSTELLATION.includes(id)) return false;
+  if (!Array.isArray(roundLoreState.runAchievements)) roundLoreState.runAchievements = [];
+  if (!roundLoreState.runAchievements.includes(id)) roundLoreState.runAchievements.push(id);
+  document.documentElement.setAttribute('data-holesy-run-constellation', roundLoreState.runAchievements.join(','));
+  const complete = CROWNLANDS_CONSTELLATION.every(requiredId => roundLoreState.runAchievements.includes(requiredId));
+  if (!complete || roundLoreState.crownlandsUnlockedThisRun) return false;
+  roundLoreState.crownlandsUnlockedThisRun = true;
+  try { localStorage.setItem(SECRET_TOWN_STORAGE_KEY, 'unlocked'); } catch {}
+  document.documentElement.setAttribute('data-holesy-crownlands-unlocked', 'true');
+  unlockLoreDoc('crn-3', '');
+  showEventBanner('THE ARCHIVE HAS FOUND A ROAD THAT WAS NOT THERE BEFORE.', 7600);
+  return true;
 }
 
 function pickNextLoreDrop() {
@@ -7995,7 +8017,11 @@ function startLoreRunTracking() {
     maxPlayerRadius: player ? player.radius : 0,
     newAchievements: 0,
     documentDropAwarded: false,
+    runAchievements: [],
+    crownlandsUnlockedThisRun: false,
   };
+  document.documentElement.setAttribute('data-holesy-run-constellation', '');
+  document.documentElement.setAttribute('data-holesy-crownlands-unlocked', String(isCrownlandsUnlocked()));
   pendingLoreDropId = '';
 }
 
@@ -10522,11 +10548,14 @@ function restoreRoundLoreState(state, now = performance.now()) {
   }
   roundLoreState = {
     ...state,
+    runAchievements: Array.isArray(state.runAchievements) ? [...state.runAchievements] : [],
     lastEatAt: now - (state.lastEatAgoMs || 0),
     peopleTimes: (state.peopleAgoMs || []).map(age => now - age),
   };
   delete roundLoreState.lastEatAgoMs;
   delete roundLoreState.peopleAgoMs;
+  document.documentElement.setAttribute('data-holesy-run-constellation', roundLoreState.runAchievements.join(','));
+  document.documentElement.setAttribute('data-holesy-crownlands-unlocked', String(isCrownlandsUnlocked()));
 }
 
 function refreshEndlessSaveControls() {

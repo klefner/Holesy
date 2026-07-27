@@ -2,6 +2,15 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.185 - 2026-07-27
+
+The hidden road to Crownlands.
+
+- Designates Crownlands as the secret town and adds a four-achievement constellation that must be earned during one continuous game rather than assembled from permanent achievement history.
+- Preserves the current constellation across waves, world shifts, and an explicit Endless save/load; a new unsaved game begins with an empty constellation.
+- Permanently records the completed Crownlands gate while keeping the unfinished town out of automatic rotation and the temporary city selector.
+- Adds three cryptic Archive records describing the four proofs as a living threshold, five leafy witnesses, an emptied square, and the fifth bell.
+
 ## Master 16.184 - 2026-07-27
 
 Town-era response profiles.

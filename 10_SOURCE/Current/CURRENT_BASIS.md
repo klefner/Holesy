@@ -6,8 +6,15 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.184` and player-facing surfaces show `Version 16.184`
-- `Master 16.184` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.185` and player-facing surfaces show `Version 16.185`
+- `Master 16.185` is the current governed source basis and includes:
+  - Crownlands designated as the secret town
+  - a run-scoped four-achievement constellation that ignores prior permanent achievement history
+  - explicit Endless save/load preservation with unsaved new-game reset semantics
+  - three cryptic Crownlands Archive records
+  - a permanent completed gate while Crownlands remains excluded from selection and rotation until its town package is finished
+  - all prior `Master 16.184` town-era response work
+- `Master 16.184` includes:
   - positive town-era composition profiles covering response style, street lighting, agriculture weighting, enemy rosters, and boss rosters
   - Medieval ground warbands of swordsmen, longbow archers, mounted lancers, and the mounted Iron Reeve instead of aircraft, paratroopers, robots, tanks, mechs, or other futuristic units
   - an Iron Reeve devour gate of 6.2 plus higher charge speed and damage
