@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 185;
+export const BUILD_SUB = 186;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.186',
+    title: 'Medieval sound, scale, and growth repair',
+    notes: [
+      'Keeps the main soundtrack active after Begin instead of fading it out when gameplay starts.',
+      'Preserves authored animal scale during hole entry and makes animals steadily shrink from the mouth downward.',
+      'Adds denser parcel forage plus roaming torch walkers, horses, and horse-drawn carts to Medieval Village.',
+      'Keeps the tallest landmarks as later progression targets while making the small-building path achievable during the opening wave.',
+    ],
+  },
   {
     label: 'Master 16.185',
     title: 'The hidden road to Crownlands',

@@ -1480,6 +1480,49 @@ function makeMedievalAnimal(kind, x, z, bounds) {
   return obj;
 }
 
+function makeMedievalHorseCart(x, z, bounds, direction = 0) {
+  const group = new THREE.Group();
+  const wood = sharedBoxMat(0x6f4728);
+  const dark = sharedBoxMat(0x30271f);
+  const horseColor = sharedBoxMat(0x70472c);
+  const horse = new THREE.Mesh(sharedBoxGeometry(1.7, 1.0, 0.62), horseColor);
+  horse.position.set(1.65, 0.76, 0);
+  group.add(horse);
+  const horseHead = new THREE.Mesh(sharedBoxGeometry(0.55, 0.58, 0.52), horseColor);
+  horseHead.position.set(2.62, 1.05, 0);
+  group.add(horseHead);
+  for (const sx of [1.2, 2.05]) for (const sz of [-0.22, 0.22]) {
+    const leg = new THREE.Mesh(sharedBoxGeometry(0.13, 0.7, 0.13), dark);
+    leg.position.set(sx, 0.35, sz);
+    group.add(leg);
+  }
+  const cartBed = new THREE.Mesh(sharedBoxGeometry(2.25, 0.48, 1.25), wood);
+  cartBed.position.set(-0.55, 0.82, 0);
+  group.add(cartBed);
+  for (const wheelZ of [-0.72, 0.72]) {
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 0.18, 10), dark);
+    wheel.rotation.x = Math.PI / 2;
+    wheel.position.set(-0.55, 0.52, wheelZ);
+    group.add(wheel);
+  }
+  const shaft = new THREE.Mesh(sharedBoxGeometry(1.8, 0.08, 0.08), wood);
+  shaft.position.set(0.72, 0.66, 0);
+  group.add(shaft);
+  group.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
+  const obj = makeMedievalConsumable('horse-drawn cart', group, 1.55, 62, x, z, 0);
+  obj.mandateKind = 'animal';
+  obj.mesh.rotation.y = -direction;
+  medievalAmbientActors.push({
+    type: 'animal',
+    obj,
+    bounds,
+    direction,
+    speed: 0.8,
+    timer: 3 + Math.random() * 3,
+  });
+  return obj;
+}
+
 function makeMedievalVillager(x, z, bounds, role) {
   const person = makePerson({ x, z }, role === 'fighter' ? null : bounds);
   person.isMedievalAsset = true;
@@ -1708,6 +1751,7 @@ async function populateMedievalVillage() {
     [-7.8, -7.1], [-4.7, -7.7], [0, -8], [4.8, -7.6], [7.8, -6.9],
     [-8, -3.5], [8, -3.1], [-8.1, 2.9], [8.1, 3.4],
     [-7.7, 7], [-4.4, 7.8], [0.4, 8], [4.7, 7.7], [7.7, 6.8],
+    [-5.2, -0.8], [-2.4, 2.8], [2.2, -2.7], [5.2, 0.9], [0.2, 4.8], [-0.3, -4.7],
   ];
   let edibleCount = 0;
   for (let parcelIndex = 0; parcelIndex < eligibleParcels.length; parcelIndex++) {
@@ -1757,6 +1801,21 @@ async function populateMedievalVillage() {
     const bounds = { minX: bp.x - 8.6, maxX: bp.x + 8.6, minZ: bp.z - 8.6, maxZ: bp.z + 8.6 };
     makeMedievalVillager(bp.x - 1.2, bp.z, bounds, 'fighter');
     makeMedievalVillager(bp.x + 1.2, bp.z, bounds, 'fighter');
+  }
+  const roadLifeParcels = [...eligibleParcels].sort(() => Math.random() - 0.5);
+  for (let i = 0; i < Math.min(24, roadLifeParcels.length); i++) {
+    const bp = roadLifeParcels[i];
+    const useHorizontalRoad = i % 2 === 0;
+    const roadOffset = (BLOCK - ROAD_W) / 2 + ROAD_W * 0.48;
+    const centerX = useHorizontalRoad ? bp.x + randomBetween(-7.2, 7.2) : bp.x + (i % 4 < 2 ? -roadOffset : roadOffset);
+    const centerZ = useHorizontalRoad ? bp.z + (i % 4 < 2 ? -roadOffset : roadOffset) : bp.z + randomBetween(-7.2, 7.2);
+    const bounds = useHorizontalRoad
+      ? { minX: bp.x - 8.5, maxX: bp.x + 8.5, minZ: centerZ - 0.8, maxZ: centerZ + 0.8 }
+      : { minX: centerX - 0.8, maxX: centerX + 0.8, minZ: bp.z - 8.5, maxZ: bp.z + 8.5 };
+    const direction = useHorizontalRoad ? (i % 4 < 2 ? 0 : Math.PI) : (i % 4 < 2 ? Math.PI / 2 : -Math.PI / 2);
+    if (i < 6) makeMedievalHorseCart(centerX, centerZ, bounds, direction);
+    else if (i < 12) makeMedievalAnimal('horse', centerX, centerZ, bounds);
+    else makeMedievalVillager(centerX, centerZ, bounds, 'torch');
   }
   document.documentElement.setAttribute('data-holesy-medieval-ambient-actors', String(medievalAmbientActors.length));
   wakeRenderLoop();
@@ -8196,7 +8255,9 @@ function primeAudioFromStartGesture() {
 
 function syncTitleAudioToGameState() {
   if (!musicStarted) return;
-  if (shouldPlayTitleMusicForCurrentState() && isMusicAudibleAllowed()) {
+  const shouldPlayMainMusic = shouldPlayTitleMusicForCurrentState()
+    || isGameState(GAME_STATES.PLAYING, GAME_STATES.WAVE_TRANSITION, GAME_STATES.PAUSED);
+  if (shouldPlayMainMusic && isMusicAudibleAllowed()) {
     startMusic();
   } else if (music.playing) {
     stopMusic(300);
@@ -12400,6 +12461,8 @@ function beginConsume(h, obj) {
   obj.falling = true;
   obj.fallVel = 0;
   obj.spin = (Math.random() - 0.5) * 4;
+  obj.fallBaseScale = obj.mesh.scale.clone();
+  obj.fallShrinkStartDepth = obj.mandateKind === 'animal' ? 0.35 : HOLE_DESCENT_CONFIG.shrinkStartDepth;
   obj.fallTargetHole = h;
   configureHoleDescentPath(h, obj);
   setHoleDescentRenderMode(obj, true);
@@ -16963,9 +17026,11 @@ function animate(frameNow = performance.now()) {
       if (obj.isVoxelBuildingCube) {
         obj.mesh.scale.set(1, 1, 1);
       } else {
-        const shrinkT = THREE.MathUtils.clamp((depth - HOLE_DESCENT_CONFIG.shrinkStartDepth) / Math.max(1, HOLE_DESCENT_CONFIG.fullShrinkDepth - HOLE_DESCENT_CONFIG.shrinkStartDepth), 0, 1);
+        const shrinkStartDepth = obj.fallShrinkStartDepth ?? HOLE_DESCENT_CONFIG.shrinkStartDepth;
+        const shrinkT = THREE.MathUtils.clamp((depth - shrinkStartDepth) / Math.max(1, HOLE_DESCENT_CONFIG.fullShrinkDepth - shrinkStartDepth), 0, 1);
         const s = THREE.MathUtils.lerp(1, HOLE_DESCENT_CONFIG.minScale, shrinkT);
-        obj.mesh.scale.set(s, s, s);
+        const baseScale = obj.fallBaseScale || obj.mesh.scale;
+        obj.mesh.scale.set(baseScale.x * s, baseScale.y * s, baseScale.z * s);
       }
       if (obj.isVoxelBuildingCube && obj.pendingVoxelConsume && !obj.voxelTouchedFloorWhilePending && obj.mesh.position.y <= (obj.stackFloorY || 0)) {
         obj.voxelTouchedFloorWhilePending = true;

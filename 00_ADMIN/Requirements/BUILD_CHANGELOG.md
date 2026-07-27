@@ -2,6 +2,17 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.186 - 2026-07-27
+
+Medieval sound, scale, and growth repair.
+
+- Repairs the gameplay-audio transition that faded the existing soundtrack out immediately after Begin.
+- Preserves each swallowed object's authored scale instead of forcing imported animals to scale `1`.
+- Makes animals shrink continuously from near the hole mouth to sell the long fall.
+- Increases Medieval parcel forage from 14 to 20 staged small edibles per building parcel.
+- Adds period-specific road life using torch walkers, loose horses, and horse-drawn carts.
+- Retains staged structure progression: small buildings are opening-wave targets; medium, large, and tower structures remain earned escalation targets.
+
 ## Master 16.185 - 2026-07-27
 
 The hidden road to Crownlands.
