@@ -237,18 +237,18 @@ Explicit exceptions: tree fall direction, seasonal material variants, vegetation
 | --- | --- | --- | --- | --- |
 | Farm Animals | Harvest County | Crownlands livestock | Included CC0 | approve for normalization |
 | Ultimate Animated Animals | Harvest County | Wildreach wildlife | Included CC0 | approve; audit animation clips |
-| brutalist-building | Concrete Capital | none | page evidence required | quarantine pending license |
-| Buildings Pack - August 2017 | Railgate | none | page evidence required | inspect original source page |
+| brutalist-building | Concrete Capital | none | Free Standard; NoAI | cleared for incorporated use; exclude from generative-AI workflows |
+| Buildings Pack - August 2017 | Railgate | none | Quaternius CC0 | cleared |
 | Buildings Pack - January 2019 | Railgate | Brickworks only if needed | Included CC0 | approve |
 | Downtown City MegaKit Standard | Brickworks Borough | existing MegaKit Downtown lineage only | Included CC0 | approve unused roster |
 | Farm Buildings | Harvest County | Crownlands farms | Included CC0 | approve |
-| low-poly-city-pack | Brickworks Borough | none | page evidence required | hold; combined scene |
+| low-poly-city-pack | Brickworks Borough | none | CC BY 4.0 | cleared with attribution; separate combined scene |
 | Medieval Village MegaKit Standard | Crownlands | existing Medieval lineage only | Included CC0 | use only roster/components absent from the existing town |
-| Modular Dungeon Pack | Underkeep | none | page evidence required | verify source page |
-| Modular Medieval Buildings | Crownlands | Underkeep fortifications | page evidence required | verify source page |
-| ruined-city-free | Ruinfall | Lockdown skyline only | page evidence required | quarantine pending license |
-| sci-fi-mega-castle | Concrete Capital | Neon Foundry landmark candidate | page evidence required | quarantine pending license |
-| street-city-for-games-free | Lockdown | none | page evidence required | quarantine; combined scene |
+| Modular Dungeon Pack | Underkeep | none | Quaternius CC0 | cleared |
+| Modular Medieval Buildings | Crownlands | Underkeep fortifications | Quaternius CC0 | cleared |
+| ruined-city-free | Ruinfall | Lockdown skyline only | Free Standard; AI-assisted textures disclosed | hold for provenance/content review |
+| sci-fi-mega-castle | Concrete Capital | Neon Foundry landmark candidate | CC BY 4.0; AI-model provenance disclosed | hold for provenance review |
+| street-city-for-games-free | Lockdown | none | Free Standard | cleared for incorporated use; separate scene and review signage |
 | Ultimate Building Models Pack | Brickworks Borough | Railgate only if needed | Included CC0 | inspect nested archives |
 | Ultimate Fantasy RTS | Crownlands | Harvest County generic farm props only | Included CC0 | approve |
 | Ultimate Modular Ruins | Ruinfall | Underkeep limited props | Included CC0 | approve |
@@ -261,20 +261,20 @@ Explicit exceptions: tree fall direction, seasonal material variants, vegetation
 | Animated Monster Pack | Underkeep | Lockdown limited infected variants | Included CC0 | approve; avoid repeated hero silhouettes |
 | Animated Robot | Neon Foundry | Farstar small enemy candidate | Included CC0 | approve; audit rig |
 | Tank Pack | Concrete Capital | Lockdown limited military response | Included CC0 | approve |
-| city-infrastructure-base-map | Brickworks Borough | Railgate layout reference | page evidence required | quarantine; separate combined scene |
-| alien-planet landscape/skybox | Farstar Colony | none | page evidence required | quarantine pending license |
+| city-infrastructure-base-map | Brickworks Borough | Railgate layout reference | CC BY 4.0 | cleared with attribution; separate combined scene |
+| alien-planet landscape/skybox | Farstar Colony | none | CC BY 4.0 | cleared with attribution |
 | Nature Crops Pack copy A | Harvest County | Crownlands crops | Included CC0 | approve canonical copy |
 | Nature Crops Pack copy B | Harvest County duplicate candidate | none | Included CC0 | archive hashes differ; compare internal payload before deleting or promoting |
-| Simple Nature Pack | Harvest County | lightweight fallback only | page evidence required | verify source page |
+| Simple Nature Pack | Harvest County | lightweight fallback only | Quaternius CC0 | cleared |
 | Stylized Nature MegaKit Standard | Wildreach | Farstar recolor prohibited unless separately approved | Included CC0 | approve |
-| Textured Fantasy Nature | Ruinfall | Underkeep vegetation | page evidence required | verify source page |
+| Textured Fantasy Nature | Ruinfall | Underkeep vegetation | Quaternius CC0 | cleared |
 | Textured Stylized Trees | Ruinfall | Lockdown overgrowth | Included CC0 | approve |
 | Ultimate Nature Pack | Wildreach | seasonal Crownlands outskirts | Included CC0 | approve |
 | Ultimate Stylized Nature | Farstar Colony | Wildreach limited secondary | Included CC0 | approve; large source requires strict selection |
 | Ultimate Animated Character Pack | Crownlands | Railgate civilian subsets | Included CC0 | approve; partition character families |
 | Ultimate Modular Women | Railgate | Neon Foundry/Farstar role subsets | Included CC0 | approve; normalize modular combinations |
 | Train Pack | Railgate | none | Included CC0 | approve |
-| Public Transport Pack | Railgate | Brickworks buses only | page evidence required | verify source page |
+| Public Transport Pack | Railgate | Brickworks buses only | Quaternius CC0 | cleared |
 | Realistic Car Pack | Railgate | Lockdown undamaged-car subset | Included CC0 | approve |
 | Ultimate Spaceships | Farstar Colony | none | Included CC0 | approve; strict size/texture budget |
 
