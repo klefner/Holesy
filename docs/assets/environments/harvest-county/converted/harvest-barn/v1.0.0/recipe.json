@@ -1,0 +1,38 @@
+{
+  "packId": "harvest-county-quaternius",
+  "modelId": "harvest-barn",
+  "assetId": "harvest-barn",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/harvest-county/normalized-source/Barn.gltf",
+  "sourceSha256": "118ba427581c1cdc7610ec23510991314a7be93375531023d3933752853735b3",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16159,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 10.5,
+    "depth": 10.5,
+    "height": 7.672983271532441
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "DarkRed",
+    "topFaces": "RoofBlack",
+    "cutFaces": "DarkRed",
+    "coreVisualScale": 0.28
+  },
+  "progressionClass": "medium_structure",
+  "collapseSize": 5.25,
+  "unusualElements": [],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}

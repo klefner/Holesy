@@ -1,0 +1,40 @@
+{
+  "packId": "harvest-county-quaternius",
+  "modelId": "harvest-windmill",
+  "assetId": "harvest-windmill",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/harvest-county/normalized-source/Windmill.gltf",
+  "sourceSha256": "b5b0e372a5077b3e77aaf9d3fe19ed67c0d7315256d76d44f6795861a4f8e4c4",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16159,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 10,
+    "depth": 10,
+    "height": 17.20456322016832
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "Brown",
+    "topFaces": "Brown",
+    "cutFaces": "Brown",
+    "coreVisualScale": 0.28
+  },
+  "progressionClass": "large_structure",
+  "collapseSize": 6,
+  "unusualElements": [
+    "windmill blades retained inside structural grid"
+  ],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}
