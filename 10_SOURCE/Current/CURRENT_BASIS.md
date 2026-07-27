@@ -6,8 +6,16 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.181` and player-facing surfaces show `Version 16.181`
-- `Master 16.181` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.182` and player-facing surfaces show `Version 16.182`
+- `Master 16.182` is the current governed source basis and includes:
+  - Harvest County as the first July-model-intake town, with a dense crop-to-livestock-to-building consumption ladder
+  - Quaternius CC0 farm buildings, crops, animals, and nature assets promoted into optimized runtime GLBs
+  - six farm structures processed through the shared imported-building destruction standard
+  - strict car-free Medieval Village and Harvest County recipes plus environment-aware Run Goals
+  - a guaranteed Harvest County starter ring, 792 verified themed edibles, 42 livestock, and eight building sites
+  - four guaranteed Medieval commons types, horses, 448 verified loose edibles, and 43 ambient actors
+  - all prior `Master 16.181` imported-city destruction work
+- `Master 16.181` includes:
   - a reusable, manifest-driven destruction standard for all cities using externally authored models
   - authentic clipped surfaces plus closed inset structural cores for all ten Medieval building models
   - governed small, medium, large, and tower breach thresholds plus the established fragment fit/jam rules

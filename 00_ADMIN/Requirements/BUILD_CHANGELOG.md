@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.182 - 2026-07-27
+
+Harvest County and strict town-specific content.
+
+- Adds the first town from the July model portfolio with eight rotating farm structures, seven crop varieties, horses, cows, pigs, sheep, orchards, wells, coops, and dense farmyard props.
+- Processes barns, silos, the water tower, and windmill through the governed authored-facade destruction pipeline.
+- Supplies 792 themed devourables, including a guaranteed 20-object starter ring, 42 roaming livestock, and zero cars in the tested Endless Wave 1 build.
+- Removes modern cars from Medieval Village, guarantees all four Medieval commons scenes, adds horses, and raises the verified Medieval population to 448 loose edibles plus 43 ambient actors.
+- Filters town-incompatible Run Goals and adds animal goals so car-free towns cannot demand cars.
+
 ## Master 16.181 - 2026-07-22
 
 Reusable imported-city model destruction.

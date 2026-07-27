@@ -1268,7 +1268,8 @@ Current program:
 
 - the July 2026 model intake is allocated into eleven distinct proposed towns in `NEW_TOWN_ASSET_ALLOCATION_MATRIX.md`
 - every archive has one primary visual home, limited secondary use, a license state, and an intake decision
-- Harvest County is the recommended first vertical slice, followed by Railgate, Lockdown, Farstar Colony, and Crownlands
+- Harvest County is implemented in `Master 16.182` as the first vertical slice; Railgate, Lockdown, Farstar Colony, and Crownlands follow
+- `Master 16.182` also establishes strict town-specific spawn and objective filtering: Medieval Village and Harvest County contain no modern cars, and Run Goals cannot request excluded object families
 - raw ZIPs remain untouched under `50_ASSETS/Graphics and Art/`; only selected, license-cleared, optimized runtime assets may enter a town package
 
 Intent:

@@ -1,0 +1,300 @@
+{
+  "accessors": [
+    {
+      "name": "WaterTower_Cube.006-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 3066,
+      "min": [
+        -1.1931099891662598,
+        -0.05746300145983696,
+        -1.2447429895401
+      ],
+      "max": [
+        1.1931099891662598,
+        6.724452018737793,
+        1.2447429895401
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "WaterTower_Cube.006-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 3066,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "WaterTower_Cube.006-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 6720,
+      "min": [
+        0
+      ],
+      "max": [
+        3065
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "WaterTower_Cube.006-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 211,
+      "min": [
+        -1.1931099891662598,
+        -0.07156799733638763,
+        -1.1206409931182861
+      ],
+      "max": [
+        1.3391410112380981,
+        6.983397960662842,
+        0.1337900012731552
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 36792
+    },
+    {
+      "name": "WaterTower_Cube.006-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 211,
+      "min": [
+        -1,
+        -1,
+        -0.9238766431808472
+      ],
+      "max": [
+        0.9976717233657837,
+        0.9285374283790588,
+        0.9238766431808472
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 36792
+    },
+    {
+      "name": "WaterTower_Cube.006-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 327,
+      "min": [
+        0
+      ],
+      "max": [
+        210
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 13440
+    },
+    {
+      "name": "WaterTower_Cube.006-Mesh_2_positions",
+      "componentType": 5126,
+      "count": 320,
+      "min": [
+        -1.1541069746017456,
+        6.144032001495361,
+        -1.1541069746017456
+      ],
+      "max": [
+        1.1541069746017456,
+        8.357030868530273,
+        1.1541069746017456
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 39324
+    },
+    {
+      "name": "WaterTower_Cube.006-Mesh_2_normals",
+      "componentType": 5126,
+      "count": 320,
+      "min": [
+        -0.9876939654350281,
+        -1,
+        -0.9876939654350281
+      ],
+      "max": [
+        0.9876939654350281,
+        0.8722487688064575,
+        0.9876939654350281
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 39324
+    },
+    {
+      "name": "WaterTower_Cube.006-Mesh_2_indices",
+      "componentType": 5123,
+      "count": 474,
+      "min": [
+        0
+      ],
+      "max": [
+        319
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 14096
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "WaterTower",
+      "byteLength": 101372,
+      "uri": "WaterTower.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 43164,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 43164,
+      "byteOffset": 43164,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 15044,
+      "byteOffset": 86328,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "Brown",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.224804,
+          0.076709,
+          0.037364,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "Grey",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.350832,
+          0.350832,
+          0.350832,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "DarkGrey",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.176204,
+          0.176204,
+          0.176204,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    }
+  ],
+  "meshes": [
+    {
+      "name": "WaterTower_Cube.006-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 3,
+            "NORMAL": 4
+          },
+          "indices": 5,
+          "material": 1,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 6,
+            "NORMAL": 7
+          },
+          "indices": 8,
+          "material": 2,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "WaterTower_Cube.006",
+      "mesh": 0
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

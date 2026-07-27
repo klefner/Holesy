@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.181';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.182';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1084,11 +1084,13 @@ const ENVIRONMENT_KEYS = Object.freeze({
   CLASSIC: 'classic',
   MEGAKIT_DOWNTOWN: 'megakitDowntown',
   MEDIEVAL_VILLAGE: 'medievalVillage',
+  HARVEST_COUNTY: 'harvestCounty',
 });
 const CITY_PACK_KEYS = Object.freeze({
   MEGAKIT_DISTRICT: 'megakitDistrict',
   MEGAKIT_STREETS: 'megakitStreets',
   MEDIEVAL_VILLAGE: 'medievalVillage',
+  HARVEST_COUNTY: 'harvestCounty',
 });
 // A city is a recipe, not an asset-pack assumption. Recipes may use no packs,
 // one pack, or several packs; future city types should be added here and to
@@ -1102,6 +1104,10 @@ const CITY_RECIPES = Object.freeze({
   [ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE]: Object.freeze({
     label: 'Medieval Village',
     packs: Object.freeze([CITY_PACK_KEYS.MEDIEVAL_VILLAGE]),
+  }),
+  [ENVIRONMENT_KEYS.HARVEST_COUNTY]: Object.freeze({
+    label: 'Harvest County',
+    packs: Object.freeze([CITY_PACK_KEYS.HARVEST_COUNTY]),
   }),
 });
 const ELIGIBLE_ENVIRONMENTS = Object.freeze(Object.values(ENVIRONMENT_KEYS));
@@ -1118,6 +1124,7 @@ const megakitIntactShellsByStack = new Map();
 let megakitEnvironmentGeneration = 0;
 const MEGAKIT_ASSET_BASE = 'assets/environments/downtown-city-megakit/source-gltf/';
 const MEDIEVAL_ASSET_BASE = 'assets/environments/medieval-village/runtime/';
+const HARVEST_ASSET_BASE = 'assets/environments/harvest-county/runtime/';
 const medievalGltfLoader = new GLTFLoader();
 const medievalBuildingCache = new Map();
 const medievalDestructibleCache = new Map();
@@ -1126,6 +1133,11 @@ const medievalAmbientActors = [];
 let medievalEnvironmentGeneration = 0;
 let medievalRosterOffset = 0;
 const medievalNativeParcelKeys = new Set();
+const harvestGltfLoader = new GLTFLoader();
+const harvestAssetCache = new Map();
+const harvestDestructibleCache = new Map();
+const harvestEnvironmentMeshes = [];
+let harvestEnvironmentGeneration = 0;
 const MEDIEVAL_BUILDINGS = Object.freeze([
   { sourceBase: 'House_1', assetId: 'medieval-house-1', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
   { sourceBase: 'Blacksmith', assetId: 'medieval-blacksmith', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
@@ -1139,6 +1151,21 @@ const MEDIEVAL_BUILDINGS = Object.freeze([
   { sourceBase: 'Stable', assetId: 'medieval-stable', footprint: 11.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
 ]);
 const MEDIEVAL_COMMONS_ARCHETYPES = Object.freeze(['farm', 'pasture', 'barnyard', 'training_yard']);
+const HARVEST_BUILDINGS = Object.freeze([
+  { sourceBase: 'SmallBarn', assetId: 'harvest-small-barn', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
+  { sourceBase: 'Barn', assetId: 'harvest-barn', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
+  { sourceBase: 'BigBarn', assetId: 'harvest-big-barn', footprint: 12, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96 },
+  { sourceBase: 'Silo', assetId: 'harvest-silo', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.25, blockCount: 128 },
+  { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128, unusualElement: 'water_tank' },
+  { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, unusualElement: 'windmill_blades' },
+]);
+const HARVEST_CROPS = Object.freeze(['Carrot_4', 'Tomato_4', 'Pumpkin_4', 'Watermelon_4', 'Corn_4', 'Lettuce_4', 'Wheat_4']);
+const HARVEST_ANIMALS = Object.freeze({
+  Cow: { size: 0.82, value: 36, speed: 0.42 },
+  Pig: { size: 0.55, value: 22, speed: 0.62 },
+  Sheep: { size: 0.62, value: 25, speed: 0.55 },
+  Horse: { size: 0.95, value: 44, speed: 0.72 },
+});
 
 function chooseEnvironmentForNextCity() {
   if (ELIGIBLE_ENVIRONMENTS.includes(selectedEnvironmentOverride)) {
@@ -1169,6 +1196,65 @@ function clearMedievalEnvironmentMeshes() {
     if (mesh && mesh.parent) scene.remove(mesh);
   }
   medievalEnvironmentMeshes.length = 0;
+}
+
+function clearHarvestEnvironmentMeshes() {
+  harvestEnvironmentGeneration++;
+  for (const mesh of harvestEnvironmentMeshes) {
+    if (mesh && mesh.parent) scene.remove(mesh);
+  }
+  harvestEnvironmentMeshes.length = 0;
+}
+
+function loadHarvestAsset(sourceBase) {
+  if (!harvestAssetCache.has(sourceBase)) {
+    const promise = harvestGltfLoader.loadAsync(`${HARVEST_ASSET_BASE}${sourceBase}.glb`)
+      .then(gltf => gltf.scene)
+      .catch(error => {
+        harvestAssetCache.delete(sourceBase);
+        throw error;
+      });
+    harvestAssetCache.set(sourceBase, promise);
+  }
+  return harvestAssetCache.get(sourceBase);
+}
+
+function loadHarvestDestructible(definition) {
+  if (!harvestDestructibleCache.has(definition.assetId)) {
+    const asset = `assets/environments/harvest-county/converted/${definition.assetId}/v1.0.0/${definition.sourceBase}_destructible.gltf`;
+    const promise = harvestGltfLoader.loadAsync(asset).then(gltf => {
+      gltf.scene.updateMatrixWorld(true);
+      const blockTemplates = [];
+      gltf.scene.traverse(child => {
+        if (!child.userData?.holesyBlock) return;
+        let hasRenderedMesh = false;
+        child.traverse(descendant => { if (descendant.isMesh) hasRenderedMesh = true; });
+        if (!hasRenderedMesh) return;
+        const visual = child.clone(true);
+        visual.position.set(0, 0, 0);
+        visual.quaternion.identity();
+        blockTemplates.push({
+          name: child.name,
+          visual,
+          position: child.getWorldPosition(new THREE.Vector3()),
+          scale: child.getWorldScale(new THREE.Vector3()),
+          blockWidth: child.userData.blockWidth,
+          blockHeight: child.userData.blockHeight,
+          blockDepth: child.userData.blockDepth,
+          floor: child.userData.floor || 0,
+        });
+      });
+      if (blockTemplates.length !== definition.blockCount) {
+        throw new Error(`${definition.sourceBase} expected ${definition.blockCount} converted fragments; received ${blockTemplates.length}.`);
+      }
+      return blockTemplates;
+    }).catch(error => {
+      harvestDestructibleCache.delete(definition.assetId);
+      throw error;
+    });
+    harvestDestructibleCache.set(definition.assetId, promise);
+  }
+  return harvestDestructibleCache.get(definition.assetId);
 }
 
 function loadMedievalBuilding(sourceBase) {
@@ -1353,8 +1439,10 @@ function makeMedievalConsumable(name, mesh, size, value, x, z, y = 0) {
 
 function makeMedievalAnimal(kind, x, z, bounds) {
   const group = new THREE.Group();
-  const profile = kind === 'cow'
-    ? { body: [1.45, 0.82, 0.62], color: 0x5b3b28, size: 0.82, value: 36, speed: 0.45 }
+  const profile = kind === 'horse'
+    ? { body: [1.7, 1.05, 0.62], color: 0x70472c, size: 0.95, value: 44, speed: 0.72 }
+    : kind === 'cow'
+      ? { body: [1.45, 0.82, 0.62], color: 0x5b3b28, size: 0.82, value: 36, speed: 0.45 }
     : kind === 'sheep'
       ? { body: [1.0, 0.72, 0.58], color: 0xe5dfcf, size: 0.62, value: 24, speed: 0.6 }
       : { body: [0.46, 0.42, 0.34], color: 0xb96f32, size: 0.28, value: 10, speed: 0.95 };
@@ -1497,7 +1585,8 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell, bl
     object.buildingSize = buildingSize;
     object.isSkyscraperChunk = false;
     object.mandateKind = definition.progressionClass === 'tower_structure' ? 'tower' : 'building';
-    object.isMedievalAsset = true;
+    object.isMedievalAsset = definition.theme !== 'harvest';
+    object.isHarvestAsset = definition.theme === 'harvest';
     object.isOfflineConvertedAsset = true;
     object.physicsStackPiece = true;
     object.usesBoxStackContacts = true;
@@ -1534,14 +1623,15 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell, bl
 async function populateMedievalVillage() {
   const generation = medievalEnvironmentGeneration;
   document.documentElement.setAttribute('data-holesy-medieval-models', '0');
+  document.documentElement.setAttribute('data-holesy-medieval-cars', '0');
   document.documentElement.setAttribute('data-holesy-medieval-pack-percent', '90');
   document.documentElement.setAttribute('data-holesy-medieval-native-parcels', String(medievalNativeParcelKeys.size));
   showEventBanner('DISTRICT: Medieval Village', 2200);
   addMedievalStreetDetails();
 
   const eligibleParcels = blockPositions.filter(bp =>
-    Math.abs(bp.x) < currentArenaHalf - 10 &&
-    Math.abs(bp.z) < currentArenaHalf - 10 &&
+    Math.abs(bp.x) < currentArenaHalf + 10 &&
+    Math.abs(bp.z) < currentArenaHalf + 10 &&
     !reservedParcelKeys.has(parcelKey(bp))
   );
   const sites = eligibleParcels.map((bp, order) => ({
@@ -1612,19 +1702,266 @@ async function populateMedievalVillage() {
   }
   document.documentElement.setAttribute('data-holesy-medieval-edibles', String(edibleCount));
   const ambientParcels = [...eligibleParcels].sort(() => Math.random() - 0.5);
-  for (let i = 0; i < Math.min(12, ambientParcels.length); i++) {
+  for (let i = 0; i < Math.min(20, ambientParcels.length); i++) {
     const bp = ambientParcels[i];
     const bounds = { minX: bp.x - 8.6, maxX: bp.x + 8.6, minZ: bp.z - 8.6, maxZ: bp.z + 8.6 };
-    if (i < 6) makeMedievalAnimal(['chicken', 'sheep', 'cow'][i % 3], bp.x + randomBetween(-7, 7), bp.z + randomBetween(-7, 7), bounds);
+    if (i < 12) makeMedievalAnimal(['chicken', 'sheep', 'cow', 'horse'][i % 4], bp.x + randomBetween(-7, 7), bp.z + randomBetween(-7, 7), bounds);
     else makeMedievalVillager(bp.x + randomBetween(-7, 7), bp.z + randomBetween(-7, 7), bounds, 'torch');
   }
-  for (let i = 12; i < Math.min(18, ambientParcels.length); i += 2) {
+  for (let i = 20; i < Math.min(28, ambientParcels.length); i += 2) {
     const bp = ambientParcels[i];
     const bounds = { minX: bp.x - 8.6, maxX: bp.x + 8.6, minZ: bp.z - 8.6, maxZ: bp.z + 8.6 };
     makeMedievalVillager(bp.x - 1.2, bp.z, bounds, 'fighter');
     makeMedievalVillager(bp.x + 1.2, bp.z, bounds, 'fighter');
   }
   document.documentElement.setAttribute('data-holesy-medieval-ambient-actors', String(medievalAmbientActors.length));
+  wakeRenderLoop();
+}
+
+function addHarvestGroundPlane(x, z, w, d, color, rotation = 0) {
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, d),
+    new THREE.MeshLambertMaterial({ color })
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.rotation.z = rotation;
+  mesh.position.set(x, 0.036, z);
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  harvestEnvironmentMeshes.push(mesh);
+}
+
+function normalizeHarvestVisual(template, targetFootprint) {
+  const visual = template.clone(true);
+  visual.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(visual);
+  const dimensions = bounds.getSize(new THREE.Vector3());
+  const center = bounds.getCenter(new THREE.Vector3());
+  visual.position.set(-center.x, -bounds.min.y, -center.z);
+  const group = new THREE.Group();
+  group.add(visual);
+  group.scale.setScalar(targetFootprint / (Math.max(dimensions.x, dimensions.z) || 1));
+  group.traverse(child => {
+    if (!child.isMesh) return;
+    child.castShadow = true;
+    child.receiveShadow = true;
+  });
+  return group;
+}
+
+function addHarvestConsumable(template, name, x, z, targetFootprint, size, value, mandateKind = 'prop') {
+  const group = normalizeHarvestVisual(template, targetFootprint);
+  const object = makeObject(group, size, 0, value, { x, z, y: 0 });
+  object.isHarvestAsset = true;
+  object.harvestAssetName = name;
+  object.mandateKind = mandateKind;
+  return object;
+}
+
+function addHarvestAnimal(template, kind, x, z, bounds) {
+  const profile = HARVEST_ANIMALS[kind];
+  const targetFootprint = kind === 'Horse' ? 2.3 : kind === 'Cow' ? 2 : kind === 'Sheep' ? 1.45 : 1.15;
+  const object = addHarvestConsumable(template, kind, x, z, targetFootprint, profile.size, profile.value, 'animal');
+  medievalAmbientActors.push({
+    type: 'animal',
+    obj: object,
+    bounds,
+    direction: Math.random() * Math.PI * 2,
+    speed: profile.speed,
+    timer: 1 + Math.random() * 3,
+  });
+  return object;
+}
+
+async function addHarvestBuilding(definition, authoredSource, blockTemplates, bp) {
+  const authoredVisual = normalizeHarvestVisual(authoredSource, definition.footprint);
+  authoredVisual.rotation.y = Math.atan2(player.x - bp.x, player.z - bp.z);
+  authoredVisual.position.set(bp.x, 0, bp.z);
+  scene.add(authoredVisual);
+  harvestEnvironmentMeshes.push(authoredVisual);
+  addMedievalDestructionStack(
+    { ...definition, theme: 'harvest' },
+    bp.x,
+    bp.z,
+    authoredVisual.rotation.y,
+    authoredVisual,
+    blockTemplates
+  );
+}
+
+async function populateHarvestCounty() {
+  const generation = harvestEnvironmentGeneration;
+  showEventBanner('DISTRICT: Harvest County', 2200);
+  document.documentElement.setAttribute('data-holesy-harvest-cars', '0');
+  document.documentElement.setAttribute('data-holesy-harvest-buildings', '0');
+  document.documentElement.setAttribute('data-holesy-harvest-edibles', '0');
+
+  const dirt = 0x8a6b45;
+  const fieldGreen = 0x5d713b;
+  for (const roadIndex of [-3, -2, -1, 0, 1, 2, 3]) {
+    const roadCenter = roadIndex * BLOCK;
+    addHarvestGroundPlane(roadCenter, 0, ROAD_W * 0.78, WORLD_SIZE, dirt);
+    addHarvestGroundPlane(0, roadCenter, WORLD_SIZE, ROAD_W * 0.78, dirt);
+  }
+
+  const assetNames = [
+    ...HARVEST_CROPS,
+    ...Object.keys(HARVEST_ANIMALS),
+    'Tree1', 'Bush1', 'Rock1', 'ChickenCoop', 'Well',
+  ];
+  const templates = new Map();
+  for (const assetName of assetNames) {
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+    try {
+      templates.set(assetName, await loadHarvestAsset(assetName));
+    } catch (error) {
+      console.warn(`[Holesy] Harvest County asset unavailable: ${assetName}`, error);
+    }
+    await yieldCityBuildFrame();
+  }
+
+  const buildingAssets = new Map();
+  for (const definition of HARVEST_BUILDINGS) {
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+    try {
+      const authored = await loadHarvestAsset(definition.sourceBase);
+      await yieldCityBuildFrame();
+      const destructible = await loadHarvestDestructible(definition);
+      buildingAssets.set(definition.assetId, { authored, destructible });
+    } catch (error) {
+      console.warn(`[Holesy] Harvest building unavailable after intake validation: ${definition.sourceBase}`, error);
+    }
+    await yieldCityBuildFrame();
+  }
+
+  let edibleCount = 0;
+  let buildingCount = 0;
+  const activeParcels = blockPositions.filter(bp =>
+    Math.abs(bp.x) < currentArenaHalf + 10 &&
+    Math.abs(bp.z) < currentArenaHalf + 10
+  );
+  const buildingEvery = 5;
+  for (let parcelIndex = 0; parcelIndex < activeParcels.length; parcelIndex++) {
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+    const bp = activeParcels[parcelIndex];
+    const bounds = { minX: bp.x - 8.7, maxX: bp.x + 8.7, minZ: bp.z - 8.7, maxZ: bp.z + 8.7 };
+    const parcelType = parcelIndex % buildingEvery;
+    addHarvestGroundPlane(bp.x, bp.z, 19, 19, parcelType === 1 ? 0x765538 : fieldGreen);
+
+    if (parcelType === 0) {
+      const definition = HARVEST_BUILDINGS[buildingCount % HARVEST_BUILDINGS.length];
+      const building = buildingAssets.get(definition.assetId);
+      if (building) {
+        await addHarvestBuilding(definition, building.authored, building.destructible, bp);
+        buildingCount++;
+      }
+      const supportKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'cart'];
+      for (let i = 0; i < 16; i++) {
+        const angle = i / 16 * Math.PI * 2;
+        addMedievalProp(
+          `Harvest ${supportKinds[i % supportKinds.length]}`,
+          bp.x + Math.cos(angle) * randomBetween(6.5, 8.2),
+          bp.z + Math.sin(angle) * randomBetween(6.5, 8.2),
+          supportKinds[i % supportKinds.length]
+        );
+        edibleCount++;
+      }
+    } else if (parcelType === 1 || parcelType === 2) {
+      for (let row = 0; row < 4; row++) for (let col = 0; col < 5; col++) {
+        const cropName = HARVEST_CROPS[(parcelIndex + row * 2 + col) % HARVEST_CROPS.length];
+        const template = templates.get(cropName);
+        if (!template) continue;
+        const isLargeProduce = cropName.includes('Pumpkin') || cropName.includes('Watermelon');
+        addHarvestConsumable(
+          template,
+          cropName,
+          bp.x - 6.3 + col * 3.1 + randomBetween(-0.18, 0.18),
+          bp.z - 5.2 + row * 3.45 + randomBetween(-0.18, 0.18),
+          isLargeProduce ? 1.25 : 0.9,
+          isLargeProduce ? 0.3 : 0.2,
+          isLargeProduce ? 7 : 4
+        );
+        edibleCount++;
+      }
+      for (const [dx, dz, kind] of [[-8,-7,'basket'],[0,-8,'sack'],[8,-7,'crate'],[-8,7,'basket'],[0,8,'hay'],[8,7,'barrel']]) {
+        addMedievalProp(`Field-edge ${kind}`, bp.x + dx, bp.z + dz, kind);
+        edibleCount++;
+      }
+    } else if (parcelType === 3) {
+      const animalKinds = ['Horse', 'Cow', 'Pig', 'Sheep', 'Cow', 'Pig'];
+      for (let i = 0; i < animalKinds.length; i++) {
+        const kind = animalKinds[i];
+        const template = templates.get(kind);
+        if (!template) continue;
+        addHarvestAnimal(template, kind, bp.x + randomBetween(-6.5, 6.5), bp.z + randomBetween(-6.5, 6.5), bounds);
+        edibleCount++;
+      }
+      for (const [dx, dz, kind] of [[-7,-7,'hay'],[7,-7,'barrel'],[-7,7,'sack'],[7,7,'crate'],[0,-7,'hay'],[0,7,'basket']]) {
+        addMedievalProp(`Pasture ${kind}`, bp.x + dx, bp.z + dz, kind);
+        edibleCount++;
+      }
+    } else {
+      const tree = templates.get('Tree1');
+      const bush = templates.get('Bush1');
+      const well = templates.get('Well');
+      const coop = templates.get('ChickenCoop');
+      if (well) { addHarvestConsumable(well, 'Farm well', bp.x, bp.z, 2.8, 1.45, 48); edibleCount++; }
+      if (coop) { addHarvestConsumable(coop, 'Chicken coop', bp.x - 5, bp.z + 4.5, 3.8, 1.8, 58); edibleCount++; }
+      for (let i = 0; i < 10; i++) {
+        const angle = i / 10 * Math.PI * 2;
+        const template = i % 3 === 0 ? tree : bush;
+        if (!template) continue;
+        addHarvestConsumable(
+          template,
+          i % 3 === 0 ? 'Orchard tree' : 'Berry bush',
+          bp.x + Math.cos(angle) * randomBetween(5.2, 7.8),
+          bp.z + Math.sin(angle) * randomBetween(5.2, 7.8),
+          i % 3 === 0 ? 2.6 : 1.1,
+          i % 3 === 0 ? 1.25 : 0.42,
+          i % 3 === 0 ? 34 : 11,
+          i % 3 === 0 ? 'tree' : 'prop'
+        );
+        edibleCount++;
+      }
+    }
+    if (parcelType !== 0) {
+      const fillOffsets = [[-5.5, 0], [5.5, 0], [0, -5.5], [0, 5.5]];
+      const fillKinds = ['basket', 'sack', 'crate', 'barrel'];
+      for (let i = 0; i < fillOffsets.length; i++) {
+        const [dx, dz] = fillOffsets[i];
+        addMedievalProp(
+          `Harvest parcel ${fillKinds[i]}`,
+          bp.x + dx + randomBetween(-0.45, 0.45),
+          bp.z + dz + randomBetween(-0.45, 0.45),
+          fillKinds[i]
+        );
+        edibleCount++;
+      }
+    }
+    if (parcelIndex % 3 === 2) await yieldCityBuildFrame();
+  }
+
+  // The opening location must never depend on which parcel archetype happened
+  // to receive the player. Seed a visible, themed first-bite ring around the
+  // hole so every Harvest County run begins with an immediate growth route.
+  const starterKinds = ['basket', 'sack', 'crate', 'basket', 'hay', 'barrel'];
+  for (let i = 0; i < 20; i++) {
+    const angle = i / 20 * Math.PI * 2;
+    const radius = i < 8 ? 3.6 : i < 14 ? 5.6 : 7.4;
+    addMedievalProp(
+      `Harvest starter ${starterKinds[i % starterKinds.length]}`,
+      clampToArena(player.x + Math.cos(angle) * radius, 2),
+      clampToArena(player.z + Math.sin(angle) * radius, 2),
+      starterKinds[i % starterKinds.length]
+    );
+    edibleCount++;
+  }
+
+  document.documentElement.setAttribute('data-holesy-harvest-buildings', String(buildingCount));
+  document.documentElement.setAttribute('data-holesy-harvest-edibles', String(edibleCount));
+  document.documentElement.setAttribute('data-holesy-harvest-animals', String(
+    medievalAmbientActors.filter(actor => actor.obj?.isHarvestAsset).length
+  ));
   wakeRenderLoop();
 }
 
@@ -1865,6 +2202,7 @@ const CITY_PACK_POPULATORS = Object.freeze({
   [CITY_PACK_KEYS.MEGAKIT_DISTRICT]: populateMegakitDowntown,
   [CITY_PACK_KEYS.MEGAKIT_STREETS]: populateMegakitStreetPack,
   [CITY_PACK_KEYS.MEDIEVAL_VILLAGE]: populateMedievalVillage,
+  [CITY_PACK_KEYS.HARVEST_COUNTY]: populateHarvestCounty,
 });
 
 async function populateSelectedCityPacks() {
@@ -3739,15 +4077,17 @@ function populateParcelDetails(bp, parcelUse, blockBounds) {
 async function populateCity() {
   chooseEnvironmentForNextCity();
   const isMedievalVillage = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE;
+  const isHarvestCounty = selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY;
   if (isMedievalVillage) clearMedievalEnvironmentMeshes();
+  if (isHarvestCounty) clearHarvestEnvironmentMeshes();
   const economy = getEffectiveDifficultyProfile();
   const buildingBlockDensity = economy.buildingBlockDensityMult || 1;
   const skyscraperChance = 0.35 * (economy.skyscraperChanceMult || 1);
   const midBuildingChance = 0.30;
   const smallBuildingChance = 0.85 * (economy.smallBuildingDensityMult || 1);
   const sidewalkAssetDensity = economy.sidewalkAssetDensityMult || 1;
-  const carCount = isMedievalVillage ? 4 : Math.max(8, Math.round(35 * (economy.carDensityMult || 1)));
-  const parkAssetCount = isMedievalVillage ? 4 : Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
+  const carCount = (isMedievalVillage || isHarvestCounty) ? 0 : Math.max(8, Math.round(35 * (economy.carDensityMult || 1)));
+  const parkAssetCount = isHarvestCounty ? 0 : isMedievalVillage ? 8 : Math.max(8, Math.round(40 * (economy.parkAssetDensityMult || 1)));
   const personChance = economy.personChanceMult || 1;
   medievalNativeParcelKeys.clear();
   if (isMedievalVillage) {
@@ -3755,10 +4095,10 @@ async function populateCity() {
     const shuffledNativeParcels = [...blockPositions].sort(() => Math.random() - 0.5);
     for (const bp of shuffledNativeParcels.slice(0, nativeParcelCount)) medievalNativeParcelKeys.add(parcelKey(bp));
   }
-  const governmentBlock = isMedievalVillage ? null : blockPositions[Math.floor(Math.random() * blockPositions.length)];
+  const governmentBlock = (isMedievalVillage || isHarvestCounty) ? null : blockPositions[Math.floor(Math.random() * blockPositions.length)];
   // Keep parks special and legible: every regenerated town gets exactly one
   // or two park parcels, never the previous four-to-six-parcel flood.
-  const parkCount = isMedievalVillage ? 2 : (Math.random() < 0.5 ? 1 : 2);
+  const parkCount = isHarvestCounty ? 0 : isMedievalVillage ? 4 : (Math.random() < 0.5 ? 1 : 2);
   const parkParcels = new Map();
   const shuffledParkCandidates = blockPositions.filter(bp =>
     bp !== governmentBlock && (!isMedievalVillage || medievalNativeParcelKeys.has(parcelKey(bp)))
@@ -3798,6 +4138,11 @@ async function populateCity() {
   let populatedBlockCount = 0;
   for (const bp of blockPositions) {
     const isNativeMedievalParcel = isMedievalVillage && medievalNativeParcelKeys.has(parcelKey(bp));
+    if (isHarvestCounty) {
+      populatedBlockCount++;
+      if (populatedBlockCount % 4 === 0) await yieldCityBuildFrame();
+      continue;
+    }
     if (isMedievalVillage && !isNativeMedievalParcel) {
       populatedBlockCount++;
       if (populatedBlockCount % 4 === 0) await yieldCityBuildFrame();
@@ -6578,7 +6923,7 @@ const RUN_OBJECTIVE_COUNT = 3;
 const RUN_OBJECTIVE_SET_REFRESH_INTERVAL = 5;
 const RUN_OBJECTIVE_SET_BONUS_SCORE = 750;
 const RUN_OBJECTIVE_SET_SPEED_SECONDS = 12;
-const RUN_OBJECTIVE_PLAIN_LABELS = Object.freeze({ people: 'people', vehicles: 'cars', props: 'street objects', trees: 'trees', buildings: 'building pieces', soldiers: 'soldiers', manholes: 'manhole covers' });
+const RUN_OBJECTIVE_PLAIN_LABELS = Object.freeze({ people: 'people', vehicles: 'cars', animals: 'animals', props: 'street objects', trees: 'trees', buildings: 'building pieces', soldiers: 'soldiers', manholes: 'manhole covers' });
 const OBJECT_MASTERY_SAVE_DEBOUNCE_MS = 2500;
 const RUN_OBJECTIVE_DEFS = Object.freeze([
   { id: 'people', label: 'Crowd Sweep', target: 45, reward: 220 },
@@ -6594,6 +6939,9 @@ const RUN_OBJECTIVE_DEFS = Object.freeze([
   { id: 'vehicles', label: 'Car Collector', target: 28, reward: 590 },
   { id: 'vehicles', label: 'No Parking', target: 34, reward: 700 },
   { id: 'vehicles', label: 'Street Sweepers', target: 40, reward: 820 },
+  { id: 'animals', label: 'Barnyard Bite', target: 10, reward: 250 },
+  { id: 'animals', label: 'Livestock Lunch', target: 18, reward: 420 },
+  { id: 'animals', label: 'County Roundup', target: 30, reward: 680 },
   { id: 'props', label: 'Street Stuff', target: 35, reward: 210 },
   { id: 'props', label: 'Curb Cleanup', target: 48, reward: 290 },
   { id: 'props', label: 'Cone Zone', target: 60, reward: 360 },
@@ -6713,6 +7061,10 @@ function getObjectiveDef(familyId) {
 function isRunObjectiveEligible(def) {
   if (def.waveOnly && !isWaveBasedMode()) return false;
   if (def.megaKitOnly && selectedEnvironment !== ENVIRONMENT_KEYS.MEGAKIT_DOWNTOWN) return false;
+  const isHistoricOrRural = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY;
+  if (isHistoricOrRural && (def.id === 'vehicles' || def.id === 'people')) return false;
+  if (selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE && def.id === 'trees') return false;
+  if (!isHistoricOrRural && def.id === 'animals') return false;
   return true;
 }
 
@@ -6764,6 +7116,7 @@ function objectFamilyForObjective(obj) {
   if (assetName.includes('manhole')) return 'manholes';
   if (obj.isPerson) return 'people';
   if (obj.isCar) return 'vehicles';
+  if (obj.mandateKind === 'animal') return 'animals';
   if (obj.isTree) return 'trees';
   if (obj.isBuilding || obj.isVoxelBuildingCube || obj.isSkyscraperChunk || obj.isGovernmentBuildingPiece || obj.buildingSize || obj.physicsStackPiece) return 'buildings';
   if (obj.isProp || obj.isPowerup) return 'props';
@@ -6853,6 +7206,7 @@ function runObjectiveInstruction(objective) {
   const instructions = {
     people: `Devour ${target} people.`,
     vehicles: `Devour ${target} cars or trucks.`,
+    animals: `Devour ${target} roaming farm animals.`,
     props: `Devour ${target} street props, such as benches, hydrants, cones, lamps, or similar objects.`,
     trees: `Devour ${target} trees.`,
     buildings: `Devour ${target} breakable building pieces.`,
@@ -10425,6 +10779,7 @@ function cashoutFromLmsChoice() {
 function tearDownWorld() {
   clearMegakitEnvironmentMeshes();
   clearMedievalEnvironmentMeshes();
+  clearHarvestEnvironmentMeshes();
   // Consumables (people, cars, trees, buildings, props, lamps). Also includes
   // any object currently mid-fall (the animate loop handles falling objects
   // whether consumed or not, and removes them from scene at y < -5).

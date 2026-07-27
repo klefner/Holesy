@@ -1,0 +1,349 @@
+{
+  "accessors": [
+    {
+      "name": "Windmill_Cube.020-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 1215,
+      "min": [
+        -1.0207730531692505,
+        0.002445999998599291,
+        -0.9489259719848633
+      ],
+      "max": [
+        1.0207730531692505,
+        9.02513599395752,
+        0.9489259719848633
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Windmill_Cube.020-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 1215,
+      "min": [
+        -1,
+        -1,
+        -0.9999999403953552
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "Windmill_Cube.020-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 1998,
+      "min": [
+        0
+      ],
+      "max": [
+        1214
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Windmill_Cube.020-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 80,
+      "min": [
+        0.11348100006580353,
+        8.170122146606445,
+        -0.10579799860715866
+      ],
+      "max": [
+        4.248363971710205,
+        9.721907615661621,
+        0.10579799860715866
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 14580
+    },
+    {
+      "name": "Windmill_Cube.020-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 80,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 14580
+    },
+    {
+      "name": "Windmill_Cube.020-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 150,
+      "min": [
+        0
+      ],
+      "max": [
+        79
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 3996
+    },
+    {
+      "name": "Windmill_Blades_Cube.021-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 760,
+      "min": [
+        -2.2593040466308594,
+        6.679995059967041,
+        0.6118789911270142
+      ],
+      "max": [
+        2.2593040466308594,
+        11.198604583740234,
+        0.8309900164604187
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 15540
+    },
+    {
+      "name": "Windmill_Blades_Cube.021-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 760,
+      "min": [
+        -1,
+        -1,
+        -0.9662083387374878
+      ],
+      "max": [
+        1,
+        1,
+        0.9664192199707031
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 15540
+    },
+    {
+      "name": "Windmill_Blades_Cube.021-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 1200,
+      "min": [
+        0
+      ],
+      "max": [
+        759
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 4296
+    },
+    {
+      "name": "Windmill_Blades_Cube.021-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 504,
+      "min": [
+        -1.7778650522232056,
+        7.161434173583984,
+        0.5809569954872131
+      ],
+      "max": [
+        1.7778650522232056,
+        10.717164993286133,
+        0.6783090233802795
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 24660
+    },
+    {
+      "name": "Windmill_Blades_Cube.021-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 504,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 24660
+    },
+    {
+      "name": "Windmill_Blades_Cube.021-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 972,
+      "min": [
+        0
+      ],
+      "max": [
+        503
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 6696
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "Windmill",
+      "byteLength": 70056,
+      "uri": "Windmill.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 30708,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 30708,
+      "byteOffset": 30708,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 8640,
+      "byteOffset": 61416,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "Brown",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.224804,
+          0.076709,
+          0.037364,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "Grey",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.350832,
+          0.350832,
+          0.350832,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Windmill_Cube.020-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 3,
+            "NORMAL": 4
+          },
+          "indices": 5,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Windmill_Blades_Cube.021-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 6,
+            "NORMAL": 7
+          },
+          "indices": 8,
+          "material": 1,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10
+          },
+          "indices": 11,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Windmill_Cube.020",
+      "mesh": 0
+    },
+    {
+      "name": "Windmill_Blades_Cube.021",
+      "mesh": 1
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1
+      ]
+    }
+  ]
+}

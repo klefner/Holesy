@@ -1,0 +1,458 @@
+{
+  "accessors": [
+    {
+      "name": "Silo_Cylinder.007-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 360,
+      "min": [
+        -1.6277910470962524,
+        0.3400700092315674,
+        -1.5481209754943848
+      ],
+      "max": [
+        1.6277910470962524,
+        7.066771984100342,
+        1.5481209754943848
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 360,
+      "min": [
+        -0.9510656595230103,
+        0,
+        -1
+      ],
+      "max": [
+        0.9510656595230103,
+        0,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 540,
+      "min": [
+        0
+      ],
+      "max": [
+        359
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 260,
+      "min": [
+        -1.6065670251846313,
+        7.157814025878906,
+        -1.5279359817504883
+      ],
+      "max": [
+        1.6065670251846313,
+        9.019186019897461,
+        1.5806200504302979
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 4320
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 260,
+      "min": [
+        -0.9991543889045715,
+        0.04059814661741257,
+        -0.9919671416282654
+      ],
+      "max": [
+        0.9991543889045715,
+        0.9894453287124634,
+        0.9919671416282654
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 4320
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 378,
+      "min": [
+        0
+      ],
+      "max": [
+        259
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 1080
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_2_positions",
+      "componentType": 5126,
+      "count": 804,
+      "min": [
+        -1.7502249479293823,
+        -0.04944600164890289,
+        -1.6645629405975342
+      ],
+      "max": [
+        1.7502249479293823,
+        7.2400970458984375,
+        1.6645629405975342
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 7440
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_2_normals",
+      "componentType": 5126,
+      "count": 804,
+      "min": [
+        -0.9510656595230103,
+        -1,
+        -1
+      ],
+      "max": [
+        0.9510656595230103,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 7440
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_2_indices",
+      "componentType": 5123,
+      "count": 1830,
+      "min": [
+        0
+      ],
+      "max": [
+        803
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 1836
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_3_positions",
+      "componentType": 5126,
+      "count": 626,
+      "min": [
+        -0.3159860074520111,
+        -0.03225500136613846,
+        1.6295039653778076
+      ],
+      "max": [
+        0.31706398725509644,
+        7.277698993682861,
+        1.8454300165176392
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 17088
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_3_normals",
+      "componentType": 5126,
+      "count": 626,
+      "min": [
+        -1,
+        -0.9999181032180786,
+        -0.9999181032180786
+      ],
+      "max": [
+        1,
+        0.9999181032180786,
+        0.9999181032180786
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 17088
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_3_indices",
+      "componentType": 5123,
+      "count": 1656,
+      "min": [
+        0
+      ],
+      "max": [
+        625
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 5496
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_4_positions",
+      "componentType": 5126,
+      "count": 224,
+      "min": [
+        1.4361790418624878,
+        -0.03614800050854683,
+        -0.13900800049304962
+      ],
+      "max": [
+        1.9172899723052979,
+        7.600933074951172,
+        0.13900800049304962
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 24600
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_4_normals",
+      "componentType": 5126,
+      "count": 224,
+      "min": [
+        -1,
+        -1,
+        -0.9238766431808472
+      ],
+      "max": [
+        0.9976717233657837,
+        0.9289222955703735,
+        0.9238766431808472
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 24600
+    },
+    {
+      "name": "Silo_Cylinder.007-Mesh_4_indices",
+      "componentType": 5123,
+      "count": 372,
+      "min": [
+        0
+      ],
+      "max": [
+        223
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 8808
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "Silo",
+      "byteLength": 64128,
+      "uri": "Silo.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 27288,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 27288,
+      "byteOffset": 27288,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 9552,
+      "byteOffset": 54576,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "LightRed",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.273903,
+          0.056039,
+          0.041967,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "White",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.64,
+          0.64,
+          0.64,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "DarkRed",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.202353,
+          0.04252,
+          0.032067,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "Brown",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.224804,
+          0.076709,
+          0.037364,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "Grey",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.350832,
+          0.350832,
+          0.350832,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Silo_Cylinder.007-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 3,
+            "NORMAL": 4
+          },
+          "indices": 5,
+          "material": 1,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 6,
+            "NORMAL": 7
+          },
+          "indices": 8,
+          "material": 2,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10
+          },
+          "indices": 11,
+          "material": 3,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 12,
+            "NORMAL": 13
+          },
+          "indices": 14,
+          "material": 4,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Silo_Cylinder.007",
+      "mesh": 0
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

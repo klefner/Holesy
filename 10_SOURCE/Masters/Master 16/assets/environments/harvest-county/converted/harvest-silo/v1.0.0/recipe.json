@@ -1,0 +1,38 @@
+{
+  "packId": "harvest-county-quaternius",
+  "modelId": "harvest-silo",
+  "assetId": "harvest-silo",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/harvest-county/normalized-source/Silo.gltf",
+  "sourceSha256": "fef2bb2a9b198ad64e7a5ea9bf8e374308e5da89568b42ba1ea67ad15d2dd0da",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16159,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 8,
+    "blockCount": 128,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 8,
+    "depth": 8,
+    "height": 19.781529932461346
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "LightRed",
+    "topFaces": "LightRed",
+    "cutFaces": "DarkRed",
+    "coreVisualScale": 0.28
+  },
+  "progressionClass": "tower_structure",
+  "collapseSize": 6.25,
+  "unusualElements": [],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}

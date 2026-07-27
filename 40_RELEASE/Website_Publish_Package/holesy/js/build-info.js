@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 181;
+export const BUILD_SUB = 182;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.182',
+    title: 'Harvest County and strict town themes',
+    notes: [
+      'Adds Harvest County with CC0 farm buildings, crops, horses, cows, pigs, sheep, orchards, wells, coops, and dense farmyard props.',
+      'Builds a continuous opening-to-building consumption ladder across every Harvest County parcel instead of leaving broad decorative dead space.',
+      'Uses the shared authored-facade destruction pipeline for barns, silos, the water tower, and windmill.',
+      'Removes modern cars from Medieval Village and Harvest County while guaranteeing all four Medieval commons scenes plus more roaming animals and horses.',
+    ],
+  },
   {
     label: 'Master 16.181',
     title: 'Reusable authored-model destruction pipeline',

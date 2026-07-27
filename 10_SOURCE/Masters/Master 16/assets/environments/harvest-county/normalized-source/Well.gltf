@@ -1,0 +1,458 @@
+{
+  "accessors": [
+    {
+      "name": "Well_Cylinder.002-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 3768,
+      "min": [
+        -0.638372004032135,
+        -0.0071840002201497555,
+        -0.6712139844894409
+      ],
+      "max": [
+        0.638372004032135,
+        0.966247022151947,
+        0.6712139844894409
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 3768,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 5691,
+      "min": [
+        0
+      ],
+      "max": [
+        3767
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 414,
+      "min": [
+        -0.3746649920940399,
+        0.9058830142021179,
+        -0.6148809790611267
+      ],
+      "max": [
+        0.3746649920940399,
+        2.138366937637329,
+        0.6148809790611267
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 45216
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 414,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 45216
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 888,
+      "min": [
+        0
+      ],
+      "max": [
+        413
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 11384
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_2_positions",
+      "componentType": 5126,
+      "count": 952,
+      "min": [
+        -0.5627999901771545,
+        1.5241889953613281,
+        -0.5836449861526489
+      ],
+      "max": [
+        0.5627999901771545,
+        2.0959300994873047,
+        0.5836449861526489
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 50184
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_2_normals",
+      "componentType": 5126,
+      "count": 952,
+      "min": [
+        -0.9140423536300659,
+        -0.8987447023391724,
+        -1
+      ],
+      "max": [
+        0.9140423536300659,
+        0.8987447023391724,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 50184
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_2_indices",
+      "componentType": 5123,
+      "count": 1560,
+      "min": [
+        0
+      ],
+      "max": [
+        951
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 13160
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_3_positions",
+      "componentType": 5126,
+      "count": 114,
+      "min": [
+        -0.050613000988960266,
+        0.04466399922966957,
+        -0.24184100329875946
+      ],
+      "max": [
+        0.050613000988960266,
+        1.2228269577026367,
+        0.19623300433158875
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 61608
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_3_normals",
+      "componentType": 5126,
+      "count": 114,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        0.866019070148468,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 61608
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_3_indices",
+      "componentType": 5123,
+      "count": 180,
+      "min": [
+        0
+      ],
+      "max": [
+        113
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 16280
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_4_positions",
+      "componentType": 5126,
+      "count": 176,
+      "min": [
+        -0.029231999069452286,
+        1.007910966873169,
+        -0.6865879893302917
+      ],
+      "max": [
+        0.029231999069452286,
+        1.1981379985809326,
+        0.8002949953079224
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 62976
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_4_normals",
+      "componentType": 5126,
+      "count": 176,
+      "min": [
+        -1,
+        -0.895526111125946,
+        -1
+      ],
+      "max": [
+        1,
+        0.8958306312561035,
+        0.9914345145225525
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 62976
+    },
+    {
+      "name": "Well_Cylinder.002-Mesh_4_indices",
+      "componentType": 5123,
+      "count": 276,
+      "min": [
+        0
+      ],
+      "max": [
+        175
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 16640
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "Well",
+      "byteLength": 147368,
+      "uri": "Well.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 65088,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 65088,
+      "byteOffset": 65088,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 17192,
+      "byteOffset": 130176,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "Grey",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.350832,
+          0.350832,
+          0.350832,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "Brown",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.224804,
+          0.076709,
+          0.037364,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "LightRed",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.273903,
+          0.056039,
+          0.041967,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "White",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.696,
+          0.64,
+          0.64,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "DarkGrey",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.117849,
+          0.117849,
+          0.117849,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Well_Cylinder.002-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 3,
+            "NORMAL": 4
+          },
+          "indices": 5,
+          "material": 1,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 6,
+            "NORMAL": 7
+          },
+          "indices": 8,
+          "material": 2,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10
+          },
+          "indices": 11,
+          "material": 3,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 12,
+            "NORMAL": 13
+          },
+          "indices": 14,
+          "material": 4,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Well_Cylinder.002",
+      "mesh": 0
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}

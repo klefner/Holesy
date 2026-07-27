@@ -1,0 +1,40 @@
+{
+  "packId": "harvest-county-quaternius",
+  "modelId": "harvest-water-tower",
+  "assetId": "harvest-water-tower",
+  "source": "10_SOURCE/Masters/Master 16/assets/environments/harvest-county/normalized-source/WaterTower.gltf",
+  "sourceSha256": "2402b993001beb31fe6e310bab250d72d3705b416f8ba2422592532682a72d6e",
+  "pipeline": "holesy-imported-building-destructible",
+  "pipelineVersion": "1.0.0",
+  "seed": 16159,
+  "subdivision": {
+    "shape": "closed-box-with-boundary-facade",
+    "cols": 4,
+    "rows": 4,
+    "floors": 8,
+    "blockCount": 128,
+    "gapRatio": 0.04
+  },
+  "dimensions": {
+    "width": 8,
+    "depth": 8,
+    "height": 26.628004457759538
+  },
+  "materials": {
+    "intactShell": "unmodified authored glTF at runtime",
+    "outwardFaces": "Brown",
+    "topFaces": "Brown",
+    "cutFaces": "DarkGrey",
+    "coreVisualScale": 0.28
+  },
+  "progressionClass": "tower_structure",
+  "collapseSize": 6.5,
+  "unusualElements": [
+    "water-tower tank retained inside structural grid"
+  ],
+  "physics": {
+    "collider": "box",
+    "fallPreset": "shared-imported-building-collapse",
+    "settlePreset": "grounded-sleep"
+  }
+}

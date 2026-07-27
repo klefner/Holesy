@@ -1,0 +1,1009 @@
+{
+  "accessors": [
+    {
+      "name": "Barn_Cube.005-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 481,
+      "min": [
+        -3.5515880584716797,
+        0.001976999919861555,
+        -3.9892640113830566
+      ],
+      "max": [
+        3.5537259578704834,
+        5.595245838165283,
+        3.9881820678710938
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 0
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 481,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 0
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 1104,
+      "min": [
+        0
+      ],
+      "max": [
+        480
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 0
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 882,
+      "min": [
+        -3.5877959728240967,
+        0.001976999919861555,
+        -3.9892640113830566
+      ],
+      "max": [
+        3.589935064315796,
+        5.595245838165283,
+        4.059088230133057
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 5772
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 882,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 5772
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 1908,
+      "min": [
+        0
+      ],
+      "max": [
+        881
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 2208
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_2_positions",
+      "componentType": 5126,
+      "count": 1640,
+      "min": [
+        -3.4984889030456543,
+        0.24379000067710876,
+        -3.8906409740448
+      ],
+      "max": [
+        3.500627040863037,
+        5.599575042724609,
+        3.8574070930480957
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 16356
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_2_normals",
+      "componentType": 5126,
+      "count": 1640,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 16356
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_2_indices",
+      "componentType": 5123,
+      "count": 2754,
+      "min": [
+        0
+      ],
+      "max": [
+        1639
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 6024
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_3_positions",
+      "componentType": 5126,
+      "count": 212,
+      "min": [
+        -3.862377882003784,
+        2.763824939727783,
+        -3.9506490230560303
+      ],
+      "max": [
+        3.864516019821167,
+        6.01061487197876,
+        4.014567852020264
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 36036
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_3_normals",
+      "componentType": 5126,
+      "count": 212,
+      "min": [
+        -0.9844627976417542,
+        -0.9237412214279175,
+        -1
+      ],
+      "max": [
+        0.9844627976417542,
+        0.9031117558479309,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 36036
+    },
+    {
+      "name": "Barn_Cube.005-Mesh_3_indices",
+      "componentType": 5123,
+      "count": 444,
+      "min": [
+        0
+      ],
+      "max": [
+        211
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 11532
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 28,
+      "min": [
+        0.15754899382591248,
+        0.3762719929218292,
+        3.8947360515594482
+      ],
+      "max": [
+        1.6816710233688354,
+        2.1535680294036865,
+        3.8947360515594482
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 38580
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 28,
+      "min": [
+        0,
+        0,
+        1
+      ],
+      "max": [
+        0,
+        0,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 38580
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 72,
+      "min": [
+        0
+      ],
+      "max": [
+        27
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 12420
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 186,
+      "min": [
+        -0.000742000003810972,
+        0.19168700277805328,
+        3.8007218837738037
+      ],
+      "max": [
+        1.8399629592895508,
+        2.3381528854370117,
+        4.013851165771484
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 38916
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 186,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 38916
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 528,
+      "min": [
+        0
+      ],
+      "max": [
+        185
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 12564
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh_2_positions",
+      "componentType": 5126,
+      "count": 64,
+      "min": [
+        0.15086300671100616,
+        0.24379000067710876,
+        3.8753321170806885
+      ],
+      "max": [
+        1.7033339738845825,
+        2.1864020824432373,
+        3.9433579444885254
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 41148
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh_2_normals",
+      "componentType": 5126,
+      "count": 64,
+      "min": [
+        -1,
+        0,
+        -1
+      ],
+      "max": [
+        1,
+        0,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 41148
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh_2_indices",
+      "componentType": 5123,
+      "count": 96,
+      "min": [
+        0
+      ],
+      "max": [
+        63
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 13620
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 64,
+      "min": [
+        -1.7783399820327759,
+        0.24379000067710876,
+        3.8753321170806885
+      ],
+      "max": [
+        -0.22586899995803833,
+        2.1864020824432373,
+        3.9433579444885254
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 41916
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 64,
+      "min": [
+        -1,
+        0,
+        -1
+      ],
+      "max": [
+        1,
+        0,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 41916
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 96,
+      "min": [
+        0
+      ],
+      "max": [
+        63
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 13812
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 28,
+      "min": [
+        -1.7716540098190308,
+        0.3762719929218292,
+        3.8947360515594482
+      ],
+      "max": [
+        -0.24753199517726898,
+        2.1535680294036865,
+        3.8947360515594482
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 42684
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 28,
+      "min": [
+        0,
+        0,
+        1
+      ],
+      "max": [
+        0,
+        0,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 42684
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 72,
+      "min": [
+        0
+      ],
+      "max": [
+        27
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 14004
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh_2_positions",
+      "componentType": 5126,
+      "count": 186,
+      "min": [
+        -1.9299449920654297,
+        0.19168700277805328,
+        3.8007218837738037
+      ],
+      "max": [
+        -0.08923999965190887,
+        2.3381528854370117,
+        4.013851165771484
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 43020
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh_2_normals",
+      "componentType": 5126,
+      "count": 186,
+      "min": [
+        -1,
+        -1,
+        -1
+      ],
+      "max": [
+        1,
+        1,
+        1
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 43020
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh_2_indices",
+      "componentType": 5123,
+      "count": 528,
+      "min": [
+        0
+      ],
+      "max": [
+        185
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 14148
+    },
+    {
+      "name": "Barn_Window_Cube-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 34,
+      "min": [
+        0.7556520104408264,
+        3.32688307762146,
+        4.136303901672363
+      ],
+      "max": [
+        1.2816979885101318,
+        4.553592205047607,
+        4.155968189239502
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 45252
+    },
+    {
+      "name": "Barn_Window_Cube-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 34,
+      "min": [
+        -0.0374000146985054,
+        0,
+        0.9993003606796265
+      ],
+      "max": [
+        -0.03730015456676483,
+        0,
+        0.9993041157722473
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 45252
+    },
+    {
+      "name": "Barn_Window_Cube-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 90,
+      "min": [
+        0
+      ],
+      "max": [
+        33
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 15204
+    },
+    {
+      "name": "Barn_Window_Cube-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 178,
+      "min": [
+        0.6421869993209839,
+        3.224879026412964,
+        4.060544967651367
+      ],
+      "max": [
+        1.3955689668655396,
+        4.655594825744629,
+        4.214025974273682
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 45660
+    },
+    {
+      "name": "Barn_Window_Cube-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 178,
+      "min": [
+        -0.9997354745864868,
+        -1,
+        -0.9993003606796265
+      ],
+      "max": [
+        0.9997354745864868,
+        1,
+        0.9993041157722473
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 45660
+    },
+    {
+      "name": "Barn_Window_Cube-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 474,
+      "min": [
+        0
+      ],
+      "max": [
+        177
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 15384
+    },
+    {
+      "name": "Barn_Window2_Cube.014-Mesh_0_positions",
+      "componentType": 5126,
+      "count": 28,
+      "min": [
+        -1.2599949836730957,
+        3.32688307762146,
+        4.144769191741943
+      ],
+      "max": [
+        -0.7448030114173889,
+        4.553592205047607,
+        4.173270225524902
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 47796
+    },
+    {
+      "name": "Barn_Window2_Cube.014-Mesh_0_normals",
+      "componentType": 5126,
+      "count": 28,
+      "min": [
+        0.05519863963127136,
+        0,
+        0.9984753727912903
+      ],
+      "max": [
+        0.05519863963127136,
+        0,
+        0.9984753727912903
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 47796
+    },
+    {
+      "name": "Barn_Window2_Cube.014-Mesh_0_indices",
+      "componentType": 5123,
+      "count": 90,
+      "min": [
+        0
+      ],
+      "max": [
+        27
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 16332
+    },
+    {
+      "name": "Barn_Window2_Cube.014-Mesh_1_positions",
+      "componentType": 5126,
+      "count": 164,
+      "min": [
+        -1.372833013534546,
+        3.224879026412964,
+        4.067162990570068
+      ],
+      "max": [
+        -0.6326900124549866,
+        4.655594825744629,
+        4.233182907104492
+      ],
+      "type": "VEC3",
+      "bufferView": 0,
+      "byteOffset": 48132
+    },
+    {
+      "name": "Barn_Window2_Cube.014-Mesh_1_normals",
+      "componentType": 5126,
+      "count": 164,
+      "min": [
+        -0.9991633296012878,
+        -1,
+        -0.9984753727912903
+      ],
+      "max": [
+        0.9991633296012878,
+        1,
+        0.9984753727912903
+      ],
+      "type": "VEC3",
+      "bufferView": 1,
+      "byteOffset": 48132
+    },
+    {
+      "name": "Barn_Window2_Cube.014-Mesh_1_indices",
+      "componentType": 5123,
+      "count": 474,
+      "min": [
+        0
+      ],
+      "max": [
+        163
+      ],
+      "type": "SCALAR",
+      "bufferView": 2,
+      "byteOffset": 16512
+    }
+  ],
+  "asset": {
+    "generator": "obj2gltf",
+    "version": "2.0"
+  },
+  "buffers": [
+    {
+      "name": "Barn",
+      "byteLength": 117660,
+      "uri": "Barn.bin"
+    }
+  ],
+  "bufferViews": [
+    {
+      "name": "bufferView_0",
+      "buffer": 0,
+      "byteLength": 50100,
+      "byteOffset": 0,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_1",
+      "buffer": 0,
+      "byteLength": 50100,
+      "byteOffset": 50100,
+      "byteStride": 12,
+      "target": 34962
+    },
+    {
+      "name": "bufferView_2",
+      "buffer": 0,
+      "byteLength": 17460,
+      "byteOffset": 100200,
+      "target": 34963
+    }
+  ],
+  "materials": [
+    {
+      "name": "DarkRed",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.202353,
+          0.04252,
+          0.032067,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "White",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.64,
+          0.64,
+          0.64,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "LightRed",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.273903,
+          0.056039,
+          0.041967,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    },
+    {
+      "name": "RoofBlack",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.078802,
+          0.078802,
+          0.078802,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.903921569
+      },
+      "emissiveFactor": [
+        0,
+        0,
+        0
+      ],
+      "alphaMode": "OPAQUE",
+      "doubleSided": true
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Barn_Cube.005-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0,
+            "NORMAL": 1
+          },
+          "indices": 2,
+          "material": 0,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 3,
+            "NORMAL": 4
+          },
+          "indices": 5,
+          "material": 1,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 6,
+            "NORMAL": 7
+          },
+          "indices": 8,
+          "material": 2,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10
+          },
+          "indices": 11,
+          "material": 3,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Barn_Door_Cube.002-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 12,
+            "NORMAL": 13
+          },
+          "indices": 14,
+          "material": 0,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 15,
+            "NORMAL": 16
+          },
+          "indices": 17,
+          "material": 1,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 18,
+            "NORMAL": 19
+          },
+          "indices": 20,
+          "material": 2,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Barn_Door2_Cube.007-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 21,
+            "NORMAL": 22
+          },
+          "indices": 23,
+          "material": 2,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 24,
+            "NORMAL": 25
+          },
+          "indices": 26,
+          "material": 0,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 27,
+            "NORMAL": 28
+          },
+          "indices": 29,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Barn_Window_Cube-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 30,
+            "NORMAL": 31
+          },
+          "indices": 32,
+          "material": 2,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 33,
+            "NORMAL": 34
+          },
+          "indices": 35,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Barn_Window2_Cube.014-Mesh",
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 36,
+            "NORMAL": 37
+          },
+          "indices": 38,
+          "material": 2,
+          "mode": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 39,
+            "NORMAL": 40
+          },
+          "indices": 41,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "Barn_Cube.005",
+      "mesh": 0
+    },
+    {
+      "name": "Barn_Door_Cube.002",
+      "mesh": 1
+    },
+    {
+      "name": "Barn_Door2_Cube.007",
+      "mesh": 2
+    },
+    {
+      "name": "Barn_Window_Cube",
+      "mesh": 3
+    },
+    {
+      "name": "Barn_Window2_Cube.014",
+      "mesh": 4
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ]
+}

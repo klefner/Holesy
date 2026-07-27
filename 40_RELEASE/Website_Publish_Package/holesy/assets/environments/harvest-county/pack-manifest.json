@@ -1,0 +1,74 @@
+{
+  "packId": "harvest-county-quaternius",
+  "recipeVersion": "1.0.0",
+  "license": "CC0-1.0",
+  "sourceUrl": "https://quaternius.com/packs/farmbuildings.html",
+  "normalizedSourceDir": "10_SOURCE/Masters/Master 16/assets/environments/harvest-county/normalized-source",
+  "convertedOutputDir": "10_SOURCE/Masters/Master 16/assets/environments/harvest-county/converted",
+  "relativeTexturePrefix": "../../../normalized-source/",
+  "defaultGrid": {
+    "cols": 4,
+    "rows": 4,
+    "floors": 6
+  },
+  "coreVisualScale": 0.28,
+  "materials": {
+    "facade": ["Wood", "Wall", "Metal", "Stone"],
+    "roof": ["Roof", "Metal"],
+    "interior": ["Wood", "Dark", "Stone"]
+  },
+  "models": [
+    {
+      "id": "harvest-small-barn",
+      "assetId": "harvest-small-barn",
+      "sourceBase": "SmallBarn",
+      "footprint": 8.5,
+      "progressionClass": "small_structure",
+      "collapseSize": 4.25
+    },
+    {
+      "id": "harvest-barn",
+      "assetId": "harvest-barn",
+      "sourceBase": "Barn",
+      "footprint": 10.5,
+      "progressionClass": "medium_structure",
+      "collapseSize": 5.25
+    },
+    {
+      "id": "harvest-big-barn",
+      "assetId": "harvest-big-barn",
+      "sourceBase": "BigBarn",
+      "footprint": 12,
+      "progressionClass": "large_structure",
+      "collapseSize": 6
+    },
+    {
+      "id": "harvest-silo",
+      "assetId": "harvest-silo",
+      "sourceBase": "Silo",
+      "footprint": 8,
+      "grid": { "cols": 4, "rows": 4, "floors": 8 },
+      "progressionClass": "tower_structure",
+      "collapseSize": 6.25
+    },
+    {
+      "id": "harvest-water-tower",
+      "assetId": "harvest-water-tower",
+      "sourceBase": "WaterTower",
+      "footprint": 8,
+      "grid": { "cols": 4, "rows": 4, "floors": 8 },
+      "progressionClass": "tower_structure",
+      "collapseSize": 6.5,
+      "unusualElements": ["water-tower tank retained inside structural grid"]
+    },
+    {
+      "id": "harvest-windmill",
+      "assetId": "harvest-windmill",
+      "sourceBase": "Windmill",
+      "footprint": 10,
+      "progressionClass": "large_structure",
+      "collapseSize": 6,
+      "unusualElements": ["windmill blades retained inside structural grid"]
+    }
+  ]
+}
