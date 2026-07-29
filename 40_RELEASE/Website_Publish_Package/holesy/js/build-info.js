@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 188;
+export const BUILD_SUB = 189;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.189',
+    title: 'Organic frontier town topology',
+    notes: [
+      'Historic and frontier towns no longer inherit asphalt, lane markings, concrete sidewalks, or a full-board street grid.',
+      'Replaces the grid with a few winding dirt routes, uneven settlement spacing, and farm plots that sit directly in the landscape.',
+      'Adds a labeled saloon, sheriff office and jail, general store, livery stable, feed-and-grain shop, and frontier houses.',
+      'Keeps modern and future city recipes on their existing clean grid topology.',
+    ],
+  },
   {
     label: 'Master 16.188',
     title: 'Living Harvest economy and fair mandates',

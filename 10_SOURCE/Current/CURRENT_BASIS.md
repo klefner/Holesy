@@ -6,8 +6,13 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.188` and player-facing surfaces show `Version 16.188`
-- `Master 16.188` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.189` and player-facing surfaces show `Version 16.189`
+- `Master 16.189` is the current governed source basis and includes:
+  - recipe-controlled modern-grid versus organic historic/frontier topology
+  - winding partial-board dirt routes and irregular Harvest site placement
+  - six labeled, destructible small-town frontier buildings
+  - all prior `Master 16.188` Harvest economy and Mandate work
+- `Master 16.188` includes:
   - a 1,111-object Harvest opening economy with visible cultivated fields, workers, riders, carriages, farm equipment, and expanded livestock
   - projected-radius feasibility filtering for building-piece Mandates
   - Harvest-specific Mandate wording and corrected animal-entry perspective scaling

@@ -2,6 +2,18 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.189 - 2026-07-29
+
+Organic frontier town topology.
+
+- Establishes topology as a town-recipe decision instead of forcing every environment onto the modern street grid.
+- Hides asphalt, yellow lane markings, and concrete sidewalk parcels in Medieval Village and Harvest County.
+- Adds four irregular dirt-road routes whose branches bend, merge, and stop inside the board.
+- Offsets Harvest farm and building sites so the settlement no longer reads as 36 identical square parcels.
+- Adds six smaller frontier buildings: a saloon, sheriff office and jail, general store, livery stable, feed-and-grain shop, and frontier house.
+- Reuses the governed imported-model destruction pipeline for every added structure.
+- Leaves Classic City and MegaKit Downtown on the existing modern grid.
+
 ## Master 16.188 - 2026-07-29
 
 Living Harvest economy and fair mandates.
