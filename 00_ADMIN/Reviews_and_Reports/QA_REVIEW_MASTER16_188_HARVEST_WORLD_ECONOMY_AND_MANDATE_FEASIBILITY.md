@@ -38,4 +38,8 @@ The feasibility model intentionally assumes the player captures 34 percent of re
 
 ## Publication
 
-Pending scoped commit, Pages deployment, and live verification.
+- Source and release candidate committed as `4b0da3f` and pushed to `codex/publish-master4-structure`.
+- GitHub Pages package committed as `0569e0b` and pushed to `claude/happy-clarke-ORWAI`.
+- Public verification at `https://klefner.github.io/Holesy/?v=16.188-0569e0b` displayed Version 16.188.
+- A fresh public Harvest start completed in 5.70 seconds on a cold network run with preload ready, the full expected content telemetry, a reachable-radius estimate of 5.96, and the themed Mandate `Eat 11 South Farm Building Pieces`.
+- The public browser run produced no page errors.
