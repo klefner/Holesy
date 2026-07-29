@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.186';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.187';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1182,6 +1182,12 @@ const HARVEST_ANIMALS = Object.freeze({
   Sheep: { size: 0.62, value: 25, speed: 0.55 },
   Horse: { size: 0.95, value: 44, speed: 0.72 },
 });
+const HARVEST_PREFAB_NAMES = Object.freeze([
+  ...HARVEST_CROPS,
+  ...Object.keys(HARVEST_ANIMALS),
+  'Tree1', 'Bush1', 'Rock1', 'ChickenCoop', 'Well',
+]);
+let harvestCountyPreloadPromise = null;
 
 function chooseEnvironmentForNextCity() {
   if (ELIGIBLE_ENVIRONMENTS.includes(selectedEnvironmentOverride)) {
@@ -1271,6 +1277,24 @@ function loadHarvestDestructible(definition) {
     harvestDestructibleCache.set(definition.assetId, promise);
   }
   return harvestDestructibleCache.get(definition.assetId);
+}
+
+function preloadHarvestCountyAssets() {
+  if (harvestCountyPreloadPromise) return harvestCountyPreloadPromise;
+  document.documentElement.setAttribute('data-holesy-harvest-preload', 'loading');
+  const requests = [
+    ...HARVEST_PREFAB_NAMES.map(sourceBase => loadHarvestAsset(sourceBase)),
+    ...HARVEST_BUILDINGS.flatMap(definition => [
+      loadHarvestAsset(definition.sourceBase),
+      loadHarvestDestructible(definition),
+    ]),
+  ];
+  harvestCountyPreloadPromise = Promise.allSettled(requests).then(results => {
+    const failed = results.filter(result => result.status === 'rejected').length;
+    document.documentElement.setAttribute('data-holesy-harvest-preload', failed ? `partial:${failed}` : 'ready');
+    return results;
+  });
+  return harvestCountyPreloadPromise;
 }
 
 function loadMedievalBuilding(sourceBase) {
@@ -1907,11 +1931,10 @@ async function populateHarvestCounty() {
     addHarvestGroundPlane(0, roadCenter, WORLD_SIZE, ROAD_W * 0.78, dirt);
   }
 
-  const assetNames = [
-    ...HARVEST_CROPS,
-    ...Object.keys(HARVEST_ANIMALS),
-    'Tree1', 'Bush1', 'Rock1', 'ChickenCoop', 'Well',
-  ];
+  await preloadHarvestCountyAssets();
+  if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+
+  const assetNames = HARVEST_PREFAB_NAMES;
   const templates = new Map();
   for (const assetName of assetNames) {
     if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
@@ -5551,6 +5574,9 @@ difficultySelect.value = selectedDifficultyName;
 setDifficulty(selectedDifficultyName);
 environmentSelect?.addEventListener('change', () => {
   selectedEnvironmentOverride = environmentSelect.value;
+  if (selectedEnvironmentOverride === ENVIRONMENT_KEYS.HARVEST_COUNTY) {
+    preloadHarvestCountyAssets();
+  }
   const recipe = CITY_RECIPES[selectedEnvironmentOverride];
   environmentDesc.textContent = recipe
     ? `${recipe.label} will be used for every generated city. Temporary control — remove before release.`

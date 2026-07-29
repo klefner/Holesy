@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.187 - 2026-07-29
+
+Fast Harvest County startup.
+
+- Replaces sequential Harvest County network/decode waits with one parallel asset-preload job.
+- Begins preloading immediately when Harvest County is selected, before Begin is pressed.
+- Reuses the warmed loader caches during town construction.
+- Preserves all buildings, destructible fragments, crops, animals, props, and themed density.
+- Reduced measured Begin-to-gameplay time from 10.8 seconds on live 16.185 to 1.17 seconds under a deliberately delayed local asset network.
+
 ## Master 16.186 - 2026-07-27
 
 Medieval sound, scale, and growth repair.

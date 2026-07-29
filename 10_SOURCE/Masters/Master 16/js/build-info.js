@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 186;
+export const BUILD_SUB = 187;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.187',
+    title: 'Fast Harvest County startup',
+    notes: [
+      'Starts Harvest County model and destructible-asset downloads together as soon as the town is selected.',
+      'Builds the town from the warmed asset cache instead of serializing more than two dozen network waits behind Building City.',
+      'Preserves all Harvest buildings, crops, animals, destruction models, and themed density.',
+    ],
+  },
   {
     label: 'Master 16.186',
     title: 'Medieval sound, scale, and growth repair',

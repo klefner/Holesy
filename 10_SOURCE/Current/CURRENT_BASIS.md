@@ -6,8 +6,12 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.186` and player-facing surfaces show `Version 16.186`
-- `Master 16.186` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.187` and player-facing surfaces show `Version 16.187`
+- `Master 16.187` is the current governed source basis and includes:
+  - parallel Harvest County prefab/destructible preloading beginning at town selection
+  - warmed-cache scene construction that removes sequential network latency from the Begin wait
+  - all prior `Master 16.186` Medieval sound, scale, and growth work
+- `Master 16.186` includes:
   - repaired soundtrack continuity from the Begin gesture into active gameplay
   - authored-scale preservation plus immediate perspective shrink for swallowed animals
   - 20 staged parcel edibles per Medieval building parcel
