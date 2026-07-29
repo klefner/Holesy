@@ -22,6 +22,8 @@ Harvest County loaded its prefab and destructible resources sequentially. More t
 - Visual screenshot review confirmed the gameplay scene and HUD rendered.
 - JavaScript syntax passed for source/release `main.js` and `build-info.js`.
 - SHA-256 source/release parity passed for `index.html`, `js/main.js`, and `js/build-info.js`.
+- GitHub Pages live verification displayed `Version 16.187`.
+- The live public build reached Harvest County gameplay in 1.49 seconds after Begin with preload `ready`, 8 buildings, 792 edibles, and no browser errors.
 
 ## Acceptance
 
