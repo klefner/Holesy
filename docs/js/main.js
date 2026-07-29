@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.188';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.189';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1107,6 +1107,9 @@ const CITY_RECIPES = Object.freeze({
   }),
   [ENVIRONMENT_KEYS.HARVEST_COUNTY]: Object.freeze({
     label: 'Harvest County',
+    // The Harvest population function selectively reuses approved frontier
+    // structures from the Medieval pack; listing that pack here would execute
+    // the entire Medieval population recipe a second time.
     packs: Object.freeze([CITY_PACK_KEYS.HARVEST_COUNTY]),
   }),
 });
@@ -1174,6 +1177,14 @@ const HARVEST_BUILDINGS = Object.freeze([
   { sourceBase: 'Silo', assetId: 'harvest-silo', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.25, blockCount: 128 },
   { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128, unusualElement: 'water_tank' },
   { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, unusualElement: 'windmill_blades' },
+]);
+const HARVEST_FRONTIER_BUILDINGS = Object.freeze([
+  { ...MEDIEVAL_BUILDINGS[2], role: 'Saloon', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[0], role: 'Sheriff Office and Jail', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[1], role: 'General Store', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[9], role: 'Livery Stable', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[5], role: 'Feed and Grain', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[6], role: 'Frontier House', theme: 'harvest' },
 ]);
 const HARVEST_CROPS = Object.freeze(['Carrot_4', 'Tomato_4', 'Pumpkin_4', 'Watermelon_4', 'Corn_4', 'Lettuce_4', 'Wheat_4']);
 const HARVEST_ANIMALS = Object.freeze({
@@ -1288,6 +1299,10 @@ function preloadHarvestCountyAssets() {
       loadHarvestAsset(definition.sourceBase),
       loadHarvestDestructible(definition),
     ]),
+    ...HARVEST_FRONTIER_BUILDINGS.flatMap(definition => [
+      loadMedievalBuilding(definition.sourceBase),
+      loadMedievalDestructible(definition),
+    ]),
   ];
   harvestCountyPreloadPromise = Promise.allSettled(requests).then(results => {
     const failed = results.filter(result => result.status === 'rejected').length;
@@ -1387,19 +1402,38 @@ function addMedievalGroundPlane(x, z, w, d, color, rotation = 0) {
   medievalEnvironmentMeshes.push(mesh);
 }
 
+function addHistoricPathSegment(addPlane, from, to, width, color) {
+  const dx = to[0] - from[0];
+  const dz = to[1] - from[1];
+  const length = Math.hypot(dx, dz);
+  addPlane(
+    (from[0] + to[0]) * 0.5,
+    (from[1] + to[1]) * 0.5,
+    length + width * 0.55,
+    width,
+    color,
+    -Math.atan2(dz, dx)
+  );
+}
+
+const HISTORIC_ROAD_ROUTES = Object.freeze([
+  Object.freeze([[-96,-61],[-70,-54],[-43,-60],[-18,-47],[8,-50],[34,-34],[67,-38],[96,-23]]),
+  Object.freeze([[-58,-96],[-52,-72],[-43,-60],[-34,-34],[-15,-12],[5,13],[1,42],[19,72]]),
+  Object.freeze([[8,-50],[22,-22],[47,-2],[66,21],[61,52],[82,86]]),
+  Object.freeze([[-34,-34],[-62,-22],[-79,2],[-74,31],[-92,55]]),
+]);
+
+function addHistoricRoadNetwork(addPlane, color) {
+  for (const route of HISTORIC_ROAD_ROUTES) {
+    for (let i = 1; i < route.length; i++) {
+      addHistoricPathSegment(addPlane, route[i - 1], route[i], i % 3 === 0 ? 5.8 : 6.8, color);
+    }
+  }
+}
+
 function addMedievalStreetDetails() {
   const earth = 0x766347;
-  const stone = 0x8b8374;
-  for (const roadIndex of [-3, -2, -1, 0, 1, 2, 3]) {
-    const roadCenter = roadIndex * BLOCK;
-    addMedievalGroundPlane(roadCenter, 0, ROAD_W * 0.72, WORLD_SIZE, earth);
-    addMedievalGroundPlane(0, roadCenter, WORLD_SIZE, ROAD_W * 0.72, earth);
-  }
-  for (const bp of blockPositions) {
-    const edge = (BLOCK - ROAD_W) / 2 + 0.25;
-    addMedievalGroundPlane(bp.x, bp.z - edge, BLOCK - ROAD_W, 0.45, stone);
-    addMedievalGroundPlane(bp.x, bp.z + edge, BLOCK - ROAD_W, 0.45, stone);
-  }
+  addHistoricRoadNetwork(addMedievalGroundPlane, earth);
 }
 
 function addMedievalProp(name, x, z, kind) {
@@ -2010,6 +2044,54 @@ async function addHarvestBuilding(definition, authoredSource, blockTemplates, bp
   );
 }
 
+function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, site, accent) {
+  const authoredVisual = normalizeHarvestVisual(authoredSource, definition.footprint);
+  authoredVisual.rotation.y = site.rotation;
+  authoredVisual.position.set(site.x, 0, site.z);
+  const signCanvas = document.createElement('canvas');
+  signCanvas.width = 512;
+  signCanvas.height = 128;
+  const signContext = signCanvas.getContext('2d');
+  signContext.fillStyle = `#${accent.toString(16).padStart(6, '0')}`;
+  signContext.fillRect(0, 0, signCanvas.width, signCanvas.height);
+  signContext.strokeStyle = '#2f2015';
+  signContext.lineWidth = 14;
+  signContext.strokeRect(7, 7, signCanvas.width - 14, signCanvas.height - 14);
+  signContext.fillStyle = '#fff0c7';
+  signContext.font = definition.role.length > 18 ? 'bold 42px Georgia' : 'bold 54px Georgia';
+  signContext.textAlign = 'center';
+  signContext.textBaseline = 'middle';
+  signContext.fillText(definition.role.toUpperCase(), 256, 66, 470);
+  const signTexture = new THREE.CanvasTexture(signCanvas);
+  signTexture.colorSpace = THREE.SRGBColorSpace;
+  const sign = new THREE.Mesh(
+    sharedBoxGeometry(Math.min(4.6, definition.footprint * 0.48), 0.72, 0.16),
+    new THREE.MeshBasicMaterial({ map: signTexture })
+  );
+  sign.position.set(0, Math.max(3.1, definition.footprint * 0.36), definition.footprint * 0.43);
+  const awning = new THREE.Mesh(
+    sharedBoxGeometry(Math.min(5.2, definition.footprint * 0.55), 0.16, 1.45),
+    sharedBoxMat(0x6f4728)
+  );
+  awning.position.set(0, Math.max(2.25, definition.footprint * 0.27), definition.footprint * 0.46);
+  awning.rotation.x = -0.12;
+  authoredVisual.add(sign, awning);
+  scene.add(authoredVisual);
+  harvestEnvironmentMeshes.push(authoredVisual);
+  addMedievalDestructionStack(
+    definition,
+    site.x,
+    site.z,
+    site.rotation,
+    authoredVisual,
+    blockTemplates
+  );
+  for (const object of physicsStackPieces) {
+    if (object.stackCenterX !== site.x || object.stackCenterZ !== site.z) continue;
+    object.harvestAssetName = `${definition.role} building piece`;
+  }
+}
+
 async function populateHarvestCounty() {
   const generation = harvestEnvironmentGeneration;
   showEventBanner('DISTRICT: Harvest County', 2200);
@@ -2019,11 +2101,7 @@ async function populateHarvestCounty() {
 
   const dirt = 0x8a6b45;
   const fieldGreen = 0x5d713b;
-  for (const roadIndex of [-3, -2, -1, 0, 1, 2, 3]) {
-    const roadCenter = roadIndex * BLOCK;
-    addHarvestGroundPlane(roadCenter, 0, ROAD_W * 0.78, WORLD_SIZE, dirt);
-    addHarvestGroundPlane(0, roadCenter, WORLD_SIZE, ROAD_W * 0.78, dirt);
-  }
+  addHistoricRoadNetwork(addHarvestGroundPlane, dirt);
 
   await preloadHarvestCountyAssets();
   if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
@@ -2054,20 +2132,39 @@ async function populateHarvestCounty() {
     await yieldCityBuildFrame();
   }
 
+  const frontierAssets = new Map();
+  for (const definition of HARVEST_FRONTIER_BUILDINGS) {
+    if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+    try {
+      const authored = await loadMedievalBuilding(definition.sourceBase);
+      const destructible = await loadMedievalDestructible(definition);
+      frontierAssets.set(definition.role, { authored, destructible });
+    } catch (error) {
+      console.warn(`[Holesy] Frontier building unavailable after intake validation: ${definition.role}`, error);
+    }
+  }
+
   let edibleCount = 0;
   let buildingCount = 0;
   let fieldCount = 0;
   const activeParcels = blockPositions.filter(bp =>
     Math.abs(bp.x) < currentArenaHalf + 10 &&
     Math.abs(bp.z) < currentArenaHalf + 10
-  );
+  ).map((bp, index) => ({
+    x: bp.x + Math.sin(index * 2.31) * 6.2,
+    z: bp.z + Math.cos(index * 1.73) * 5.6,
+  }));
   const buildingEvery = 5;
   for (let parcelIndex = 0; parcelIndex < activeParcels.length; parcelIndex++) {
     if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
     const bp = activeParcels[parcelIndex];
     const bounds = { minX: bp.x - 8.7, maxX: bp.x + 8.7, minZ: bp.z - 8.7, maxZ: bp.z + 8.7 };
     const parcelType = parcelIndex % buildingEvery;
-    addHarvestGroundPlane(bp.x, bp.z, 19, 19, parcelType === 1 ? 0x765538 : fieldGreen);
+    if (parcelType === 1 || parcelType === 2) {
+      addHarvestGroundPlane(bp.x, bp.z, 18.5, 17.2, parcelType === 1 ? 0x765538 : 0x6f5b36);
+    } else if (parcelType === 3) {
+      addHarvestGroundPlane(bp.x, bp.z, 17.5, 16.5, 0x536b38, 0.08 * Math.sin(parcelIndex));
+    }
 
     if (parcelType === 0) {
       const definition = HARVEST_BUILDINGS[buildingCount % HARVEST_BUILDINGS.length];
@@ -2192,18 +2289,43 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
-  const roadParcels = [...activeParcels].sort(() => Math.random() - 0.5);
+  const frontierSites = [
+    { x: -31, z: -45, rotation: 0.10 },
+    { x: -17, z: -48, rotation: 0.08 },
+    { x: -3, z: -47, rotation: -0.04 },
+    { x: 12, z: -44, rotation: -0.10 },
+    { x: -25, z: -31, rotation: Math.PI + 0.06 },
+    { x: -9, z: -32, rotation: Math.PI - 0.08 },
+  ];
+  const frontierAccents = [0x8b2f24, 0x355f78, 0xb28b3e, 0x6b4b32, 0x8a6f36, 0x536b46];
+  for (let i = 0; i < HARVEST_FRONTIER_BUILDINGS.length; i++) {
+    const definition = HARVEST_FRONTIER_BUILDINGS[i];
+    const asset = frontierAssets.get(definition.role);
+    if (!asset) continue;
+    addHarvestFrontierBuilding(
+      definition,
+      asset.authored,
+      asset.destructible,
+      frontierSites[i],
+      frontierAccents[i]
+    );
+    buildingCount++;
+  }
+
+  const roadWaypoints = HISTORIC_ROAD_ROUTES.flat();
   const horseTemplate = templates.get('Horse');
-  for (let i = 0; i < Math.min(32, roadParcels.length); i++) {
-    const bp = roadParcels[i];
-    const horizontal = i % 2 === 0;
-    const roadOffset = (BLOCK - ROAD_W) / 2 + ROAD_W * 0.48;
-    const x = horizontal ? bp.x + randomBetween(-7, 7) : bp.x + (i % 4 < 2 ? -roadOffset : roadOffset);
-    const z = horizontal ? bp.z + (i % 4 < 2 ? -roadOffset : roadOffset) : bp.z + randomBetween(-7, 7);
-    const bounds = horizontal
-      ? { minX: bp.x - 8.5, maxX: bp.x + 8.5, minZ: z - 0.75, maxZ: z + 0.75 }
-      : { minX: x - 0.75, maxX: x + 0.75, minZ: bp.z - 8.5, maxZ: bp.z + 8.5 };
-    const direction = horizontal ? (i % 4 < 2 ? 0 : Math.PI) : (i % 4 < 2 ? Math.PI / 2 : -Math.PI / 2);
+  for (let i = 0; i < 32; i++) {
+    const point = roadWaypoints[i % roadWaypoints.length];
+    const next = roadWaypoints[(i + 1) % roadWaypoints.length];
+    const x = point[0] + randomBetween(-1.4, 1.4);
+    const z = point[1] + randomBetween(-1.4, 1.4);
+    const bounds = {
+      minX: Math.min(point[0], next[0]) - 2.2,
+      maxX: Math.max(point[0], next[0]) + 2.2,
+      minZ: Math.min(point[1], next[1]) - 2.2,
+      maxZ: Math.max(point[1], next[1]) + 2.2,
+    };
+    const direction = Math.atan2(next[1] - point[1], next[0] - point[0]);
     if (i < 8) makeMedievalHorseCart(x, z, bounds, direction);
     else if (i < 16 && horseTemplate) addHarvestRider(horseTemplate, x, z, bounds);
     else addHarvestWorker(x, z, bounds, i % 2 ? 'fork' : 'hoe');
@@ -2228,6 +2350,10 @@ async function populateHarvestCounty() {
   document.documentElement.setAttribute('data-holesy-harvest-farm-equipment', String(
     objects.filter(obj => obj.harvestAssetName === 'farm tractor and plow').length
   ));
+  document.documentElement.setAttribute(
+    'data-holesy-harvest-frontier-buildings',
+    HARVEST_FRONTIER_BUILDINGS.map(definition => definition.role).join(',')
+  );
   wakeRenderLoop();
 }
 
@@ -2781,6 +2907,9 @@ function setArenaScale(scale = 1.0) {
 // Roads (grid)
 const roadMat = new THREE.MeshLambertMaterial({ color: 0x2d2d35 });
 const lineMat = new THREE.MeshBasicMaterial({ color: 0xf5d547 });
+const baseGridRoadMeshes = [];
+const baseGridLineMeshes = [];
+const baseGridSidewalkMeshes = [];
 
 function addRoad(x, z, w, h) {
   const r = new THREE.Mesh(new THREE.PlaneGeometry(w, h), roadMat);
@@ -2788,6 +2917,7 @@ function addRoad(x, z, w, h) {
   r.position.set(x, 0.01, z);
   r.receiveShadow = true;
   scene.add(r);
+  baseGridRoadMeshes.push(r);
   // Dashed center lines
   const isHoriz = w > h;
   const dashCount = Math.floor((isHoriz ? w : h) / 4);
@@ -2801,6 +2931,7 @@ function addRoad(x, z, w, h) {
     const t = (i / dashCount - 0.5) * (isHoriz ? w : h);
     dash.position.set(isHoriz ? x + t : x, 0.02, isHoriz ? z : z + t);
     scene.add(dash);
+    baseGridLineMeshes.push(dash);
   }
 }
 
@@ -2832,6 +2963,19 @@ for (const bp of blockPositions) {
   sw.position.set(bp.x, 0.015, bp.z);
   sw.receiveShadow = true;
   scene.add(sw);
+  baseGridSidewalkMeshes.push(sw);
+}
+
+function applyTownTopologyVisibility() {
+  const historicTopology = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE
+    || selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY;
+  for (const mesh of baseGridRoadMeshes) mesh.visible = !historicTopology;
+  for (const mesh of baseGridLineMeshes) mesh.visible = !historicTopology;
+  for (const mesh of baseGridSidewalkMeshes) mesh.visible = !historicTopology;
+  document.documentElement.setAttribute(
+    'data-holesy-town-topology',
+    historicTopology ? 'organic-dirt-routes' : 'modern-grid'
+  );
 }
 
 // =========================================================================
@@ -4342,6 +4486,7 @@ function populateParcelDetails(bp, parcelUse, blockBounds) {
 
 async function populateCity() {
   chooseEnvironmentForNextCity();
+  applyTownTopologyVisibility();
   const isMedievalVillage = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE;
   const isHarvestCounty = selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY;
   if (isMedievalVillage) clearMedievalEnvironmentMeshes();
