@@ -35,4 +35,7 @@ The organic layout intentionally preserves the existing gameplay coordinate and 
 
 ## Publication
 
-Pending source/release parity, scoped commit, Pages deployment, and live verification.
+- Source/release candidate committed as `728c794`, with Harvest Mandate wording completed in `c55e2f7`; both are pushed to `codex/publish-master4-structure`.
+- GitHub Pages package committed as `7c4ad01`, with the Mandate wording follow-up in `7aa9b07`; both are pushed to `claude/happy-clarke-ORWAI`.
+- Public verification displayed Version 16.189, `organic-dirt-routes`, preload ready, 1,111 edibles, 14 buildings, all six named frontier structures, and no browser errors.
+- The cold public Harvest construction completed in 2.29 seconds.
