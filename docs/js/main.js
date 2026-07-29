@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.187';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.188';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1462,7 +1462,10 @@ function addMedievalProp(name, x, z, kind) {
     stall: { size: 1.5, value: 45 },
   }[kind] || { size: 0.6, value: 18 };
   const obj = makeObject(group, propProfile.size, 0, propProfile.value, { x, z, y: 0 });
-  obj.isMedievalAsset = true;
+  const isHarvestTown = selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY;
+  obj.isMedievalAsset = !isHarvestTown;
+  obj.isHarvestAsset = isHarvestTown;
+  if (isHarvestTown) obj.value = Math.round(obj.value * 1.55);
   obj.medievalAssetName = name;
   obj.mandateKind = 'prop';
   return obj;
@@ -1534,6 +1537,11 @@ function makeMedievalHorseCart(x, z, bounds, direction = 0) {
   group.add(shaft);
   group.traverse(child => { if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; } });
   const obj = makeMedievalConsumable('horse-drawn cart', group, 1.55, 62, x, z, 0);
+  if (selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY) {
+    obj.isMedievalAsset = false;
+    obj.isHarvestAsset = true;
+    obj.value = 96;
+  }
   obj.mandateKind = 'animal';
   obj.mesh.rotation.y = -direction;
   medievalAmbientActors.push({
@@ -1549,7 +1557,9 @@ function makeMedievalHorseCart(x, z, bounds, direction = 0) {
 
 function makeMedievalVillager(x, z, bounds, role) {
   const person = makePerson({ x, z }, role === 'fighter' ? null : bounds);
-  person.isMedievalAsset = true;
+  const isHarvestTown = selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY;
+  person.isMedievalAsset = !isHarvestTown;
+  person.isHarvestAsset = isHarvestTown;
   person.medievalRole = role;
   if (role === 'torch') {
     if (!person.moving) {
@@ -1878,10 +1888,94 @@ function normalizeHarvestVisual(template, targetFootprint) {
 
 function addHarvestConsumable(template, name, x, z, targetFootprint, size, value, mandateKind = 'prop') {
   const group = normalizeHarvestVisual(template, targetFootprint);
-  const object = makeObject(group, size, 0, value, { x, z, y: 0 });
+  const object = makeObject(group, size, 0, Math.round(value * 1.55), { x, z, y: 0 });
   object.isHarvestAsset = true;
   object.harvestAssetName = name;
   object.mandateKind = mandateKind;
+  return object;
+}
+
+function addHarvestFieldRows(bp, cropColor = 0x6f7f38) {
+  for (let row = 0; row < 5; row++) {
+    const ridge = new THREE.Mesh(
+      sharedBoxGeometry(16.2, 0.16, 0.32),
+      sharedBoxMat(row % 2 ? 0x765238 : 0x68462f)
+    );
+    ridge.position.set(bp.x, 0.11, bp.z - 6.2 + row * 3.1);
+    ridge.receiveShadow = true;
+    scene.add(ridge);
+    harvestEnvironmentMeshes.push(ridge);
+    const growthStrip = new THREE.Mesh(
+      sharedBoxGeometry(15.6, 0.08, 0.14),
+      sharedBoxMat(cropColor)
+    );
+    growthStrip.position.set(bp.x, 0.22, ridge.position.z);
+    scene.add(growthStrip);
+    harvestEnvironmentMeshes.push(growthStrip);
+  }
+}
+
+function addHarvestWorker(x, z, bounds, tool = 'hoe') {
+  const worker = makePerson({ x, z }, bounds);
+  worker.isHarvestAsset = true;
+  worker.harvestRole = 'field-worker';
+  worker.value = 18;
+  const handle = new THREE.Mesh(sharedBoxGeometry(0.08, 1.35, 0.08), sharedBoxMat(0x624328));
+  handle.position.set(0.42, 0.88, 0);
+  handle.rotation.z = tool === 'fork' ? -0.32 : -0.58;
+  const head = new THREE.Mesh(
+    sharedBoxGeometry(tool === 'fork' ? 0.42 : 0.48, 0.08, 0.12),
+    sharedBoxMat(0x8b8f91)
+  );
+  head.position.set(0.72, 0.38, 0);
+  head.rotation.z = handle.rotation.z;
+  worker.mesh.add(handle, head);
+  return worker;
+}
+
+function addHarvestTractor(x, z, rotation = 0) {
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(sharedBoxGeometry(2.2, 0.9, 1.25), sharedBoxMat(0x7f9b32));
+  body.position.y = 0.9;
+  group.add(body);
+  const hood = new THREE.Mesh(sharedBoxGeometry(1.1, 0.65, 1.1), sharedBoxMat(0xb2b83e));
+  hood.position.set(1.35, 0.92, 0);
+  group.add(hood);
+  for (const [wx, wz, radius] of [[-0.8,-0.72,0.72],[-0.8,0.72,0.72],[1.25,-0.66,0.48],[1.25,0.66,0.48]]) {
+    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 0.24, 10), sharedBoxMat(0x282521));
+    wheel.rotation.x = Math.PI / 2;
+    wheel.position.set(wx, radius, wz);
+    group.add(wheel);
+  }
+  const plow = new THREE.Mesh(sharedBoxGeometry(1.8, 0.12, 1.8), sharedBoxMat(0x777b7c));
+  plow.position.set(-1.75, 0.28, 0);
+  group.add(plow);
+  group.rotation.y = rotation;
+  const object = makeObject(group, 1.55, 0, 88, { x, z, y: 0 });
+  object.isHarvestAsset = true;
+  object.harvestAssetName = 'farm tractor and plow';
+  object.mandateKind = 'farm_equipment';
+  object.isProp = true;
+  return object;
+}
+
+function addHarvestRider(horseTemplate, x, z, bounds) {
+  const group = normalizeHarvestVisual(horseTemplate, 2.15);
+  const rider = new THREE.Group();
+  const torso = new THREE.Mesh(sharedBoxGeometry(0.42, 0.72, 0.32), sharedBoxMat(0x6f5137));
+  torso.position.y = 1.9;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 8, 6), sharedBoxMat(0xd5a77b));
+  head.position.y = 2.42;
+  rider.add(torso, head);
+  group.add(rider);
+  const object = makeObject(group, 1.08, 0, 78, { x, z, y: 0 });
+  object.isHarvestAsset = true;
+  object.harvestAssetName = 'mounted farm rider';
+  object.mandateKind = 'animal';
+  medievalAmbientActors.push({
+    type: 'animal', obj: object, bounds,
+    direction: Math.random() * Math.PI * 2, speed: 0.78, timer: 2 + Math.random() * 3,
+  });
   return object;
 }
 
@@ -1962,6 +2056,7 @@ async function populateHarvestCounty() {
 
   let edibleCount = 0;
   let buildingCount = 0;
+  let fieldCount = 0;
   const activeParcels = blockPositions.filter(bp =>
     Math.abs(bp.x) < currentArenaHalf + 10 &&
     Math.abs(bp.z) < currentArenaHalf + 10
@@ -1993,7 +2088,9 @@ async function populateHarvestCounty() {
         edibleCount++;
       }
     } else if (parcelType === 1 || parcelType === 2) {
-      for (let row = 0; row < 4; row++) for (let col = 0; col < 5; col++) {
+      fieldCount++;
+      addHarvestFieldRows(bp, parcelType === 1 ? 0x789a3f : 0xb18b35);
+      for (let row = 0; row < 5; row++) for (let col = 0; col < 7; col++) {
         const cropName = HARVEST_CROPS[(parcelIndex + row * 2 + col) % HARVEST_CROPS.length];
         const template = templates.get(cropName);
         if (!template) continue;
@@ -2001,12 +2098,20 @@ async function populateHarvestCounty() {
         addHarvestConsumable(
           template,
           cropName,
-          bp.x - 6.3 + col * 3.1 + randomBetween(-0.18, 0.18),
-          bp.z - 5.2 + row * 3.45 + randomBetween(-0.18, 0.18),
-          isLargeProduce ? 1.25 : 0.9,
+          bp.x - 6.9 + col * 2.3 + randomBetween(-0.14, 0.14),
+          bp.z - 6.2 + row * 3.1 + randomBetween(-0.14, 0.14),
+          isLargeProduce ? 1.1 : 0.78,
           isLargeProduce ? 0.3 : 0.2,
-          isLargeProduce ? 7 : 4
+          isLargeProduce ? 9 : 6,
+          'crop'
         );
+        edibleCount++;
+      }
+      addHarvestWorker(bp.x - 3.8, bp.z + 1.1, bounds, 'hoe');
+      addHarvestWorker(bp.x + 4.2, bp.z - 2.2, bounds, 'fork');
+      edibleCount += 2;
+      if (parcelIndex % 2 === 0) {
+        addHarvestTractor(bp.x + 5.7, bp.z + 5.7, parcelIndex % 4 === 0 ? 0 : Math.PI / 2);
         edibleCount++;
       }
       for (const [dx, dz, kind] of [[-8,-7,'basket'],[0,-8,'sack'],[8,-7,'crate'],[-8,7,'basket'],[0,8,'hay'],[8,7,'barrel']]) {
@@ -2014,7 +2119,7 @@ async function populateHarvestCounty() {
         edibleCount++;
       }
     } else if (parcelType === 3) {
-      const animalKinds = ['Horse', 'Cow', 'Pig', 'Sheep', 'Cow', 'Pig'];
+      const animalKinds = ['Horse', 'Cow', 'Pig', 'Sheep', 'Cow', 'Pig', 'Sheep', 'Cow', 'Horse', 'Pig'];
       for (let i = 0; i < animalKinds.length; i++) {
         const kind = animalKinds[i];
         const template = templates.get(kind);
@@ -2022,6 +2127,8 @@ async function populateHarvestCounty() {
         addHarvestAnimal(template, kind, bp.x + randomBetween(-6.5, 6.5), bp.z + randomBetween(-6.5, 6.5), bounds);
         edibleCount++;
       }
+      addHarvestWorker(bp.x, bp.z, bounds, 'fork');
+      edibleCount++;
       for (const [dx, dz, kind] of [[-7,-7,'hay'],[7,-7,'barrel'],[-7,7,'sack'],[7,7,'crate'],[0,-7,'hay'],[0,7,'basket']]) {
         addMedievalProp(`Pasture ${kind}`, bp.x + dx, bp.z + dz, kind);
         edibleCount++;
@@ -2033,6 +2140,8 @@ async function populateHarvestCounty() {
       const coop = templates.get('ChickenCoop');
       if (well) { addHarvestConsumable(well, 'Farm well', bp.x, bp.z, 2.8, 1.45, 48); edibleCount++; }
       if (coop) { addHarvestConsumable(coop, 'Chicken coop', bp.x - 5, bp.z + 4.5, 3.8, 1.8, 58); edibleCount++; }
+      addHarvestWorker(bp.x + 3.5, bp.z - 2.5, bounds, 'hoe');
+      edibleCount++;
       for (let i = 0; i < 10; i++) {
         const angle = i / 10 * Math.PI * 2;
         const template = i % 3 === 0 ? tree : bush;
@@ -2083,10 +2192,41 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
+  const roadParcels = [...activeParcels].sort(() => Math.random() - 0.5);
+  const horseTemplate = templates.get('Horse');
+  for (let i = 0; i < Math.min(32, roadParcels.length); i++) {
+    const bp = roadParcels[i];
+    const horizontal = i % 2 === 0;
+    const roadOffset = (BLOCK - ROAD_W) / 2 + ROAD_W * 0.48;
+    const x = horizontal ? bp.x + randomBetween(-7, 7) : bp.x + (i % 4 < 2 ? -roadOffset : roadOffset);
+    const z = horizontal ? bp.z + (i % 4 < 2 ? -roadOffset : roadOffset) : bp.z + randomBetween(-7, 7);
+    const bounds = horizontal
+      ? { minX: bp.x - 8.5, maxX: bp.x + 8.5, minZ: z - 0.75, maxZ: z + 0.75 }
+      : { minX: x - 0.75, maxX: x + 0.75, minZ: bp.z - 8.5, maxZ: bp.z + 8.5 };
+    const direction = horizontal ? (i % 4 < 2 ? 0 : Math.PI) : (i % 4 < 2 ? Math.PI / 2 : -Math.PI / 2);
+    if (i < 8) makeMedievalHorseCart(x, z, bounds, direction);
+    else if (i < 16 && horseTemplate) addHarvestRider(horseTemplate, x, z, bounds);
+    else addHarvestWorker(x, z, bounds, i % 2 ? 'fork' : 'hoe');
+    edibleCount++;
+  }
+
   document.documentElement.setAttribute('data-holesy-harvest-buildings', String(buildingCount));
   document.documentElement.setAttribute('data-holesy-harvest-edibles', String(edibleCount));
   document.documentElement.setAttribute('data-holesy-harvest-animals', String(
     medievalAmbientActors.filter(actor => actor.obj?.isHarvestAsset).length
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-fields', String(fieldCount));
+  document.documentElement.setAttribute('data-holesy-harvest-workers', String(
+    objects.filter(obj => obj.isHarvestAsset && (obj.harvestRole === 'field-worker' || obj.isPerson)).length
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-riders', String(
+    objects.filter(obj => obj.harvestAssetName === 'mounted farm rider').length
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-carriages', String(
+    objects.filter(obj => obj.isHarvestAsset && obj.medievalAssetName === 'horse-drawn cart').length
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-farm-equipment', String(
+    objects.filter(obj => obj.harvestAssetName === 'farm tractor and plow').length
   ));
   wakeRenderLoop();
 }
@@ -7570,9 +7710,49 @@ function getMandateRequiredCount(slot, availableCount) {
   return Math.max(floor, Math.min(cap, desired));
 }
 
-function getMandateAvailableCount(slot) {
+function estimatePlayerReachableRadiusForMandate() {
+  if (!player) return MIN_RADIUS;
+  let projectedScore = player.score || 0;
+  let projectedRadius = Math.max(player.radius || MIN_RADIUS, player.targetRadius || MIN_RADIUS);
+  const candidates = objects
+    .filter(obj => isMandateSelectableObject(obj) && !obj.isBuilding && !obj.physicsStackPiece)
+    .sort((a, b) => getObjectLargestDimension(a) - getObjectLargestDimension(b));
+  const remaining = new Set(candidates);
+  for (let pass = 0; pass < 5 && remaining.size; pass++) {
+    let addedValue = 0;
+    for (const obj of [...remaining]) {
+      if (getObjectLargestDimension(obj) > projectedRadius * 2 * 0.95 || obj.size > projectedRadius * 0.98) continue;
+      // Four holes compete for the board. A strong player can reasonably
+      // secure about one third of reachable loose value; mandates must not
+      // assume the player owns every edible in the district.
+      addedValue += Math.max(1, obj.value || 1) * 0.34;
+      remaining.delete(obj);
+    }
+    if (addedValue <= 0) break;
+    projectedScore += addedValue;
+    const growthScore = Math.max(0, projectedScore - (player.sizeResetScoreFloor || 0));
+    projectedRadius = Math.min(
+      getEndlessRadiusCap(),
+      MIN_RADIUS + GROWTH_K * Math.log(1 + growthScore / GROWTH_SCALE) + (player.bonusRadius || 0)
+    );
+  }
+  return projectedRadius;
+}
+
+function isMandateObjectReachable(slot, obj, projectedRadius) {
+  if (slot.group !== 'buildings') return true;
+  const collapseGate = Number(obj.stackCollapseSize) || 0;
+  if (collapseGate > 0 && projectedRadius * 0.95 < collapseGate) return false;
+  return getObjectLargestDimension(obj) <= projectedRadius * 2 * 0.95;
+}
+
+function getMandateAvailableCount(slot, projectedRadius = Infinity) {
   if (typeof slot.availability === 'function') return Math.max(0, Math.floor(slot.availability()));
-  return objects.filter(obj => isMandateSelectableObject(obj) && slot.test(obj)).length;
+  return objects.filter(obj =>
+    isMandateSelectableObject(obj)
+    && slot.test(obj)
+    && isMandateObjectReachable(slot, obj, projectedRadius)
+  ).length;
 }
 
 function weightedShuffleMandateSlots(slots) {
@@ -7582,15 +7762,53 @@ function weightedShuffleMandateSlots(slots) {
     .map(entry => entry.slot);
 }
 
+function getTownMandateLabel(slot) {
+  if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY) return slot.label;
+  const harvestLabels = {
+    people: 'Farm Workers',
+    moving_people: 'Walking Farm Workers',
+    standing_people: 'Working Farmhands',
+    north_people: 'North Farm Workers',
+    south_people: 'South Farm Workers',
+    east_people: 'East Farm Workers',
+    west_people: 'West Farm Workers',
+    center_people: 'Central Farm Workers',
+    edge_people: 'Outer Farm Workers',
+    props: 'Farm Objects',
+    north_props: 'North Farm Objects',
+    south_props: 'South Farm Objects',
+    east_props: 'East Farm Objects',
+    west_props: 'West Farm Objects',
+    center_props: 'Central Farm Objects',
+    trees: 'Orchard Trees',
+    north_trees: 'North Orchard Trees',
+    south_trees: 'South Orchard Trees',
+    east_trees: 'East Orchard Trees',
+    west_trees: 'West Orchard Trees',
+    edge_trees: 'Outer Orchard Trees',
+    park_trees: 'Farmstead Trees',
+    buildings: 'Farm Building Pieces',
+    north_buildings: 'North Farm Building Pieces',
+    south_buildings: 'South Farm Building Pieces',
+    east_buildings: 'East Farm Building Pieces',
+    west_buildings: 'West Farm Building Pieces',
+    center_buildings: 'Central Farm Building Pieces',
+    edge_buildings: 'Outer Farm Building Pieces',
+  };
+  return harvestLabels[slot.id] || slot.label;
+}
+
 function selectMandateTargets() {
   mandateTargets = [];
   mandateCollected = 0;
   mandateComplete = false;
 
   const wave = Math.max(1, currentWave || 1);
+  const projectedRadius = estimatePlayerReachableRadiusForMandate();
+  document.documentElement.setAttribute('data-holesy-mandate-reachable-radius', projectedRadius.toFixed(2));
   const eligibleSlots = weightedShuffleMandateSlots(MANDATE_TARGET_SLOTS)
     .filter(slot => wave >= (slot.minWave || 1))
-    .map(slot => ({ slot, availableCount: getMandateAvailableCount(slot) }))
+    .map(slot => ({ slot, availableCount: getMandateAvailableCount(slot, projectedRadius) }))
     .filter(entry => entry.availableCount > 0);
   const districtPool = eligibleSlots.slice(0, MANDATE_PRESSURE.districtPoolSize);
   const targetCount = Math.min(getMandateTargetCountForWave(), districtPool.length, MANDATE_COUNT);
@@ -7603,7 +7821,7 @@ function selectMandateTargets() {
     if (slot.group) usedGroups.add(slot.group);
     mandateTargets.push({
       id: slot.id,
-      label: slot.label,
+      label: getTownMandateLabel(slot),
       verb: slot.verb || 'Eat',
       action: slot.action || 'eat',
       required: getMandateRequiredCount(slot, availableCount),
@@ -7620,7 +7838,7 @@ function selectMandateTargets() {
     if (mandateTargets.some(objective => objective.id === slot.id)) continue;
     mandateTargets.push({
       id: slot.id,
-      label: slot.label,
+      label: getTownMandateLabel(slot),
       verb: slot.verb || 'Eat',
       action: slot.action || 'eat',
       required: getMandateRequiredCount(slot, availableCount),
@@ -7634,6 +7852,10 @@ function selectMandateTargets() {
   if (mandateTargets.length !== targetCount) {
     console.warn(`MANDATE CATEGORY SHORTFALL: selected ${mandateTargets.length}/${targetCount}`);
   }
+  document.documentElement.setAttribute(
+    'data-holesy-mandate-targets',
+    mandateTargets.map(target => `${target.id}:${target.required}`).join(',')
+  );
   updateMandateHUD();
 }
 
@@ -12489,6 +12711,10 @@ function beginConsume(h, obj) {
   obj.spin = (Math.random() - 0.5) * 4;
   obj.fallBaseScale = obj.mesh.scale.clone();
   obj.fallShrinkStartDepth = obj.mandateKind === 'animal' ? 0.35 : HOLE_DESCENT_CONFIG.shrinkStartDepth;
+  obj.fallFullShrinkDepth = obj.mandateKind === 'animal' ? 11 : HOLE_DESCENT_CONFIG.fullShrinkDepth;
+  if (obj.mandateKind === 'animal') {
+    obj.mesh.scale.copy(obj.fallBaseScale).multiplyScalar(0.92);
+  }
   obj.fallTargetHole = h;
   configureHoleDescentPath(h, obj);
   setHoleDescentRenderMode(obj, true);
@@ -17053,8 +17279,10 @@ function animate(frameNow = performance.now()) {
         obj.mesh.scale.set(1, 1, 1);
       } else {
         const shrinkStartDepth = obj.fallShrinkStartDepth ?? HOLE_DESCENT_CONFIG.shrinkStartDepth;
-        const shrinkT = THREE.MathUtils.clamp((depth - shrinkStartDepth) / Math.max(1, HOLE_DESCENT_CONFIG.fullShrinkDepth - shrinkStartDepth), 0, 1);
-        const s = THREE.MathUtils.lerp(1, HOLE_DESCENT_CONFIG.minScale, shrinkT);
+        const fullShrinkDepth = obj.fallFullShrinkDepth ?? HOLE_DESCENT_CONFIG.fullShrinkDepth;
+        const shrinkT = THREE.MathUtils.clamp((depth - shrinkStartDepth) / Math.max(1, fullShrinkDepth - shrinkStartDepth), 0, 1);
+        const entryScale = obj.mandateKind === 'animal' ? 0.92 : 1;
+        const s = THREE.MathUtils.lerp(entryScale, HOLE_DESCENT_CONFIG.minScale, shrinkT);
         const baseScale = obj.fallBaseScale || obj.mesh.scale;
         obj.mesh.scale.set(baseScale.x * s, baseScale.y * s, baseScale.z * s);
       }
