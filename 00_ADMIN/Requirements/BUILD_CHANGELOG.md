@@ -2,6 +2,17 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.188 - 2026-07-29
+
+Living Harvest economy and fair mandates.
+
+- Raises Harvest County's verified edible inventory from 792 to 1,111.
+- Adds 14 visible cultivated fields, 58 farm workers, eight mounted riders, eight horse-drawn carriages, seven tractors with plows, and a larger livestock population.
+- Increases themed crop, prop, and livestock value so a strong opening clear reaches the smallest farm structures while larger landmarks remain later progression.
+- Filters building-piece Mandates against the radius a player can realistically earn from a contested board.
+- Replaces generic urban Mandate labels with farm-specific wording in Harvest County.
+- Prevents imported animals from enlarging at consume start and makes them shrink earlier during their descent.
+
 ## Master 16.187 - 2026-07-29
 
 Fast Harvest County startup.

@@ -8,7 +8,7 @@ Before any release packaging, live upload, master promotion, backlog sequencing,
 
 The acting developer must also read the repo-root `AGENTS.md` so release, implementation, QA, and handoff responsibilities are applied consistently across Codex, Claude, and other AI systems.
 
-## Current State As Of 2026-07-27
+## Current State As Of 2026-07-29
 
 | Layer | Current value | Meaning |
 | --- | --- | --- |
@@ -17,9 +17,9 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 | Stable `main` | stale relative to active branch | `main` is not the current gameplay source of truth until an explicit PR/merge updates it. |
 | Current approved source master | `10_SOURCE/Masters/Master 16/` | Governed modular source package for the current playable build line. |
 | Current source entry point | `10_SOURCE/Masters/Master 16/index.html` | Browser entry point for the modular source package. |
-| Current in-game build label | `Master 16.187` | Current internal review patch inside the approved Master 16 source and release package; normal player surfaces display `Version 16.187`. This candidate accelerates Harvest County startup while retaining the 16.186 gameplay repairs and temporary city override; it is not release-clear. |
+| Current in-game build label | `Master 16.188` | Current internal review patch inside the approved Master 16 source and release package; normal player surfaces display `Version 16.188`. This candidate repairs Harvest County's opening economy, world activity, animal descent scale, and Mandate feasibility while retaining the 16.187 startup repair and temporary city override; it is not release-clear. |
 | Current release package | `40_RELEASE/Website_Publish_Package/holesy/` | Current modular browser-client release package and source for the GitHub Pages `docs/` deployment tree. |
-| Current Pages deployment branch | `claude/happy-clarke-ORWAI` | GitHub Pages publishes from this branch's `docs/` folder; commit `727faf6` publishes `Master 16.187`. Live verification on 2026-07-29 confirmed Version 16.187 and a 1.49-second Harvest County Begin-to-gameplay load with preload ready, 8 buildings, 792 edibles, and no browser errors. |
+| Current Pages deployment branch | `claude/happy-clarke-ORWAI` | GitHub Pages publishes from this branch's `docs/` folder; commit `727faf6` currently publishes `Master 16.187`. Live verification on 2026-07-29 confirmed Version 16.187 and a 1.49-second Harvest County Begin-to-gameplay load with preload ready, 8 buildings, 792 edibles, and no browser errors. Master 16.188 remains local until its scoped Pages deployment is committed, pushed, and verified live. |
 | Legacy GoDaddy packages | obsolete | GoDaddy publishing was discontinued when GitHub Pages became the production host; retained historical folders must not drive release decisions. |
 | Live site | `https://klefner.github.io/Holesy/` | GitHub Pages production URL. Verify this URL separately after every deployment; do not infer live state from local package state. |
 | Accepted architecture target | modular browser client split | The committed target is not a single-file game. See `ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`. |
@@ -27,7 +27,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 
 ## Non-Negotiable Distinctions
 
-- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.187` is the current modular review patch on that architecture line.
+- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.188` is the current modular review patch on that architecture line.
 - `Master 16.74` closes `PERF-012` as a production package migration item; future UI, save/load, level/theme, reward/quest, and gameplay-system extraction should be tracked as separate feature-support architecture work.
 - The production package must preserve the modular folder shape unless an emergency temporary bundled hotfix is explicitly approved and documented.
 - GitHub Pages deployment must preserve the full modular package shape under the configured `docs/` source while commits remain narrowly scoped to changed files.

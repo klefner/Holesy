@@ -6,8 +6,13 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.187` and player-facing surfaces show `Version 16.187`
-- `Master 16.187` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.188` and player-facing surfaces show `Version 16.188`
+- `Master 16.188` is the current governed source basis and includes:
+  - a 1,111-object Harvest opening economy with visible cultivated fields, workers, riders, carriages, farm equipment, and expanded livestock
+  - projected-radius feasibility filtering for building-piece Mandates
+  - Harvest-specific Mandate wording and corrected animal-entry perspective scaling
+  - all prior `Master 16.187` Harvest startup work
+- `Master 16.187` includes:
   - parallel Harvest County prefab/destructible preloading beginning at town selection
   - warmed-cache scene construction that removes sequential network latency from the Begin wait
   - all prior `Master 16.186` Medieval sound, scale, and growth work

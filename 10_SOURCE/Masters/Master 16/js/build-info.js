@@ -1,8 +1,18 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 187;
+export const BUILD_SUB = 188;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.188',
+    title: 'Living Harvest economy and fair mandates',
+    notes: [
+      'Fills Harvest County with visible crop rows, field workers, farmhands, livestock, mounted riders, horse-drawn carts, tractors, and plows.',
+      'Expands the opening edible economy and farm-object values so a strong Wave 1 clear reaches the smallest structures without making towers immediate food.',
+      'Checks building Mandates against the radius a player can realistically earn before offering them.',
+      'Stops imported animals from enlarging at hole entry and accelerates their perspective shrink during the fall.',
+    ],
+  },
   {
     label: 'Master 16.187',
     title: 'Fast Harvest County startup',
