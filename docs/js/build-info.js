@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 189;
+export const BUILD_SUB = 190;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.190',
+    title: 'Mandate clarity and ambient audio voice ceiling',
+    notes: [
+      'The Mandate panel instruction line now confirms Surge is active once every target is met, instead of still reading like an open threat next to a Complete! badge and full 4/4 counters.',
+      'Consume sounds (people, trees, cars, small props) now share an 8-voice ceiling the same way building-destruction audio already does, so a dense field devoured in a short burst can no longer overload the audio graph and cut sound out.',
+    ],
+  },
   {
     label: 'Master 16.189',
     title: 'Organic frontier town topology',
