@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 194;
+export const BUILD_SUB = 195;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.195',
+    title: 'Harvest 1,000-object performance budget',
+    notes: [
+      'Caps every Harvest County generation at exactly 1,000 gameplay objects and exposes the generated total for QA.',
+      'Expands Harvest to 28 buildings while reducing each building from 96–128 fragments to 20 meaningful pieces.',
+      'Removes the mass scatter and worker excess while preserving populated roads, farms, animals, and starter-area activity.',
+    ],
+  },
   {
     label: 'Master 16.194',
     title: 'Hole-Eye first-person view',

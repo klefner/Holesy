@@ -17,7 +17,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 | Stable `main` | stale relative to active branch | `main` is not the current gameplay source of truth until an explicit PR/merge updates it. |
 | Current approved source master | `10_SOURCE/Masters/Master 16/` | Governed modular source package for the current playable build line. |
 | Current source entry point | `10_SOURCE/Masters/Master 16/index.html` | Browser entry point for the modular source package. |
-| Current in-game build label | `Master 16.194` | Current published gameplay build based on `Master 16.193`; normal player surfaces display `Version 16.194`. It adds the Hole-Eye first-person camera, accessible view controls, camera-relative keyboard movement, a north compass, and reduced close-view rendering range. |
+| Current in-game build label | `Master 16.195` | Current internal performance-review build based on `Master 16.194`; normal player surfaces display `Version 16.195`. It gives Harvest County an exact 1,000-object generation target, 28 buildings, 20 destruction pieces per building, and sharply reduced loose-object and actor populations; publication remains pending user validation. |
 | Current release package | `40_RELEASE/Website_Publish_Package/holesy/` | Current modular browser-client release package and source for the GitHub Pages `docs/` deployment tree. |
 | Current Pages deployment branch | `claude/happy-clarke-ORWAI` | GitHub Pages publishes from this branch's `docs/` folder; commit `c2ce0d9` publishes `Master 16.194`. Live verification on 2026-07-30 confirmed HTTP 200 plus the deployed `Master 16.194` metadata and `Version 16.194` player-facing labels. |
 | Legacy GoDaddy packages | obsolete | GoDaddy publishing was discontinued when GitHub Pages became the production host; retained historical folders must not drive release decisions. |
@@ -27,7 +27,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 
 ## Non-Negotiable Distinctions
 
-- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.194` is the current modular review patch on that architecture line.
+- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.195` is the current modular review patch on that architecture line.
 - `Master 16.74` closes `PERF-012` as a production package migration item; future UI, save/load, level/theme, reward/quest, and gameplay-system extraction should be tracked as separate feature-support architecture work.
 - The production package must preserve the modular folder shape unless an emergency temporary bundled hotfix is explicitly approved and documented.
 - GitHub Pages deployment must preserve the full modular package shape under the configured `docs/` source while commits remain narrowly scoped to changed files.

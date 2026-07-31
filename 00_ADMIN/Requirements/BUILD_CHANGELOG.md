@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.195 - 2026-07-31
+
+Established the first exact town object-budget trial in Harvest County.
+
+- Generates exactly 1,000 Harvest gameplay objects every run.
+- Increases Harvest from 17 to 28 buildings while reducing each building to 20 destruction pieces.
+- Removes the 11x11 mass-scatter population and 96-worker excess.
+- Reduces individually simulated crops, animals, signs, wagons, road actors, and tumbleweeds while preserving immediate starter-area activity.
+- Exposes the target, generated total, and building-piece count as document telemetry for repeatable QA.
+
 ## Master 16.194 - 2026-07-30
 
 Added the responsive Hole-Eye first-person view.

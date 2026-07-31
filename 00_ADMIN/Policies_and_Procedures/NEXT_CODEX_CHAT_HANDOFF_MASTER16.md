@@ -16,7 +16,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.194`
+- current in-game label: `Master 16.195`
 
 Current basis note:
 
@@ -24,7 +24,7 @@ Current basis note:
 
 What `Master 16` specifically represents:
 
-- `Master 16.194` adds the size-aware Hole-Eye first-person camera, camera-relative keyboard control, north compass, accessible view/pause controls, and reduced close-view render range; it carries forward the `Master 16.193` crowded-scene frame-pacing work, mounted frontier storefront signs, organic rural sites, weathered trails, wagon debris, Mandate-rule correction, and Railgate catalog foundation
+- `Master 16.195` establishes an exact 1,000-object Harvest County generation budget, increases the town to 28 buildings, reduces buildings to 20 fragments each, and removes the mass scatter/worker excess; it carries forward the `Master 16.194` Hole-Eye camera and all prior frontier work
 - it includes the full approved `Master 15` gameplay baseline
 - it carries forward the idle lifecycle cleanup from `Master 15.39`
 - it includes the playable Archive / found-document / lore-achievement-buff system from `Master 15.40`
