@@ -6221,6 +6221,7 @@ const runObjectivesEl = document.getElementById('run-objectives');
 const mandatePanelEl = document.getElementById('mandate-panel');
 const mandateDotsEl = document.getElementById('mandate-dots');
 const mandateLabelEl = document.getElementById('mandate-label');
+const mandateInstructionEl = document.getElementById('mandate-instruction');
 const waveContractEl = document.getElementById('wave-contract');
 const waveContractMandatesEl = document.getElementById('wave-contract-mandates');
 const waveContractGoalsEl = document.getElementById('wave-contract-goals');
@@ -8674,6 +8675,16 @@ function updateMandateHUD() {
   const isComplete = remaining === 0 && mandateTargets.length > 0;
   if (isComplete) mandateComplete = true;
   mandateLabelEl.textContent = remaining === 0 && mandateTargets.length > 0 ? 'Complete!' : `${remaining || MANDATE_COUNT} left`;
+  // "Finish every target for a Mandate Surge" names the reward without ever
+  // explaining what it is -- confusing on its own (reported: read as if
+  // "Mandate Surge" were another objective to complete, not the payoff for
+  // finishing the ones already listed below it). Spell the actual reward
+  // out in plain terms instead, and confirm it's live once earned.
+  if (mandateInstructionEl) {
+    mandateInstructionEl.textContent = isComplete
+      ? 'All targets met — speed boosted and damage reduced for the rest of the wave.'
+      : 'Finish every target below for a speed boost and damage protection this wave.';
+  }
   mandatePanelEl.classList.toggle('mandate-complete', isComplete);
   if (isComplete && !mandateHudWasComplete && deadlineWarningWasVisible) startMandateSuccessPulse();
   if (!isComplete && mandateHudWasComplete) {
@@ -9331,6 +9342,27 @@ function releaseBuildingAudioVoice() {
   activeBuildingAudioVoices = Math.max(0, activeBuildingAudioVoices - 1);
 }
 
+// Same voice-ceiling pattern as the building sounds above, applied to the
+// everyday consume sounds (scream/tree/car/metal via playSample) -- those
+// never got one, so a dense field with a lot devoured in a short burst
+// (e.g. Harvest County's much larger opening object count, or a wide pull
+// radius sweeping through it) can fire dozens of concurrent
+// AudioBufferSourceNodes with reverb sends, which is a well-known way to
+// overload the Web Audio graph and cause exactly the "sound mostly cut
+// out" symptom reported after a busy stretch.
+const MAX_SIMULTANEOUS_AMBIENT_SOUNDS = 8;
+let activeAmbientAudioVoices = 0;
+
+function reserveAmbientAudioVoice() {
+  if (activeAmbientAudioVoices >= MAX_SIMULTANEOUS_AMBIENT_SOUNDS) return false;
+  activeAmbientAudioVoices++;
+  return true;
+}
+
+function releaseAmbientAudioVoice() {
+  activeAmbientAudioVoices = Math.max(0, activeAmbientAudioVoices - 1);
+}
+
 function scheduleAudioBankWarmup(delayMs = 2500) {
   if (audioBanksLoaded || audioBankWarmupTimer || !music.ctx) return;
   audioBankWarmupTimer = setTimeout(() => {
@@ -9387,8 +9419,8 @@ function makeVoiceProfile() {
 }
 
 // Generic sample playback with pitch + gain control, reverb send
-function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12) {
-  if (!music.ctx || !buffer) return;
+function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, onRelease = null) {
+  if (!music.ctx || !buffer) { if (onRelease) onRelease(); return; }
   const ctx = music.ctx;
   const src = ctx.createBufferSource();
   src.buffer = buffer;
@@ -9404,7 +9436,10 @@ function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12) {
     rev.connect(music.reverb);
   }
   activeNonMusicSources.add(src);
-  src.onended = () => activeNonMusicSources.delete(src);
+  src.onended = () => {
+    activeNonMusicSources.delete(src);
+    if (onRelease) onRelease();
+  };
   src.start();
 }
 
@@ -9415,6 +9450,7 @@ function stopActiveNonMusicSources() {
   }
   activeNonMusicSources.clear();
   activeBuildingAudioVoices = 0;
+  activeAmbientAudioVoices = 0;
 }
 
 // Play scream for a person using their voice profile
@@ -9424,7 +9460,8 @@ function playScream(voice, volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const buf = audioBank.screams[voice.sampleIdx];
   if (!buf) return; // not decoded yet — silent this one
-  playSample(buf, voice.playbackRate, voice.gain * volumeScale, 0.12);
+  if (!reserveAmbientAudioVoice()) return;
+  playSample(buf, voice.playbackRate, voice.gain * volumeScale, 0.12, releaseAmbientAudioVoice);
 }
 
 // Play a random tree sound with slight pitch variation
@@ -9435,11 +9472,12 @@ function playTreeSound(volumeScale = 1.0) {
   // Pick a random tree sample that has decoded
   const loaded = audioBank.trees.filter(b => b);
   if (loaded.length === 0) return;
+  if (!reserveAmbientAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   // Slight pitch wobble for variety
   const rate = 0.92 + Math.random() * 0.16;
   const gain = (0.5 + Math.random() * 0.2) * volumeScale;
-  playSample(buf, rate, gain, 0.18);
+  playSample(buf, rate, gain, 0.18, releaseAmbientAudioVoice);
 }
 
 // Play a random car sound with slight pitch variation
@@ -9449,10 +9487,11 @@ function playCarSound(volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.cars.filter(b => b);
   if (loaded.length === 0) return;
+  if (!reserveAmbientAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   const rate = 0.95 + Math.random() * 0.10;
   const gain = (0.55 + Math.random() * 0.20) * volumeScale;
-  playSample(buf, rate, gain, 0.10);
+  playSample(buf, rate, gain, 0.10, releaseAmbientAudioVoice);
 }
 
 // Play a random building demolition sound. Pitch and volume scale with
@@ -9627,12 +9666,13 @@ function playMetalSound(volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.metal.filter(b => b);
   if (loaded.length === 0) return;
+  if (!reserveAmbientAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   // Wide pitch variation (0.82 - 1.22x) — simulates different object sizes/densities.
   // Lower pitch = larger/heavier metal (bench, lamp post). Higher = smaller (cone, mailbox).
   const rate = 0.82 + Math.random() * 0.40;
   const gain = (0.45 + Math.random() * 0.25) * volumeScale;
-  playSample(buf, rate, gain, 0.14);
+  playSample(buf, rate, gain, 0.14, releaseAmbientAudioVoice);
 }
 
 // =========================================================================
