@@ -19,7 +19,10 @@ Date: 2026-07-31
 - Hole-Eye remained toggleable and the north compass remained visible.
 - Browser console inspection reported no errors or warnings.
 - `node --check` passed and changed modular source/release files matched by SHA-256.
+- GitHub Pages commit `0793290` was pushed to `claude/happy-clarke-ORWAI`, and local/remote commit hashes matched after fetch.
+- Public `index.html`, `js/main.js`, and `js/build-info.js` returned HTTP 200 after Pages propagation.
+- Public JavaScript exposed the 12-piece building rule, starter-food telemetry, raised camera constants, and `Master 16.196` metadata.
 
 ## Result
 
-Pass for local review. GitHub Pages publication must be verified separately.
+Pass for local review and the standard GitHub Pages test deployment.
