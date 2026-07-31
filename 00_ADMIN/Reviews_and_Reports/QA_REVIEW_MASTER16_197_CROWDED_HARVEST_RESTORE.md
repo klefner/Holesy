@@ -20,7 +20,7 @@ Date: 2026-07-31
 
 ## Result
 
-Pass for local review; GitHub Pages verification pending publication.
+Pass for local review and the standard GitHub Pages test deployment.
 
 - Browser smoke loaded Harvest County in Waves mode without console errors or warnings.
 - Runtime telemetry reported 3,194 edibles, 17 buildings, 257 workers, 156 animals, 36 road signs, 30 tumbleweeds, and 26 wagon objects.
@@ -28,3 +28,5 @@ Pass for local review; GitHub Pages verification pending publication.
 - `node --check` passed for source and release JavaScript.
 - SHA-256 hashes matched between modular source and release for all five changed package files.
 - Source and release searches found no fixed Harvest object-target constant or old reward terminology.
+- GitHub Pages commit `7bbb88e` was pushed to `claude/happy-clarke-ORWAI`.
+- Public requests returned HTTP 200 and exposed `Master 16.197`, the restored 11x11 scatter grid and 96-worker rule, no fixed Harvest object target, and no old Mandate reward terminology.
