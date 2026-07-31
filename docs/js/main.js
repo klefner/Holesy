@@ -1210,6 +1210,8 @@ const HARVEST_BUILDINGS = Object.freeze([
   { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128, unusualElement: 'water_tank' },
   { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, unusualElement: 'windmill_blades' },
 ]);
+const HARVEST_WORLD_OBJECT_TARGET = 1000;
+const HARVEST_BUILDING_FRAGMENT_TARGET = 20;
 const HARVEST_FRONTIER_BUILDINGS = Object.freeze([
   { ...MEDIEVAL_BUILDINGS[2], role: 'Saloon', theme: 'harvest' },
   { ...MEDIEVAL_BUILDINGS[0], role: 'Sheriff Office and Jail', theme: 'harvest' },
@@ -2426,7 +2428,7 @@ async function addHarvestBuilding(definition, authoredSource, blockTemplates, bp
     bp.z,
     authoredVisual.rotation.y,
     authoredVisual,
-    blockTemplates
+    selectHarvestBuildingFragments(blockTemplates)
   );
 }
 
@@ -2491,7 +2493,7 @@ function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, 
     site.z,
     site.rotation,
     authoredVisual,
-    blockTemplates
+    selectHarvestBuildingFragments(blockTemplates)
   );
   for (const object of physicsStackPieces) {
     if (object.stackCenterX !== site.x || object.stackCenterZ !== site.z) continue;
@@ -2499,8 +2501,19 @@ function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, 
   }
 }
 
+function selectHarvestBuildingFragments(blockTemplates) {
+  if (blockTemplates.length <= HARVEST_BUILDING_FRAGMENT_TARGET) return blockTemplates;
+  const selected = [];
+  for (let i = 0; i < HARVEST_BUILDING_FRAGMENT_TARGET; i++) {
+    selected.push(blockTemplates[Math.floor(i * blockTemplates.length / HARVEST_BUILDING_FRAGMENT_TARGET)]);
+  }
+  return selected;
+}
+
 async function populateHarvestCounty() {
   const generation = harvestEnvironmentGeneration;
+  const objectCountAtStart = objects.length;
+  const buildingPieceCountAtStart = physicsStackPieces.length;
   showEventBanner('DISTRICT: Harvest County', 2200);
   document.documentElement.setAttribute('data-holesy-harvest-cars', '0');
   document.documentElement.setAttribute('data-holesy-harvest-buildings', '0');
@@ -2555,19 +2568,18 @@ async function populateHarvestCounty() {
   let buildingCount = 0;
   let fieldCount = 0;
   const activeParcels = generateHarvestRuralSites();
-  const buildingEvery = 4;
   for (let parcelIndex = 0; parcelIndex < activeParcels.length; parcelIndex++) {
     if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
     const bp = activeParcels[parcelIndex];
     const bounds = { minX: bp.x - 8.7, maxX: bp.x + 8.7, minZ: bp.z - 8.7, maxZ: bp.z + 8.7 };
-    const parcelType = parcelIndex % buildingEvery;
-    if (parcelType === 1 || parcelType === 2) {
-      addHarvestGroundPlane(bp.x, bp.z, 18.5 * bp.scale, 17.2 * bp.scale, parcelType === 1 ? 0x765538 : 0x6f5b36, bp.rotation);
+    const parcelType = parcelIndex % 4;
+    if (parcelType === 2) {
+      addHarvestGroundPlane(bp.x, bp.z, 18.5 * bp.scale, 17.2 * bp.scale, 0x6f5b36, bp.rotation);
     } else if (parcelType === 3) {
       addHarvestGroundPlane(bp.x, bp.z, 17.5 * bp.scale, 16.5 * bp.scale, 0x536b38, bp.rotation);
     }
 
-    if (parcelType === 0) {
+    if (parcelType === 0 || parcelType === 1) {
       const definition = HARVEST_BUILDINGS[buildingCount % HARVEST_BUILDINGS.length];
       const building = buildingAssets.get(definition.assetId);
       if (building) {
@@ -2575,8 +2587,8 @@ async function populateHarvestCounty() {
         buildingCount++;
       }
       const supportKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'cart'];
-      for (let i = 0; i < 16; i++) {
-        const angle = i / 16 * Math.PI * 2;
+      for (let i = 0; i < 3; i++) {
+        const angle = i / 3 * Math.PI * 2;
         addMedievalProp(
           `Harvest ${supportKinds[i % supportKinds.length]}`,
           bp.x + Math.cos(angle) * randomBetween(6.5, 8.2),
@@ -2585,10 +2597,10 @@ async function populateHarvestCounty() {
         );
         edibleCount++;
       }
-    } else if (parcelType === 1 || parcelType === 2) {
+    } else if (parcelType === 2) {
       fieldCount++;
       addHarvestFieldRows(bp, parcelType === 1 ? 0x789a3f : 0xb18b35);
-      for (let row = 0; row < 5; row++) for (let col = 0; col < 7; col++) {
+      for (let row = 0; row < 2; row++) for (let col = 0; col < 4; col++) {
         const cropName = HARVEST_CROPS[(parcelIndex + row * 2 + col) % HARVEST_CROPS.length];
         const template = templates.get(cropName);
         if (!template) continue;
@@ -2596,8 +2608,8 @@ async function populateHarvestCounty() {
         addHarvestConsumable(
           template,
           cropName,
-          bp.x - 6.9 + col * 2.3 + randomBetween(-0.14, 0.14),
-          bp.z - 6.2 + row * 3.1 + randomBetween(-0.14, 0.14),
+          bp.x - 5.4 + col * 3.6 + randomBetween(-0.14, 0.14),
+          bp.z - 3.0 + row * 6.0 + randomBetween(-0.14, 0.14),
           isLargeProduce ? 1.1 : 0.78,
           isLargeProduce ? 0.3 : 0.2,
           isLargeProduce ? 9 : 6,
@@ -2606,18 +2618,17 @@ async function populateHarvestCounty() {
         edibleCount++;
       }
       addHarvestWorker(bp.x - 3.8, bp.z + 1.1, bounds, 'hoe');
-      addHarvestWorker(bp.x + 4.2, bp.z - 2.2, bounds, 'fork');
-      edibleCount += 2;
+      edibleCount++;
       if (parcelIndex % 2 === 0) {
         addHarvestTractor(bp.x + 5.7, bp.z + 5.7, parcelIndex % 4 === 0 ? 0 : Math.PI / 2);
         edibleCount++;
       }
-      for (const [dx, dz, kind] of [[-8,-7,'basket'],[0,-8,'sack'],[8,-7,'crate'],[-8,7,'basket'],[0,8,'hay'],[8,7,'barrel']]) {
+      for (const [dx, dz, kind] of [[-8,-7,'basket'],[8,7,'barrel']]) {
         addMedievalProp(`Field-edge ${kind}`, bp.x + dx, bp.z + dz, kind);
         edibleCount++;
       }
     } else if (parcelType === 3) {
-      const animalKinds = ['Horse', 'Cow', 'Pig', 'Sheep', 'Cow', 'Pig', 'Sheep', 'Cow', 'Horse', 'Pig'];
+      const animalKinds = ['Horse', 'Cow', 'Sheep'];
       for (let i = 0; i < animalKinds.length; i++) {
         const kind = animalKinds[i];
         const template = templates.get(kind);
@@ -2627,7 +2638,7 @@ async function populateHarvestCounty() {
       }
       addHarvestWorker(bp.x, bp.z, bounds, 'fork');
       edibleCount++;
-      for (const [dx, dz, kind] of [[-7,-7,'hay'],[7,-7,'barrel'],[-7,7,'sack'],[7,7,'crate'],[0,-7,'hay'],[0,7,'basket']]) {
+      for (const [dx, dz, kind] of [[-7,-7,'hay'],[7,7,'crate']]) {
         addMedievalProp(`Pasture ${kind}`, bp.x + dx, bp.z + dz, kind);
         edibleCount++;
       }
@@ -2658,7 +2669,7 @@ async function populateHarvestCounty() {
       }
     }
     if (parcelType !== 0) {
-      const fillOffsets = [[-5.5, 0], [5.5, 0], [0, -5.5], [0, 5.5]];
+      const fillOffsets = [[-5.5, 0], [5.5, 0]];
       const fillKinds = ['basket', 'sack', 'crate', 'barrel'];
       for (let i = 0; i < fillOffsets.length; i++) {
         const [dx, dz] = fillOffsets[i];
@@ -2674,7 +2685,7 @@ async function populateHarvestCounty() {
     if (parcelIndex % 3 === 2) await yieldCityBuildFrame();
   }
 
-  for (let i = 0; i < 26; i++) {
+  for (let i = 0; i < 8; i++) {
     const site = activeParcels[(i * 7 + 3) % activeParcels.length];
     const variant = HARVEST_WAGON_VARIANTS[i % HARVEST_WAGON_VARIANTS.length];
     addHarvestWagonDebris(
@@ -2690,12 +2701,12 @@ async function populateHarvestCounty() {
   // around the player. Jittered coverage cells prevent large dead zones while
   // remaining visually irregular from run to run.
   const scatterKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'rock'];
-  const coverageCells = 11;
+  const coverageCells = 5;
   const scatterExtent = Math.min(101, currentArenaHalf - 4);
   const cellSize = scatterExtent * 2 / coverageCells;
   for (let gx = 0; gx < coverageCells; gx++) {
     for (let gz = 0; gz < coverageCells; gz++) {
-      const perCell = 10 + Math.floor(Math.random() * 5);
+      const perCell = 1;
       for (let i = 0; i < perCell; i++) {
         const x = -scatterExtent + (gx + Math.random()) * cellSize;
         const z = -scatterExtent + (gz + Math.random()) * cellSize;
@@ -2711,7 +2722,7 @@ async function populateHarvestCounty() {
         );
         edibleCount++;
       }
-      if (Math.random() < 0.78) {
+      if (Math.random() < 0.15) {
         const centerX = -scatterExtent + (gx + 0.5) * cellSize;
         const centerZ = -scatterExtent + (gz + 0.5) * cellSize;
         const bounds = {
@@ -2754,7 +2765,7 @@ async function populateHarvestCounty() {
 
   const roadWaypoints = HISTORIC_ROAD_ROUTES.flat();
   const horseTemplate = templates.get('Horse');
-  for (let i = 0; i < 32; i++) {
+  for (let i = 0; i < 8; i++) {
     const point = roadWaypoints[i % roadWaypoints.length];
     const next = roadWaypoints[(i + 1) % roadWaypoints.length];
     const x = point[0] + randomBetween(-1.4, 1.4);
@@ -2772,7 +2783,7 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
-  for (let i = 0; i < 36; i++) {
+  for (let i = 0; i < 12; i++) {
     const route = HISTORIC_ROAD_ROUTES[i % HISTORIC_ROAD_ROUTES.length];
     const segmentIndex = 1 + (i * 3 % (route.length - 1));
     const from = route[segmentIndex - 1];
@@ -2792,7 +2803,7 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
-  for (let i = 0; i < 96; i++) {
+  for (let i = 0; i < 12; i++) {
     const site = activeParcels[(i * 5 + 2) % activeParcels.length];
     const bounds = {
       minX: site.x - 9.5, maxX: site.x + 9.5,
@@ -2807,7 +2818,7 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 8; i++) {
     const route = HISTORIC_ROAD_ROUTES[i % HISTORIC_ROAD_ROUTES.length];
     const point = route[(i * 2 + 1) % route.length];
     addHarvestTumbleweed(
@@ -2817,6 +2828,27 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
+  while (objects.length - objectCountAtStart < HARVEST_WORLD_OBJECT_TARGET) {
+    const fillIndex = objects.length - objectCountAtStart;
+    const fillerOrdinal = edibleCount;
+    const angle = fillerOrdinal * 2.399963229728653;
+    const nearPlayer = objects.length - objectCountAtStart < HARVEST_WORLD_OBJECT_TARGET - 24;
+    const radius = nearPlayer ? 6 + (fillerOrdinal % 12) * 1.05 : 18 + (fillerOrdinal % 19) * 4.1;
+    const originX = nearPlayer ? player.x : 0;
+    const originZ = nearPlayer ? player.z : 0;
+    addMedievalProp(
+      `Harvest budget filler ${fillIndex}`,
+      clampToArena(originX + Math.cos(angle) * radius, 3),
+      clampToArena(originZ + Math.sin(angle) * radius, 3),
+      ['basket', 'sack', 'crate', 'barrel', 'hay', 'rock'][fillIndex % 6]
+    );
+    edibleCount++;
+  }
+  const generatedObjectCount = objects.length - objectCountAtStart;
+  const generatedBuildingPieceCount = physicsStackPieces.length - buildingPieceCountAtStart;
+  document.documentElement.setAttribute('data-holesy-harvest-object-target', String(HARVEST_WORLD_OBJECT_TARGET));
+  document.documentElement.setAttribute('data-holesy-harvest-object-total', String(generatedObjectCount));
+  document.documentElement.setAttribute('data-holesy-harvest-building-pieces', String(generatedBuildingPieceCount));
   document.documentElement.setAttribute('data-holesy-harvest-buildings', String(buildingCount));
   document.documentElement.setAttribute('data-holesy-harvest-edibles', String(edibleCount));
   document.documentElement.setAttribute('data-holesy-harvest-animals', String(
@@ -6221,7 +6253,6 @@ const runObjectivesEl = document.getElementById('run-objectives');
 const mandatePanelEl = document.getElementById('mandate-panel');
 const mandateDotsEl = document.getElementById('mandate-dots');
 const mandateLabelEl = document.getElementById('mandate-label');
-const mandateInstructionEl = document.getElementById('mandate-instruction');
 const waveContractEl = document.getElementById('wave-contract');
 const waveContractMandatesEl = document.getElementById('wave-contract-mandates');
 const waveContractGoalsEl = document.getElementById('wave-contract-goals');
@@ -8675,16 +8706,6 @@ function updateMandateHUD() {
   const isComplete = remaining === 0 && mandateTargets.length > 0;
   if (isComplete) mandateComplete = true;
   mandateLabelEl.textContent = remaining === 0 && mandateTargets.length > 0 ? 'Complete!' : `${remaining || MANDATE_COUNT} left`;
-  // "Finish every target for a Mandate Surge" names the reward without ever
-  // explaining what it is -- confusing on its own (reported: read as if
-  // "Mandate Surge" were another objective to complete, not the payoff for
-  // finishing the ones already listed below it). Spell the actual reward
-  // out in plain terms instead, and confirm it's live once earned.
-  if (mandateInstructionEl) {
-    mandateInstructionEl.textContent = isComplete
-      ? 'All targets met — speed boosted and damage reduced for the rest of the wave.'
-      : 'Finish every target below for a speed boost and damage protection this wave.';
-  }
   mandatePanelEl.classList.toggle('mandate-complete', isComplete);
   if (isComplete && !mandateHudWasComplete && deadlineWarningWasVisible) startMandateSuccessPulse();
   if (!isComplete && mandateHudWasComplete) {
@@ -9342,27 +9363,6 @@ function releaseBuildingAudioVoice() {
   activeBuildingAudioVoices = Math.max(0, activeBuildingAudioVoices - 1);
 }
 
-// Same voice-ceiling pattern as the building sounds above, applied to the
-// everyday consume sounds (scream/tree/car/metal via playSample) -- those
-// never got one, so a dense field with a lot devoured in a short burst
-// (e.g. Harvest County's much larger opening object count, or a wide pull
-// radius sweeping through it) can fire dozens of concurrent
-// AudioBufferSourceNodes with reverb sends, which is a well-known way to
-// overload the Web Audio graph and cause exactly the "sound mostly cut
-// out" symptom reported after a busy stretch.
-const MAX_SIMULTANEOUS_AMBIENT_SOUNDS = 8;
-let activeAmbientAudioVoices = 0;
-
-function reserveAmbientAudioVoice() {
-  if (activeAmbientAudioVoices >= MAX_SIMULTANEOUS_AMBIENT_SOUNDS) return false;
-  activeAmbientAudioVoices++;
-  return true;
-}
-
-function releaseAmbientAudioVoice() {
-  activeAmbientAudioVoices = Math.max(0, activeAmbientAudioVoices - 1);
-}
-
 function scheduleAudioBankWarmup(delayMs = 2500) {
   if (audioBanksLoaded || audioBankWarmupTimer || !music.ctx) return;
   audioBankWarmupTimer = setTimeout(() => {
@@ -9419,8 +9419,8 @@ function makeVoiceProfile() {
 }
 
 // Generic sample playback with pitch + gain control, reverb send
-function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, onRelease = null) {
-  if (!music.ctx || !buffer) { if (onRelease) onRelease(); return; }
+function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12) {
+  if (!music.ctx || !buffer) return;
   const ctx = music.ctx;
   const src = ctx.createBufferSource();
   src.buffer = buffer;
@@ -9436,10 +9436,7 @@ function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, on
     rev.connect(music.reverb);
   }
   activeNonMusicSources.add(src);
-  src.onended = () => {
-    activeNonMusicSources.delete(src);
-    if (onRelease) onRelease();
-  };
+  src.onended = () => activeNonMusicSources.delete(src);
   src.start();
 }
 
@@ -9450,7 +9447,6 @@ function stopActiveNonMusicSources() {
   }
   activeNonMusicSources.clear();
   activeBuildingAudioVoices = 0;
-  activeAmbientAudioVoices = 0;
 }
 
 // Play scream for a person using their voice profile
@@ -9460,8 +9456,7 @@ function playScream(voice, volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const buf = audioBank.screams[voice.sampleIdx];
   if (!buf) return; // not decoded yet — silent this one
-  if (!reserveAmbientAudioVoice()) return;
-  playSample(buf, voice.playbackRate, voice.gain * volumeScale, 0.12, releaseAmbientAudioVoice);
+  playSample(buf, voice.playbackRate, voice.gain * volumeScale, 0.12);
 }
 
 // Play a random tree sound with slight pitch variation
@@ -9472,12 +9467,11 @@ function playTreeSound(volumeScale = 1.0) {
   // Pick a random tree sample that has decoded
   const loaded = audioBank.trees.filter(b => b);
   if (loaded.length === 0) return;
-  if (!reserveAmbientAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   // Slight pitch wobble for variety
   const rate = 0.92 + Math.random() * 0.16;
   const gain = (0.5 + Math.random() * 0.2) * volumeScale;
-  playSample(buf, rate, gain, 0.18, releaseAmbientAudioVoice);
+  playSample(buf, rate, gain, 0.18);
 }
 
 // Play a random car sound with slight pitch variation
@@ -9487,11 +9481,10 @@ function playCarSound(volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.cars.filter(b => b);
   if (loaded.length === 0) return;
-  if (!reserveAmbientAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   const rate = 0.95 + Math.random() * 0.10;
   const gain = (0.55 + Math.random() * 0.20) * volumeScale;
-  playSample(buf, rate, gain, 0.10, releaseAmbientAudioVoice);
+  playSample(buf, rate, gain, 0.10);
 }
 
 // Play a random building demolition sound. Pitch and volume scale with
@@ -9666,13 +9659,12 @@ function playMetalSound(volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.metal.filter(b => b);
   if (loaded.length === 0) return;
-  if (!reserveAmbientAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   // Wide pitch variation (0.82 - 1.22x) — simulates different object sizes/densities.
   // Lower pitch = larger/heavier metal (bench, lamp post). Higher = smaller (cone, mailbox).
   const rate = 0.82 + Math.random() * 0.40;
   const gain = (0.45 + Math.random() * 0.25) * volumeScale;
-  playSample(buf, rate, gain, 0.14, releaseAmbientAudioVoice);
+  playSample(buf, rate, gain, 0.14);
 }
 
 // =========================================================================

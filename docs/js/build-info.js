@@ -5,10 +5,11 @@ export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}`
 export const BUILD_CHANGELOG = Object.freeze([
   {
     label: 'Master 16.195',
-    title: 'Mandate reward copy and ambient audio voice ceiling',
+    title: 'Harvest 1,000-object performance budget',
     notes: [
-      'The Mandate panel and pre-wave briefing no longer name the "Mandate Surge" reward without explaining it -- both now say plainly what finishing every target grants (a speed boost and damage protection this wave), and the panel confirms it once earned.',
-      'Consume sounds (people, trees, cars, small props) now share an 8-voice ceiling the same way building-destruction audio already does, so a dense field devoured in a short burst can no longer overload the audio graph and cut sound out.',
+      'Caps every Harvest County generation at exactly 1,000 gameplay objects and exposes the generated total for QA.',
+      'Expands Harvest to 28 buildings while reducing each building from 96–128 fragments to 20 meaningful pieces.',
+      'Removes the mass scatter and worker excess while preserving populated roads, farms, animals, and starter-area activity.',
     ],
   },
   {
