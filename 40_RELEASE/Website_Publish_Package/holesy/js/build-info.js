@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 193;
+export const BUILD_SUB = 194;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.194',
+    title: 'Hole-Eye first-person view',
+    notes: [
+      'Adds a fast first-person Hole-Eye view with size-aware camera response and camera-relative keyboard control.',
+      'Switches instantly with the HUD button, V, Escape, or a debounced mouse-wheel gesture while keeping Pause accessible with P.',
+      'Adds a north-pointing compass for location-based Mandates and trims first-person camera range for steadier performance.',
+    ],
+  },
   {
     label: 'Master 16.193',
     title: 'Crowd-scale frame pacing',

@@ -1069,6 +1069,19 @@ scene.fog = new THREE.Fog(0x9ec7e8, 80, HOLESY_CONFIG.performance.profiles[HOLES
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 500);
 camera.position.set(0, 40, 30);
 camera.lookAt(0, 0, 0);
+const OVERHEAD_CAMERA_FAR = 500;
+const HOLE_EYE_CAMERA_FAR = 175;
+const HOLE_EYE_FOG_NEAR = 42;
+const HOLE_EYE_FOG_FAR = 145;
+let holeEyeViewEnabled = false;
+let holeEyeViewBlend = 0;
+const holeEyeForward = new THREE.Vector2(0, -1);
+const holeEyeDesiredForward = new THREE.Vector2(0, -1);
+const cameraLookTarget = new THREE.Vector3(0, 0, 0);
+let lastCameraFocusX = 0;
+let lastCameraFocusZ = 0;
+let cameraFocusTracked = false;
+let lastCameraModeFar = OVERHEAD_CAMERA_FAR;
 
 // Lights
 const ambient = new THREE.AmbientLight(0xffffff, 0.55);
@@ -5525,6 +5538,7 @@ function updateHoleVisual(h) {
   const s = Math.max(3, h.radius * 2.2);
   h.labelSprite.scale.set(s, s / 4, 1);
   h.labelSprite.position.y = Math.max(2.5, h.radius * 1.5 + 1);
+  h.labelSprite.visible = !(h.isPlayer && holeEyeViewBlend > 0.45);
 
   if (h.vortexArcGroup && h.vortexArcs) {
     const musicState = holesyMusicState;
@@ -5999,7 +6013,12 @@ const hitPt = new THREE.Vector3();
 function getMouseGround() {
   ndcVec.set(input.mouseNormX, -input.mouseNormY);
   raycaster.setFromCamera(ndcVec, camera);
-  raycaster.ray.intersectPlane(groundPlane, hitPt);
+  if (!raycaster.ray.intersectPlane(groundPlane, hitPt)) {
+    const dx = raycaster.ray.direction.x;
+    const dz = raycaster.ray.direction.z;
+    const mag = Math.hypot(dx, dz) || 1;
+    hitPt.set(player.x + (dx / mag) * getPlayerPrecisionReach(), 0, player.z + (dz / mag) * getPlayerPrecisionReach());
+  }
   return hitPt;
 }
 
@@ -6019,10 +6038,20 @@ function resolvePlayerInputSource() {
 }
 
 function applyKeyboardControl(keyIntent) {
-  const mag = Math.hypot(keyIntent.dx, keyIntent.dz);
+  let intentX = keyIntent.dx;
+  let intentZ = keyIntent.dz;
+  if (holeEyeViewEnabled || holeEyeViewBlend > 0.5) {
+    const forwardAmount = -keyIntent.dz;
+    const rightAmount = keyIntent.dx;
+    intentX = holeEyeForward.x * forwardAmount - holeEyeForward.y * rightAmount;
+    intentZ = holeEyeForward.y * forwardAmount + holeEyeForward.x * rightAmount;
+    const facingMagnitude = Math.hypot(intentX, intentZ);
+    if (facingMagnitude > 0.05) holeEyeDesiredForward.set(intentX / facingMagnitude, intentZ / facingMagnitude);
+  }
+  const mag = Math.hypot(intentX, intentZ);
   const reach = HOLESY_CONFIG.input.keyboardReach;
-  player.targetX = clampToArena(player.x + (keyIntent.dx / mag) * reach, 2);
-  player.targetZ = clampToArena(player.z + (keyIntent.dz / mag) * reach, 2);
+  player.targetX = clampToArena(player.x + (intentX / mag) * reach, 2);
+  player.targetZ = clampToArena(player.z + (intentZ / mag) * reach, 2);
   player._lastInputWasKeys = true;
 }
 
@@ -6046,6 +6075,9 @@ function applyMouseControl() {
   const scale = distance > reach ? reach / distance : 1;
   player.targetX = clampToArena(player.x + dx * scale, 2);
   player.targetZ = clampToArena(player.z + dz * scale, 2);
+  if ((holeEyeViewEnabled || holeEyeViewBlend > 0.5) && distance > 0.25) {
+    holeEyeDesiredForward.set(dx / distance, dz / distance);
+  }
 }
 
 function getPlayerPrecisionReach() {
@@ -6066,8 +6098,17 @@ function applyTouchControl() {
   const nx = (input.dragDx / mag) * scale;
   const ny = (input.dragDy / mag) * scale;
   const reach = getPlayerPrecisionReach();
-  player.targetX = clampToArena(player.x + nx * reach, 2);
-  player.targetZ = clampToArena(player.z + ny * reach, 2);
+  let worldX = nx;
+  let worldZ = ny;
+  if (holeEyeViewEnabled || holeEyeViewBlend > 0.5) {
+    const forwardAmount = -ny;
+    worldX = holeEyeForward.x * forwardAmount - holeEyeForward.y * nx;
+    worldZ = holeEyeForward.y * forwardAmount + holeEyeForward.x * nx;
+    const worldMag = Math.hypot(worldX, worldZ);
+    if (worldMag > 0.05) holeEyeDesiredForward.set(worldX / worldMag, worldZ / worldMag);
+  }
+  player.targetX = clampToArena(player.x + worldX * reach, 2);
+  player.targetZ = clampToArena(player.z + worldZ * reach, 2);
 }
 
 function updatePlayerInputTarget() {
@@ -6189,6 +6230,8 @@ let waveContractCompleteTimer = null;
 let waveContractSkipToken = null;
 const adaptiveAssistIndicatorEl = document.getElementById('adaptive-assist-indicator');
 const mobileHudToggleBtn = document.getElementById('mobile-hud-toggle');
+const povToggleBtn = document.getElementById('pov-toggle-btn');
+const povCompassArrow = document.getElementById('pov-compass-arrow');
 const skipWaitBtn = document.getElementById('skip-wait-btn');
 const hapticTestBtn = document.getElementById('haptic-test-btn');
 const hapticStatusEl = document.getElementById('haptic-status');
@@ -12933,6 +12976,41 @@ pauseBtn.addEventListener('click', () => {
   if (pauseOverlay.classList.contains('hidden')) pauseGame();
   else resumeGame();
 });
+function syncHoleEyeViewControl() {
+  if (!povToggleBtn) return;
+  povToggleBtn.setAttribute('aria-pressed', holeEyeViewEnabled ? 'true' : 'false');
+  povToggleBtn.setAttribute('aria-label', holeEyeViewEnabled ? 'Return to third-person overhead view' : 'Switch to first-person Hole-Eye View');
+  povToggleBtn.textContent = holeEyeViewEnabled ? 'VIEW: 1ST · V/ESC' : 'VIEW: 3RD';
+  document.body.classList.toggle('hole-eye-view', holeEyeViewEnabled);
+}
+
+function setHoleEyeView(enabled) {
+  holeEyeViewEnabled = !!enabled;
+  if (holeEyeViewEnabled && player?.alive) {
+    releaseMouseControl();
+    const centerDistance = Math.hypot(player.x, player.z);
+    if (centerDistance > 1) holeEyeDesiredForward.set(-player.x / centerDistance, -player.z / centerDistance);
+  }
+  syncHoleEyeViewControl();
+  wakeRenderLoop();
+}
+
+function toggleHoleEyeView() {
+  if (!isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION)) return;
+  setHoleEyeView(!holeEyeViewEnabled);
+}
+
+if (povToggleBtn) povToggleBtn.addEventListener('click', toggleHoleEyeView);
+let lastViewWheelToggleAt = 0;
+canvas.addEventListener('wheel', (e) => {
+  if (!isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION)) return;
+  if (Math.abs(e.deltaY) < 12) return;
+  e.preventDefault();
+  const now = performance.now();
+  if (now - lastViewWheelToggleAt < 650) return;
+  lastViewWheelToggleAt = now;
+  toggleHoleEyeView();
+}, { passive: false });
 if (timeCycleBtn) timeCycleBtn.addEventListener('click', () => cycleTimeOfDayLook());
 pauseResumeBtn.addEventListener('click', () => resumeGame());
 pauseSaveBtn.addEventListener('click', () => saveEndlessGame());
@@ -12946,6 +13024,17 @@ pauseExitBtn.addEventListener('click', () => {
 });
 
 window.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'v' && !e.repeat) {
+    e.preventDefault();
+    toggleHoleEyeView();
+    return;
+  }
+  if (e.key.toLowerCase() === 'p' && !e.repeat && canUsePauseMenu()) {
+    e.preventDefault();
+    if (pauseOverlay.classList.contains('hidden')) pauseGame();
+    else resumeGame();
+    return;
+  }
   if (e.key === '`') {
     e.preventDefault();
     toggleDebugOverlay();
@@ -12960,6 +13049,11 @@ window.addEventListener('keydown', (e) => {
     if (!loreModal.classList.contains('hidden')) {
       e.preventDefault();
       closeLoreArchive();
+      return;
+    }
+    if (holeEyeViewEnabled) {
+      e.preventDefault();
+      setHoleEyeView(false);
       return;
     }
     if (!canUsePauseMenu()) return;
@@ -17791,6 +17885,90 @@ window.addEventListener('pageshow', (event) => {
   syncTitleAudioToGameState();
 });
 
+function updateGameplayCamera(focus, dt, now) {
+  const targetBlend = holeEyeViewEnabled ? 1 : 0;
+  const transitionAlpha = 1 - Math.exp(-dt * 11);
+  holeEyeViewBlend += (targetBlend - holeEyeViewBlend) * transitionAlpha;
+  if (Math.abs(targetBlend - holeEyeViewBlend) < 0.002) holeEyeViewBlend = targetBlend;
+
+  if (!cameraFocusTracked) {
+    lastCameraFocusX = focus.x;
+    lastCameraFocusZ = focus.z;
+    cameraFocusTracked = true;
+  } else {
+    const focusDx = focus.x - lastCameraFocusX;
+    const focusDz = focus.z - lastCameraFocusZ;
+    const focusTravel = Math.hypot(focusDx, focusDz);
+    if (holeEyeViewBlend < 0.15 && focusTravel > 0.02) {
+      holeEyeDesiredForward.set(focusDx / focusTravel, focusDz / focusTravel);
+    }
+    lastCameraFocusX = focus.x;
+    lastCameraFocusZ = focus.z;
+  }
+
+  const cameraSizeResponse = THREE.MathUtils.clamp((focus.radius - MIN_RADIUS) / 9, 0, 1);
+  const headingRate = THREE.MathUtils.lerp(3.6, 7.5, cameraSizeResponse);
+  const headingAlpha = 1 - Math.exp(-dt * headingRate);
+  holeEyeForward.lerp(holeEyeDesiredForward, headingAlpha);
+  if (holeEyeForward.lengthSq() < 0.001) holeEyeForward.set(0, -1);
+  else holeEyeForward.normalize();
+  if (povCompassArrow && holeEyeViewBlend > 0.01) {
+    const northAngle = Math.atan2(-holeEyeForward.x, -holeEyeForward.y);
+    povCompassArrow.style.transform = `translateX(-50%) rotate(${northAngle}rad)`;
+  }
+
+  const overheadHeight = 30 + focus.radius * 1.8;
+  const overheadBack = 20 + focus.radius * 1.5;
+  const overheadX = focus.x;
+  const overheadY = overheadHeight;
+  const overheadZ = focus.z + overheadBack;
+
+  const eyeBack = THREE.MathUtils.clamp(4 + focus.radius * 0.65, 4.6, 10);
+  const eyeHeight = THREE.MathUtils.clamp(2.75 + focus.radius * 0.38, 3.1, 7);
+  const eyeX = focus.x - holeEyeForward.x * eyeBack;
+  const eyeY = eyeHeight;
+  const eyeZ = focus.z - holeEyeForward.y * eyeBack;
+
+  const desiredX = THREE.MathUtils.lerp(overheadX, eyeX, holeEyeViewBlend);
+  const desiredY = THREE.MathUtils.lerp(overheadY, eyeY, holeEyeViewBlend);
+  const desiredZ = THREE.MathUtils.lerp(overheadZ, eyeZ, holeEyeViewBlend);
+  const eyeFollowRate = THREE.MathUtils.lerp(7.5, 12.5, cameraSizeResponse);
+  const followRate = THREE.MathUtils.lerp(4, eyeFollowRate, holeEyeViewBlend);
+  const followAlpha = 1 - Math.exp(-dt * followRate);
+  camera.position.x += (desiredX - camera.position.x) * followAlpha;
+  camera.position.y += (desiredY - camera.position.y) * followAlpha;
+  camera.position.z += (desiredZ - camera.position.z) * followAlpha;
+
+  const eyeLookDistance = THREE.MathUtils.clamp(8 + focus.radius * 0.55, 8, 18);
+  const desiredLookX = THREE.MathUtils.lerp(focus.x, focus.x + holeEyeForward.x * eyeLookDistance, holeEyeViewBlend);
+  const desiredLookY = 0;
+  const desiredLookZ = THREE.MathUtils.lerp(focus.z, focus.z + holeEyeForward.y * eyeLookDistance, holeEyeViewBlend);
+  cameraLookTarget.x += (desiredLookX - cameraLookTarget.x) * followAlpha;
+  cameraLookTarget.y += (desiredLookY - cameraLookTarget.y) * followAlpha;
+  cameraLookTarget.z += (desiredLookZ - cameraLookTarget.z) * followAlpha;
+
+  if (player.unitClearShakeUntil && now < player.unitClearShakeUntil) {
+    const shakeT = (player.unitClearShakeUntil - now) / 520;
+    const shake = Math.max(0, shakeT) * THREE.MathUtils.lerp(0.55, 0.22, holeEyeViewBlend);
+    camera.position.x += (Math.random() - 0.5) * shake;
+    camera.position.y += (Math.random() - 0.5) * shake * 0.6;
+    camera.position.z += (Math.random() - 0.5) * shake;
+  }
+  camera.lookAt(cameraLookTarget);
+
+  const desiredFar = holeEyeViewBlend > 0.5 ? HOLE_EYE_CAMERA_FAR : OVERHEAD_CAMERA_FAR;
+  if (desiredFar !== lastCameraModeFar) {
+    lastCameraModeFar = desiredFar;
+    camera.far = desiredFar;
+    camera.updateProjectionMatrix();
+  }
+  if (scene.fog) {
+    const profileFogFar = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.fogFar;
+    scene.fog.near = THREE.MathUtils.lerp(80, HOLE_EYE_FOG_NEAR, holeEyeViewBlend);
+    scene.fog.far = THREE.MathUtils.lerp(profileFogFar, Math.min(profileFogFar, HOLE_EYE_FOG_FAR), holeEyeViewBlend);
+  }
+}
+
 function animate(frameNow = performance.now()) {
   animationFrameId = null;
   if (lifecycleTerminated) return;
@@ -18020,19 +18198,7 @@ function animate(frameNow = performance.now()) {
     const focus = player.alive ? player : (holes.find(h => h.alive) || player);
     // Camera follows focus hole. Zoom-out coefficient is deliberately small so
     // the hole visibly grows on screen rather than staying the same perceived size.
-    const camHeight = 30 + focus.radius * 1.8;
-    const camBack = 20 + focus.radius * 1.5;
-    camera.position.x += (focus.x - camera.position.x) * Math.min(1, dt * 4);
-    camera.position.z += (focus.z + camBack - camera.position.z) * Math.min(1, dt * 4);
-    camera.position.y += (camHeight - camera.position.y) * Math.min(1, dt * 4);
-    if (player.unitClearShakeUntil && now < player.unitClearShakeUntil) {
-      const shakeT = (player.unitClearShakeUntil - now) / 520;
-      const shake = Math.max(0, shakeT) * 0.55;
-      camera.position.x += (Math.random() - 0.5) * shake;
-      camera.position.y += (Math.random() - 0.5) * shake * 0.6;
-      camera.position.z += (Math.random() - 0.5) * shake;
-    }
-    camera.lookAt(focus.x, 0, focus.z);
+    updateGameplayCamera(focus, dt, now);
 
     if (now - lastHudUpdateAt >= HUD_UPDATE_INTERVAL_MS) {
       lastHudUpdateAt = now;

@@ -6,8 +6,12 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.193` and player-facing surfaces show `Version 16.193`
-- `Master 16.193` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.194` and player-facing surfaces show `Version 16.194`
+- `Master 16.194` is the current governed source basis and includes:
+  - a fast Hole-Eye first-person camera with size-aware response, camera-relative WASD/arrow movement, and reduced close-view render range
+  - visible HUD, keyboard, Escape, and debounced mouse-wheel transitions between first-person and overhead third-person views
+  - a first-person compass that continuously points north for location-based Mandates
+- `Master 16.193` includes:
   - a world-cell proximity index that limits per-frame eating, pulling, jam, and blocked-object checks to objects near a living hole
   - 30 Hz passive simulation for pedestrians, animals, and tumbleweeds while player control, panic behavior, physics, and consumption remain display-frame responsive
   - faster adaptive render scaling under sustained slow frames, with gradual resolution recovery after performance stabilizes

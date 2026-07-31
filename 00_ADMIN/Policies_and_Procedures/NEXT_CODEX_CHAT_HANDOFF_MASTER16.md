@@ -16,7 +16,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.193`
+- current in-game label: `Master 16.194`
 
 Current basis note:
 
@@ -24,7 +24,7 @@ Current basis note:
 
 What `Master 16` specifically represents:
 
-- `Master 16.193` preserves the crowded Harvest population while adding nearby-cell interaction indexing, 30 Hz passive pedestrian/animal/tumbleweed simulation, and faster adaptive render scaling; it carries forward the mounted frontier storefront signs, organic rural sites, weathered trails, wagon debris, Mandate-rule correction, and Railgate catalog foundation
+- `Master 16.194` adds the size-aware Hole-Eye first-person camera, camera-relative keyboard control, north compass, accessible view/pause controls, and reduced close-view render range; it carries forward the `Master 16.193` crowded-scene frame-pacing work, mounted frontier storefront signs, organic rural sites, weathered trails, wagon debris, Mandate-rule correction, and Railgate catalog foundation
 - it includes the full approved `Master 15` gameplay baseline
 - it carries forward the idle lifecycle cleanup from `Master 15.39`
 - it includes the playable Archive / found-document / lore-achievement-buff system from `Master 15.40`

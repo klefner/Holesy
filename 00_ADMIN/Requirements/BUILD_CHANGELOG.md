@@ -2,6 +2,15 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.194 - 2026-07-30
+
+Added the responsive Hole-Eye first-person view.
+
+- Adds size-aware camera sensitivity and camera-relative WASD/arrow movement.
+- Keeps the mouse cursor and HUD controls available, adds `P` pause access, and lets `V`, Escape, the HUD button, or a debounced mouse-wheel gesture change views.
+- Adds a north-pointing first-person compass for location-based Mandates.
+- Reduces first-person camera range and fog distance to limit rendering cost.
+
 ## Master 16.193 - 2026-07-30
 
 Improved crowded-scene frame pacing without thinning the town.

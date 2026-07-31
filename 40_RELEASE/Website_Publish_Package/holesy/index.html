@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="holesy-build" content="Master 16.193" />
+<meta name="holesy-build" content="Master 16.194" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 <title>Downtown Devour</title>
   <meta name="theme-color" content="#071326" />
@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/holesy-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/holesy-180.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/styles.css?v=16.193" />
+  <link rel="stylesheet" href="css/styles.css?v=16.194" />
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -75,7 +75,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-      <button id="build-version" type="button" aria-label="Show update notes">Version 16.193</button>
+      <button id="build-version" type="button" aria-label="Show update notes">Version 16.194</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -164,14 +164,19 @@
 </div>
 
 <div id="game-controls" class="hidden">
+  <button id="pov-toggle-btn" type="button" aria-label="Switch to first-person Hole-Eye View" aria-pressed="false" title="View: WASD/arrows move · mouse wheel or V toggles · Esc exits · P pauses">VIEW: 3RD</button>
   <button id="time-cycle-btn" type="button" aria-label="Cycle time of day">Time: Mid Day</button>
-  <button id="pause-btn" type="button">Pause</button>
+  <button id="pause-btn" type="button" title="Pause (P)">Pause</button>
+</div>
+<div id="pov-compass" aria-label="Compass: arrow points north">
+  <span class="pov-compass-n">N</span>
+  <span id="pov-compass-arrow" aria-hidden="true">▲</span>
 </div>
 
 <div id="pause-overlay" class="hidden">
   <h2>Paused</h2>
   <div class="pause-sub">Take a breather, then jump back in or return to the game mode selector.</div>
-    <div class="pause-version" id="pause-version-label">Version 16.193</div>
+    <div class="pause-version" id="pause-version-label">Version 16.194</div>
   <div class="pause-status" id="pause-status-message" role="status" aria-live="polite"></div>
   <div class="pause-btns">
     <button class="pause-resume" id="pause-resume-btn" type="button">Resume</button>
@@ -251,7 +256,7 @@
 }
 </script>
 
-<script type="module" src="js/main.js?v=16.193"></script>
+<script type="module" src="js/main.js?v=16.194"></script>
 </body>
 </html>
 
