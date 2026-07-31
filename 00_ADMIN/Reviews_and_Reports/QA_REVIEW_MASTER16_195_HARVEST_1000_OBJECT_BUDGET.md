@@ -18,7 +18,11 @@ Date: 2026-07-31
 - Browser console inspection reported no runtime errors.
 - `node --check` passed for source and release JavaScript.
 - Source and release hashes matched for all changed package files.
+- All 559 release-package files matched the GitHub Pages `docs/` deployment tree by SHA-256 before publication.
+- GitHub Pages commit `0011355` was pushed to `claude/happy-clarke-ORWAI`, and local/remote commit hashes matched after fetch.
+- Public requests for `index.html`, `js/main.js`, and `js/build-info.js` returned HTTP 200 after Pages propagation.
+- Public `js/main.js` exposed the 1,000-object Harvest target, 20-fragment building target, and generated-object telemetry; public build metadata reported `Master 16.195`.
 
 ## Result
 
-Pass for local review. Production publication is not claimed by this report.
+Pass for local review and the standard GitHub Pages test deployment.

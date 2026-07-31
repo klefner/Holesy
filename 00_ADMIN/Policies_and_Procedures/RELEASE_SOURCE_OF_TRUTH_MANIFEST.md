@@ -8,7 +8,7 @@ Before any release packaging, live upload, master promotion, backlog sequencing,
 
 The acting developer must also read the repo-root `AGENTS.md` so release, implementation, QA, and handoff responsibilities are applied consistently across Codex, Claude, and other AI systems.
 
-## Current State As Of 2026-07-30
+## Current State As Of 2026-07-31
 
 | Layer | Current value | Meaning |
 | --- | --- | --- |
@@ -17,9 +17,9 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 | Stable `main` | stale relative to active branch | `main` is not the current gameplay source of truth until an explicit PR/merge updates it. |
 | Current approved source master | `10_SOURCE/Masters/Master 16/` | Governed modular source package for the current playable build line. |
 | Current source entry point | `10_SOURCE/Masters/Master 16/index.html` | Browser entry point for the modular source package. |
-| Current in-game build label | `Master 16.195` | Current internal performance-review build based on `Master 16.194`; normal player surfaces display `Version 16.195`. It gives Harvest County an exact 1,000-object generation target, 28 buildings, 20 destruction pieces per building, and sharply reduced loose-object and actor populations; publication remains pending user validation. |
+| Current in-game build label | `Master 16.195` | Current GitHub Pages test build based on `Master 16.194`; normal player surfaces display `Version 16.195`. It gives Harvest County an exact 1,000-object generation target, 28 buildings, 20 destruction pieces per building, and sharply reduced loose-object and actor populations. |
 | Current release package | `40_RELEASE/Website_Publish_Package/holesy/` | Current modular browser-client release package and source for the GitHub Pages `docs/` deployment tree. |
-| Current Pages deployment branch | `claude/happy-clarke-ORWAI` | GitHub Pages publishes from this branch's `docs/` folder; commit `c2ce0d9` publishes `Master 16.194`. Live verification on 2026-07-30 confirmed HTTP 200 plus the deployed `Master 16.194` metadata and `Version 16.194` player-facing labels. |
+| Current Pages deployment branch | `claude/happy-clarke-ORWAI` | GitHub Pages publishes from this branch's `docs/` folder; commit `0011355` publishes the complete `Master 16.195` package. Live verification on 2026-07-31 confirmed HTTP 200, the deployed `Master 16.195` metadata, and the public JavaScript rules for the 1,000-object Harvest cap, 20 fragments per building, and generation telemetry. |
 | Legacy GoDaddy packages | obsolete | GoDaddy publishing was discontinued when GitHub Pages became the production host; retained historical folders must not drive release decisions. |
 | Live site | `https://klefner.github.io/Holesy/` | GitHub Pages production URL. Verify this URL separately after every deployment; do not infer live state from local package state. |
 | Accepted architecture target | modular browser client split | The committed target is not a single-file game. See `ARCHITECTURE_DECISION_MODULAR_CLIENT_SPLIT.md`. |
