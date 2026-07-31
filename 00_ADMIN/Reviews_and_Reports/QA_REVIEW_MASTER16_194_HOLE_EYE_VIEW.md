@@ -18,7 +18,9 @@ Date: 2026-07-30
 - Local browser smoke opened Harvest County, entered Hole-Eye View, and confirmed the first-person control state, north compass, visible HUD controls, and return-to-overhead action.
 - Local browser console inspection found no runtime errors.
 - First-person camera uses a shorter far plane and fog range than overhead view.
+- Pages commit `c2ce0d9` published the full modular package from `docs/`.
+- Live verification returned HTTP 200 and confirmed deployed `Master 16.194` metadata plus `Version 16.194` player-facing labels.
 
 ## Result
 
-Pass for local review. Production state is not claimed by this report.
+Pass for local and production publication review.
