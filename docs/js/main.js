@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.192';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.196.2';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1211,7 +1211,10 @@ const HARVEST_BUILDINGS = Object.freeze([
   { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, unusualElement: 'windmill_blades' },
 ]);
 const HARVEST_WORLD_OBJECT_TARGET = 1000;
-const HARVEST_BUILDING_FRAGMENT_TARGET = 20;
+// Dormant destruction pieces share the same world-object budget as edible
+// starter content. Twelve well-spaced pieces preserve readable collapse while
+// leaving most of Harvest's fixed budget available for first-wave growth.
+const HARVEST_BUILDING_FRAGMENT_TARGET = 12;
 const HARVEST_FRONTIER_BUILDINGS = Object.freeze([
   { ...MEDIEVAL_BUILDINGS[2], role: 'Saloon', theme: 'harvest' },
   { ...MEDIEVAL_BUILDINGS[0], role: 'Sheriff Office and Jail', theme: 'harvest' },
@@ -2828,19 +2831,24 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
+  const harvestObjectsBeforeBudgetFill = objects.length - objectCountAtStart;
   while (objects.length - objectCountAtStart < HARVEST_WORLD_OBJECT_TARGET) {
     const fillIndex = objects.length - objectCountAtStart;
-    const fillerOrdinal = edibleCount;
+    const fillerOrdinal = fillIndex - harvestObjectsBeforeBudgetFill;
     const angle = fillerOrdinal * 2.399963229728653;
-    const nearPlayer = objects.length - objectCountAtStart < HARVEST_WORLD_OBJECT_TARGET - 24;
-    const radius = nearPlayer ? 6 + (fillerOrdinal % 12) * 1.05 : 18 + (fillerOrdinal % 19) * 4.1;
-    const originX = nearPlayer ? player.x : 0;
-    const originZ = nearPlayer ? player.z : 0;
+    const starterFood = fillerOrdinal < 240;
+    const radius = starterFood
+      ? 4.2 + Math.sqrt(fillerOrdinal) * 1.05
+      : 18 + (fillerOrdinal % 19) * 4.1;
+    const originX = starterFood ? player.x : 0;
+    const originZ = starterFood ? player.z : 0;
+    const starterKinds = ['basket', 'sack', 'basket', 'crate', 'sack', 'barrel'];
+    const countyKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'rock'];
     addMedievalProp(
-      `Harvest budget filler ${fillIndex}`,
+      `${starterFood ? 'Harvest starter food' : 'Harvest budget filler'} ${fillIndex}`,
       clampToArena(originX + Math.cos(angle) * radius, 3),
       clampToArena(originZ + Math.sin(angle) * radius, 3),
-      ['basket', 'sack', 'crate', 'barrel', 'hay', 'rock'][fillIndex % 6]
+      (starterFood ? starterKinds : countyKinds)[fillIndex % 6]
     );
     edibleCount++;
   }
@@ -2851,6 +2859,21 @@ async function populateHarvestCounty() {
   document.documentElement.setAttribute('data-holesy-harvest-building-pieces', String(generatedBuildingPieceCount));
   document.documentElement.setAttribute('data-holesy-harvest-buildings', String(buildingCount));
   document.documentElement.setAttribute('data-holesy-harvest-edibles', String(edibleCount));
+  const starterFoodObjects = objects.filter(obj =>
+    obj.isHarvestAsset && String(obj.medievalAssetName || '').startsWith('Harvest starter food')
+  );
+  const projectedFirstWaveRadius = estimatePlayerReachableRadiusForMandate();
+  const reachableBuildingStacks = new Set(
+    physicsStackPieces
+      .filter(piece => (piece.stackCollapseSize || 0) <= projectedFirstWaveRadius * 0.95)
+      .map(piece => piece.stackId)
+  );
+  document.documentElement.setAttribute('data-holesy-harvest-starter-food', String(starterFoodObjects.length));
+  document.documentElement.setAttribute('data-holesy-harvest-starter-value', String(
+    starterFoodObjects.reduce((total, obj) => total + Math.max(0, obj.value || 0), 0)
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-wave-one-radius', projectedFirstWaveRadius.toFixed(2));
+  document.documentElement.setAttribute('data-holesy-harvest-wave-one-buildings', String(reachableBuildingStacks.size));
   document.documentElement.setAttribute('data-holesy-harvest-animals', String(
     medievalAmbientActors.filter(actor => actor.obj?.isHarvestAsset).length
   ));
@@ -17955,8 +17978,10 @@ function updateGameplayCamera(focus, dt, now) {
   const overheadY = overheadHeight;
   const overheadZ = focus.z + overheadBack;
 
-  const eyeBack = THREE.MathUtils.clamp(4 + focus.radius * 0.65, 4.6, 10);
-  const eyeHeight = THREE.MathUtils.clamp(2.75 + focus.radius * 0.38, 3.1, 7);
+  // Hole-Eye is an elevated close-follow view: high/back enough to keep the
+  // entire rim in frame, low enough to retain the landscape-level perspective.
+  const eyeBack = THREE.MathUtils.clamp(6.4 + focus.radius * 1.05, 7.6, 16);
+  const eyeHeight = THREE.MathUtils.clamp(4.5 + focus.radius * 0.72, 5.35, 11);
   const eyeX = focus.x - holeEyeForward.x * eyeBack;
   const eyeY = eyeHeight;
   const eyeZ = focus.z - holeEyeForward.y * eyeBack;
@@ -17971,7 +17996,7 @@ function updateGameplayCamera(focus, dt, now) {
   camera.position.y += (desiredY - camera.position.y) * followAlpha;
   camera.position.z += (desiredZ - camera.position.z) * followAlpha;
 
-  const eyeLookDistance = THREE.MathUtils.clamp(8 + focus.radius * 0.55, 8, 18);
+  const eyeLookDistance = THREE.MathUtils.clamp(9 + focus.radius * 0.72, 9, 20);
   const desiredLookX = THREE.MathUtils.lerp(focus.x, focus.x + holeEyeForward.x * eyeLookDistance, holeEyeViewBlend);
   const desiredLookY = 0;
   const desiredLookZ = THREE.MathUtils.lerp(focus.z, focus.z + holeEyeForward.y * eyeLookDistance, holeEyeViewBlend);
