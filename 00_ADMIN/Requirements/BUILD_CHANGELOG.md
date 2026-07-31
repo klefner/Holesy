@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.196 - 2026-07-31
+
+Rebalanced the fixed Harvest budget around first-wave growth and raised the close camera.
+
+- Keeps Harvest at exactly 1,000 generated gameplay objects and 28 buildings.
+- Reduces dormant destruction pieces from 20 to 12 per building, freeing 224 slots for visible edible content.
+- Provides 240 small starter-food objects worth 4,240 points near the player before distributing larger food across the county.
+- Models a wave-one reachable radius of at least 5.44 with seven building stacks reachable across three tested generations.
+- Raises and backs off Hole-Eye View so the full hole rim remains visible with the surrounding landscape.
+
 ## Master 16.195 - 2026-07-31
 
 Established the first exact town object-budget trial in Harvest County.

@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 195;
+export const BUILD_SUB = 196;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.196',
+    title: 'First-wave Harvest growth and higher Hole-Eye framing',
+    notes: [
+      'Harvest keeps its exact 1,000-object performance cap but reserves more of it for visible edible starter content instead of dormant building fragments.',
+      'A dense progression-aware starter field now supplies small food first so players can grow into buildings during wave one.',
+      'Hole-Eye View sits higher and farther back so the entire hole remains visible with surrounding landscape.',
+    ],
+  },
   {
     label: 'Master 16.195',
     title: 'Harvest 1,000-object performance budget',

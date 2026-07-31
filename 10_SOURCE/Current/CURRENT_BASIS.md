@@ -6,8 +6,12 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.195` and player-facing surfaces show `Version 16.195`
-- `Master 16.195` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.196` and player-facing surfaces show `Version 16.196`
+- `Master 16.196` is the current governed source basis and includes:
+  - the exact 1,000-object Harvest cap with 28 buildings, 12 meaningful destruction pieces per building, and 664 visible edibles
+  - 240 small starter-food objects near the player, restoring enough modeled wave-one growth to reach seven buildings
+  - a higher, farther-back Hole-Eye camera that keeps the complete hole rim and surrounding landscape visible
+- `Master 16.195` includes:
   - an exact 1,000-gameplay-object Harvest County generation target with browser-readable count telemetry
   - 28 Harvest buildings using 20 destruction pieces each instead of 96–128 pre-created fragments
   - reduced crop, scatter, worker, road-actor, sign, wagon, and tumbleweed counts while retaining populated starter areas and rural landmarks
