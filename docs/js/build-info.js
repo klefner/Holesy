@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 196;
+export const BUILD_SUB = 197;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.197',
+    title: 'Crowded Harvest population restored',
+    notes: [
+      'Restores the full pre-cap Harvest population and building breakup detail from the crowded Master 16.194 generation logic.',
+      'Keeps the higher Hole-Eye framing and all later camera and control improvements.',
+      'Replaces unexplained reward jargon with plain speed-boost and damage-protection language.',
+    ],
+  },
   {
     label: 'Master 16.196',
     title: 'First-wave Harvest growth and higher Hole-Eye framing',
@@ -62,7 +71,7 @@ export const BUILD_CHANGELOG = Object.freeze([
     title: 'Mandates no longer end runs',
     notes: [
       'Removes only the rule that ends a run when the Mandate target list is incomplete.',
-      'Keeps every Mandate category, target, progress row, completion reward, and Mandate Surge intact.',
+      'Keeps every Mandate category, target, progress row, completion reward, speed boost, and damage protection intact.',
       'Lets Waves and Endless advance normally when a Mandate is incomplete.',
     ],
   },
@@ -672,7 +681,7 @@ export const BUILD_CHANGELOG = Object.freeze([
     title: 'Mandatory Mandates and wave-long reward',
     notes: [
       'Makes wave-based Mandates truly mandatory: an incomplete Mandate at wave end now ends the run.',
-      'Completing every Mandate row grants the score bonus plus a Mandate Surge speed/protection reward that lasts until the wave ends.',
+      'Completing every Mandate row grants the score bonus plus a speed boost and damage protection until the wave ends.',
       'Clarifies that Run Goals remain optional reward goals while Mandates are the survival contract for each wave.',
     ],
   },
