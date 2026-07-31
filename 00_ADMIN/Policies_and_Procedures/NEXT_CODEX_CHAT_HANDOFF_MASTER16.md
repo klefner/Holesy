@@ -16,7 +16,7 @@ Current promoted master:
 
 - `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\`
 - playable entry point: `C:\Users\KentLefner\OneDrive - Sandcastle Change\Desktop\game-repo\Holesy\10_SOURCE\Masters\Master 16\index.html`
-- current in-game label: `Master 16.196`
+- current in-game label: `Master 16.197`
 
 Current basis note:
 
@@ -24,8 +24,9 @@ Current basis note:
 
 What `Master 16` specifically represents:
 
-- `Master 16.196` preserves the exact 1,000-object Harvest County budget and 28 buildings while reducing dormant breakup pieces to 12 per building, restoring 664 visible edibles and 240 near-player starter foods; its modeled wave-one growth reaches seven buildings, and its raised Hole-Eye camera frames the full rim plus landscape
-- `Master 16.195` established the first exact 1,000-object Harvest County generation budget; `Master 16.196` corrects its first-wave progression regression
+- `Master 16.197` restores the full crowded Harvest generation logic and building breakup detail from `Master 16.194`, retains the higher `Master 16.196` Hole-Eye framing and later controls, and removes Mandate Surge jargon in favor of explicit speed-boost and damage-protection language
+- `Master 16.195` and `Master 16.196` are rejected object-cap trials retained only as historical evidence; future Harvest performance work must preserve the crowded population
+- `Master 16.194` adds the size-aware Hole-Eye first-person camera, camera-relative keyboard control, north compass, accessible view/pause controls, and reduced close-view render range; it carries forward the `Master 16.193` crowded-scene frame-pacing work, mounted frontier storefront signs, organic rural sites, weathered trails, wagon debris, Mandate-rule correction, and Railgate catalog foundation
 - it includes the full approved `Master 15` gameplay baseline
 - it carries forward the idle lifecycle cleanup from `Master 15.39`
 - it includes the playable Archive / found-document / lore-achievement-buff system from `Master 15.40`

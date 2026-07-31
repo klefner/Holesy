@@ -1,6 +1,6 @@
 # Holesy Modular Package Manifest
 
-Build label: `Master 16.196`
+Build label: `Master 16.197`
 
 Purpose: enumerate the complete governed modular package so release and upload work no longer treats `index.html` as the whole game.
 
@@ -82,7 +82,7 @@ Purpose: enumerate the complete governed modular package so release and upload w
 - `Master 16.110` adds a mobile-first compact HUD, an expandable HUD toggle, and haptic support diagnostics so mobile play keeps the field visible and exposes unsupported vibration browsers.
 - `Master 16.109` repairs Mandate fairness by lowering first-wave people/car pressure, adding a clearer per-wave count curve, and capping requirements against the actual category supply.
 - `Master 16.108` adds mobile haptic pings for player devours and distinct haptic patterns for special gameplay events, guarded by feature detection and cooldowns.
-- `Master 16.107` makes wave-based Mandates truly mandatory by ending the run on incomplete wave expiry, and rewards completed Mandates with a wave-long Mandate Surge speed/protection burst.
+- `Master 16.107` makes wave-based Mandates truly mandatory by ending the run on incomplete wave expiry, and rewards completed Mandates with a wave-long speed boost and damage protection.
 - `Master 16.106` makes Endless Waves the default flagship mode, raises true-boss swallow requirements, adds speed-boost resistance to boss eating, and makes bosses hit harder while kiting away from nearby holes to keep firing.
 - `Master 16.105` makes building debris heavier, lowers artificial upward hop/bounce, and prevents medium-building voxel cubes from snapping to the ground before they actually fall there.
 - `Master 16.104` repairs the mobile mode picker by making each visible game-mode choice a real button with touch-friendly styling and pressed-state updates.

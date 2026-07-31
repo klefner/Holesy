@@ -6,15 +6,13 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.196` and player-facing surfaces show `Version 16.196`
-- `Master 16.196` is the current governed source basis and includes:
-  - the exact 1,000-object Harvest cap with 28 buildings, 12 meaningful destruction pieces per building, and 664 visible edibles
-  - 240 small starter-food objects near the player, restoring enough modeled wave-one growth to reach seven buildings
-  - a higher, farther-back Hole-Eye camera that keeps the complete hole rim and surrounding landscape visible
-- `Master 16.195` includes:
-  - an exact 1,000-gameplay-object Harvest County generation target with browser-readable count telemetry
-  - 28 Harvest buildings using 20 destruction pieces each instead of 96–128 pre-created fragments
-  - reduced crop, scatter, worker, road-actor, sign, wagon, and tumbleweed counts while retaining populated starter areas and rural landmarks
+- `Master 16` is the approved build family; the current internal build label is `Master 16.197` and player-facing surfaces show `Version 16.197`
+- `Master 16.197` is the current governed source basis and includes:
+  - the full crowded Harvest population and full 96–128-piece building breakup logic restored from `Master 16.194`
+  - no 1,000-object cap, density thinning, worker reduction, road-life reduction, or destruction-fragment reduction
+  - the higher, farther-back Hole-Eye camera that keeps the complete hole rim and surrounding landscape visible
+  - plain Mandate reward language describing the speed boost and damage protection without the Mandate Surge name
+- `Master 16.195` and `Master 16.196` are rejected object-count experiments retained as historical evidence only
 - `Master 16.194` includes:
   - a fast Hole-Eye first-person camera with size-aware response, camera-relative WASD/arrow movement, and reduced close-view render range
   - visible HUD, keyboard, Escape, and debounced mouse-wheel transitions between first-person and overhead third-person views

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.196.2';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.197';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1210,11 +1210,6 @@ const HARVEST_BUILDINGS = Object.freeze([
   { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128, unusualElement: 'water_tank' },
   { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, unusualElement: 'windmill_blades' },
 ]);
-const HARVEST_WORLD_OBJECT_TARGET = 1000;
-// Dormant destruction pieces share the same world-object budget as edible
-// starter content. Twelve well-spaced pieces preserve readable collapse while
-// leaving most of Harvest's fixed budget available for first-wave growth.
-const HARVEST_BUILDING_FRAGMENT_TARGET = 12;
 const HARVEST_FRONTIER_BUILDINGS = Object.freeze([
   { ...MEDIEVAL_BUILDINGS[2], role: 'Saloon', theme: 'harvest' },
   { ...MEDIEVAL_BUILDINGS[0], role: 'Sheriff Office and Jail', theme: 'harvest' },
@@ -2431,7 +2426,7 @@ async function addHarvestBuilding(definition, authoredSource, blockTemplates, bp
     bp.z,
     authoredVisual.rotation.y,
     authoredVisual,
-    selectHarvestBuildingFragments(blockTemplates)
+    blockTemplates
   );
 }
 
@@ -2496,7 +2491,7 @@ function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, 
     site.z,
     site.rotation,
     authoredVisual,
-    selectHarvestBuildingFragments(blockTemplates)
+    blockTemplates
   );
   for (const object of physicsStackPieces) {
     if (object.stackCenterX !== site.x || object.stackCenterZ !== site.z) continue;
@@ -2504,19 +2499,8 @@ function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, 
   }
 }
 
-function selectHarvestBuildingFragments(blockTemplates) {
-  if (blockTemplates.length <= HARVEST_BUILDING_FRAGMENT_TARGET) return blockTemplates;
-  const selected = [];
-  for (let i = 0; i < HARVEST_BUILDING_FRAGMENT_TARGET; i++) {
-    selected.push(blockTemplates[Math.floor(i * blockTemplates.length / HARVEST_BUILDING_FRAGMENT_TARGET)]);
-  }
-  return selected;
-}
-
 async function populateHarvestCounty() {
   const generation = harvestEnvironmentGeneration;
-  const objectCountAtStart = objects.length;
-  const buildingPieceCountAtStart = physicsStackPieces.length;
   showEventBanner('DISTRICT: Harvest County', 2200);
   document.documentElement.setAttribute('data-holesy-harvest-cars', '0');
   document.documentElement.setAttribute('data-holesy-harvest-buildings', '0');
@@ -2571,18 +2555,19 @@ async function populateHarvestCounty() {
   let buildingCount = 0;
   let fieldCount = 0;
   const activeParcels = generateHarvestRuralSites();
+  const buildingEvery = 4;
   for (let parcelIndex = 0; parcelIndex < activeParcels.length; parcelIndex++) {
     if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
     const bp = activeParcels[parcelIndex];
     const bounds = { minX: bp.x - 8.7, maxX: bp.x + 8.7, minZ: bp.z - 8.7, maxZ: bp.z + 8.7 };
-    const parcelType = parcelIndex % 4;
-    if (parcelType === 2) {
-      addHarvestGroundPlane(bp.x, bp.z, 18.5 * bp.scale, 17.2 * bp.scale, 0x6f5b36, bp.rotation);
+    const parcelType = parcelIndex % buildingEvery;
+    if (parcelType === 1 || parcelType === 2) {
+      addHarvestGroundPlane(bp.x, bp.z, 18.5 * bp.scale, 17.2 * bp.scale, parcelType === 1 ? 0x765538 : 0x6f5b36, bp.rotation);
     } else if (parcelType === 3) {
       addHarvestGroundPlane(bp.x, bp.z, 17.5 * bp.scale, 16.5 * bp.scale, 0x536b38, bp.rotation);
     }
 
-    if (parcelType === 0 || parcelType === 1) {
+    if (parcelType === 0) {
       const definition = HARVEST_BUILDINGS[buildingCount % HARVEST_BUILDINGS.length];
       const building = buildingAssets.get(definition.assetId);
       if (building) {
@@ -2590,8 +2575,8 @@ async function populateHarvestCounty() {
         buildingCount++;
       }
       const supportKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'cart'];
-      for (let i = 0; i < 3; i++) {
-        const angle = i / 3 * Math.PI * 2;
+      for (let i = 0; i < 16; i++) {
+        const angle = i / 16 * Math.PI * 2;
         addMedievalProp(
           `Harvest ${supportKinds[i % supportKinds.length]}`,
           bp.x + Math.cos(angle) * randomBetween(6.5, 8.2),
@@ -2600,10 +2585,10 @@ async function populateHarvestCounty() {
         );
         edibleCount++;
       }
-    } else if (parcelType === 2) {
+    } else if (parcelType === 1 || parcelType === 2) {
       fieldCount++;
       addHarvestFieldRows(bp, parcelType === 1 ? 0x789a3f : 0xb18b35);
-      for (let row = 0; row < 2; row++) for (let col = 0; col < 4; col++) {
+      for (let row = 0; row < 5; row++) for (let col = 0; col < 7; col++) {
         const cropName = HARVEST_CROPS[(parcelIndex + row * 2 + col) % HARVEST_CROPS.length];
         const template = templates.get(cropName);
         if (!template) continue;
@@ -2611,8 +2596,8 @@ async function populateHarvestCounty() {
         addHarvestConsumable(
           template,
           cropName,
-          bp.x - 5.4 + col * 3.6 + randomBetween(-0.14, 0.14),
-          bp.z - 3.0 + row * 6.0 + randomBetween(-0.14, 0.14),
+          bp.x - 6.9 + col * 2.3 + randomBetween(-0.14, 0.14),
+          bp.z - 6.2 + row * 3.1 + randomBetween(-0.14, 0.14),
           isLargeProduce ? 1.1 : 0.78,
           isLargeProduce ? 0.3 : 0.2,
           isLargeProduce ? 9 : 6,
@@ -2621,17 +2606,18 @@ async function populateHarvestCounty() {
         edibleCount++;
       }
       addHarvestWorker(bp.x - 3.8, bp.z + 1.1, bounds, 'hoe');
-      edibleCount++;
+      addHarvestWorker(bp.x + 4.2, bp.z - 2.2, bounds, 'fork');
+      edibleCount += 2;
       if (parcelIndex % 2 === 0) {
         addHarvestTractor(bp.x + 5.7, bp.z + 5.7, parcelIndex % 4 === 0 ? 0 : Math.PI / 2);
         edibleCount++;
       }
-      for (const [dx, dz, kind] of [[-8,-7,'basket'],[8,7,'barrel']]) {
+      for (const [dx, dz, kind] of [[-8,-7,'basket'],[0,-8,'sack'],[8,-7,'crate'],[-8,7,'basket'],[0,8,'hay'],[8,7,'barrel']]) {
         addMedievalProp(`Field-edge ${kind}`, bp.x + dx, bp.z + dz, kind);
         edibleCount++;
       }
     } else if (parcelType === 3) {
-      const animalKinds = ['Horse', 'Cow', 'Sheep'];
+      const animalKinds = ['Horse', 'Cow', 'Pig', 'Sheep', 'Cow', 'Pig', 'Sheep', 'Cow', 'Horse', 'Pig'];
       for (let i = 0; i < animalKinds.length; i++) {
         const kind = animalKinds[i];
         const template = templates.get(kind);
@@ -2641,7 +2627,7 @@ async function populateHarvestCounty() {
       }
       addHarvestWorker(bp.x, bp.z, bounds, 'fork');
       edibleCount++;
-      for (const [dx, dz, kind] of [[-7,-7,'hay'],[7,7,'crate']]) {
+      for (const [dx, dz, kind] of [[-7,-7,'hay'],[7,-7,'barrel'],[-7,7,'sack'],[7,7,'crate'],[0,-7,'hay'],[0,7,'basket']]) {
         addMedievalProp(`Pasture ${kind}`, bp.x + dx, bp.z + dz, kind);
         edibleCount++;
       }
@@ -2672,7 +2658,7 @@ async function populateHarvestCounty() {
       }
     }
     if (parcelType !== 0) {
-      const fillOffsets = [[-5.5, 0], [5.5, 0]];
+      const fillOffsets = [[-5.5, 0], [5.5, 0], [0, -5.5], [0, 5.5]];
       const fillKinds = ['basket', 'sack', 'crate', 'barrel'];
       for (let i = 0; i < fillOffsets.length; i++) {
         const [dx, dz] = fillOffsets[i];
@@ -2688,7 +2674,7 @@ async function populateHarvestCounty() {
     if (parcelIndex % 3 === 2) await yieldCityBuildFrame();
   }
 
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 26; i++) {
     const site = activeParcels[(i * 7 + 3) % activeParcels.length];
     const variant = HARVEST_WAGON_VARIANTS[i % HARVEST_WAGON_VARIANTS.length];
     addHarvestWagonDebris(
@@ -2704,12 +2690,12 @@ async function populateHarvestCounty() {
   // around the player. Jittered coverage cells prevent large dead zones while
   // remaining visually irregular from run to run.
   const scatterKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'rock'];
-  const coverageCells = 5;
+  const coverageCells = 11;
   const scatterExtent = Math.min(101, currentArenaHalf - 4);
   const cellSize = scatterExtent * 2 / coverageCells;
   for (let gx = 0; gx < coverageCells; gx++) {
     for (let gz = 0; gz < coverageCells; gz++) {
-      const perCell = 1;
+      const perCell = 10 + Math.floor(Math.random() * 5);
       for (let i = 0; i < perCell; i++) {
         const x = -scatterExtent + (gx + Math.random()) * cellSize;
         const z = -scatterExtent + (gz + Math.random()) * cellSize;
@@ -2725,7 +2711,7 @@ async function populateHarvestCounty() {
         );
         edibleCount++;
       }
-      if (Math.random() < 0.15) {
+      if (Math.random() < 0.78) {
         const centerX = -scatterExtent + (gx + 0.5) * cellSize;
         const centerZ = -scatterExtent + (gz + 0.5) * cellSize;
         const bounds = {
@@ -2768,7 +2754,7 @@ async function populateHarvestCounty() {
 
   const roadWaypoints = HISTORIC_ROAD_ROUTES.flat();
   const horseTemplate = templates.get('Horse');
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 32; i++) {
     const point = roadWaypoints[i % roadWaypoints.length];
     const next = roadWaypoints[(i + 1) % roadWaypoints.length];
     const x = point[0] + randomBetween(-1.4, 1.4);
@@ -2786,7 +2772,7 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 36; i++) {
     const route = HISTORIC_ROAD_ROUTES[i % HISTORIC_ROAD_ROUTES.length];
     const segmentIndex = 1 + (i * 3 % (route.length - 1));
     const from = route[segmentIndex - 1];
@@ -2806,7 +2792,7 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 96; i++) {
     const site = activeParcels[(i * 5 + 2) % activeParcels.length];
     const bounds = {
       minX: site.x - 9.5, maxX: site.x + 9.5,
@@ -2821,7 +2807,7 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 30; i++) {
     const route = HISTORIC_ROAD_ROUTES[i % HISTORIC_ROAD_ROUTES.length];
     const point = route[(i * 2 + 1) % route.length];
     addHarvestTumbleweed(
@@ -2831,49 +2817,8 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
-  const harvestObjectsBeforeBudgetFill = objects.length - objectCountAtStart;
-  while (objects.length - objectCountAtStart < HARVEST_WORLD_OBJECT_TARGET) {
-    const fillIndex = objects.length - objectCountAtStart;
-    const fillerOrdinal = fillIndex - harvestObjectsBeforeBudgetFill;
-    const angle = fillerOrdinal * 2.399963229728653;
-    const starterFood = fillerOrdinal < 240;
-    const radius = starterFood
-      ? 4.2 + Math.sqrt(fillerOrdinal) * 1.05
-      : 18 + (fillerOrdinal % 19) * 4.1;
-    const originX = starterFood ? player.x : 0;
-    const originZ = starterFood ? player.z : 0;
-    const starterKinds = ['basket', 'sack', 'basket', 'crate', 'sack', 'barrel'];
-    const countyKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'rock'];
-    addMedievalProp(
-      `${starterFood ? 'Harvest starter food' : 'Harvest budget filler'} ${fillIndex}`,
-      clampToArena(originX + Math.cos(angle) * radius, 3),
-      clampToArena(originZ + Math.sin(angle) * radius, 3),
-      (starterFood ? starterKinds : countyKinds)[fillIndex % 6]
-    );
-    edibleCount++;
-  }
-  const generatedObjectCount = objects.length - objectCountAtStart;
-  const generatedBuildingPieceCount = physicsStackPieces.length - buildingPieceCountAtStart;
-  document.documentElement.setAttribute('data-holesy-harvest-object-target', String(HARVEST_WORLD_OBJECT_TARGET));
-  document.documentElement.setAttribute('data-holesy-harvest-object-total', String(generatedObjectCount));
-  document.documentElement.setAttribute('data-holesy-harvest-building-pieces', String(generatedBuildingPieceCount));
   document.documentElement.setAttribute('data-holesy-harvest-buildings', String(buildingCount));
   document.documentElement.setAttribute('data-holesy-harvest-edibles', String(edibleCount));
-  const starterFoodObjects = objects.filter(obj =>
-    obj.isHarvestAsset && String(obj.medievalAssetName || '').startsWith('Harvest starter food')
-  );
-  const projectedFirstWaveRadius = estimatePlayerReachableRadiusForMandate();
-  const reachableBuildingStacks = new Set(
-    physicsStackPieces
-      .filter(piece => (piece.stackCollapseSize || 0) <= projectedFirstWaveRadius * 0.95)
-      .map(piece => piece.stackId)
-  );
-  document.documentElement.setAttribute('data-holesy-harvest-starter-food', String(starterFoodObjects.length));
-  document.documentElement.setAttribute('data-holesy-harvest-starter-value', String(
-    starterFoodObjects.reduce((total, obj) => total + Math.max(0, obj.value || 0), 0)
-  ));
-  document.documentElement.setAttribute('data-holesy-harvest-wave-one-radius', projectedFirstWaveRadius.toFixed(2));
-  document.documentElement.setAttribute('data-holesy-harvest-wave-one-buildings', String(reachableBuildingStacks.size));
   document.documentElement.setAttribute('data-holesy-harvest-animals', String(
     medievalAmbientActors.filter(actor => actor.obj?.isHarvestAsset).length
   ));
@@ -6570,10 +6515,10 @@ function hideDebugOverlay() {
 }
 
 const ACTIVE_EFFECT_VISUALS = {
-  mandate_surge: {
+  mandate_reward: {
     icon: 'MANDATE',
-    label: 'Mandate Surge',
-    effect: 'Wave-long surge',
+    label: 'Mandate Reward',
+    effect: 'Speed + protection · wave-long',
     bg: 'linear-gradient(135deg, rgba(255,221,89,0.96), rgba(255,94,126,0.9))',
     border: 'rgba(255,240,180,0.9)',
     glow: 'rgba(255,190,72,0.46)',
@@ -6659,13 +6604,13 @@ function hideActiveEffectsUi() {
 
 function effectVisualFor(type, source) {
   if (type === 'speed') {
-    if (source === 'mandate') return ACTIVE_EFFECT_VISUALS.mandate_surge;
+    if (source === 'mandate') return ACTIVE_EFFECT_VISUALS.mandate_reward;
     if (source === 'unit_clear') return ACTIVE_EFFECT_VISUALS.unit_clear_speed;
     if (source === 'run_goals') return ACTIVE_EFFECT_VISUALS.goal_sweep;
     if (source === 'speed_burst') return ACTIVE_EFFECT_VISUALS.speed_burst;
     return ACTIVE_EFFECT_VISUALS.default_speed;
   }
-  if (source === 'mandate') return ACTIVE_EFFECT_VISUALS.mandate_surge;
+  if (source === 'mandate') return ACTIVE_EFFECT_VISUALS.mandate_reward;
   if (source === 'unit_clear') return ACTIVE_EFFECT_VISUALS.unit_clear_shield;
   if (source === 'iron_skin') return ACTIVE_EFFECT_VISUALS.iron_skin;
   return ACTIVE_EFFECT_VISUALS.default_shield;
@@ -10264,7 +10209,7 @@ function getEventBannerPriority(text) {
 function compactEventBannerText(text) {
   const replacements = [
     [/FULL UNIT CLEAR! MASS SURGED\. BULLET DAMAGE SUPPRESSED\. SPEED BOOST ACTIVE\./i, 'UNIT CLEARED · MASS + SHIELD + SPEED'],
-    [/MANDATE COMPLETE: SURGE ACTIVE UNTIL WAVE END\./i, 'MANDATE COMPLETE · SURGE ACTIVE'],
+    [/MANDATE COMPLETE: SURGE ACTIVE UNTIL WAVE END\./i, 'MANDATE COMPLETE · SPEED + PROTECTION'],
     [/GOAL SWEEP: \+(\d+) and speed surge\./i, 'GOAL SWEEP · +$1 · SPEED'],
     [/Bonus Mass claimed! Score and size increased\./i, 'BONUS MASS · SCORE + SIZE'],
   ];

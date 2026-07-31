@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="holesy-build" content="Master 16.196" />
+<meta name="holesy-build" content="Master 16.197" />
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 <title>Downtown Devour</title>
   <meta name="theme-color" content="#071326" />
@@ -11,7 +11,7 @@
   <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/holesy-32.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/holesy-180.png" />
   <link rel="manifest" href="manifest.webmanifest" />
-  <link rel="stylesheet" href="css/styles.css?v=16.196" />
+  <link rel="stylesheet" href="css/styles.css?v=16.197" />
 </head>
 <body>
 <canvas id="game"></canvas>
@@ -40,7 +40,7 @@
         <div class="label">Mandate</div>
         <div class="label" id="mandate-label">5 left</div>
       </div>
-      <div id="mandate-instruction">Finish every target for a Mandate Surge.</div>
+      <div id="mandate-instruction">Finish every target for a wave-long speed boost and damage protection.</div>
       <div id="mandate-dots"></div>
     </div>
   </div>
@@ -48,8 +48,8 @@
 <div id="wave-contract" class="hidden" role="dialog" aria-modal="true" aria-labelledby="wave-contract-title">
   <div id="wave-contract-title">THE CITY HAS TERMS</div>
   <section class="wave-contract-card required">
-    <strong>MANDATE — COMPLETE FOR A SURGE</strong>
-    <span>Finish them for the surge.</span>
+    <strong>MANDATE — COMPLETE FOR SPEED + PROTECTION</strong>
+    <span>Finish every target to move faster and block damage for the rest of the wave.</span>
     <div id="wave-contract-mandates"></div>
   </section>
   <section class="wave-contract-card optional">
@@ -75,7 +75,7 @@
     <div id="final-wrap" class="hidden">
       <div id="leaderboard"></div>
     </div>
-      <button id="build-version" type="button" aria-label="Show update notes">Version 16.196</button>
+      <button id="build-version" type="button" aria-label="Show update notes">Version 16.197</button>
 
   <!-- Mode picker — always shown on the first screen across platforms -->
 <div id="mode-picker-wrap">
@@ -176,7 +176,7 @@
 <div id="pause-overlay" class="hidden">
   <h2>Paused</h2>
   <div class="pause-sub">Take a breather, then jump back in or return to the game mode selector.</div>
-    <div class="pause-version" id="pause-version-label">Version 16.196</div>
+    <div class="pause-version" id="pause-version-label">Version 16.197</div>
   <div class="pause-status" id="pause-status-message" role="status" aria-live="polite"></div>
   <div class="pause-btns">
     <button class="pause-resume" id="pause-resume-btn" type="button">Resume</button>
@@ -256,7 +256,7 @@
 }
 </script>
 
-<script type="module" src="js/main.js?v=16.196.2"></script>
+<script type="module" src="js/main.js?v=16.197"></script>
 </body>
 </html>
 

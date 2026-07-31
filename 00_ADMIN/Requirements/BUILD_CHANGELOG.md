@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.197 - 2026-07-31
+
+Restored the crowded Harvest population and removed unexplained Mandate terminology.
+
+- Reverses the Master 16.195/16.196 object cap, density cuts, actor cuts, and building-fragment reductions.
+- Restores the exact Harvest generation logic last used in the crowded Master 16.194 test build.
+- Retains the higher Hole-Eye camera framing introduced after 16.194.
+- Replaces Mandate Surge wording with explicit wave-long speed-boost and damage-protection language.
+- Establishes that future performance work must preserve population and instead reduce rendering and simulation cost.
+
 ## Master 16.196 - 2026-07-31
 
 Rebalanced the fixed Harvest budget around first-wave growth and raised the close camera.

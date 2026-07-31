@@ -1,5 +1,7 @@
 # QA Review - Master 16.195 Harvest 1,000-Object Budget
 
+> Historical trial only. Rejected by the user on 2026-07-31 because the reduced population blocked first-wave growth and building Mandates. Superseded by Master 16.197, which restores the crowded Master 16.194 population.
+
 Date: 2026-07-31
 
 ## Scope
