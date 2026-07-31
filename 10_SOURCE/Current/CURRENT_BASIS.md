@@ -6,8 +6,27 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.189` and player-facing surfaces show `Version 16.189`
-- `Master 16.189` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.193` and player-facing surfaces show `Version 16.193`
+- `Master 16.193` is the current governed source basis and includes:
+  - a world-cell proximity index that limits per-frame eating, pulling, jam, and blocked-object checks to objects near a living hole
+  - 30 Hz passive simulation for pedestrians, animals, and tumbleweeds while player control, panic behavior, physics, and consumption remain display-frame responsive
+  - faster adaptive render scaling under sustained slow frames, with gradual resolution recovery after performance stabilizes
+  - preservation of the full crowded Harvest population and all `Master 16.192` storefront-sign work
+- `Master 16.192` includes:
+  - smaller storefront signs mounted at low facade-fascia height using measured imported-building bounds
+  - removal of the detached synthetic awnings that appeared to float beyond the frontier buildings
+  - preservation of the `Master 16.191` organic rural-site and trail work
+- `Master 16.191` includes:
+  - collision-spaced Harvest rural sites that no longer derive from the modern city-block parcel lattice
+  - curved variable-width historic trail ribbons with dry, muddy, wet, rutted, and irregular-edge surface variation
+  - 11 distinct wagon/wheel forms distributed as 26 consumable Harvest objects per generation
+  - an exactly-100-entry Railgate-owned object catalog plus a separate 20-entry shared modern-object catalog
+  - all prior `Master 16.190` Mandate-rule work
+- `Master 16.190` includes:
+  - removal only of the rule that ends a run when the Mandate target list is incomplete
+  - retention of every Mandate category, target, progress row, completion reward, and Mandate Surge
+  - all prior `Master 16.189` frontier topology work
+- `Master 16.189` includes:
   - recipe-controlled modern-grid versus organic historic/frontier topology
   - winding partial-board dirt routes and irregular Harvest site placement
   - six labeled, destructible small-town frontier buildings

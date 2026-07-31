@@ -2,6 +2,41 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.193 - 2026-07-30
+
+Improved crowded-scene frame pacing without thinning the town.
+
+- Replaces the full-list interaction starting point with a nearby world-cell index.
+- Updates passive pedestrians, animals, and tumbleweeds at a stable 30 Hz while preserving responsive panic and gameplay systems.
+- Makes adaptive resolution react after one sustained slow window and recover gradually after stable performance.
+- Preserves every Harvest object, building, sign, road, trail, and gameplay rule from `Master 16.192`.
+
+## Master 16.192 - 2026-07-29
+
+Mounted frontier storefront signs.
+
+- Sizes each storefront sign conservatively against its imported building facade.
+- Mounts signs at low storefront-fascia height instead of above the roofline.
+- Removes detached synthetic awnings while preserving the curved, weathered Harvest trail network.
+
+## Master 16.191 - 2026-07-29
+
+Living rural sites, weathered trails, and Railgate catalog foundation.
+
+- Replaces Harvest County's displaced hidden-grid parcels with collision-spaced rural sites placed directly in world space.
+- Converts historic routes into curved spline ribbons with continuously varying widths, irregular borders, dry soil, mud, wet patches, and wagon tracks.
+- Adds 11 visibly distinct intact/broken wagon and wheel forms, with 26 randomly distributed consumable instances per Harvest generation.
+- Adds an exactly-100-entry Railgate-owned object catalog and a separate 20-entry explicitly shared modern-object catalog.
+- Records which Railgate objects can use confirmed supplied models versus procedural or compound authoring.
+
+## Master 16.190 - 2026-07-29
+
+Mandates no longer end runs.
+
+- Removes only the rule that ends a run when the Mandate target list is incomplete.
+- Retains every Mandate category, target, progress row, completion reward, and Mandate Surge.
+- Lets Waves and Endless advance normally when a Mandate is incomplete.
+
 ## Master 16.189 - 2026-07-29
 
 Organic frontier town topology.

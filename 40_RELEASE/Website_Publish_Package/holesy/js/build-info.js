@@ -1,8 +1,44 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 189;
+export const BUILD_SUB = 193;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.193',
+    title: 'Crowd-scale frame pacing',
+    notes: [
+      'Keeps the crowded frontier population while limiting object interaction checks to nearby world cells.',
+      'Runs passive pedestrian, animal, and tumbleweed motion at a stable 30 Hz while panic and gameplay remain responsive.',
+      'Responds to sustained slow frames sooner and can temporarily lower render resolution before crowded scenes hitch.',
+    ],
+  },
+  {
+    label: 'Master 16.192',
+    title: 'Crowded living frontier',
+    notes: [
+      'Removes the repeated starter-object ring and restores randomized corner starts in every mode.',
+      'Adds road signs, many more people, wild plants, cacti, and wind-driven tumbleweeds.',
+      'Fills low-density gaps across Harvest County while keeping immediate hole clearance.',
+    ],
+  },
+  {
+    label: 'Master 16.191',
+    title: 'Living rural sites and weathered trails',
+    notes: [
+      'Replaces Harvest County hidden-grid parcels with collision-spaced rural sites clustered around organic routes.',
+      'Builds curved, variable-width trails with dry soil, mud, wet patches, irregular edges, and wagon ruts.',
+      'Adds broken wagon and wheel objects and establishes the 100-object Railgate theme catalog.',
+    ],
+  },
+  {
+    label: 'Master 16.190',
+    title: 'Mandates no longer end runs',
+    notes: [
+      'Removes only the rule that ends a run when the Mandate target list is incomplete.',
+      'Keeps every Mandate category, target, progress row, completion reward, and Mandate Surge intact.',
+      'Lets Waves and Endless advance normally when a Mandate is incomplete.',
+    ],
+  },
   {
     label: 'Master 16.189',
     title: 'Organic frontier town topology',

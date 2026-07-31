@@ -8,7 +8,7 @@ Before any release packaging, live upload, master promotion, backlog sequencing,
 
 The acting developer must also read the repo-root `AGENTS.md` so release, implementation, QA, and handoff responsibilities are applied consistently across Codex, Claude, and other AI systems.
 
-## Current State As Of 2026-07-29
+## Current State As Of 2026-07-30
 
 | Layer | Current value | Meaning |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 | Stable `main` | stale relative to active branch | `main` is not the current gameplay source of truth until an explicit PR/merge updates it. |
 | Current approved source master | `10_SOURCE/Masters/Master 16/` | Governed modular source package for the current playable build line. |
 | Current source entry point | `10_SOURCE/Masters/Master 16/index.html` | Browser entry point for the modular source package. |
-| Current in-game build label | `Master 16.189` | Current internal review patch inside the approved Master 16 source and release package; normal player surfaces display `Version 16.189`. This candidate separates modern-grid and historic/frontier topology, gives Harvest County winding dirt roads and irregular sites, and adds a compact frontier civic/commercial cluster while retaining the 16.188 economy and Mandate repairs; it is not release-clear. |
+| Current in-game build label | `Master 16.193` | Current internal performance review patch based on `Master 16.192`; normal player surfaces display `Version 16.193`. It preserves the full crowded frontier scene while adding nearby-cell interaction indexing, 30 Hz passive ambient simulation, and faster adaptive render scaling; it is pending publication verification. |
 | Current release package | `40_RELEASE/Website_Publish_Package/holesy/` | Current modular browser-client release package and source for the GitHub Pages `docs/` deployment tree. |
 | Current Pages deployment branch | `claude/happy-clarke-ORWAI` | GitHub Pages publishes from this branch's `docs/` folder; commits `7c4ad01` and `7aa9b07` publish `Master 16.189`. Live verification on 2026-07-29 confirmed Version 16.189, organic dirt-route topology, preload ready, 1,111 edibles, 14 destructible buildings including six named frontier structures, themed Mandate wording, and no browser errors. |
 | Legacy GoDaddy packages | obsolete | GoDaddy publishing was discontinued when GitHub Pages became the production host; retained historical folders must not drive release decisions. |
@@ -27,7 +27,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 
 ## Non-Negotiable Distinctions
 
-- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.189` is the current modular review patch on that architecture line.
+- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.193` is the current modular review patch on that architecture line.
 - `Master 16.74` closes `PERF-012` as a production package migration item; future UI, save/load, level/theme, reward/quest, and gameplay-system extraction should be tracked as separate feature-support architecture work.
 - The production package must preserve the modular folder shape unless an emergency temporary bundled hotfix is explicitly approved and documented.
 - GitHub Pages deployment must preserve the full modular package shape under the configured `docs/` source while commits remain narrowly scoped to changed files.
