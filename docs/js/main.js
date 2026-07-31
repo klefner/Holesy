@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.190';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.192';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
+import { RAILGATE_OBJECT_CATALOG, SHARED_THEME_OBJECT_CATALOG } from '../data/theme-object-catalogs.js?v=16.192';
 function markBootStep(step) {
   try {
     document.documentElement.setAttribute('data-holesy-boot', step);
@@ -1006,6 +1007,7 @@ let adaptivePixelRatio = Math.min(window.devicePixelRatio, configuredMaxPixelRat
 let adaptiveFrameTimeTotal = 0;
 let adaptiveFrameCount = 0;
 let adaptiveSlowWindows = 0;
+let adaptiveHealthyWindows = 0;
 let adaptiveLastCheckAt = performance.now();
 renderer.setPixelRatio(adaptivePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1021,6 +1023,7 @@ function updateAdaptiveRenderer(now, frameDeltaMs) {
     adaptiveFrameTimeTotal = 0;
     adaptiveFrameCount = 0;
     adaptiveSlowWindows = 0;
+    adaptiveHealthyWindows = 0;
     adaptiveLastCheckAt = now;
     return;
   }
@@ -1031,16 +1034,32 @@ function updateAdaptiveRenderer(now, frameDeltaMs) {
   adaptiveFrameTimeTotal = 0;
   adaptiveFrameCount = 0;
   adaptiveLastCheckAt = now;
-  adaptiveSlowWindows = averageFrameMs > 27 ? adaptiveSlowWindows + 1 : 0;
-  if (adaptiveSlowWindows < 3) return;
-  adaptiveSlowWindows = 0;
-  if (adaptivePixelRatio > 1) {
-    adaptivePixelRatio = Math.max(1, adaptivePixelRatio - 0.25);
-    renderer.setPixelRatio(adaptivePixelRatio);
-    renderer.setSize(window.innerWidth, window.innerHeight, false);
-  } else if (renderer.shadowMap.enabled) {
-    renderer.shadowMap.enabled = false;
+  if (averageFrameMs > 24) {
+    adaptiveSlowWindows++;
+    adaptiveHealthyWindows = 0;
+  } else if (averageFrameMs < 18) {
+    adaptiveHealthyWindows++;
+    adaptiveSlowWindows = 0;
+  } else {
+    adaptiveSlowWindows = 0;
+    adaptiveHealthyWindows = 0;
   }
+  if (adaptiveSlowWindows >= 1) {
+    adaptiveSlowWindows = 0;
+    if (adaptivePixelRatio > 0.75) {
+      adaptivePixelRatio = Math.max(0.75, adaptivePixelRatio - 0.25);
+      renderer.setPixelRatio(adaptivePixelRatio);
+      renderer.setSize(window.innerWidth, window.innerHeight, false);
+    } else if (renderer.shadowMap.enabled) {
+      renderer.shadowMap.enabled = false;
+    }
+    return;
+  }
+  if (adaptiveHealthyWindows < 5 || adaptivePixelRatio >= Math.min(window.devicePixelRatio, configuredMaxPixelRatio)) return;
+  adaptiveHealthyWindows = 0;
+  adaptivePixelRatio = Math.min(Math.min(window.devicePixelRatio, configuredMaxPixelRatio), adaptivePixelRatio + 0.25);
+  renderer.setPixelRatio(adaptivePixelRatio);
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
 }
 
 const scene = new THREE.Scene();
@@ -1050,6 +1069,19 @@ scene.fog = new THREE.Fog(0x9ec7e8, 80, HOLESY_CONFIG.performance.profiles[HOLES
 const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.5, 500);
 camera.position.set(0, 40, 30);
 camera.lookAt(0, 0, 0);
+const OVERHEAD_CAMERA_FAR = 500;
+const HOLE_EYE_CAMERA_FAR = 175;
+const HOLE_EYE_FOG_NEAR = 42;
+const HOLE_EYE_FOG_FAR = 145;
+let holeEyeViewEnabled = false;
+let holeEyeViewBlend = 0;
+const holeEyeForward = new THREE.Vector2(0, -1);
+const holeEyeDesiredForward = new THREE.Vector2(0, -1);
+const cameraLookTarget = new THREE.Vector3(0, 0, 0);
+let lastCameraFocusX = 0;
+let lastCameraFocusZ = 0;
+let cameraFocusTracked = false;
+let lastCameraModeFar = OVERHEAD_CAMERA_FAR;
 
 // Lights
 const ambient = new THREE.AmbientLight(0xffffff, 0.55);
@@ -1402,32 +1434,124 @@ function addMedievalGroundPlane(x, z, w, d, color, rotation = 0) {
   medievalEnvironmentMeshes.push(mesh);
 }
 
-function addHistoricPathSegment(addPlane, from, to, width, color) {
-  const dx = to[0] - from[0];
-  const dz = to[1] - from[1];
-  const length = Math.hypot(dx, dz);
-  addPlane(
-    (from[0] + to[0]) * 0.5,
-    (from[1] + to[1]) * 0.5,
-    length + width * 0.55,
-    width,
-    color,
-    -Math.atan2(dz, dx)
-  );
-}
-
 const HISTORIC_ROAD_ROUTES = Object.freeze([
   Object.freeze([[-96,-61],[-70,-54],[-43,-60],[-18,-47],[8,-50],[34,-34],[67,-38],[96,-23]]),
   Object.freeze([[-58,-96],[-52,-72],[-43,-60],[-34,-34],[-15,-12],[5,13],[1,42],[19,72]]),
   Object.freeze([[8,-50],[22,-22],[47,-2],[66,21],[61,52],[82,86]]),
   Object.freeze([[-34,-34],[-62,-22],[-79,2],[-74,31],[-92,55]]),
+  Object.freeze([[-18,-47],[-8,-30],[-19,-7],[-38,12],[-31,37],[-48,63]]),
+  Object.freeze([[5,13],[28,20],[43,39],[38,63],[55,87]]),
 ]);
 
-function addHistoricRoadNetwork(addPlane, color) {
-  for (const route of HISTORIC_ROAD_ROUTES) {
-    for (let i = 1; i < route.length; i++) {
-      addHistoricPathSegment(addPlane, route[i - 1], route[i], i % 3 === 0 ? 5.8 : 6.8, color);
+const historicTrailTextureCache = new Map();
+function getHistoricTrailMaterial(color, condition = 'mixed') {
+  const key = `${color}:${condition}`;
+  if (historicTrailTextureCache.has(key)) return historicTrailTextureCache.get(key);
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const base = new THREE.Color(color);
+  ctx.fillStyle = `#${base.getHexString()}`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const patchPalette = condition === 'muddy'
+    ? ['rgba(48,31,20,.34)', 'rgba(84,55,31,.34)', 'rgba(35,28,22,.26)']
+    : condition === 'dry'
+      ? ['rgba(202,159,97,.24)', 'rgba(120,83,47,.22)', 'rgba(232,195,132,.16)']
+      : ['rgba(54,38,25,.28)', 'rgba(175,128,73,.20)', 'rgba(95,65,40,.24)'];
+  for (let i = 0; i < 90; i++) {
+    ctx.fillStyle = patchPalette[i % patchPalette.length];
+    ctx.beginPath();
+    ctx.ellipse(
+      Math.random() * 256,
+      Math.random() * 512,
+      5 + Math.random() * 32,
+      3 + Math.random() * 26,
+      Math.random() * Math.PI,
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+  }
+  ctx.lineCap = 'round';
+  for (const x of [77, 91, 165, 179]) {
+    ctx.strokeStyle = condition === 'dry' ? 'rgba(75,52,31,.27)' : 'rgba(39,29,22,.42)';
+    ctx.lineWidth = 4 + Math.random() * 3;
+    ctx.setLineDash([22 + Math.random() * 18, 7 + Math.random() * 9]);
+    ctx.beginPath();
+    ctx.moveTo(x + randomBetween(-3, 3), 0);
+    for (let y = 0; y <= 512; y += 32) ctx.lineTo(x + Math.sin(y * 0.043 + x) * 4, y);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  if (condition !== 'dry') {
+    for (let i = 0; i < (condition === 'muddy' ? 18 : 8); i++) {
+      const gradient = ctx.createRadialGradient(0, 0, 1, 0, 0, 28);
+      gradient.addColorStop(0, 'rgba(36,45,45,.34)');
+      gradient.addColorStop(1, 'rgba(36,45,45,0)');
+      ctx.save();
+      ctx.translate(30 + Math.random() * 196, Math.random() * 512);
+      ctx.scale(1.8, 0.46);
+      ctx.fillStyle = gradient;
+      ctx.fillRect(-30, -30, 60, 60);
+      ctx.restore();
     }
+  }
+  const map = new THREE.CanvasTexture(canvas);
+  map.wrapS = map.wrapT = THREE.RepeatWrapping;
+  map.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    map,
+    roughness: condition === 'muddy' ? 0.66 : condition === 'dry' ? 0.98 : 0.84,
+    metalness: 0,
+  });
+  historicTrailTextureCache.set(key, material);
+  return material;
+}
+
+function addHistoricRoadNetwork(addPlane, color) {
+  const targetMeshes = addPlane === addHarvestGroundPlane ? harvestEnvironmentMeshes : medievalEnvironmentMeshes;
+  for (let routeIndex = 0; routeIndex < HISTORIC_ROAD_ROUTES.length; routeIndex++) {
+    const route = HISTORIC_ROAD_ROUTES[routeIndex];
+    const points = route.map(([x, z]) => new THREE.Vector3(x, 0.042, z));
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal', 0.5);
+    const length = curve.getLength();
+    const sampleCount = Math.max(24, Math.ceil(length / 2.2));
+    const positions = [];
+    const uvs = [];
+    const indices = [];
+    const baseWidth = routeIndex % 3 === 0 ? 7.4 : routeIndex % 3 === 1 ? 5.4 : 3.8;
+    for (let i = 0; i <= sampleCount; i++) {
+      const t = i / sampleCount;
+      const point = curve.getPointAt(t);
+      const tangent = curve.getTangentAt(t).normalize();
+      const normalX = -tangent.z;
+      const normalZ = tangent.x;
+      const slowWidthNoise = Math.sin(t * Math.PI * (2.2 + routeIndex * 0.31) + routeIndex) * 0.22;
+      const broadening = 1 + slowWidthNoise + Math.sin(t * Math.PI) * (routeIndex < 2 ? 0.20 : 0.08);
+      const width = Math.max(2.2, baseWidth * broadening);
+      const edgeNoise = Math.sin(i * 1.71 + routeIndex * 2.4) * 0.34 + Math.sin(i * 0.37) * 0.22;
+      const left = width * 0.5 + edgeNoise;
+      const right = width * 0.5 - edgeNoise * 0.7;
+      positions.push(point.x + normalX * left, point.y, point.z + normalZ * left);
+      positions.push(point.x - normalX * right, point.y, point.z - normalZ * right);
+      uvs.push(0, t * Math.max(1, length / 16), 1, t * Math.max(1, length / 16));
+      if (i < sampleCount) {
+        const a = i * 2;
+        indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
+      }
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const condition = routeIndex % 3 === 0 ? 'muddy' : routeIndex % 3 === 1 ? 'mixed' : 'dry';
+    const mesh = new THREE.Mesh(geometry, getHistoricTrailMaterial(color, condition));
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+    targetMeshes.push(mesh);
   }
 }
 
@@ -1645,7 +1769,12 @@ function populateMedievalCommonsParcel(bp, archetype) {
   }
 }
 
+let medievalAmbientAccumulator = 0;
 function updateMedievalAmbientActors(dt) {
+  medievalAmbientAccumulator = Math.min(0.1, medievalAmbientAccumulator + dt);
+  if (medievalAmbientAccumulator < 1 / 30) return;
+  dt = medievalAmbientAccumulator;
+  medievalAmbientAccumulator = 0;
   const now = performance.now() * 0.001;
   for (const actor of medievalAmbientActors) {
     const obj = actor.obj;
@@ -1658,6 +1787,19 @@ function updateMedievalAmbientActors(dt) {
       if (nx < actor.bounds.minX || nx > actor.bounds.maxX) { actor.direction = Math.PI - actor.direction; nx = THREE.MathUtils.clamp(nx, actor.bounds.minX, actor.bounds.maxX); }
       if (nz < actor.bounds.minZ || nz > actor.bounds.maxZ) { actor.direction = -actor.direction; nz = THREE.MathUtils.clamp(nz, actor.bounds.minZ, actor.bounds.maxZ); }
       obj.x = nx; obj.z = nz; obj.mesh.position.x = nx; obj.mesh.position.z = nz; obj.mesh.rotation.y = -actor.direction;
+    } else if (actor.type === 'tumbleweed') {
+      actor.direction += Math.sin(now * 0.53 + actor.phase) * dt * 0.16;
+      let nx = obj.x + Math.cos(actor.direction) * actor.speed * dt;
+      let nz = obj.z + Math.sin(actor.direction) * actor.speed * dt;
+      const edge = currentArenaHalf - 3;
+      if (nx < -edge || nx > edge) { actor.direction = Math.PI - actor.direction; nx = THREE.MathUtils.clamp(nx, -edge, edge); }
+      if (nz < -edge || nz > edge) { actor.direction = -actor.direction; nz = THREE.MathUtils.clamp(nz, -edge, edge); }
+      obj.x = nx; obj.z = nz;
+      obj.mesh.position.x = nx;
+      obj.mesh.position.z = nz;
+      obj.mesh.position.y = 0.42 + Math.abs(Math.sin(now * 3.1 + actor.phase)) * 0.24;
+      obj.mesh.rotation.x += dt * actor.speed * 1.7;
+      obj.mesh.rotation.z += dt * actor.speed * 0.8;
     } else if (actor.type === 'fighter') {
       obj.mesh.rotation.y = Math.sin(now * 1.7 + actor.phase) * 0.42;
       actor.sword.rotation.z = -0.65 + Math.sin(now * 4.2 + actor.phase) * 0.52;
@@ -1902,6 +2044,250 @@ function addHarvestGroundPlane(x, z, w, d, color, rotation = 0) {
   harvestEnvironmentMeshes.push(mesh);
 }
 
+function distanceToHistoricRoutes(x, z) {
+  let nearest = Infinity;
+  for (const route of HISTORIC_ROAD_ROUTES) {
+    for (let i = 1; i < route.length; i++) {
+      const [ax, az] = route[i - 1];
+      const [bx, bz] = route[i];
+      const dx = bx - ax;
+      const dz = bz - az;
+      const lengthSq = dx * dx + dz * dz || 1;
+      const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / lengthSq));
+      nearest = Math.min(nearest, Math.hypot(x - (ax + dx * t), z - (az + dz * t)));
+    }
+  }
+  return nearest;
+}
+
+function generateHarvestRuralSites(targetCount = 44) {
+  const sites = [];
+  const limit = Math.min(currentArenaHalf - 9, 96);
+  const minimumSpacing = 13.5;
+  const frontierTownBounds = { minX: -43, maxX: 23, minZ: -59, maxZ: -20 };
+  for (let attempt = 0; attempt < 2600 && sites.length < targetCount; attempt++) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = Math.sqrt(Math.random()) * limit;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    if (Math.hypot(x - player.x, z - player.z) < 10) continue;
+    if (x > frontierTownBounds.minX && x < frontierTownBounds.maxX && z > frontierTownBounds.minZ && z < frontierTownBounds.maxZ) continue;
+    const routeDistance = distanceToHistoricRoutes(x, z);
+    if (attempt % 5 !== 0 && routeDistance > 20) continue;
+    if (sites.some(site => Math.hypot(site.x - x, site.z - z) < minimumSpacing)) continue;
+    sites.push({
+      x,
+      z,
+      rotation: randomBetween(-0.34, 0.34),
+      routeDistance,
+      scale: randomBetween(0.82, 1.18),
+    });
+  }
+  return sites;
+}
+
+const HARVEST_WAGON_VARIANTS = Object.freeze([
+  'intact farm wagon',
+  'broken-bed wagon',
+  'axle-only wagon',
+  'detached wagon wheel',
+  'broken-rim wagon wheel',
+  'split-spoke wagon wheel',
+  'detached wheel pair',
+  'overturned wagon',
+  'mud-stuck wagon',
+  'hay wagon',
+  'produce wagon',
+]);
+
+function addHarvestWagonDebris(variant, x, z, rotation = 0) {
+  const group = new THREE.Group();
+  const wood = sharedBoxMat(0x654126);
+  const wornWood = sharedBoxMat(0x49301f);
+  const iron = sharedBoxMat(0x2d2926);
+  const straw = sharedBoxMat(0xb89045);
+  const produce = sharedBoxMat(0x9a4f2f);
+  const addWheel = (wx, wz, broken = false) => {
+    const wheel = new THREE.Group();
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(broken ? 0.48 : 0.58, 0.09, 7, broken ? 8 : 14, broken ? Math.PI * 1.45 : Math.PI * 2), wornWood);
+    rim.rotation.y = Math.PI / 2;
+    wheel.add(rim);
+    const spokeCount = broken ? 4 : 8;
+    for (let i = 0; i < spokeCount; i++) {
+      const spoke = new THREE.Mesh(sharedBoxGeometry(0.06, 0.06, broken ? 0.7 : 1.02), wood);
+      spoke.rotation.x = i / spokeCount * Math.PI;
+      wheel.add(spoke);
+    }
+    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.24, 8), iron);
+    hub.rotation.x = Math.PI / 2;
+    wheel.add(hub);
+    wheel.position.set(wx, 0.6, wz);
+    group.add(wheel);
+  };
+  const wheelOnly = variant.includes('wheel') || variant === 'detached wheel pair';
+  if (wheelOnly) {
+    addWheel(0, 0, variant.includes('broken') || variant.includes('split'));
+    if (variant === 'detached wheel pair') addWheel(1.1, 0.25, true);
+  } else {
+    const bed = new THREE.Mesh(sharedBoxGeometry(2.5, 0.24, 1.35), variant === 'broken-bed wagon' ? wornWood : wood);
+    bed.position.y = 0.82;
+    if (variant === 'overturned wagon') bed.rotation.z = Math.PI * 0.44;
+    group.add(bed);
+    const axle = new THREE.Mesh(sharedBoxGeometry(0.16, 0.16, 1.9), iron);
+    axle.position.y = 0.56;
+    group.add(axle);
+    if (variant !== 'axle-only wagon') {
+      addWheel(-0.78, -0.78, variant === 'broken-bed wagon');
+      addWheel(-0.78, 0.78, variant === 'overturned wagon');
+      addWheel(0.78, -0.78, variant === 'mud-stuck wagon');
+      if (variant !== 'broken-bed wagon') addWheel(0.78, 0.78, false);
+    }
+    const tongue = new THREE.Mesh(sharedBoxGeometry(2.0, 0.12, 0.12), wood);
+    tongue.position.set(2.05, 0.7, 0);
+    group.add(tongue);
+    if (variant === 'hay wagon') {
+      const load = new THREE.Mesh(sharedBoxGeometry(1.9, 0.85, 1.05), straw);
+      load.position.y = 1.35;
+      group.add(load);
+    } else if (variant === 'produce wagon') {
+      for (let i = 0; i < 8; i++) {
+        const item = new THREE.Mesh(new THREE.SphereGeometry(0.18, 7, 5), produce);
+        item.position.set(randomBetween(-0.82, 0.82), randomBetween(1.02, 1.42), randomBetween(-0.42, 0.42));
+        group.add(item);
+      }
+    } else if (variant === 'mud-stuck wagon') {
+      const mud = new THREE.Mesh(new THREE.CircleGeometry(1.28, 18), new THREE.MeshStandardMaterial({ color: 0x403024, roughness: 0.58 }));
+      mud.rotation.x = -Math.PI / 2;
+      mud.position.y = 0.025;
+      group.add(mud);
+    }
+  }
+  group.rotation.y = rotation;
+  group.traverse(child => { if (child.isMesh) child.castShadow = child.receiveShadow = true; });
+  const object = makeMedievalConsumable(`Harvest ${variant}`, group, wheelOnly ? 0.72 : 1.65, wheelOnly ? 24 : 62, x, z, 0);
+  object.isHarvestAsset = true;
+  object.harvestAssetName = variant;
+  object.mandateKind = 'prop';
+  return object;
+}
+
+const HARVEST_ROAD_SIGN_LABELS = Object.freeze([
+  'TOWN', 'FARMS', 'CATTLE', 'DEPOT', 'WATER', 'MARKET', 'LIVERY', 'SALOON',
+  'NORTH TRAIL', 'SOUTH TRAIL', 'RIVER', 'COUNTY LINE',
+]);
+
+function addHarvestRoadSign(label, x, z, rotation = 0) {
+  const group = new THREE.Group();
+  const wood = sharedBoxMat(0x5d3c24);
+  const post = new THREE.Mesh(sharedBoxGeometry(0.16, 1.9, 0.16), wood);
+  post.position.y = 0.95;
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 96;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#81572f';
+  ctx.fillRect(0, 0, 256, 96);
+  ctx.strokeStyle = '#392417';
+  ctx.lineWidth = 10;
+  ctx.strokeRect(5, 5, 246, 86);
+  ctx.fillStyle = '#f1d39a';
+  ctx.font = label.length > 9 ? 'bold 25px Georgia' : 'bold 34px Georgia';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, 128, 50, 226);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const board = new THREE.Mesh(
+    sharedBoxGeometry(1.9, 0.72, 0.12),
+    [
+      wood, wood, wood, wood,
+      new THREE.MeshBasicMaterial({ map: texture }),
+      wood,
+    ]
+  );
+  board.position.y = 1.72;
+  group.add(post, board);
+  group.rotation.y = rotation;
+  group.traverse(child => { if (child.isMesh) child.castShadow = child.receiveShadow = true; });
+  const object = makeMedievalConsumable(`Harvest road sign: ${label}`, group, 0.72, 22, x, z, 0);
+  object.isHarvestAsset = true;
+  object.harvestAssetName = 'road sign';
+  object.mandateKind = 'prop';
+  return object;
+}
+
+function addHarvestCactus(x, z, scale = 1) {
+  const group = new THREE.Group();
+  const green = sharedBoxMat(0x47743d);
+  const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.22 * scale, 0.27 * scale, 1.9 * scale, 7), green);
+  trunk.position.y = 0.95 * scale;
+  group.add(trunk);
+  for (const side of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.12 * scale, 0.14 * scale, 0.85 * scale, 7), green);
+    arm.position.set(side * 0.34 * scale, 1.05 * scale, 0);
+    arm.rotation.z = side * -0.72;
+    const tip = new THREE.Mesh(new THREE.CylinderGeometry(0.11 * scale, 0.13 * scale, 0.58 * scale, 7), green);
+    tip.position.set(side * 0.60 * scale, 1.38 * scale, 0);
+    group.add(arm, tip);
+  }
+  group.rotation.y = Math.random() * Math.PI;
+  group.traverse(child => { if (child.isMesh) child.castShadow = child.receiveShadow = true; });
+  const object = makeMedievalConsumable('Harvest cactus', group, 0.56 * scale, 18, x, z, 0);
+  object.isHarvestAsset = true;
+  object.harvestAssetName = 'cactus';
+  object.mandateKind = 'tree';
+  object.isTree = true;
+  return object;
+}
+
+function addHarvestWildPlant(x, z, variant = 0) {
+  const group = new THREE.Group();
+  const colors = [0x78943f, 0x8a7c35, 0x5f843f, 0xa4863f, 0x6d904f];
+  const leaf = sharedBoxMat(colors[variant % colors.length]);
+  const stem = sharedBoxMat(0x557038);
+  const stemCount = 3 + variant % 4;
+  for (let i = 0; i < stemCount; i++) {
+    const angle = i / stemCount * Math.PI * 2 + variant;
+    const stalk = new THREE.Mesh(sharedBoxGeometry(0.06, 0.5 + (i % 2) * 0.22, 0.06), stem);
+    stalk.position.set(Math.cos(angle) * 0.18, stalk.geometry.parameters.height * 0.5, Math.sin(angle) * 0.18);
+    stalk.rotation.z = Math.cos(angle) * 0.28;
+    const leaves = new THREE.Mesh(new THREE.SphereGeometry(0.18 + (variant % 3) * 0.04, 6, 4), leaf);
+    leaves.scale.set(1.35, 0.58, 0.72);
+    leaves.position.set(Math.cos(angle) * 0.3, 0.42 + (i % 2) * 0.16, Math.sin(angle) * 0.3);
+    group.add(stalk, leaves);
+  }
+  group.rotation.y = Math.random() * Math.PI;
+  group.traverse(child => { if (child.isMesh) child.castShadow = true; });
+  const object = makeMedievalConsumable('Harvest wild plant', group, 0.24, 7, x, z, 0);
+  object.isHarvestAsset = true;
+  object.harvestAssetName = 'wild plant';
+  object.mandateKind = 'prop';
+  return object;
+}
+
+function addHarvestTumbleweed(x, z) {
+  const group = new THREE.Group();
+  const twig = sharedBoxMat(0x76502e);
+  for (let i = 0; i < 5; i++) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.42 + (i % 2) * 0.1, 0.035, 5, 10), twig);
+    ring.rotation.set(i * 0.73, i * 1.17, i * 0.41);
+    group.add(ring);
+  }
+  group.position.y = 0.5;
+  const object = makeMedievalConsumable('Harvest tumbleweed', group, 0.48, 12, x, z, 0);
+  object.isHarvestAsset = true;
+  object.harvestAssetName = 'tumbleweed';
+  object.mandateKind = 'prop';
+  medievalAmbientActors.push({
+    type: 'tumbleweed',
+    obj: object,
+    direction: randomBetween(-0.35, 0.35),
+    speed: randomBetween(1.4, 2.8),
+    phase: Math.random() * Math.PI * 2,
+  });
+  return object;
+}
+
 function normalizeHarvestVisual(template, targetFootprint) {
   const visual = template.clone(true);
   visual.updateMatrixWorld(true);
@@ -2046,6 +2432,9 @@ async function addHarvestBuilding(definition, authoredSource, blockTemplates, bp
 
 function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, site, accent) {
   const authoredVisual = normalizeHarvestVisual(authoredSource, definition.footprint);
+  authoredVisual.updateMatrixWorld(true);
+  const facadeBounds = new THREE.Box3().setFromObject(authoredVisual);
+  const facadeSize = facadeBounds.getSize(new THREE.Vector3());
   authoredVisual.rotation.y = site.rotation;
   authoredVisual.position.set(site.x, 0, site.z);
   const signCanvas = document.createElement('canvas');
@@ -2064,18 +2453,36 @@ function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, 
   signContext.fillText(definition.role.toUpperCase(), 256, 66, 470);
   const signTexture = new THREE.CanvasTexture(signCanvas);
   signTexture.colorSpace = THREE.SRGBColorSpace;
+  const signWidth = Math.min(3.1, Math.max(1.45, facadeSize.x * 0.4));
+  const signHeight = Math.min(0.58, Math.max(0.42, signWidth * 0.18));
+  const signDepth = 0.11;
+  const signFaceMaterial = new THREE.MeshBasicMaterial({ map: signTexture });
+  const signEdgeMaterial = sharedBoxMat(0x3b2719);
   const sign = new THREE.Mesh(
-    sharedBoxGeometry(Math.min(4.6, definition.footprint * 0.48), 0.72, 0.16),
-    new THREE.MeshBasicMaterial({ map: signTexture })
+    sharedBoxGeometry(signWidth, signHeight, signDepth),
+    [
+      signEdgeMaterial, signEdgeMaterial, signEdgeMaterial,
+      signEdgeMaterial, signFaceMaterial, signEdgeMaterial,
+    ]
   );
-  sign.position.set(0, Math.max(3.1, definition.footprint * 0.36), definition.footprint * 0.43);
-  const awning = new THREE.Mesh(
-    sharedBoxGeometry(Math.min(5.2, definition.footprint * 0.55), 0.16, 1.45),
-    sharedBoxMat(0x6f4728)
+  const signY = THREE.MathUtils.clamp(
+    facadeBounds.min.y + Math.min(2.15, Math.max(1.5, facadeSize.y * 0.42)),
+    facadeBounds.min.y + signHeight * 1.2,
+    facadeBounds.min.y + facadeSize.y * 0.58
   );
-  awning.position.set(0, Math.max(2.25, definition.footprint * 0.27), definition.footprint * 0.46);
-  awning.rotation.x = -0.12;
-  authoredVisual.add(sign, awning);
+  const facadeFrontZ = facadeBounds.max.z;
+  sign.position.set(
+    (facadeBounds.min.x + facadeBounds.max.x) * 0.5,
+    signY,
+    facadeFrontZ + signDepth * 0.5 + 0.018
+  );
+  authoredVisual.userData.frontierSignMount = {
+    role: definition.role,
+    facadeWidth: facadeSize.x,
+    signWidth,
+    clearance: sign.position.z - facadeFrontZ,
+  };
+  authoredVisual.add(sign);
   scene.add(authoredVisual);
   harvestEnvironmentMeshes.push(authoredVisual);
   addMedievalDestructionStack(
@@ -2147,23 +2554,17 @@ async function populateHarvestCounty() {
   let edibleCount = 0;
   let buildingCount = 0;
   let fieldCount = 0;
-  const activeParcels = blockPositions.filter(bp =>
-    Math.abs(bp.x) < currentArenaHalf + 10 &&
-    Math.abs(bp.z) < currentArenaHalf + 10
-  ).map((bp, index) => ({
-    x: bp.x + Math.sin(index * 2.31) * 6.2,
-    z: bp.z + Math.cos(index * 1.73) * 5.6,
-  }));
-  const buildingEvery = 5;
+  const activeParcels = generateHarvestRuralSites();
+  const buildingEvery = 4;
   for (let parcelIndex = 0; parcelIndex < activeParcels.length; parcelIndex++) {
     if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
     const bp = activeParcels[parcelIndex];
     const bounds = { minX: bp.x - 8.7, maxX: bp.x + 8.7, minZ: bp.z - 8.7, maxZ: bp.z + 8.7 };
     const parcelType = parcelIndex % buildingEvery;
     if (parcelType === 1 || parcelType === 2) {
-      addHarvestGroundPlane(bp.x, bp.z, 18.5, 17.2, parcelType === 1 ? 0x765538 : 0x6f5b36);
+      addHarvestGroundPlane(bp.x, bp.z, 18.5 * bp.scale, 17.2 * bp.scale, parcelType === 1 ? 0x765538 : 0x6f5b36, bp.rotation);
     } else if (parcelType === 3) {
-      addHarvestGroundPlane(bp.x, bp.z, 17.5, 16.5, 0x536b38, 0.08 * Math.sin(parcelIndex));
+      addHarvestGroundPlane(bp.x, bp.z, 17.5 * bp.scale, 16.5 * bp.scale, 0x536b38, bp.rotation);
     }
 
     if (parcelType === 0) {
@@ -2273,20 +2674,59 @@ async function populateHarvestCounty() {
     if (parcelIndex % 3 === 2) await yieldCityBuildFrame();
   }
 
-  // The opening location must never depend on which parcel archetype happened
-  // to receive the player. Seed a visible, themed first-bite ring around the
-  // hole so every Harvest County run begins with an immediate growth route.
-  const starterKinds = ['basket', 'sack', 'crate', 'basket', 'hay', 'barrel'];
-  for (let i = 0; i < 20; i++) {
-    const angle = i / 20 * Math.PI * 2;
-    const radius = i < 8 ? 3.6 : i < 14 ? 5.6 : 7.4;
-    addMedievalProp(
-      `Harvest starter ${starterKinds[i % starterKinds.length]}`,
-      clampToArena(player.x + Math.cos(angle) * radius, 2),
-      clampToArena(player.z + Math.sin(angle) * radius, 2),
-      starterKinds[i % starterKinds.length]
+  for (let i = 0; i < 26; i++) {
+    const site = activeParcels[(i * 7 + 3) % activeParcels.length];
+    const variant = HARVEST_WAGON_VARIANTS[i % HARVEST_WAGON_VARIANTS.length];
+    addHarvestWagonDebris(
+      variant,
+      site.x + Math.cos(i * 2.17) * randomBetween(5.2, 9.4),
+      site.z + Math.sin(i * 2.17) * randomBetween(5.2, 9.4),
+      randomBetween(-Math.PI, Math.PI)
     );
     edibleCount++;
+  }
+
+  // Fill the whole county rather than arranging a repeated starter pattern
+  // around the player. Jittered coverage cells prevent large dead zones while
+  // remaining visually irregular from run to run.
+  const scatterKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'rock'];
+  const coverageCells = 11;
+  const scatterExtent = Math.min(101, currentArenaHalf - 4);
+  const cellSize = scatterExtent * 2 / coverageCells;
+  for (let gx = 0; gx < coverageCells; gx++) {
+    for (let gz = 0; gz < coverageCells; gz++) {
+      const perCell = 10 + Math.floor(Math.random() * 5);
+      for (let i = 0; i < perCell; i++) {
+        const x = -scatterExtent + (gx + Math.random()) * cellSize;
+        const z = -scatterExtent + (gz + Math.random()) * cellSize;
+        if (Math.hypot(x - player.x, z - player.z) < 2.5) continue;
+        const roll = Math.random();
+        if (roll < 0.12) addHarvestCactus(x, z, randomBetween(0.72, 1.24));
+        else if (roll < 0.54) addHarvestWildPlant(x, z, gx * 7 + gz * 3 + i);
+        else addMedievalProp(
+          `Scattered Harvest ${scatterKinds[(gx + gz + i) % scatterKinds.length]}`,
+          x,
+          z,
+          scatterKinds[(gx + gz + i) % scatterKinds.length]
+        );
+        edibleCount++;
+      }
+      if (Math.random() < 0.78) {
+        const centerX = -scatterExtent + (gx + 0.5) * cellSize;
+        const centerZ = -scatterExtent + (gz + 0.5) * cellSize;
+        const bounds = {
+          minX: centerX - cellSize * 0.46, maxX: centerX + cellSize * 0.46,
+          minZ: centerZ - cellSize * 0.46, maxZ: centerZ + cellSize * 0.46,
+        };
+        addHarvestWorker(
+          centerX + randomBetween(-cellSize * 0.4, cellSize * 0.4),
+          centerZ + randomBetween(-cellSize * 0.4, cellSize * 0.4),
+          bounds,
+          (gx + gz) % 3 === 0 ? 'fork' : 'hoe'
+        );
+        edibleCount++;
+      }
+    }
   }
 
   const frontierSites = [
@@ -2332,6 +2772,51 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
+  for (let i = 0; i < 36; i++) {
+    const route = HISTORIC_ROAD_ROUTES[i % HISTORIC_ROAD_ROUTES.length];
+    const segmentIndex = 1 + (i * 3 % (route.length - 1));
+    const from = route[segmentIndex - 1];
+    const to = route[segmentIndex];
+    const t = randomBetween(0.18, 0.82);
+    const dx = to[0] - from[0];
+    const dz = to[1] - from[1];
+    const length = Math.hypot(dx, dz) || 1;
+    const side = i % 2 ? -1 : 1;
+    const offset = side * randomBetween(4.2, 6.8);
+    addHarvestRoadSign(
+      HARVEST_ROAD_SIGN_LABELS[i % HARVEST_ROAD_SIGN_LABELS.length],
+      from[0] + dx * t - dz / length * offset,
+      from[1] + dz * t + dx / length * offset,
+      -Math.atan2(dz, dx)
+    );
+    edibleCount++;
+  }
+
+  for (let i = 0; i < 96; i++) {
+    const site = activeParcels[(i * 5 + 2) % activeParcels.length];
+    const bounds = {
+      minX: site.x - 9.5, maxX: site.x + 9.5,
+      minZ: site.z - 9.5, maxZ: site.z + 9.5,
+    };
+    addHarvestWorker(
+      site.x + randomBetween(-8.8, 8.8),
+      site.z + randomBetween(-8.8, 8.8),
+      bounds,
+      i % 3 === 0 ? 'fork' : 'hoe'
+    );
+    edibleCount++;
+  }
+
+  for (let i = 0; i < 30; i++) {
+    const route = HISTORIC_ROAD_ROUTES[i % HISTORIC_ROAD_ROUTES.length];
+    const point = route[(i * 2 + 1) % route.length];
+    addHarvestTumbleweed(
+      clampToArena(point[0] + randomBetween(-12, 12), 3),
+      clampToArena(point[1] + randomBetween(-12, 12), 3)
+    );
+    edibleCount++;
+  }
+
   document.documentElement.setAttribute('data-holesy-harvest-buildings', String(buildingCount));
   document.documentElement.setAttribute('data-holesy-harvest-edibles', String(edibleCount));
   document.documentElement.setAttribute('data-holesy-harvest-animals', String(
@@ -2350,10 +2835,28 @@ async function populateHarvestCounty() {
   document.documentElement.setAttribute('data-holesy-harvest-farm-equipment', String(
     objects.filter(obj => obj.harvestAssetName === 'farm tractor and plow').length
   ));
+  document.documentElement.setAttribute('data-holesy-harvest-wagon-objects', String(
+    objects.filter(obj => HARVEST_WAGON_VARIANTS.includes(obj.harvestAssetName)).length
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-road-signs', String(
+    objects.filter(obj => obj.harvestAssetName === 'road sign').length
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-cacti', String(
+    objects.filter(obj => obj.harvestAssetName === 'cactus').length
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-wild-plants', String(
+    objects.filter(obj => obj.harvestAssetName === 'wild plant').length
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-tumbleweeds', String(
+    objects.filter(obj => obj.harvestAssetName === 'tumbleweed').length
+  ));
+  document.documentElement.setAttribute('data-holesy-railgate-catalog-size', String(RAILGATE_OBJECT_CATALOG.length));
+  document.documentElement.setAttribute('data-holesy-shared-theme-object-count', String(SHARED_THEME_OBJECT_CATALOG.length));
   document.documentElement.setAttribute(
     'data-holesy-harvest-frontier-buildings',
     HARVEST_FRONTIER_BUILDINGS.map(definition => definition.role).join(',')
   );
+  document.documentElement.setAttribute('data-holesy-harvest-sign-mounting', 'low-fascia-fit');
   wakeRenderLoop();
 }
 
@@ -5035,6 +5538,7 @@ function updateHoleVisual(h) {
   const s = Math.max(3, h.radius * 2.2);
   h.labelSprite.scale.set(s, s / 4, 1);
   h.labelSprite.position.y = Math.max(2.5, h.radius * 1.5 + 1);
+  h.labelSprite.visible = !(h.isPlayer && holeEyeViewBlend > 0.45);
 
   if (h.vortexArcGroup && h.vortexArcs) {
     const musicState = holesyMusicState;
@@ -5509,7 +6013,12 @@ const hitPt = new THREE.Vector3();
 function getMouseGround() {
   ndcVec.set(input.mouseNormX, -input.mouseNormY);
   raycaster.setFromCamera(ndcVec, camera);
-  raycaster.ray.intersectPlane(groundPlane, hitPt);
+  if (!raycaster.ray.intersectPlane(groundPlane, hitPt)) {
+    const dx = raycaster.ray.direction.x;
+    const dz = raycaster.ray.direction.z;
+    const mag = Math.hypot(dx, dz) || 1;
+    hitPt.set(player.x + (dx / mag) * getPlayerPrecisionReach(), 0, player.z + (dz / mag) * getPlayerPrecisionReach());
+  }
   return hitPt;
 }
 
@@ -5529,10 +6038,20 @@ function resolvePlayerInputSource() {
 }
 
 function applyKeyboardControl(keyIntent) {
-  const mag = Math.hypot(keyIntent.dx, keyIntent.dz);
+  let intentX = keyIntent.dx;
+  let intentZ = keyIntent.dz;
+  if (holeEyeViewEnabled || holeEyeViewBlend > 0.5) {
+    const forwardAmount = -keyIntent.dz;
+    const rightAmount = keyIntent.dx;
+    intentX = holeEyeForward.x * forwardAmount - holeEyeForward.y * rightAmount;
+    intentZ = holeEyeForward.y * forwardAmount + holeEyeForward.x * rightAmount;
+    const facingMagnitude = Math.hypot(intentX, intentZ);
+    if (facingMagnitude > 0.05) holeEyeDesiredForward.set(intentX / facingMagnitude, intentZ / facingMagnitude);
+  }
+  const mag = Math.hypot(intentX, intentZ);
   const reach = HOLESY_CONFIG.input.keyboardReach;
-  player.targetX = clampToArena(player.x + (keyIntent.dx / mag) * reach, 2);
-  player.targetZ = clampToArena(player.z + (keyIntent.dz / mag) * reach, 2);
+  player.targetX = clampToArena(player.x + (intentX / mag) * reach, 2);
+  player.targetZ = clampToArena(player.z + (intentZ / mag) * reach, 2);
   player._lastInputWasKeys = true;
 }
 
@@ -5556,6 +6075,9 @@ function applyMouseControl() {
   const scale = distance > reach ? reach / distance : 1;
   player.targetX = clampToArena(player.x + dx * scale, 2);
   player.targetZ = clampToArena(player.z + dz * scale, 2);
+  if ((holeEyeViewEnabled || holeEyeViewBlend > 0.5) && distance > 0.25) {
+    holeEyeDesiredForward.set(dx / distance, dz / distance);
+  }
 }
 
 function getPlayerPrecisionReach() {
@@ -5576,8 +6098,17 @@ function applyTouchControl() {
   const nx = (input.dragDx / mag) * scale;
   const ny = (input.dragDy / mag) * scale;
   const reach = getPlayerPrecisionReach();
-  player.targetX = clampToArena(player.x + nx * reach, 2);
-  player.targetZ = clampToArena(player.z + ny * reach, 2);
+  let worldX = nx;
+  let worldZ = ny;
+  if (holeEyeViewEnabled || holeEyeViewBlend > 0.5) {
+    const forwardAmount = -ny;
+    worldX = holeEyeForward.x * forwardAmount - holeEyeForward.y * nx;
+    worldZ = holeEyeForward.y * forwardAmount + holeEyeForward.x * nx;
+    const worldMag = Math.hypot(worldX, worldZ);
+    if (worldMag > 0.05) holeEyeDesiredForward.set(worldX / worldMag, worldZ / worldMag);
+  }
+  player.targetX = clampToArena(player.x + worldX * reach, 2);
+  player.targetZ = clampToArena(player.z + worldZ * reach, 2);
 }
 
 function updatePlayerInputTarget() {
@@ -5690,7 +6221,6 @@ const runObjectivesEl = document.getElementById('run-objectives');
 const mandatePanelEl = document.getElementById('mandate-panel');
 const mandateDotsEl = document.getElementById('mandate-dots');
 const mandateLabelEl = document.getElementById('mandate-label');
-const mandateInstructionEl = document.getElementById('mandate-instruction');
 const waveContractEl = document.getElementById('wave-contract');
 const waveContractMandatesEl = document.getElementById('wave-contract-mandates');
 const waveContractGoalsEl = document.getElementById('wave-contract-goals');
@@ -5700,6 +6230,8 @@ let waveContractCompleteTimer = null;
 let waveContractSkipToken = null;
 const adaptiveAssistIndicatorEl = document.getElementById('adaptive-assist-indicator');
 const mobileHudToggleBtn = document.getElementById('mobile-hud-toggle');
+const povToggleBtn = document.getElementById('pov-toggle-btn');
+const povCompassArrow = document.getElementById('pov-compass-arrow');
 const skipWaitBtn = document.getElementById('skip-wait-btn');
 const hapticTestBtn = document.getElementById('haptic-test-btn');
 const hapticStatusEl = document.getElementById('haptic-status');
@@ -8142,17 +8674,6 @@ function updateMandateHUD() {
   const isComplete = remaining === 0 && mandateTargets.length > 0;
   if (isComplete) mandateComplete = true;
   mandateLabelEl.textContent = remaining === 0 && mandateTargets.length > 0 ? 'Complete!' : `${remaining || MANDATE_COUNT} left`;
-  // Once every target is met the panel still showed "Finish every target or
-  // the run ends." right next to a Complete! pill and 4/4 counters -- read
-  // as a live threat next to a done badge, with no indication the Mandate
-  // Surge reward (see ACTIVE_EFFECT_VISUALS.mandate_surge) had actually
-  // kicked in. Swap the instruction line itself once complete instead of
-  // leaving stale pre-completion copy in place.
-  if (mandateInstructionEl) {
-    mandateInstructionEl.textContent = isComplete
-      ? 'Mandate complete — Surge active for the rest of the wave.'
-      : 'Finish every target or the run ends.';
-  }
   mandatePanelEl.classList.toggle('mandate-complete', isComplete);
   if (isComplete && !mandateHudWasComplete && deadlineWarningWasVisible) startMandateSuccessPulse();
   if (!isComplete && mandateHudWasComplete) {
@@ -8810,27 +9331,6 @@ function releaseBuildingAudioVoice() {
   activeBuildingAudioVoices = Math.max(0, activeBuildingAudioVoices - 1);
 }
 
-// Same voice-ceiling pattern as the building sounds above, applied to the
-// everyday consume sounds (scream/tree/car/metal via playSample) -- those
-// never got one, so a dense field with a lot devoured in a short burst
-// (e.g. Harvest County's much larger opening object count, or a wide pull
-// radius sweeping through it) can fire dozens of concurrent
-// AudioBufferSourceNodes with reverb sends, which is a well-known way to
-// overload the Web Audio graph and cause exactly the "sound mostly cut
-// out" symptom reported after a busy stretch.
-const MAX_SIMULTANEOUS_AMBIENT_SOUNDS = 8;
-let activeAmbientAudioVoices = 0;
-
-function reserveAmbientAudioVoice() {
-  if (activeAmbientAudioVoices >= MAX_SIMULTANEOUS_AMBIENT_SOUNDS) return false;
-  activeAmbientAudioVoices++;
-  return true;
-}
-
-function releaseAmbientAudioVoice() {
-  activeAmbientAudioVoices = Math.max(0, activeAmbientAudioVoices - 1);
-}
-
 function scheduleAudioBankWarmup(delayMs = 2500) {
   if (audioBanksLoaded || audioBankWarmupTimer || !music.ctx) return;
   audioBankWarmupTimer = setTimeout(() => {
@@ -8886,12 +9386,9 @@ function makeVoiceProfile() {
   return { isFemale, isPanicked, sampleIdx, playbackRate, gain };
 }
 
-// Generic sample playback with pitch + gain control, reverb send. Callers
-// that reserved a voice (see reserveAmbientAudioVoice) pass onRelease so
-// the reservation is freed exactly when the source actually finishes,
-// same lifecycle the building-sound voice ceiling already uses.
-function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, onRelease = null) {
-  if (!music.ctx || !buffer) { if (onRelease) onRelease(); return; }
+// Generic sample playback with pitch + gain control, reverb send
+function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12) {
+  if (!music.ctx || !buffer) return;
   const ctx = music.ctx;
   const src = ctx.createBufferSource();
   src.buffer = buffer;
@@ -8907,10 +9404,7 @@ function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, on
     rev.connect(music.reverb);
   }
   activeNonMusicSources.add(src);
-  src.onended = () => {
-    activeNonMusicSources.delete(src);
-    if (onRelease) onRelease();
-  };
+  src.onended = () => activeNonMusicSources.delete(src);
   src.start();
 }
 
@@ -8921,7 +9415,6 @@ function stopActiveNonMusicSources() {
   }
   activeNonMusicSources.clear();
   activeBuildingAudioVoices = 0;
-  activeAmbientAudioVoices = 0;
 }
 
 // Play scream for a person using their voice profile
@@ -8931,8 +9424,7 @@ function playScream(voice, volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const buf = audioBank.screams[voice.sampleIdx];
   if (!buf) return; // not decoded yet — silent this one
-  if (!reserveAmbientAudioVoice()) return;
-  playSample(buf, voice.playbackRate, voice.gain * volumeScale, 0.12, releaseAmbientAudioVoice);
+  playSample(buf, voice.playbackRate, voice.gain * volumeScale, 0.12);
 }
 
 // Play a random tree sound with slight pitch variation
@@ -8943,12 +9435,11 @@ function playTreeSound(volumeScale = 1.0) {
   // Pick a random tree sample that has decoded
   const loaded = audioBank.trees.filter(b => b);
   if (loaded.length === 0) return;
-  if (!reserveAmbientAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   // Slight pitch wobble for variety
   const rate = 0.92 + Math.random() * 0.16;
   const gain = (0.5 + Math.random() * 0.2) * volumeScale;
-  playSample(buf, rate, gain, 0.18, releaseAmbientAudioVoice);
+  playSample(buf, rate, gain, 0.18);
 }
 
 // Play a random car sound with slight pitch variation
@@ -8958,11 +9449,10 @@ function playCarSound(volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.cars.filter(b => b);
   if (loaded.length === 0) return;
-  if (!reserveAmbientAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   const rate = 0.95 + Math.random() * 0.10;
   const gain = (0.55 + Math.random() * 0.20) * volumeScale;
-  playSample(buf, rate, gain, 0.10, releaseAmbientAudioVoice);
+  playSample(buf, rate, gain, 0.10);
 }
 
 // Play a random building demolition sound. Pitch and volume scale with
@@ -9137,13 +9627,12 @@ function playMetalSound(volumeScale = 1.0) {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const loaded = audioBank.metal.filter(b => b);
   if (loaded.length === 0) return;
-  if (!reserveAmbientAudioVoice()) return;
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   // Wide pitch variation (0.82 - 1.22x) — simulates different object sizes/densities.
   // Lower pitch = larger/heavier metal (bench, lamp post). Higher = smaller (cone, mailbox).
   const rate = 0.82 + Math.random() * 0.40;
   const gain = (0.45 + Math.random() * 0.25) * volumeScale;
-  playSample(buf, rate, gain, 0.14, releaseAmbientAudioVoice);
+  playSample(buf, rate, gain, 0.14);
 }
 
 // =========================================================================
@@ -10077,6 +10566,7 @@ async function startGame() {
 
   tearDownWorld();
   resetHoleState();
+  repositionHolesForNewWave();
   await populateCity();
   selectMandateTargets();
   startLoreRunTracking();
@@ -11503,6 +11993,7 @@ function repositionHolesForNewWave() {
     h.x = c.x; h.z = c.z;
     h.targetX = c.x; h.targetZ = c.z;
     h.lastWaveStartCornerKey = c.key;
+    if (h.isPlayer) document.documentElement.setAttribute('data-holesy-player-start-corner', c.key);
     // Clear hole-hunt target since the world just changed under it
     h.aiTargetObj = null;
     h.aiState = 'wander';
@@ -11709,7 +12200,7 @@ function presentWaveContract(waveNum, onDocked) {
   mandateCard?.classList.toggle('hidden', pendingMandates.length === 0);
   goalsCard?.classList.toggle('hidden', pendingGoals.length === 0);
   waveContractMandatesEl.innerHTML = pendingMandates
-    .map(target => `<div>☠ ${escapeHtml(`${target.verb} ${target.required} ${target.label}`)}</div>`).join('');
+    .map(target => `<div>⚡ ${escapeHtml(`${target.verb} ${target.required} ${target.label}`)}</div>`).join('');
   waveContractGoalsEl.innerHTML = pendingGoals
     .map(goal => `<div>★ ${escapeHtml(goal.label)}</div>`).join('');
   waveContractEl.classList.remove('hidden', 'docking');
@@ -11757,7 +12248,6 @@ function startWave(waveNum) {
 // the next wave or ends the run if this was wave 4.
 function onWaveTimerExpired() {
   if (!player.alive && playerConsumedReturnTimer) return;
-  if (triggerMandateFailureGameOver()) return;
   // If somehow only one hole is left at this point, end immediately as a win.
   const aliveCount = holes.filter(h => h.alive).length;
   if (!endlessMode && aliveCount <= 1) { endGame(); return; }
@@ -12486,6 +12976,41 @@ pauseBtn.addEventListener('click', () => {
   if (pauseOverlay.classList.contains('hidden')) pauseGame();
   else resumeGame();
 });
+function syncHoleEyeViewControl() {
+  if (!povToggleBtn) return;
+  povToggleBtn.setAttribute('aria-pressed', holeEyeViewEnabled ? 'true' : 'false');
+  povToggleBtn.setAttribute('aria-label', holeEyeViewEnabled ? 'Return to third-person overhead view' : 'Switch to first-person Hole-Eye View');
+  povToggleBtn.textContent = holeEyeViewEnabled ? 'VIEW: 1ST · V/ESC' : 'VIEW: 3RD';
+  document.body.classList.toggle('hole-eye-view', holeEyeViewEnabled);
+}
+
+function setHoleEyeView(enabled) {
+  holeEyeViewEnabled = !!enabled;
+  if (holeEyeViewEnabled && player?.alive) {
+    releaseMouseControl();
+    const centerDistance = Math.hypot(player.x, player.z);
+    if (centerDistance > 1) holeEyeDesiredForward.set(-player.x / centerDistance, -player.z / centerDistance);
+  }
+  syncHoleEyeViewControl();
+  wakeRenderLoop();
+}
+
+function toggleHoleEyeView() {
+  if (!isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION)) return;
+  setHoleEyeView(!holeEyeViewEnabled);
+}
+
+if (povToggleBtn) povToggleBtn.addEventListener('click', toggleHoleEyeView);
+let lastViewWheelToggleAt = 0;
+canvas.addEventListener('wheel', (e) => {
+  if (!isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION)) return;
+  if (Math.abs(e.deltaY) < 12) return;
+  e.preventDefault();
+  const now = performance.now();
+  if (now - lastViewWheelToggleAt < 650) return;
+  lastViewWheelToggleAt = now;
+  toggleHoleEyeView();
+}, { passive: false });
 if (timeCycleBtn) timeCycleBtn.addEventListener('click', () => cycleTimeOfDayLook());
 pauseResumeBtn.addEventListener('click', () => resumeGame());
 pauseSaveBtn.addEventListener('click', () => saveEndlessGame());
@@ -12499,6 +13024,17 @@ pauseExitBtn.addEventListener('click', () => {
 });
 
 window.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'v' && !e.repeat) {
+    e.preventDefault();
+    toggleHoleEyeView();
+    return;
+  }
+  if (e.key.toLowerCase() === 'p' && !e.repeat && canUsePauseMenu()) {
+    e.preventDefault();
+    if (pauseOverlay.classList.contains('hidden')) pauseGame();
+    else resumeGame();
+    return;
+  }
   if (e.key === '`') {
     e.preventDefault();
     toggleDebugOverlay();
@@ -12513,6 +13049,11 @@ window.addEventListener('keydown', (e) => {
     if (!loreModal.classList.contains('hidden')) {
       e.preventDefault();
       closeLoreArchive();
+      return;
+    }
+    if (holeEyeViewEnabled) {
+      e.preventDefault();
+      setHoleEyeView(false);
       return;
     }
     if (!canUsePauseMenu()) return;
@@ -12610,6 +13151,54 @@ refreshEndlessSaveControls();
 
 function canObjectFitHole(h, obj) {
   return getObjectLargestDimension(obj) <= h.radius * 2 * 0.95 && obj.size <= h.radius * 0.98;
+}
+
+const OBJECT_PROXIMITY_CELL_SIZE = 12;
+const objectProximityGrid = new Map();
+const nearbyInteractiveObjects = new Set();
+
+function objectProximityCellKey(cellX, cellZ) {
+  return `${cellX},${cellZ}`;
+}
+
+function rebuildObjectProximityGrid() {
+  objectProximityGrid.clear();
+  for (const obj of objects) {
+    if (obj.consumed || obj.falling || obj.jammedInHole) continue;
+    if (obj.physicsStackPiece && !obj.stackActive) continue;
+    const cellX = Math.floor(obj.x / OBJECT_PROXIMITY_CELL_SIZE);
+    const cellZ = Math.floor(obj.z / OBJECT_PROXIMITY_CELL_SIZE);
+    const key = objectProximityCellKey(cellX, cellZ);
+    let bucket = objectProximityGrid.get(key);
+    if (!bucket) {
+      bucket = [];
+      objectProximityGrid.set(key, bucket);
+    }
+    bucket.push(obj);
+  }
+}
+
+function collectNearbyInteractiveObjects(extraPlayerPullRange = 0) {
+  nearbyInteractiveObjects.clear();
+  rebuildObjectProximityGrid();
+  for (const h of holes) {
+    if (!h.alive) continue;
+    // Any object that fits can only be pulled from roughly two hole radii away.
+    // Oversized jam candidates need less range, so this bound covers both paths.
+    const queryRadius = Math.max(2, h.radius * 2 + (h.isPlayer ? extraPlayerPullRange : 0) + 1);
+    const minCellX = Math.floor((h.x - queryRadius) / OBJECT_PROXIMITY_CELL_SIZE);
+    const maxCellX = Math.floor((h.x + queryRadius) / OBJECT_PROXIMITY_CELL_SIZE);
+    const minCellZ = Math.floor((h.z - queryRadius) / OBJECT_PROXIMITY_CELL_SIZE);
+    const maxCellZ = Math.floor((h.z + queryRadius) / OBJECT_PROXIMITY_CELL_SIZE);
+    for (let cellX = minCellX; cellX <= maxCellX; cellX++) {
+      for (let cellZ = minCellZ; cellZ <= maxCellZ; cellZ++) {
+        const bucket = objectProximityGrid.get(objectProximityCellKey(cellX, cellZ));
+        if (!bucket) continue;
+        for (const obj of bucket) nearbyInteractiveObjects.add(obj);
+      }
+    }
+  }
+  return nearbyInteractiveObjects;
 }
 
 function tryJamOversizedObject(h, obj, distance = null) {
@@ -14783,7 +15372,12 @@ function updateMovingCars(dt) {
 // =========================================================================
 // PEOPLE SIMULATION — walk/panic with bounds
 // =========================================================================
+let movingPeopleAccumulator = 0;
 function updateMovingPeople(dt) {
+  movingPeopleAccumulator = Math.min(0.1, movingPeopleAccumulator + dt);
+  if (movingPeopleAccumulator < 1 / 30) return;
+  dt = movingPeopleAccumulator;
+  movingPeopleAccumulator = 0;
   const PANIC_RADIUS = HOLESY_CONFIG.people.panicRadius;
   const PANIC_COOLDOWN_DIST = HOLESY_CONFIG.people.panicCooldownDistance;
   const BOUNDS_INSET = HOLESY_CONFIG.people.boundsInset;
@@ -17291,6 +17885,90 @@ window.addEventListener('pageshow', (event) => {
   syncTitleAudioToGameState();
 });
 
+function updateGameplayCamera(focus, dt, now) {
+  const targetBlend = holeEyeViewEnabled ? 1 : 0;
+  const transitionAlpha = 1 - Math.exp(-dt * 11);
+  holeEyeViewBlend += (targetBlend - holeEyeViewBlend) * transitionAlpha;
+  if (Math.abs(targetBlend - holeEyeViewBlend) < 0.002) holeEyeViewBlend = targetBlend;
+
+  if (!cameraFocusTracked) {
+    lastCameraFocusX = focus.x;
+    lastCameraFocusZ = focus.z;
+    cameraFocusTracked = true;
+  } else {
+    const focusDx = focus.x - lastCameraFocusX;
+    const focusDz = focus.z - lastCameraFocusZ;
+    const focusTravel = Math.hypot(focusDx, focusDz);
+    if (holeEyeViewBlend < 0.15 && focusTravel > 0.02) {
+      holeEyeDesiredForward.set(focusDx / focusTravel, focusDz / focusTravel);
+    }
+    lastCameraFocusX = focus.x;
+    lastCameraFocusZ = focus.z;
+  }
+
+  const cameraSizeResponse = THREE.MathUtils.clamp((focus.radius - MIN_RADIUS) / 9, 0, 1);
+  const headingRate = THREE.MathUtils.lerp(3.6, 7.5, cameraSizeResponse);
+  const headingAlpha = 1 - Math.exp(-dt * headingRate);
+  holeEyeForward.lerp(holeEyeDesiredForward, headingAlpha);
+  if (holeEyeForward.lengthSq() < 0.001) holeEyeForward.set(0, -1);
+  else holeEyeForward.normalize();
+  if (povCompassArrow && holeEyeViewBlend > 0.01) {
+    const northAngle = Math.atan2(-holeEyeForward.x, -holeEyeForward.y);
+    povCompassArrow.style.transform = `translateX(-50%) rotate(${northAngle}rad)`;
+  }
+
+  const overheadHeight = 30 + focus.radius * 1.8;
+  const overheadBack = 20 + focus.radius * 1.5;
+  const overheadX = focus.x;
+  const overheadY = overheadHeight;
+  const overheadZ = focus.z + overheadBack;
+
+  const eyeBack = THREE.MathUtils.clamp(4 + focus.radius * 0.65, 4.6, 10);
+  const eyeHeight = THREE.MathUtils.clamp(2.75 + focus.radius * 0.38, 3.1, 7);
+  const eyeX = focus.x - holeEyeForward.x * eyeBack;
+  const eyeY = eyeHeight;
+  const eyeZ = focus.z - holeEyeForward.y * eyeBack;
+
+  const desiredX = THREE.MathUtils.lerp(overheadX, eyeX, holeEyeViewBlend);
+  const desiredY = THREE.MathUtils.lerp(overheadY, eyeY, holeEyeViewBlend);
+  const desiredZ = THREE.MathUtils.lerp(overheadZ, eyeZ, holeEyeViewBlend);
+  const eyeFollowRate = THREE.MathUtils.lerp(7.5, 12.5, cameraSizeResponse);
+  const followRate = THREE.MathUtils.lerp(4, eyeFollowRate, holeEyeViewBlend);
+  const followAlpha = 1 - Math.exp(-dt * followRate);
+  camera.position.x += (desiredX - camera.position.x) * followAlpha;
+  camera.position.y += (desiredY - camera.position.y) * followAlpha;
+  camera.position.z += (desiredZ - camera.position.z) * followAlpha;
+
+  const eyeLookDistance = THREE.MathUtils.clamp(8 + focus.radius * 0.55, 8, 18);
+  const desiredLookX = THREE.MathUtils.lerp(focus.x, focus.x + holeEyeForward.x * eyeLookDistance, holeEyeViewBlend);
+  const desiredLookY = 0;
+  const desiredLookZ = THREE.MathUtils.lerp(focus.z, focus.z + holeEyeForward.y * eyeLookDistance, holeEyeViewBlend);
+  cameraLookTarget.x += (desiredLookX - cameraLookTarget.x) * followAlpha;
+  cameraLookTarget.y += (desiredLookY - cameraLookTarget.y) * followAlpha;
+  cameraLookTarget.z += (desiredLookZ - cameraLookTarget.z) * followAlpha;
+
+  if (player.unitClearShakeUntil && now < player.unitClearShakeUntil) {
+    const shakeT = (player.unitClearShakeUntil - now) / 520;
+    const shake = Math.max(0, shakeT) * THREE.MathUtils.lerp(0.55, 0.22, holeEyeViewBlend);
+    camera.position.x += (Math.random() - 0.5) * shake;
+    camera.position.y += (Math.random() - 0.5) * shake * 0.6;
+    camera.position.z += (Math.random() - 0.5) * shake;
+  }
+  camera.lookAt(cameraLookTarget);
+
+  const desiredFar = holeEyeViewBlend > 0.5 ? HOLE_EYE_CAMERA_FAR : OVERHEAD_CAMERA_FAR;
+  if (desiredFar !== lastCameraModeFar) {
+    lastCameraModeFar = desiredFar;
+    camera.far = desiredFar;
+    camera.updateProjectionMatrix();
+  }
+  if (scene.fog) {
+    const profileFogFar = HOLESY_CONFIG.performance.profiles[HOLESY_CONFIG.performance.activeProfileName].renderer.fogFar;
+    scene.fog.near = THREE.MathUtils.lerp(80, HOLE_EYE_FOG_NEAR, holeEyeViewBlend);
+    scene.fog.far = THREE.MathUtils.lerp(profileFogFar, Math.min(profileFogFar, HOLE_EYE_FOG_FAR), holeEyeViewBlend);
+  }
+}
+
 function animate(frameNow = performance.now()) {
   animationFrameId = null;
   if (lifecycleTerminated) return;
@@ -17365,7 +18043,8 @@ function animate(frameNow = performance.now()) {
     const playerLorePullBonus = player.alive && getLoreTimedBuffRemaining('pedestrian_pull', now) > 0
       ? player.radius * (getLoreComboState('block_party', now) ? 0.55 : 0.35)
       : 0;
-    for (const obj of objects) {
+    const interactiveObjects = collectNearbyInteractiveObjects(playerLorePullBonus);
+    for (const obj of interactiveObjects) {
       if (obj.consumed || obj.falling) continue;
       if (obj.jammedInHole) continue;
       if (obj.physicsStackPiece && !obj.stackActive) continue;
@@ -17519,19 +18198,7 @@ function animate(frameNow = performance.now()) {
     const focus = player.alive ? player : (holes.find(h => h.alive) || player);
     // Camera follows focus hole. Zoom-out coefficient is deliberately small so
     // the hole visibly grows on screen rather than staying the same perceived size.
-    const camHeight = 30 + focus.radius * 1.8;
-    const camBack = 20 + focus.radius * 1.5;
-    camera.position.x += (focus.x - camera.position.x) * Math.min(1, dt * 4);
-    camera.position.z += (focus.z + camBack - camera.position.z) * Math.min(1, dt * 4);
-    camera.position.y += (camHeight - camera.position.y) * Math.min(1, dt * 4);
-    if (player.unitClearShakeUntil && now < player.unitClearShakeUntil) {
-      const shakeT = (player.unitClearShakeUntil - now) / 520;
-      const shake = Math.max(0, shakeT) * 0.55;
-      camera.position.x += (Math.random() - 0.5) * shake;
-      camera.position.y += (Math.random() - 0.5) * shake * 0.6;
-      camera.position.z += (Math.random() - 0.5) * shake;
-    }
-    camera.lookAt(focus.x, 0, focus.z);
+    updateGameplayCamera(focus, dt, now);
 
     if (now - lastHudUpdateAt >= HUD_UPDATE_INTERVAL_MS) {
       lastHudUpdateAt = now;

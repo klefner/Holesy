@@ -1,14 +1,51 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 190;
+export const BUILD_SUB = 194;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
   {
-    label: 'Master 16.190',
-    title: 'Mandate clarity and ambient audio voice ceiling',
+    label: 'Master 16.194',
+    title: 'Hole-Eye first-person view',
     notes: [
-      'The Mandate panel instruction line now confirms Surge is active once every target is met, instead of still reading like an open threat next to a Complete! badge and full 4/4 counters.',
-      'Consume sounds (people, trees, cars, small props) now share an 8-voice ceiling the same way building-destruction audio already does, so a dense field devoured in a short burst can no longer overload the audio graph and cut sound out.',
+      'Adds a fast first-person Hole-Eye view with size-aware camera response and camera-relative keyboard control.',
+      'Switches instantly with the HUD button, V, Escape, or a debounced mouse-wheel gesture while keeping Pause accessible with P.',
+      'Adds a north-pointing compass for location-based Mandates and trims first-person camera range for steadier performance.',
+    ],
+  },
+  {
+    label: 'Master 16.193',
+    title: 'Crowd-scale frame pacing',
+    notes: [
+      'Keeps the crowded frontier population while limiting object interaction checks to nearby world cells.',
+      'Runs passive pedestrian, animal, and tumbleweed motion at a stable 30 Hz while panic and gameplay remain responsive.',
+      'Responds to sustained slow frames sooner and can temporarily lower render resolution before crowded scenes hitch.',
+    ],
+  },
+  {
+    label: 'Master 16.192',
+    title: 'Crowded living frontier',
+    notes: [
+      'Removes the repeated starter-object ring and restores randomized corner starts in every mode.',
+      'Adds road signs, many more people, wild plants, cacti, and wind-driven tumbleweeds.',
+      'Fills low-density gaps across Harvest County while keeping immediate hole clearance.',
+    ],
+  },
+  {
+    label: 'Master 16.191',
+    title: 'Living rural sites and weathered trails',
+    notes: [
+      'Replaces Harvest County hidden-grid parcels with collision-spaced rural sites clustered around organic routes.',
+      'Builds curved, variable-width trails with dry soil, mud, wet patches, irregular edges, and wagon ruts.',
+      'Adds broken wagon and wheel objects and establishes the 100-object Railgate theme catalog.',
+    ],
+  },
+  {
+    label: 'Master 16.190',
+    title: 'Mandates no longer end runs',
+    notes: [
+      'Removes only the rule that ends a run when the Mandate target list is incomplete.',
+      'Keeps every Mandate category, target, progress row, completion reward, and Mandate Surge intact.',
+      'Lets Waves and Endless advance normally when a Mandate is incomplete.',
     ],
   },
   {
