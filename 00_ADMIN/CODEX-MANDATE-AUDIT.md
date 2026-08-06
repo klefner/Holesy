@@ -4,7 +4,7 @@
 **Author of brief:** Claude (analysis of governed source)
 **Governed target:** `10_SOURCE/Masters/Master 16/` — **Master 16.197**, commit `d26dd98`
 **Files in scope:** `js/main.js`, `js/difficulty-profiles.js`, `index.html`, `how-to-play.html`
-**Status:** ☐ Not started ☐ In progress ☐ Awaiting klefner decision (Task 4) ☐ Done
+**Status:** ☐ Not started ☐ In progress ☐ Done
 
 ---
 
@@ -20,7 +20,7 @@
 1. `MANDATE_TARGET_SLOTS` has **57** slots; none contains goal / "sweep" / "all goals" text.
    - `grep -nE "mandateSlot\(\{" main.js | wc -l` -> expect `57`
    - `grep -niE "mandate" main.js | grep -iE "goal|sweep|all objectives|complete all"` -> expect **no** hit inside the slots array.
-2. The only "complete all goals" strings in the repo are the **Prism Orbit cosmetic** (`prism_orbit`, main.js line 33; hint at ~8183) and the **Goal Sweep** Run-Goal reward (~6549 / ~8148 / ~8214). These are rewards, not mandates. Leave their wording alone unless Task 4 Option A requires the mandate-panel copy.
+2. The only "complete all goals" strings in the repo are the **Prism Orbit cosmetic** (`prism_orbit`, main.js line 33; hint at ~8183) and the **Goal Sweep** Run-Goal reward (~6549 / ~8148 / ~8214). These are rewards, not mandates. Leave their wording alone unless Task 4 requires the mandate-panel copy.
 3. Military mandates are already wave-gated: `soldiers`/`military_units` -> `minWave: 2`, `boss_units` -> `minWave: 5`; and `selectMandateTargets()` only picks slots with `availableCount > 0`. An impossible military **mandate** cannot roll on Wave 1. Do not "fix" this.
 4. A missed mandate does **not** end the run in this source. `onWaveTimerExpired()` (~12249) never checks mandate state; `triggerMandateFailureGameOver()` (~8703) has **no callers** (dead code). `how-to-play.html` line 204 still says "a missed Mandate ends the run" — stale, contradicts the code.
 
@@ -51,15 +51,14 @@ Soldier Run Goals (`RUN_OBJECTIVE_DEFS` entries with `waveOnly: true`, ~7926–7
 - [ ] Do **not** hard-remove soldier goals — standard 4-wave runs must still be able to receive them (soldiers exist Waves 2–4). Keep `refreshRunObjectivesForWave` persistence behavior unchanged.
 - [ ] Confirm Waves 2–4 can still receive soldier goals after the change.
 
-## Task 4 — Reconcile docs with actual mandate behavior (REQUIRES klefner decision)
+## Task 4 — Reconcile docs with actual mandate behavior
 
-Code is currently **reward-only**; how-to-play says it ends the run. They must agree. Do **not** pick a direction — klefner chooses:
+**DECISION: Option A (default set by klefner — reversible; may be revisited later).**
 
-- **Option A (match current code):** edit `how-to-play.html` lines 194–205 (and `index.html` mandate copy if needed) so mandates read as an optional completion **reward** (speed + damage protection), not run-ending. No JS behavior change.
-- **Option B (make mandates truly mandatory):** re-wire enforcement (call `triggerMandateFailureGameOver()` from `onWaveTimerExpired()` before advancing) **and** guarantee every selected mandate is solvable within the wave timer. Larger/riskier; only on explicit approval.
+Code is currently **reward-only**; how-to-play says it ends the run. Make the docs match the code.
 
-- [ ] klefner's choice recorded: ____
-- [ ] Change applied per chosen option.
+- [ ] **Option A (APPROVED):** edit `how-to-play.html` lines 194–205 (and `index.html` mandate copy if needed) so mandates read as an optional completion **reward** (speed + damage protection), not run-ending. **No JS behavior change.**
+- [ ] Option B (NOT approved — do not implement unless klefner explicitly switches to it later): make mandates truly mandatory by re-wiring `triggerMandateFailureGameOver()` into `onWaveTimerExpired()` **and** guaranteeing every selected mandate is solvable within the wave timer.
 
 ---
 
@@ -72,7 +71,7 @@ The 57 mandate slots' counts/labels, mandate wave-gating (`minWave`), `selectMan
 - [ ] Grep output proving facts 1–4.
 - [ ] Task 1 live-vs-16.197 diff summary.
 - [ ] Task 3 before/after of `isRunObjectiveEligible`, plus note confirming Waves 2–4 still receive soldier goals.
-- [ ] Task 4 option chosen + exact text/behavior changed.
+- [ ] Task 4 (Option A) — exact doc text changed.
 
 ---
 
