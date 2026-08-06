@@ -6,10 +6,15 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.197` and player-facing surfaces show `Version 16.197`
-- `Master 16.197` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.198` and player-facing surfaces show `Version 16.198`
+- `Master 16.198` is the current governed source basis and includes:
+  - the crowded Harvest food supply reorganized into 44 overlapping farmstead clusters plus an 80-object guaranteed starter trail
+  - 17 unchanged intact authored buildings with complete 8,804-point building value and compact 8–20-piece destruction tiers
+  - distance sleeping for Harvest workers and ambient life, batched field rows, reduced spatial-index rebuild frequency, and performance telemetry
+  - supply-aware Run Goals that cannot demand more of a category than the generated town provides
+- `Master 16.197` remains the rollback baseline and includes:
   - the full crowded Harvest population and full 96–128-piece building breakup logic restored from `Master 16.194`
-  - no 1,000-object cap, density thinning, worker reduction, road-life reduction, or destruction-fragment reduction
+  - no 1,000-object cap, density thinning, worker reduction, or road-life reduction
   - the higher, farther-back Hole-Eye camera that keeps the complete hole rim and surrounding landscape visible
   - plain Mandate reward language describing the speed boost and damage protection without the Mandate Surge name
 - `Master 16.195` and `Master 16.196` are rejected object-count experiments retained as historical evidence only

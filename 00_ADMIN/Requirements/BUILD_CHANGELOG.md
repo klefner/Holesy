@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.198 - 2026-08-06
+
+Rebuilt Harvest performance around functioning-town design without removing its food economy.
+
+- Replaces the uniform 11x11 scatter grid with 44 overlapping farmstead clusters and a guaranteed 80-object starter feeding trail.
+- Preserves 17 intact authored buildings and their combined 8,804-point food value while reducing dormant breakup bookkeeping from about 1,760 pieces to 228 readable pieces.
+- Uses 8–20-piece destruction tiers, batches field rows, disables unnecessary small-prop shadow casting, sleeps distant rural actors, and rebuilds the interaction grid once per four frames.
+- Caps Run Goals against generated category supply and scales rewards proportionally.
+- Adds comparative frame-time, draw-call, triangle, object, building-piece, and awake-actor telemetry.
+
 ## Master 16.197 - 2026-07-31
 
 Restored the crowded Harvest population and removed unexplained Mandate terminology.
