@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 199;
+export const BUILD_SUB = 200;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.200',
+    title: 'Wave-five music source leak removed',
+    notes: [
+      'Removes completed procedural-score sources from the live music registry instead of retaining thousands through wave five.',
+      'Disconnects each finished note group\'s oscillators, filters, envelopes, and modulation nodes as soon as the group ends.',
+      'Preserves the complete Master 16.198 Harvest town baseline and the 16.199 SFX pressure protections.',
+    ],
+  },
   {
     label: 'Master 16.199',
     title: 'Late-wave audio continuity under heavy visibility',
