@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.199';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.200';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -6988,10 +6988,12 @@ const music = holesyMusicState = {
   lookahead: 0.24,     // protect the score from short render/main-thread stalls
   schedulerRecoveries: 0,
   droppedSfxVoices: 0,
-  activeSources: [],   // track so we can cancel on stop
+  activeSources: new Set(), // only currently sounding/scheduled music sources
+  peakActiveMusicSources: 0,
   duckedUntil: 0,
   holeWind: null,
 };
+const scheduledMusicSourceCleanup = new Map();
 markBootStep('after-music-state');
 
 // Musical constants
@@ -7071,6 +7073,34 @@ function getLeadNote(sixteenth) {
 }
 
 // === VOICE SYNTHESIS ===
+
+function trackScheduledMusicGroup(sources, connectedNodes = []) {
+  const liveSources = new Set(sources);
+  let groupReleased = false;
+  const releaseGroupNodes = () => {
+    if (groupReleased || liveSources.size > 0) return;
+    groupReleased = true;
+    for (const node of connectedNodes) {
+      try { node.disconnect(); } catch (e) {}
+    }
+  };
+  for (const source of sources) {
+    let released = false;
+    const cleanup = () => {
+      if (released) return;
+      released = true;
+      music.activeSources.delete(source);
+      scheduledMusicSourceCleanup.delete(source);
+      liveSources.delete(source);
+      try { source.disconnect(); } catch (e) {}
+      releaseGroupNodes();
+    };
+    music.activeSources.add(source);
+    scheduledMusicSourceCleanup.set(source, cleanup);
+    source.onended = cleanup;
+  }
+  music.peakActiveMusicSources = Math.max(music.peakActiveMusicSources, music.activeSources.size);
+}
 
 function initMusicContext() {
   if (music.ctx) return;
@@ -7187,7 +7217,7 @@ function playString(midiNote, when, duration, gain = 0.08) {
   filter.connect(env);
   env.connect(music.masterGain);
   env.connect(music.reverb);
-  music.activeSources.push(...sources);
+  trackScheduledMusicGroup(sources, [filter, env]);
 }
 
 // Low brass stab: saw+triangle, short punchy envelope with filter sweep
@@ -7217,7 +7247,7 @@ function playBrass(midiNote, when, gain = 0.1) {
   env.connect(music.reverb);
   saw.start(when); tri.start(when);
   saw.stop(when + duration + 0.05); tri.stop(when + duration + 0.05);
-  music.activeSources.push(saw, tri);
+  trackScheduledMusicGroup([saw, tri], [filter, env]);
 }
 
 // Timpani hit: filtered noise burst + pitched sine thump
@@ -7251,7 +7281,7 @@ function playTimpani(midiNote, when, vel = 1.0) {
   nEnv.gain.value = 0.15 * vel;
   noise.connect(nFilter); nFilter.connect(nEnv); nEnv.connect(music.masterGain);
   noise.start(when); noise.stop(when + 0.2);
-  music.activeSources.push(osc, noise);
+  trackScheduledMusicGroup([osc, noise], [oEnv, nFilter, nEnv]);
 }
 
 // Lead melody voice: filtered square with vibrato — flute/ocarina-ish
@@ -7279,7 +7309,7 @@ function playLead(midiNote, when, duration, gain = 0.05) {
   osc.connect(filter); filter.connect(env); env.connect(music.masterGain); env.connect(music.reverb);
   osc.start(when); lfo.start(when);
   osc.stop(when + duration + 0.05); lfo.stop(when + duration + 0.05);
-  music.activeSources.push(osc, lfo);
+  trackScheduledMusicGroup([osc, lfo], [lfoGain, filter, env]);
 }
 
 // Sub-bass drone: constantly sounding, modulated by LFO for tension.
@@ -7574,11 +7604,14 @@ function stopMusic(fadeMs = 800) {
 }
 
 function stopScheduledMusicSources() {
-  for (const source of music.activeSources || []) {
+  for (const source of [...music.activeSources]) {
     try { source.stop(); } catch(e) {}
-    try { source.disconnect(); } catch(e) {}
+    const cleanup = scheduledMusicSourceCleanup.get(source);
+    if (cleanup) cleanup();
+    else try { source.disconnect(); } catch(e) {}
   }
-  music.activeSources = [];
+  music.activeSources.clear();
+  scheduledMusicSourceCleanup.clear();
 }
 
 function stopMusicNow() {
@@ -18135,6 +18168,8 @@ function updateRuntimePerformanceTelemetry(frameDeltaMs, now) {
   root.setAttribute('data-holesy-audio-dropped-sfx-voices', String(music.droppedSfxVoices));
   root.setAttribute('data-holesy-audio-scheduler-recoveries', String(music.schedulerRecoveries));
   root.setAttribute('data-holesy-audio-context-state', music.ctx?.state || 'uninitialized');
+  root.setAttribute('data-holesy-audio-active-music-sources', String(music.activeSources.size));
+  root.setAttribute('data-holesy-audio-peak-music-sources', String(music.peakActiveMusicSources));
 }
 
 function animate(frameNow = performance.now()) {

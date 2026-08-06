@@ -2,6 +2,17 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.200 - 2026-08-06
+
+Removed the cumulative procedural-score source leak responsible for wave-five audio collapse.
+
+- Replaces the append-only music source array with a live-source set.
+- Removes and disconnects each completed note source automatically.
+- Disconnects shared filters, envelopes, noise filters, and vibrato nodes once every source in that note group has ended.
+- Keeps emergency stop behavior while preventing normal play from accumulating roughly 22 ended source references per second.
+- Adds current and peak music-source telemetry for endurance verification.
+- Preserves the full Master 16.198 Harvest baseline and the Master 16.199 SFX cap and scheduler-stall protections.
+
 ## Master 16.199 - 2026-08-06
 
 Protected late-wave audio continuity while retaining the full Master 16.198 Harvest baseline.

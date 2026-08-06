@@ -17,7 +17,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 | Stable `main` | stale relative to active branch | `main` is not the current gameplay source of truth until an explicit PR/merge updates it. |
 | Current approved source master | `10_SOURCE/Masters/Master 16/` | Governed modular source package for the current playable build line. |
 | Current source entry point | `10_SOURCE/Masters/Master 16/index.html` | Browser entry point for the modular source package. |
-| Current in-game build label | `Master 16.199` | Current internal release candidate; normal player surfaces display `Version 16.199`. It preserves the complete Master 16.198 Harvest town baseline while protecting music and effects from late-wave render stalls, missed-note backlog floods, excess simultaneous SFX voices, and retained finished audio nodes. GitHub Pages publication is pending verification. |
+| Current in-game build label | `Master 16.200` | Current internal release candidate; normal player surfaces display `Version 16.200`. It preserves the complete Master 16.198 Harvest town baseline, retains the 16.199 SFX protections, and removes the append-only procedural-music source registry that accumulated thousands of ended Web Audio nodes by wave five. GitHub Pages publication is pending verification. |
 | Current release package | `40_RELEASE/Website_Publish_Package/holesy/` | Current modular browser-client release package and source for the GitHub Pages `docs/` deployment tree. |
 | Current Pages deployment branch | `claude/happy-clarke-ORWAI` | GitHub Pages publishes from this branch's `docs/` folder; commit `7bbb88e` publishes the complete `Master 16.197` package. Live verification on 2026-07-31 confirmed HTTP 200, public 16.197 metadata, the restored 11x11 population grid and 96-worker rule, removal of the exact-object cap, explicit Mandate reward copy, and retained raised Hole-Eye camera constants. |
 | Legacy GoDaddy packages | obsolete | GoDaddy publishing was discontinued when GitHub Pages became the production host; retained historical folders must not drive release decisions. |
@@ -27,7 +27,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 
 ## Non-Negotiable Distinctions
 
-- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.199` is the current modular review patch on that architecture line.
+- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.200` is the current modular review patch on that architecture line.
 - `Master 16.74` closes `PERF-012` as a production package migration item; future UI, save/load, level/theme, reward/quest, and gameplay-system extraction should be tracked as separate feature-support architecture work.
 - The production package must preserve the modular folder shape unless an emergency temporary bundled hotfix is explicitly approved and documented.
 - GitHub Pages deployment must preserve the full modular package shape under the configured `docs/` source while commits remain narrowly scoped to changed files.

@@ -6,8 +6,12 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.199` and player-facing surfaces show `Version 16.199`
-- `Master 16.199` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.200` and player-facing surfaces show `Version 16.200`
+- `Master 16.200` is the current governed source basis and includes:
+  - per-note procedural-music cleanup that removes ended sources and disconnects their filters, envelopes, and modulation nodes instead of retaining thousands through wave five
+  - live and peak scheduled-music source telemetry for long-run endurance checks
+  - the complete `Master 16.199` audio-pressure protections and unchanged `Master 16.198` Harvest town baseline
+- `Master 16.199` remains the first audio-pressure rollback and includes:
   - the complete `Master 16.198` Harvest layout, population, progression supply, buildings, and object density unchanged as the new town baseline
   - stall-safe music scheduling that skips missed-note backlogs instead of flooding Web Audio after a heavily loaded render frame
   - a 24-voice non-music ceiling with three reserved priority voices, explicit finished-node cleanup, and audio-pressure telemetry
