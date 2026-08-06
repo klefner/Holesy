@@ -41,4 +41,4 @@ Master 16.199 still began stuttering in wave five for roughly eight seconds befo
 
 ## Release status
 
-Pass for local implementation and bounded-source endurance review. GitHub Pages verification pending publication and player wave-five confirmation.
+Pass for implementation and bounded-source endurance review. GitHub Pages commit `a18ccd5` completed successfully; public HTTP 200 verification confirmed build 200 metadata, the live-source set, per-note group cleanup, the retained SFX ceiling, and music-source telemetry. Player wave-five confirmation remains required.
