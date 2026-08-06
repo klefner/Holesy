@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 197;
+export const BUILD_SUB = 198;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.198',
+    title: 'Harvest density-preserving performance architecture',
+    notes: [
+      'Keeps the crowded Harvest population, 17 intact buildings, and complete building food value while replacing 96-128-piece rural breakup grids with readable 8-20-piece tiers.',
+      'Puts distant Harvest workers and ambient life to sleep until a live hole approaches, batches field-row scenery, and lowers repeated world-index rebuild cost.',
+      'Caps Run Goals against actual generated supply and adds frame, draw-call, actor, object, and building telemetry for direct town comparisons.',
+    ],
+  },
   {
     label: 'Master 16.197',
     title: 'Crowded Harvest population restored',

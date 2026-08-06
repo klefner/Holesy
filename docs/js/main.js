@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.197';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.198';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1203,20 +1203,20 @@ const MEDIEVAL_BUILDINGS = Object.freeze([
 ]);
 const MEDIEVAL_COMMONS_ARCHETYPES = Object.freeze(['farm', 'pasture', 'barnyard', 'training_yard']);
 const HARVEST_BUILDINGS = Object.freeze([
-  { sourceBase: 'SmallBarn', assetId: 'harvest-small-barn', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96 },
-  { sourceBase: 'Barn', assetId: 'harvest-barn', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96 },
-  { sourceBase: 'BigBarn', assetId: 'harvest-big-barn', footprint: 12, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96 },
-  { sourceBase: 'Silo', assetId: 'harvest-silo', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.25, blockCount: 128 },
-  { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128, unusualElement: 'water_tank' },
-  { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, unusualElement: 'windmill_blades' },
+  { sourceBase: 'SmallBarn', assetId: 'harvest-small-barn', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96, breakupCount: 8 },
+  { sourceBase: 'Barn', assetId: 'harvest-barn', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96, breakupCount: 12 },
+  { sourceBase: 'BigBarn', assetId: 'harvest-big-barn', footprint: 12, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, breakupCount: 18 },
+  { sourceBase: 'Silo', assetId: 'harvest-silo', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.25, blockCount: 128, breakupCount: 16 },
+  { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128, breakupCount: 16, unusualElement: 'water_tank' },
+  { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, breakupCount: 20, unusualElement: 'windmill_blades' },
 ]);
 const HARVEST_FRONTIER_BUILDINGS = Object.freeze([
-  { ...MEDIEVAL_BUILDINGS[2], role: 'Saloon', theme: 'harvest' },
-  { ...MEDIEVAL_BUILDINGS[0], role: 'Sheriff Office and Jail', theme: 'harvest' },
-  { ...MEDIEVAL_BUILDINGS[1], role: 'General Store', theme: 'harvest' },
-  { ...MEDIEVAL_BUILDINGS[9], role: 'Livery Stable', theme: 'harvest' },
-  { ...MEDIEVAL_BUILDINGS[5], role: 'Feed and Grain', theme: 'harvest' },
-  { ...MEDIEVAL_BUILDINGS[6], role: 'Frontier House', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[2], role: 'Saloon', theme: 'harvest', breakupCount: 14 },
+  { ...MEDIEVAL_BUILDINGS[0], role: 'Sheriff Office and Jail', theme: 'harvest', breakupCount: 12 },
+  { ...MEDIEVAL_BUILDINGS[1], role: 'General Store', theme: 'harvest', breakupCount: 12 },
+  { ...MEDIEVAL_BUILDINGS[9], role: 'Livery Stable', theme: 'harvest', breakupCount: 14 },
+  { ...MEDIEVAL_BUILDINGS[5], role: 'Feed and Grain', theme: 'harvest', breakupCount: 8 },
+  { ...MEDIEVAL_BUILDINGS[6], role: 'Frontier House', theme: 'harvest', breakupCount: 8 },
 ]);
 const HARVEST_CROPS = Object.freeze(['Carrot_4', 'Tomato_4', 'Pumpkin_4', 'Watermelon_4', 'Corn_4', 'Lettuce_4', 'Wheat_4']);
 const HARVEST_ANIMALS = Object.freeze({
@@ -1770,15 +1770,31 @@ function populateMedievalCommonsParcel(bp, archetype) {
 }
 
 let medievalAmbientAccumulator = 0;
+let harvestAwakeAmbientActors = 0;
+const HARVEST_ACTOR_WAKE_RADIUS = 46;
+function isNearAnyLiveHole(x, z, radius = HARVEST_ACTOR_WAKE_RADIUS) {
+  const radiusSq = radius * radius;
+  for (const hole of holes) {
+    if (!hole.alive) continue;
+    const dx = hole.x - x;
+    const dz = hole.z - z;
+    if (dx * dx + dz * dz <= radiusSq) return true;
+  }
+  return false;
+}
+
 function updateMedievalAmbientActors(dt) {
   medievalAmbientAccumulator = Math.min(0.1, medievalAmbientAccumulator + dt);
   if (medievalAmbientAccumulator < 1 / 30) return;
   dt = medievalAmbientAccumulator;
   medievalAmbientAccumulator = 0;
   const now = performance.now() * 0.001;
+  harvestAwakeAmbientActors = 0;
   for (const actor of medievalAmbientActors) {
     const obj = actor.obj;
     if (!obj || obj.consumed || obj.falling || !obj.mesh) continue;
+    if (obj.isHarvestAsset && !isNearAnyLiveHole(obj.x, obj.z)) continue;
+    if (obj.isHarvestAsset) harvestAwakeAmbientActors++;
     if (actor.type === 'animal') {
       actor.timer -= dt;
       if (actor.timer <= 0) { actor.direction += randomBetween(-1.2, 1.2); actor.timer = 1.5 + Math.random() * 3; }
@@ -1845,7 +1861,11 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell, bl
         descendant.renderOrder = 2;
       }
     });
-    const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, 5, {
+    // Compact themed buildings retain the complete authored building value even
+    // when represented by fewer, larger and more readable breakup pieces.
+    const sourcePieceCount = Math.max(blockTemplates.length, definition.blockCount || blockTemplates.length);
+    const pieceValue = Math.max(5, Math.round(sourcePieceCount * 5 / blockTemplates.length));
+    const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, pieceValue, {
       x: x + rotatedX,
       z: z + rotatedZ,
       y: template.position.y,
@@ -1887,6 +1907,16 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell, bl
     object.megakitDormantDetached = true;
     physicsStackPieces.push(object);
   }
+}
+
+function selectHarvestBreakupTemplates(definition, blockTemplates) {
+  const target = Math.max(4, Math.min(blockTemplates.length, definition.breakupCount || blockTemplates.length));
+  if (target >= blockTemplates.length) return blockTemplates;
+  const selected = [];
+  for (let i = 0; i < target; i++) {
+    selected.push(blockTemplates[Math.min(blockTemplates.length - 1, Math.floor(i * blockTemplates.length / target))]);
+  }
+  return selected;
 }
 
 async function populateMedievalVillage() {
@@ -2308,6 +2338,11 @@ function normalizeHarvestVisual(template, targetFootprint) {
 
 function addHarvestConsumable(template, name, x, z, targetFootprint, size, value, mandateKind = 'prop') {
   const group = normalizeHarvestVisual(template, targetFootprint);
+  if (mandateKind === 'prop' && targetFootprint <= 1.6) {
+    group.traverse(child => {
+      if (child.isMesh) child.castShadow = false;
+    });
+  }
   const object = makeObject(group, size, 0, Math.round(value * 1.55), { x, z, y: 0 });
   object.isHarvestAsset = true;
   object.harvestAssetName = name;
@@ -2316,22 +2351,27 @@ function addHarvestConsumable(template, name, x, z, targetFootprint, size, value
 }
 
 function addHarvestFieldRows(bp, cropColor = 0x6f7f38) {
+  const evenRidges = new THREE.InstancedMesh(sharedBoxGeometry(16.2, 0.16, 0.32), sharedBoxMat(0x68462f), 3);
+  const oddRidges = new THREE.InstancedMesh(sharedBoxGeometry(16.2, 0.16, 0.32), sharedBoxMat(0x765238), 2);
+  const growthStrips = new THREE.InstancedMesh(sharedBoxGeometry(15.6, 0.08, 0.14), sharedBoxMat(cropColor), 5);
+  const transform = new THREE.Object3D();
+  let evenIndex = 0;
+  let oddIndex = 0;
   for (let row = 0; row < 5; row++) {
-    const ridge = new THREE.Mesh(
-      sharedBoxGeometry(16.2, 0.16, 0.32),
-      sharedBoxMat(row % 2 ? 0x765238 : 0x68462f)
-    );
-    ridge.position.set(bp.x, 0.11, bp.z - 6.2 + row * 3.1);
-    ridge.receiveShadow = true;
-    scene.add(ridge);
-    harvestEnvironmentMeshes.push(ridge);
-    const growthStrip = new THREE.Mesh(
-      sharedBoxGeometry(15.6, 0.08, 0.14),
-      sharedBoxMat(cropColor)
-    );
-    growthStrip.position.set(bp.x, 0.22, ridge.position.z);
-    scene.add(growthStrip);
-    harvestEnvironmentMeshes.push(growthStrip);
+    const z = bp.z - 6.2 + row * 3.1;
+    transform.position.set(bp.x, 0.11, z);
+    transform.updateMatrix();
+    if (row % 2) oddRidges.setMatrixAt(oddIndex++, transform.matrix);
+    else evenRidges.setMatrixAt(evenIndex++, transform.matrix);
+    transform.position.set(bp.x, 0.22, z);
+    transform.updateMatrix();
+    growthStrips.setMatrixAt(row, transform.matrix);
+  }
+  for (const batch of [evenRidges, oddRidges, growthStrips]) {
+    batch.receiveShadow = true;
+    batch.instanceMatrix.needsUpdate = true;
+    scene.add(batch);
+    harvestEnvironmentMeshes.push(batch);
   }
 }
 
@@ -2426,7 +2466,7 @@ async function addHarvestBuilding(definition, authoredSource, blockTemplates, bp
     bp.z,
     authoredVisual.rotation.y,
     authoredVisual,
-    blockTemplates
+    selectHarvestBreakupTemplates(definition, blockTemplates)
   );
 }
 
@@ -2491,7 +2531,7 @@ function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, 
     site.z,
     site.rotation,
     authoredVisual,
-    blockTemplates
+    selectHarvestBreakupTemplates(definition, blockTemplates)
   );
   for (const object of physicsStackPieces) {
     if (object.stackCenterX !== site.x || object.stackCenterZ !== site.z) continue;
@@ -2501,6 +2541,7 @@ function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, 
 
 async function populateHarvestCounty() {
   const generation = harvestEnvironmentGeneration;
+  const buildingPieceCountAtStart = physicsStackPieces.length;
   showEventBanner('DISTRICT: Harvest County', 2200);
   document.documentElement.setAttribute('data-holesy-harvest-cars', '0');
   document.documentElement.setAttribute('data-holesy-harvest-buildings', '0');
@@ -2686,48 +2727,54 @@ async function populateHarvestCounty() {
     edibleCount++;
   }
 
-  // Fill the whole county rather than arranging a repeated starter pattern
-  // around the player. Jittered coverage cells prevent large dead zones while
-  // remaining visually irregular from run to run.
+  // Give every rural parcel a dense edible halo. Overlapping farmstead clusters
+  // preserve the crowded county supply without the repetitive whole-map grid.
   const scatterKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'rock'];
-  const coverageCells = 11;
-  const scatterExtent = Math.min(101, currentArenaHalf - 4);
-  const cellSize = scatterExtent * 2 / coverageCells;
-  for (let gx = 0; gx < coverageCells; gx++) {
-    for (let gz = 0; gz < coverageCells; gz++) {
-      const perCell = 10 + Math.floor(Math.random() * 5);
-      for (let i = 0; i < perCell; i++) {
-        const x = -scatterExtent + (gx + Math.random()) * cellSize;
-        const z = -scatterExtent + (gz + Math.random()) * cellSize;
-        if (Math.hypot(x - player.x, z - player.z) < 2.5) continue;
-        const roll = Math.random();
-        if (roll < 0.12) addHarvestCactus(x, z, randomBetween(0.72, 1.24));
-        else if (roll < 0.54) addHarvestWildPlant(x, z, gx * 7 + gz * 3 + i);
-        else addMedievalProp(
-          `Scattered Harvest ${scatterKinds[(gx + gz + i) % scatterKinds.length]}`,
-          x,
-          z,
-          scatterKinds[(gx + gz + i) % scatterKinds.length]
-        );
-        edibleCount++;
-      }
-      if (Math.random() < 0.78) {
-        const centerX = -scatterExtent + (gx + 0.5) * cellSize;
-        const centerZ = -scatterExtent + (gz + 0.5) * cellSize;
-        const bounds = {
-          minX: centerX - cellSize * 0.46, maxX: centerX + cellSize * 0.46,
-          minZ: centerZ - cellSize * 0.46, maxZ: centerZ + cellSize * 0.46,
-        };
-        addHarvestWorker(
-          centerX + randomBetween(-cellSize * 0.4, cellSize * 0.4),
-          centerZ + randomBetween(-cellSize * 0.4, cellSize * 0.4),
-          bounds,
-          (gx + gz) % 3 === 0 ? 'fork' : 'hoe'
-        );
-        edibleCount++;
-      }
+  for (let parcelIndex = 0; parcelIndex < activeParcels.length; parcelIndex++) {
+    const site = activeParcels[parcelIndex];
+    const clusterCount = 30 + (parcelIndex % 7);
+    for (let i = 0; i < clusterCount; i++) {
+      const angle = i * 2.399963229728653 + parcelIndex * 0.71 + randomBetween(-0.16, 0.16);
+      const radius = 6.8 + Math.sqrt((i + 1) / clusterCount) * randomBetween(4.8, 8.4);
+      const x = clampToArena(site.x + Math.cos(angle) * radius, 3);
+      const z = clampToArena(site.z + Math.sin(angle) * radius, 3);
+      if (Math.hypot(x - player.x, z - player.z) < 2.5) continue;
+      const roll = Math.random();
+      if (roll < 0.12) addHarvestCactus(x, z, randomBetween(0.72, 1.24));
+      else if (roll < 0.54) addHarvestWildPlant(x, z, parcelIndex * 11 + i);
+      else addMedievalProp(
+        `Farmstead ${scatterKinds[(parcelIndex + i) % scatterKinds.length]}`,
+        x,
+        z,
+        scatterKinds[(parcelIndex + i) % scatterKinds.length]
+      );
+      edibleCount++;
     }
+    const bounds = { minX: site.x - 9.5, maxX: site.x + 9.5, minZ: site.z - 9.5, maxZ: site.z + 9.5 };
+    addHarvestWorker(
+      site.x + randomBetween(-7.5, 7.5),
+      site.z + randomBetween(-7.5, 7.5),
+      bounds,
+      parcelIndex % 3 === 0 ? 'fork' : 'hoe'
+    );
+    edibleCount++;
   }
+  const starterTrailCount = 80;
+  for (let i = 0; i < starterTrailCount; i++) {
+    const angle = i * 2.399963229728653 + 0.4;
+    const radius = 3.4 + Math.sqrt(i + 1) * 1.58;
+    const kind = scatterKinds[i % scatterKinds.length];
+    addMedievalProp(
+      `Starter trail ${kind}`,
+      clampToArena(player.x + Math.cos(angle) * radius, 3),
+      clampToArena(player.z + Math.sin(angle) * radius, 3),
+      kind
+    );
+    edibleCount++;
+  }
+  document.documentElement.setAttribute('data-holesy-harvest-density-model', 'overlapping-farmstead-clusters');
+  document.documentElement.setAttribute('data-holesy-harvest-density-clusters', String(activeParcels.length));
+  document.documentElement.setAttribute('data-holesy-harvest-starter-trail', String(starterTrailCount));
 
   const frontierSites = [
     { x: -31, z: -45, rotation: 0.10 },
@@ -2819,6 +2866,12 @@ async function populateHarvestCounty() {
 
   document.documentElement.setAttribute('data-holesy-harvest-buildings', String(buildingCount));
   document.documentElement.setAttribute('data-holesy-harvest-edibles', String(edibleCount));
+  document.documentElement.setAttribute('data-holesy-harvest-building-pieces', String(physicsStackPieces.length - buildingPieceCountAtStart));
+  document.documentElement.setAttribute('data-holesy-harvest-building-value', String(
+    physicsStackPieces.slice(buildingPieceCountAtStart).reduce((total, piece) => total + Math.max(0, piece.value || 0), 0)
+  ));
+  document.documentElement.setAttribute('data-holesy-harvest-breakup-model', 'compact-tiered');
+  document.documentElement.setAttribute('data-holesy-harvest-actor-sleep-radius', String(HARVEST_ACTOR_WAKE_RADIUS));
   document.documentElement.setAttribute('data-holesy-harvest-animals', String(
     medievalAmbientActors.filter(actor => actor.obj?.isHarvestAsset).length
   ));
@@ -8032,8 +8085,28 @@ function isRunObjectiveEligible(def) {
   return true;
 }
 
+function getRunObjectiveAvailableCount(familyId) {
+  if (familyId === 'soldiers') return Math.max(0, estimateMandateMilitarySupply());
+  return objects.reduce((count, obj) => {
+    if (!obj || obj.consumed || obj.falling) return count;
+    return count + (objectFamilyForObjective(obj) === familyId ? 1 : 0);
+  }, 0);
+}
+
+function getSupplyAwareRunObjective(def) {
+  const available = getRunObjectiveAvailableCount(def.id);
+  const capRatio = def.id === 'buildings' ? 0.58 : 0.72;
+  const supplyCap = Math.max(1, Math.floor(available * capRatio));
+  const target = Math.max(1, Math.min(def.target, supplyCap));
+  const reward = Math.max(50, Math.round(def.reward * target / Math.max(1, def.target)));
+  return { ...def, target, reward, available };
+}
+
 function beginRunObjectives() {
-  const eligible = RUN_OBJECTIVE_DEFS.filter(isRunObjectiveEligible);
+  const eligible = RUN_OBJECTIVE_DEFS
+    .filter(isRunObjectiveEligible)
+    .map(getSupplyAwareRunObjective)
+    .filter(def => def.available > 0);
   const shuffled = [...eligible].sort(() => Math.random() - 0.5);
   const usedFamilies = new Set();
   const selected = [];
@@ -8047,10 +8120,15 @@ function beginRunObjectives() {
     id: def.id,
     label: `Eat ${def.target} ${RUN_OBJECTIVE_PLAIN_LABELS[def.id] || 'objects'}`,
     target: def.target,
+    available: def.available,
     reward: def.reward,
     progress: 0,
     complete: false,
   }));
+  document.documentElement.setAttribute(
+    'data-holesy-run-goal-supply',
+    activeRunObjectives.map(goal => `${goal.id}:${goal.target}/${goal.available}`).join(',')
+  );
   activeRunObjectiveFamilies = new Set(activeRunObjectives.map(objective => objective.id));
   activeRunObjectiveSetRewarded = false;
   markRunObjectivesUiDirty();
@@ -13156,6 +13234,8 @@ function canObjectFitHole(h, obj) {
 const OBJECT_PROXIMITY_CELL_SIZE = 12;
 const objectProximityGrid = new Map();
 const nearbyInteractiveObjects = new Set();
+const OBJECT_PROXIMITY_REBUILD_STRIDE = 4;
+let objectProximityRebuildFrame = 0;
 
 function objectProximityCellKey(cellX, cellZ) {
   return `${cellX},${cellZ}`;
@@ -13180,7 +13260,9 @@ function rebuildObjectProximityGrid() {
 
 function collectNearbyInteractiveObjects(extraPlayerPullRange = 0) {
   nearbyInteractiveObjects.clear();
-  rebuildObjectProximityGrid();
+  if (objectProximityGrid.size === 0 || objectProximityRebuildFrame++ % OBJECT_PROXIMITY_REBUILD_STRIDE === 0) {
+    rebuildObjectProximityGrid();
+  }
   for (const h of holes) {
     if (!h.alive) continue;
     // Any object that fits can only be pulled from roughly two hole radii away.
@@ -15373,6 +15455,7 @@ function updateMovingCars(dt) {
 // PEOPLE SIMULATION — walk/panic with bounds
 // =========================================================================
 let movingPeopleAccumulator = 0;
+let harvestAwakeMovingPeople = 0;
 function updateMovingPeople(dt) {
   movingPeopleAccumulator = Math.min(0.1, movingPeopleAccumulator + dt);
   if (movingPeopleAccumulator < 1 / 30) return;
@@ -15382,8 +15465,11 @@ function updateMovingPeople(dt) {
   const PANIC_COOLDOWN_DIST = HOLESY_CONFIG.people.panicCooldownDistance;
   const BOUNDS_INSET = HOLESY_CONFIG.people.boundsInset;
 
+  harvestAwakeMovingPeople = 0;
   for (const p of movingPeople) {
     if (p.consumed || p.falling) continue;
+    if (p.isHarvestAsset && !isNearAnyLiveHole(p.x, p.z)) continue;
+    if (p.isHarvestAsset) harvestAwakeMovingPeople++;
 
     // Check if any hole is near enough to trigger panic
     let nearestHole = null;
@@ -17971,6 +18057,30 @@ function updateGameplayCamera(focus, dt, now) {
   }
 }
 
+const runtimeFrameSamples = new Float32Array(240);
+let runtimeFrameSampleCount = 0;
+let runtimeFrameSampleCursor = 0;
+let runtimeTelemetryUpdatedAt = 0;
+function updateRuntimePerformanceTelemetry(frameDeltaMs, now) {
+  runtimeFrameSamples[runtimeFrameSampleCursor] = frameDeltaMs;
+  runtimeFrameSampleCursor = (runtimeFrameSampleCursor + 1) % runtimeFrameSamples.length;
+  runtimeFrameSampleCount = Math.min(runtimeFrameSamples.length, runtimeFrameSampleCount + 1);
+  if (now - runtimeTelemetryUpdatedAt < 2000 || runtimeFrameSampleCount < 30) return;
+  runtimeTelemetryUpdatedAt = now;
+  const sorted = Array.from(runtimeFrameSamples.slice(0, runtimeFrameSampleCount)).sort((a, b) => a - b);
+  const percentile = ratio => sorted[Math.min(sorted.length - 1, Math.floor((sorted.length - 1) * ratio))];
+  const root = document.documentElement;
+  root.setAttribute('data-holesy-perf-frame-median-ms', percentile(0.5).toFixed(2));
+  root.setAttribute('data-holesy-perf-frame-p95-ms', percentile(0.95).toFixed(2));
+  root.setAttribute('data-holesy-perf-draw-calls', String(renderer.info.render.calls));
+  root.setAttribute('data-holesy-perf-triangles', String(renderer.info.render.triangles));
+  root.setAttribute('data-holesy-perf-object-records', String(objects.length));
+  root.setAttribute('data-holesy-perf-building-pieces', String(physicsStackPieces.length));
+  root.setAttribute('data-holesy-perf-moving-people', String(movingPeople.length));
+  root.setAttribute('data-holesy-perf-ambient-actors', String(medievalAmbientActors.length));
+  root.setAttribute('data-holesy-perf-awake-harvest-actors', String(harvestAwakeMovingPeople + harvestAwakeAmbientActors));
+}
+
 function animate(frameNow = performance.now()) {
   animationFrameId = null;
   if (lifecycleTerminated) return;
@@ -18210,6 +18320,7 @@ function animate(frameNow = performance.now()) {
   }
 
   renderer.render(scene, camera);
+  updateRuntimePerformanceTelemetry(frameDeltaMs, now);
   scheduleNextFrame();
 }
 
