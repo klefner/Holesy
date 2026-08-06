@@ -6,8 +6,12 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.198` and player-facing surfaces show `Version 16.198`
-- `Master 16.198` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.199` and player-facing surfaces show `Version 16.199`
+- `Master 16.199` is the current governed source basis and includes:
+  - the complete `Master 16.198` Harvest layout, population, progression supply, buildings, and object density unchanged as the new town baseline
+  - stall-safe music scheduling that skips missed-note backlogs instead of flooding Web Audio after a heavily loaded render frame
+  - a 24-voice non-music ceiling with three reserved priority voices, explicit finished-node cleanup, and audio-pressure telemetry
+- `Master 16.198` remains the Harvest design and performance rollback baseline and includes:
   - the crowded Harvest food supply reorganized into 44 overlapping farmstead clusters plus an 80-object guaranteed starter trail
   - 17 unchanged intact authored buildings with complete 8,804-point building value and compact 8–20-piece destruction tiers
   - distance sleeping for Harvest workers and ambient life, batched field rows, reduced spatial-index rebuild frequency, and performance telemetry

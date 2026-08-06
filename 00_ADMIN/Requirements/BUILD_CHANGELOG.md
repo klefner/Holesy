@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.199 - 2026-08-06
+
+Protected late-wave audio continuity while retaining the full Master 16.198 Harvest baseline.
+
+- Keeps every Master 16.198 Harvest parcel cluster, starter object, actor, intact building, destruction tier, and food value unchanged.
+- Detects a delayed procedural-music scheduler and advances the musical playhead instead of scheduling every missed note simultaneously.
+- Limits non-music playback to 24 simultaneous voices with three priority reserve voices for player-kill and cannon cues.
+- Explicitly disconnects completed source, gain, and reverb nodes so five waves of consumption cannot leave an ever-growing audio graph.
+- Adds live telemetry for active SFX voices, dropped overflow voices, music-scheduler recoveries, and AudioContext state.
+
 ## Master 16.198 - 2026-08-06
 
 Rebuilt Harvest performance around functioning-town design without removing its food economy.

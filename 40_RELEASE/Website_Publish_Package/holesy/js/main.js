@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.198';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.199';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -6985,7 +6985,9 @@ const music = holesyMusicState = {
   nextNoteTime: 0,     // audio-context time of next scheduled note
   current16th: 0,      // position in the 16-bar loop, counted in 16th notes
   tempo: 128,          // BPM
-  lookahead: 0.1,      // seconds ahead to schedule
+  lookahead: 0.24,     // protect the score from short render/main-thread stalls
+  schedulerRecoveries: 0,
+  droppedSfxVoices: 0,
   activeSources: [],   // track so we can cancel on stop
   duckedUntil: 0,
   holeWind: null,
@@ -7333,6 +7335,16 @@ function scheduleNote(sixteenth, when) {
 function schedulerTick() {
   if (!music.playing) return;
   const ctx = music.ctx;
+  // Never try to replay a render-stall backlog. A very large late-game camera
+  // can briefly starve timers; catching up every missed note at once overloads
+  // the audio graph and can make the whole mix disappear. Advance the musical
+  // playhead silently, then resume slightly ahead of the hardware clock.
+  if (music.nextNoteTime < ctx.currentTime - 0.18) {
+    const missedSteps = Math.floor((ctx.currentTime - music.nextNoteTime) / SECONDS_PER_16TH) + 1;
+    music.current16th = (music.current16th + missedSteps) % LOOP_LENGTH;
+    music.nextNoteTime = ctx.currentTime + 0.06;
+    music.schedulerRecoveries++;
+  }
   // Schedule all notes coming up in the lookahead window
   while (music.nextNoteTime < ctx.currentTime + music.lookahead) {
     scheduleNote(music.current16th, music.nextNoteTime);
@@ -9396,8 +9408,37 @@ function awardEndlessWaveLoreDrop() {
 let audioBanksLoaded = false;
 let audioBankWarmupTimer = null;
 const activeNonMusicSources = new Set();
+const nonMusicSourceCleanup = new Map();
+const MAX_SIMULTANEOUS_NON_MUSIC_SOURCES = 24;
+const PRIORITY_NON_MUSIC_SOURCE_RESERVE = 3;
 const MAX_SIMULTANEOUS_BUILDING_SOUNDS = 5;
 let activeBuildingAudioVoices = 0;
+
+function canStartNonMusicSource(priority = false) {
+  const limit = MAX_SIMULTANEOUS_NON_MUSIC_SOURCES + (priority ? PRIORITY_NON_MUSIC_SOURCE_RESERVE : 0);
+  if (activeNonMusicSources.size < limit) return true;
+  music.droppedSfxVoices++;
+  return false;
+}
+
+function trackNonMusicSource(src, connectedNodes = [], onReleased = null) {
+  let released = false;
+  const cleanup = () => {
+    if (released) return;
+    released = true;
+    activeNonMusicSources.delete(src);
+    nonMusicSourceCleanup.delete(src);
+    try { src.disconnect(); } catch (e) {}
+    for (const node of connectedNodes) {
+      try { node.disconnect(); } catch (e) {}
+    }
+    if (onReleased) onReleased();
+  };
+  activeNonMusicSources.add(src);
+  nonMusicSourceCleanup.set(src, cleanup);
+  src.onended = cleanup;
+  return cleanup;
+}
 
 function reserveBuildingAudioVoice() {
   if (activeBuildingAudioVoices >= MAX_SIMULTANEOUS_BUILDING_SOUNDS) return false;
@@ -9465,8 +9506,9 @@ function makeVoiceProfile() {
 }
 
 // Generic sample playback with pitch + gain control, reverb send
-function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12) {
+function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, priority = false) {
   if (!music.ctx || !buffer) return;
+  if (!canStartNonMusicSource(priority)) return;
   const ctx = music.ctx;
   const src = ctx.createBufferSource();
   src.buffer = buffer;
@@ -9475,23 +9517,26 @@ function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12) {
   g.gain.value = gain;
   src.connect(g);
   g.connect(getSfxDestination());
+  let rev = null;
   if (music.reverb && reverbMix > 0) {
-    const rev = ctx.createGain();
+    rev = ctx.createGain();
     rev.gain.value = reverbMix;
     g.connect(rev);
     rev.connect(music.reverb);
   }
-  activeNonMusicSources.add(src);
-  src.onended = () => activeNonMusicSources.delete(src);
+  trackNonMusicSource(src, rev ? [g, rev] : [g]);
   src.start();
 }
 
 function stopActiveNonMusicSources() {
   for (const src of activeNonMusicSources) {
     try { src.stop(); } catch (e) {}
-    try { src.disconnect(); } catch (e) {}
+    const cleanup = nonMusicSourceCleanup.get(src);
+    if (cleanup) cleanup();
+    else try { src.disconnect(); } catch (e) {}
   }
   activeNonMusicSources.clear();
+  nonMusicSourceCleanup.clear();
   activeBuildingAudioVoices = 0;
 }
 
@@ -9542,6 +9587,10 @@ function playBuildingSound(buildingSize, volumeScale = 1.0) {
   const loaded = audioBank.buildings.filter(b => b);
   if (loaded.length === 0) return;
   if (!reserveBuildingAudioVoice()) return;
+  if (!canStartNonMusicSource()) {
+    releaseBuildingAudioVoice();
+    return;
+  }
   const buf = loaded[Math.floor(Math.random() * loaded.length)];
   // Scale pitch by building size: large buildings sound deeper (slower playback),
   // small ones sound snappier. Base pitch wobble ±5% for variety within each size.
@@ -9561,17 +9610,14 @@ function playBuildingSound(buildingSize, volumeScale = 1.0) {
   g.gain.value = gain;
   src.connect(g);
   g.connect(getSfxDestination());
+  let rev = null;
   if (music.reverb && reverbMix > 0) {
-    const rev = ctx.createGain();
+    rev = ctx.createGain();
     rev.gain.value = reverbMix;
     g.connect(rev);
     rev.connect(music.reverb);
   }
-  activeNonMusicSources.add(src);
-  src.onended = () => {
-    activeNonMusicSources.delete(src);
-    releaseBuildingAudioVoice();
-  };
+  trackNonMusicSource(src, rev ? [g, rev] : [g], releaseBuildingAudioVoice);
   src.start();
 }
 
@@ -9587,6 +9633,10 @@ function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId
   if (state.active >= STACK_PHYSICS_CONFIG.skyscraperAudioMaxVoicesPerStack) return;
   if (now - state.lastAt < STACK_PHYSICS_CONFIG.skyscraperAudioMinIntervalMs) return;
   if (!reserveBuildingAudioVoice()) return;
+  if (!canStartNonMusicSource()) {
+    releaseBuildingAudioVoice();
+    return;
+  }
   state.active += 1;
   state.lastAt = now;
   skyscraperImpactAudioState.set(key, state);
@@ -9603,19 +9653,18 @@ function playSkyscraperCollapseSound(volumeScale = 1.0, intensity = 1.0, stackId
   g.gain.exponentialRampToValueAtTime(0.001, stopAt);
   src.connect(g);
   g.connect(getSfxDestination());
+  let rev = null;
   if (music.reverb) {
-    const rev = ctx.createGain();
+    rev = ctx.createGain();
     rev.gain.value = 0.08 + Math.random() * 0.04;
     g.connect(rev);
     rev.connect(music.reverb);
   }
-  activeNonMusicSources.add(src);
-  src.onended = () => {
-    activeNonMusicSources.delete(src);
+  trackNonMusicSource(src, rev ? [g, rev] : [g], () => {
     const latest = skyscraperImpactAudioState.get(key);
     if (latest) latest.active = Math.max(0, latest.active - 1);
     releaseBuildingAudioVoice();
-  };
+  });
   src.start(startAt);
   try { src.stop(stopAt + 0.02); } catch (e) {}
 }
@@ -9632,6 +9681,10 @@ function playSkyscraperChunkSound(volumeScale = 1.0, obj = null) {
   if (state.active >= STACK_PHYSICS_CONFIG.skyscraperAudioMaxVoicesPerStack) return;
   if (now - state.lastAt < STACK_PHYSICS_CONFIG.skyscraperAudioMinIntervalMs) return;
   if (!reserveBuildingAudioVoice()) return;
+  if (!canStartNonMusicSource()) {
+    releaseBuildingAudioVoice();
+    return;
+  }
   state.active += 1;
   state.lastAt = now;
   skyscraperImpactAudioState.set(key, state);
@@ -9647,13 +9700,11 @@ function playSkyscraperChunkSound(volumeScale = 1.0, obj = null) {
   g.gain.exponentialRampToValueAtTime(0.001, stopAt);
   src.connect(g);
   g.connect(getSfxDestination());
-  activeNonMusicSources.add(src);
-  src.onended = () => {
-    activeNonMusicSources.delete(src);
+  trackNonMusicSource(src, [g], () => {
     const latest = skyscraperImpactAudioState.get(key);
     if (latest) latest.active = Math.max(0, latest.active - 1);
     releaseBuildingAudioVoice();
-  };
+  });
   src.start(startAt);
   try { src.stop(stopAt + 0.02); } catch (e) {}
 }
@@ -9669,6 +9720,7 @@ function playVoxelCubeImpactSound(obj, volumeScale = 1.0) {
   const state = voxelImpactAudioState.get(stackId) || { active: 0, lastAt: 0 };
   if (state.active >= STACK_PHYSICS_CONFIG.voxelAudioMaxVoicesPerStack) return;
   if (now - state.lastAt < STACK_PHYSICS_CONFIG.voxelAudioMinIntervalMs) return;
+  if (!canStartNonMusicSource()) return;
   state.active += 1;
   state.lastAt = now;
   voxelImpactAudioState.set(stackId, state);
@@ -9685,12 +9737,10 @@ function playVoxelCubeImpactSound(obj, volumeScale = 1.0) {
   g.gain.exponentialRampToValueAtTime(0.001, stopAt);
   src.connect(g);
   g.connect(getSfxDestination());
-  activeNonMusicSources.add(src);
-  src.onended = () => {
-    activeNonMusicSources.delete(src);
+  trackNonMusicSource(src, [g], () => {
     const latest = voxelImpactAudioState.get(stackId);
     if (latest) latest.active = Math.max(0, latest.active - 1);
-  };
+  });
   src.start(startAt);
   try { src.stop(stopAt + 0.02); } catch (e) {}
 }
@@ -9749,6 +9799,7 @@ function playCannonShot(volumeScale = 1.0) {
   const ctx = music.ctx;
   const now = ctx.currentTime;
   if (now - lastCannonShotTime < 0.18) return;
+  if (!canStartNonMusicSource(true)) return;
   lastCannonShotTime = now;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -9762,6 +9813,7 @@ function playCannonShot(volumeScale = 1.0) {
   const destination = getSfxDestination();
   if (!destination) return;
   gain.connect(destination);
+  trackNonMusicSource(osc, [gain]);
   osc.start(now);
   osc.stop(now + 0.45);
 }
@@ -9789,7 +9841,7 @@ function playBiteChew() {
   if (!audioBanksLoaded) scheduleAudioBankWarmup();
   const buf = audioBank.biteChew[0];
   if (!buf) return;
-  playSample(buf, 1.0, 0.85, 0.10);
+  playSample(buf, 1.0, 0.85, 0.10, true);
 }
 
 function ensureHoleWindLoop() {
@@ -18079,6 +18131,10 @@ function updateRuntimePerformanceTelemetry(frameDeltaMs, now) {
   root.setAttribute('data-holesy-perf-moving-people', String(movingPeople.length));
   root.setAttribute('data-holesy-perf-ambient-actors', String(medievalAmbientActors.length));
   root.setAttribute('data-holesy-perf-awake-harvest-actors', String(harvestAwakeMovingPeople + harvestAwakeAmbientActors));
+  root.setAttribute('data-holesy-audio-active-sfx-voices', String(activeNonMusicSources.size));
+  root.setAttribute('data-holesy-audio-dropped-sfx-voices', String(music.droppedSfxVoices));
+  root.setAttribute('data-holesy-audio-scheduler-recoveries', String(music.schedulerRecoveries));
+  root.setAttribute('data-holesy-audio-context-state', music.ctx?.state || 'uninitialized');
 }
 
 function animate(frameNow = performance.now()) {

@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 198;
+export const BUILD_SUB = 199;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.199',
+    title: 'Late-wave audio continuity under heavy visibility',
+    notes: [
+      'Preserves the complete Master 16.198 Harvest population and layout as the new town baseline.',
+      'Prevents render stalls from forcing the music scheduler to replay a backlog of missed notes and overload the Web Audio graph.',
+      'Caps simultaneous non-music voices, explicitly disconnects finished sound nodes, and reserves capacity for important player and cannon cues.',
+    ],
+  },
   {
     label: 'Master 16.198',
     title: 'Harvest density-preserving performance architecture',
