@@ -25,4 +25,8 @@ Passed local implementation verification:
 - SHA-256 parity passed for the changed source and release package files.
 - Browser smoke at `Version 16.206` confirmed the Pause overlay appeared, the decoded cue counter advanced exactly once per pause, the cue was active during Pause, and Resume changed active state to false.
 
-Live publication verification remains pending.
+Publication passed:
+
+- Pages commit `b6903a1` was pushed to `claude/happy-clarke-ORWAI`.
+- GitHub Pages workflow `31198497411` completed successfully.
+- Live browser verification confirmed the public game reports `Version 16.206` at `https://klefner.github.io/Holesy/?v=16.206-b6903a1`.
