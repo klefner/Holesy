@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 204;
+export const BUILD_SUB = 205;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.205',
+    title: 'The pause signal',
+    notes: [
+      'Plays the supplied alien-technology hum once whenever the player enters Pause.',
+      'Reserves priority SFX capacity so the cue remains audible during dense gameplay.',
+      'Stops the hum immediately on Resume so pause audio never bleeds into active play.',
+    ],
+  },
   {
     label: 'Master 16.204',
     title: 'Responsive Hole-Eye steering restored',

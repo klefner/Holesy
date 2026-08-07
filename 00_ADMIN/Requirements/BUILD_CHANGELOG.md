@@ -2,6 +2,15 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.205 - 2026-08-07
+
+Added a distinct recorded pause-state signal.
+
+- Plays the supplied six-second alien-technology hum once whenever gameplay enters Pause through the button, P, Escape, or a paused wave transition.
+- Gives the cue priority access to the bounded SFX pool so dense gameplay audio cannot crowd it out.
+- Stops and disconnects the cue immediately when Resume is selected, preventing pause audio from bleeding back into gameplay.
+- Exposes decoded, played, and active pause-cue telemetry for browser QA.
+
 ## Master 16.204 - 2026-08-07
 
 Restored intuitive, responsive first-person keyboard turning.
