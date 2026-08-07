@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.213 - 2026-08-07
+
+Corrected the world-space north landmark for the downward-pitched Hole-Eye camera.
+
+- Lowers the landmark from 70 to 17 world units so it intersects the shallow visible sky band instead of sitting above the camera frustum.
+- Moves it closer to the northern arena boundary while keeping it outside the playable field.
+- Preserves normal depth testing so terrain and buildings remain in front of it.
+
 ## Master 16.212 - 2026-08-07
 
 Rebuilt Medieval Village mounted combatants as recognizable forward-moving cavalry.

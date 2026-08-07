@@ -1,8 +1,16 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 212;
+export const BUILD_SUB = 213;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.213',
+    title: 'North returns to the horizon',
+    notes: [
+      'Lowers the world-space north landmark into the shallow sky band visible from the downward-pitched Hole-Eye camera.',
+      'Keeps the marker behind normal terrain and buildings through ordinary scene depth testing.',
+    ],
+  },
   {
     label: 'Master 16.212',
     title: 'The cavalry finds its feet',

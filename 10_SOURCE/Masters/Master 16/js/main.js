@@ -1146,8 +1146,8 @@ const povNorthSkyMaterial = new THREE.MeshStandardMaterial({
   depthWrite: false,
   fog: false,
 });
-const NORTH_MARKER_HEIGHT = 34;
-const NORTH_MARKER_HALF_WIDTH = 11.5;
+const NORTH_MARKER_HEIGHT = 28;
+const NORTH_MARKER_HALF_WIDTH = 9.5;
 const NORTH_MARKER_STROKE = 3.2;
 const NORTH_MARKER_DEPTH = 2.4;
 for (const x of [-NORTH_MARKER_HALF_WIDTH, NORTH_MARKER_HALF_WIDTH]) {
@@ -1169,7 +1169,10 @@ povNorthSkyMarker.visible = false;
 scene.add(povNorthSkyMarker);
 
 function placePovNorthSkyMarker() {
-  povNorthSkyMarker.position.set(0, 70, -currentArenaHalf - 120);
+  // Hole-Eye looks downward to keep the full mouth visible, leaving only a
+  // shallow band of sky above the horizon. Straddle that distant horizon so
+  // the upper N remains visible while terrain/buildings occlude its base.
+  povNorthSkyMarker.position.set(0, 17, -currentArenaHalf - 34);
 }
 placePovNorthSkyMarker();
 
