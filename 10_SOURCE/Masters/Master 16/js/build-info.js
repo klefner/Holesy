@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 201;
+export const BUILD_SUB = 202;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.202',
+    title: 'Balanced Hole-Eye motion comfort',
+    notes: [
+      'Keeps full-speed hole movement while separating keyboard strafing and backpedaling from camera yaw.',
+      'Adds controlled angle-based turning, a stable no-shake first-person camera, extra small-hole viewing distance, and turn-triggered Hunger shading.',
+      'Adds Balanced, Comfort, Immediate, and Snap Turn choices and removes the compass whenever gameplay ends.',
+    ],
+  },
   {
     label: 'Master 16.201',
     title: 'Large-hole frame relief and universal consume feedback',

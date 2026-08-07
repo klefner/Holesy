@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.201';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.202';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1077,6 +1077,23 @@ let holeEyeViewEnabled = false;
 let holeEyeViewBlend = 0;
 const holeEyeForward = new THREE.Vector2(0, -1);
 const holeEyeDesiredForward = new THREE.Vector2(0, -1);
+let holeEyeYaw = Math.PI;
+let holeEyeYawVelocity = 0;
+let holeEyeLastSnapAt = 0;
+const HOLE_EYE_COMFORT_STORAGE_KEY = 'holesyHoleEyeComfort';
+const HOLE_EYE_COMFORT_PROFILES = Object.freeze({
+  balanced: Object.freeze({ maxYawDeg: 150, accelerationDeg: 520, brakingDeg: 680, vignette: 0.72, cameraSeparation: 1.18, snap: false }),
+  comfort: Object.freeze({ maxYawDeg: 108, accelerationDeg: 340, brakingDeg: 440, vignette: 1, cameraSeparation: 1.25, snap: false }),
+  immediate: Object.freeze({ maxYawDeg: 270, accelerationDeg: 1100, brakingDeg: 1400, vignette: 0, cameraSeparation: 1.08, snap: false }),
+  snap: Object.freeze({ maxYawDeg: 0, accelerationDeg: 0, brakingDeg: 0, vignette: 0.9, cameraSeparation: 1.2, snap: true }),
+});
+let holeEyeComfortProfileName = (() => {
+  try {
+    const saved = localStorage.getItem(HOLE_EYE_COMFORT_STORAGE_KEY);
+    return HOLE_EYE_COMFORT_PROFILES[saved] ? saved : 'balanced';
+  } catch { return 'balanced'; }
+})();
+let holeEyeVignetteOpacity = 0;
 const cameraLookTarget = new THREE.Vector3(0, 0, 0);
 let lastCameraFocusX = 0;
 let lastCameraFocusZ = 0;
@@ -6098,8 +6115,9 @@ function applyKeyboardControl(keyIntent) {
     const rightAmount = keyIntent.dx;
     intentX = holeEyeForward.x * forwardAmount - holeEyeForward.y * rightAmount;
     intentZ = holeEyeForward.y * forwardAmount + holeEyeForward.x * rightAmount;
-    const facingMagnitude = Math.hypot(intentX, intentZ);
-    if (facingMagnitude > 0.05) holeEyeDesiredForward.set(intentX / facingMagnitude, intentZ / facingMagnitude);
+    // Keyboard locomotion is camera-relative but does not force the viewpoint
+    // to rotate: A/D strafe and S backpedals. The hole remains fully responsive
+    // while mouse/touch look controls own the visual yaw.
   }
   const mag = Math.hypot(intentX, intentZ);
   const reach = HOLESY_CONFIG.input.keyboardReach;
@@ -6285,6 +6303,7 @@ const adaptiveAssistIndicatorEl = document.getElementById('adaptive-assist-indic
 const mobileHudToggleBtn = document.getElementById('mobile-hud-toggle');
 const povToggleBtn = document.getElementById('pov-toggle-btn');
 const povCompassArrow = document.getElementById('pov-compass-arrow');
+const povComfortFrame = document.getElementById('pov-comfort-frame');
 const skipWaitBtn = document.getElementById('skip-wait-btn');
 const hapticTestBtn = document.getElementById('haptic-test-btn');
 const hapticStatusEl = document.getElementById('haptic-status');
@@ -6350,6 +6369,8 @@ const difficultySelect = document.getElementById('difficulty-select');
 const difficultyDesc = document.getElementById('difficulty-desc');
 const environmentSelect = document.getElementById('environment-select');
 const environmentDesc = document.getElementById('environment-desc');
+const holeEyeComfortSelect = document.getElementById('hole-eye-comfort-select');
+const holeEyeComfortDesc = document.getElementById('hole-eye-comfort-desc');
 const cosmeticSelect = document.getElementById('cosmetic-select');
 const cosmeticDesc = document.getElementById('cosmetic-desc');
 function refreshCosmeticPicker() {
@@ -6371,6 +6392,24 @@ cosmeticSelect?.addEventListener('change', () => {
   refreshCosmeticPicker();
 });
 refreshCosmeticPicker();
+const HOLE_EYE_COMFORT_DESCRIPTIONS = Object.freeze({
+  balanced: 'Fast movement with controlled camera acceleration, a stable horizon, and light peripheral shading during hard turns.',
+  comfort: 'Gentler camera rotation, stronger turn shading, and more distance from nearby objects. Hole movement stays full speed.',
+  immediate: 'Very fast camera response with no turn shading. First-person shake remains disabled.',
+  snap: 'Turns the view in 30-degree steps while movement remains continuous and full speed.',
+});
+function syncHoleEyeComfortPicker() {
+  if (!holeEyeComfortSelect) return;
+  holeEyeComfortSelect.value = holeEyeComfortProfileName;
+  if (holeEyeComfortDesc) holeEyeComfortDesc.textContent = HOLE_EYE_COMFORT_DESCRIPTIONS[holeEyeComfortProfileName];
+}
+holeEyeComfortSelect?.addEventListener('change', () => {
+  holeEyeComfortProfileName = HOLE_EYE_COMFORT_PROFILES[holeEyeComfortSelect.value] ? holeEyeComfortSelect.value : 'balanced';
+  holeEyeYawVelocity = 0;
+  try { localStorage.setItem(HOLE_EYE_COMFORT_STORAGE_KEY, holeEyeComfortProfileName); } catch {}
+  syncHoleEyeComfortPicker();
+});
+syncHoleEyeComfortPicker();
 const statsWindowBtn = document.getElementById('stats-window-btn');
 const loreArchiveBtn = document.getElementById('lore-archive-btn');
 const howToPlayBtn = document.getElementById('how-to-play-btn');
@@ -10597,6 +10636,7 @@ function scheduleNextWaveStart(nextWave, delayMs = HOLESY_CONFIG.eventMessaging.
 // ROUND LIFECYCLE UI HELPERS
 // =========================================================================
 function showGameplayUi() {
+  document.body.classList.add('gameplay-active');
   overlay.classList.add('hidden');
   lmsChoice.classList.add('hidden');
   pauseOverlay.classList.add('hidden');
@@ -10610,6 +10650,8 @@ function showGameplayUi() {
 }
 
 function hideGameplayUi() {
+  setHoleEyeView(false);
+  document.body.classList.remove('gameplay-active');
   hud.classList.add('hidden');
   miniLbEl.classList.add('hidden');
   gameControls.classList.add('hidden');
@@ -13095,8 +13137,11 @@ function updateHapticStatus(text = getHapticSupportText()) {
   if (hapticStatusEl) hapticStatusEl.textContent = text;
 }
 
-let lastPlayBtnActivationTs = 0;
-function handlePlayButtonPress(e) {
+// The first Begin press must never be mistaken for a duplicate merely because
+// it happens during the first 500 ms after the document starts.
+let lastPlayBtnActivationTs = -Infinity;
+let playStartInFlight = false;
+async function handlePlayButtonPress(e) {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -13108,14 +13153,35 @@ function handlePlayButtonPress(e) {
       returnToModeSelect();
       return;
   }
-    if (!isGameState(GAME_STATES.TITLE, GAME_STATES.MODE_SELECT, GAME_STATES.GAME_OVER)) return;
+    if (playStartInFlight) return;
+    const visibleInactiveMenu = !overlay.classList.contains('hidden') && !running;
+    if (!isGameState(GAME_STATES.TITLE, GAME_STATES.MODE_SELECT, GAME_STATES.GAME_OVER) && !visibleInactiveMenu) return;
+    // A completed long run can leave a stale transitional state even though the
+    // game-over selector is visibly active. The visible inactive selector is
+    // authoritative for Begin; normalize it before starting the next run.
+    if (visibleInactiveMenu && !isGameState(GAME_STATES.TITLE, GAME_STATES.MODE_SELECT, GAME_STATES.GAME_OVER)) {
+      setGameState(GAME_STATES.MODE_SELECT);
+    }
     // On first interaction, browsers block audio until a gesture occurs on
     // the iframe/page. Begin should prime audio and start the game in the
     // same user gesture.
       if (!musicStarted) {
         primeAudioFromStartGesture();
       }
-      startGame();
+      playStartInFlight = true;
+      try {
+        await startGame();
+      } catch (error) {
+        console.error('Unable to start game:', error);
+        running = false;
+        setGameState(GAME_STATES.MODE_SELECT);
+        playBtn.disabled = false;
+        setPlayButtonAction('begin');
+        subtitleEl.textContent = 'The city failed to assemble. Press Begin to try again.';
+        overlay.classList.remove('hidden');
+      } finally {
+        playStartInFlight = false;
+      }
     }
 playBtn.addEventListener('click', handlePlayButtonPress);
 playBtn.addEventListener('touchend', (e) => {
@@ -13171,7 +13237,8 @@ function syncHoleEyeViewControl() {
   povToggleBtn.setAttribute('aria-pressed', holeEyeViewEnabled ? 'true' : 'false');
   povToggleBtn.setAttribute('aria-label', holeEyeViewEnabled ? 'Return to third-person overhead view' : 'Switch to first-person Hole-Eye View');
   povToggleBtn.textContent = holeEyeViewEnabled ? 'VIEW: 1ST · V/ESC' : 'VIEW: 3RD';
-  document.body.classList.toggle('hole-eye-view', holeEyeViewEnabled);
+  const gameplayViewActive = holeEyeViewEnabled && isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION, GAME_STATES.LMS_CHOICE);
+  document.body.classList.toggle('hole-eye-view', gameplayViewActive);
 }
 
 function setHoleEyeView(enabled) {
@@ -13180,6 +13247,13 @@ function setHoleEyeView(enabled) {
     releaseMouseControl();
     const centerDistance = Math.hypot(player.x, player.z);
     if (centerDistance > 1) holeEyeDesiredForward.set(-player.x / centerDistance, -player.z / centerDistance);
+    holeEyeYaw = Math.atan2(holeEyeForward.x, holeEyeForward.y);
+    holeEyeYawVelocity = 0;
+    holeEyeLastSnapAt = 0;
+  } else {
+    holeEyeYawVelocity = 0;
+    holeEyeVignetteOpacity = 0;
+    if (povComfortFrame) povComfortFrame.style.opacity = '0';
   }
   syncHoleEyeViewControl();
   wakeRenderLoop();
@@ -18107,11 +18181,44 @@ function updateGameplayCamera(focus, dt, now) {
   }
 
   const cameraSizeResponse = THREE.MathUtils.clamp((focus.radius - MIN_RADIUS) / 9, 0, 1);
-  const headingRate = THREE.MathUtils.lerp(3.6, 7.5, cameraSizeResponse);
-  const headingAlpha = 1 - Math.exp(-dt * headingRate);
-  holeEyeForward.lerp(holeEyeDesiredForward, headingAlpha);
-  if (holeEyeForward.lengthSq() < 0.001) holeEyeForward.set(0, -1);
-  else holeEyeForward.normalize();
+  const comfortProfile = HOLE_EYE_COMFORT_PROFILES[holeEyeComfortProfileName] || HOLE_EYE_COMFORT_PROFILES.balanced;
+  const desiredYaw = Math.atan2(holeEyeDesiredForward.x, holeEyeDesiredForward.y);
+  let yawDelta = Math.atan2(Math.sin(desiredYaw - holeEyeYaw), Math.cos(desiredYaw - holeEyeYaw));
+  if (comfortProfile.snap && holeEyeViewBlend > 0.5) {
+    const snapThreshold = THREE.MathUtils.degToRad(15);
+    if (Math.abs(yawDelta) >= snapThreshold && now - holeEyeLastSnapAt >= 150) {
+      const snapRadians = THREE.MathUtils.degToRad(30) * Math.sign(yawDelta);
+      holeEyeYaw += snapRadians;
+      holeEyeLastSnapAt = now;
+      yawDelta -= snapRadians;
+      holeEyeYawVelocity = 0;
+      holeEyeVignetteOpacity = Math.max(holeEyeVignetteOpacity, 0.72);
+    }
+  } else {
+    const maxYaw = THREE.MathUtils.degToRad(comfortProfile.maxYawDeg);
+    const acceleration = THREE.MathUtils.degToRad(comfortProfile.accelerationDeg);
+    const braking = THREE.MathUtils.degToRad(comfortProfile.brakingDeg);
+    const deadband = THREE.MathUtils.degToRad(3.5);
+    const desiredVelocity = Math.abs(yawDelta) <= deadband
+      ? 0
+      : THREE.MathUtils.clamp(yawDelta * 5.2, -maxYaw, maxYaw);
+    const rate = Math.abs(desiredVelocity) < Math.abs(holeEyeYawVelocity) ? braking : acceleration;
+    const velocityStep = rate * dt;
+    if (holeEyeYawVelocity < desiredVelocity) holeEyeYawVelocity = Math.min(desiredVelocity, holeEyeYawVelocity + velocityStep);
+    else holeEyeYawVelocity = Math.max(desiredVelocity, holeEyeYawVelocity - velocityStep);
+    const yawStep = THREE.MathUtils.clamp(holeEyeYawVelocity * dt, -Math.abs(yawDelta), Math.abs(yawDelta));
+    holeEyeYaw += yawStep;
+    if (Math.abs(yawDelta) <= deadband && Math.abs(holeEyeYawVelocity) < THREE.MathUtils.degToRad(8)) holeEyeYawVelocity = 0;
+  }
+  holeEyeYaw = Math.atan2(Math.sin(holeEyeYaw), Math.cos(holeEyeYaw));
+  holeEyeForward.set(Math.sin(holeEyeYaw), Math.cos(holeEyeYaw));
+  const yawSpeedRatio = comfortProfile.snap
+    ? 0
+    : Math.min(1, Math.abs(holeEyeYawVelocity) / Math.max(0.001, THREE.MathUtils.degToRad(comfortProfile.maxYawDeg)));
+  const vignetteTarget = holeEyeViewBlend > 0.5 ? yawSpeedRatio * comfortProfile.vignette : 0;
+  const vignetteRate = vignetteTarget > holeEyeVignetteOpacity ? 12.5 : 5.5;
+  holeEyeVignetteOpacity += (vignetteTarget - holeEyeVignetteOpacity) * (1 - Math.exp(-dt * vignetteRate));
+  if (povComfortFrame) povComfortFrame.style.opacity = holeEyeVignetteOpacity.toFixed(3);
   if (povCompassArrow && holeEyeViewBlend > 0.01) {
     const northAngle = Math.atan2(-holeEyeForward.x, -holeEyeForward.y);
     povCompassArrow.style.transform = `translateX(-50%) rotate(${northAngle}rad)`;
@@ -18125,8 +18232,9 @@ function updateGameplayCamera(focus, dt, now) {
 
   // Hole-Eye is an elevated close-follow view: high/back enough to keep the
   // entire rim in frame, low enough to retain the landscape-level perspective.
-  const eyeBack = THREE.MathUtils.clamp(6.4 + focus.radius * 1.05, 7.6, 16);
-  const eyeHeight = THREE.MathUtils.clamp(4.5 + focus.radius * 0.72, 5.35, 11);
+  const smallHoleSeparation = THREE.MathUtils.lerp(comfortProfile.cameraSeparation, 1, cameraSizeResponse);
+  const eyeBack = THREE.MathUtils.clamp((6.4 + focus.radius * 1.05) * smallHoleSeparation, 7.6, 16);
+  const eyeHeight = THREE.MathUtils.clamp((4.5 + focus.radius * 0.72) * THREE.MathUtils.lerp(smallHoleSeparation, 1, 0.28), 5.35, 11);
   const eyeX = focus.x - holeEyeForward.x * eyeBack;
   const eyeY = eyeHeight;
   const eyeZ = focus.z - holeEyeForward.y * eyeBack;
@@ -18149,9 +18257,9 @@ function updateGameplayCamera(focus, dt, now) {
   cameraLookTarget.y += (desiredLookY - cameraLookTarget.y) * followAlpha;
   cameraLookTarget.z += (desiredLookZ - cameraLookTarget.z) * followAlpha;
 
-  if (player.unitClearShakeUntil && now < player.unitClearShakeUntil) {
+  if (player.unitClearShakeUntil && now < player.unitClearShakeUntil && holeEyeViewBlend < 0.05) {
     const shakeT = (player.unitClearShakeUntil - now) / 520;
-    const shake = Math.max(0, shakeT) * THREE.MathUtils.lerp(0.55, 0.22, holeEyeViewBlend);
+    const shake = Math.max(0, shakeT) * 0.55;
     camera.position.x += (Math.random() - 0.5) * shake;
     camera.position.y += (Math.random() - 0.5) * shake * 0.6;
     camera.position.z += (Math.random() - 0.5) * shake;
@@ -18257,6 +18365,9 @@ function updateRuntimePerformanceTelemetry(frameDeltaMs, now) {
   root.setAttribute('data-holesy-audio-context-state', music.ctx?.state || 'uninitialized');
   root.setAttribute('data-holesy-audio-active-music-sources', String(music.activeSources.size));
   root.setAttribute('data-holesy-audio-peak-music-sources', String(music.peakActiveMusicSources));
+  root.setAttribute('data-holesy-hole-eye-comfort-profile', holeEyeComfortProfileName);
+  root.setAttribute('data-holesy-hole-eye-yaw-deg-per-sec', THREE.MathUtils.radToDeg(Math.abs(holeEyeYawVelocity)).toFixed(1));
+  root.setAttribute('data-holesy-hole-eye-vignette-opacity', holeEyeVignetteOpacity.toFixed(3));
 }
 
 function animate(frameNow = performance.now()) {

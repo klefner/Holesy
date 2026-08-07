@@ -6,8 +6,13 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.201` and player-facing surfaces show `Version 16.201`
-- `Master 16.201` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.202` and player-facing surfaces show `Version 16.202`
+- `Master 16.202` is the current governed source basis and includes:
+  - full-speed Hole-Eye locomotion decoupled from keyboard camera yaw so strafing and backpedaling do not whip the world around
+  - angle-based camera acceleration, stable first-person framing without impact shake, extra small-hole camera separation, and turn-driven peripheral Hunger shading
+  - Balanced, Comfort, Immediate, and Snap Turn profiles stored locally
+  - compass and comfort-overlay teardown on game end plus an immediate-first-click Begin repair and resilient asynchronous startup recovery
+- `Master 16.201` remains the large-hole render and universal consume-feedback basis and includes:
   - a large-hole Harvest render governor that preserves every gameplay object while omitting only distant, sub-pixel loose details from extreme overhead rendering
   - automatic full-detail restoration near the player, below Void scale, and in Hole-Eye view
   - a short synthesized fallback pop for consumed objects without an authored category sound, bounded by the existing shared SFX voice ceiling

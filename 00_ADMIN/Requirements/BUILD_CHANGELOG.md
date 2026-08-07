@@ -2,6 +2,17 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.202 - 2026-08-07
+
+Added motion-comfort controls without slowing Hole-Eye movement.
+
+- Makes keyboard A/D strafe and S backpedal without forcing camera yaw.
+- Replaces unbounded direction-vector turning with angle-based yaw acceleration, braking, deadband, and profile-specific maximum speed.
+- Removes first-person impact shake and moves the camera modestly higher/farther back for small holes.
+- Adds turn-triggered peripheral Hunger shading and Balanced, Comfort, Immediate, and 30-degree Snap Turn profiles.
+- Keeps the compass north-aware while guaranteeing it and the comfort overlay disappear when gameplay ends.
+- Fixes an immediate Begin press being discarded during the first 500 milliseconds after page load and adds recoverable startup error handling.
+
 ## Master 16.201 - 2026-08-07
 
 Reduced the extreme overhead rendering cliff without removing Harvest gameplay content.
