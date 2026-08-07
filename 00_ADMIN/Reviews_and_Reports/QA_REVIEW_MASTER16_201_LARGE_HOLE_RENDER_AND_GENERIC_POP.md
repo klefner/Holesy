@@ -27,3 +27,8 @@ Date: 2026-08-07
 ## Remaining live test
 
 The user should repeat the late-wave Harvest run on the published Pages build. The pass condition is that Wave 5-6 remains controllable with continuous music while nearby content stays visually dense and silent categories produce a restrained pop.
+
+## Publication evidence
+
+- Pages commit `b02b8d8` publishes the modular Master 16.201 package.
+- Public verification on 2026-08-07 returned Master 16.201 metadata and the live micro-detail governor, generic pop implementation, and telemetry markers.
