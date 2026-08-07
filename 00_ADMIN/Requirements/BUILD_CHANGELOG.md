@@ -2,6 +2,15 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.203 - 2026-08-07
+
+Added recorded wave completion and universal fallback consumption audio.
+
+- Plays the supplied level-completed recording once when a successful wave enters the next-district transition.
+- Replaces the synthesized generic pop with the supplied small-hit recording for consumed objects that have no authored category sound.
+- Trims each fallback hit to a crisp 240-millisecond pop, varies pitch and distance volume, and retains the existing 24-voice SFX ceiling, priority reserve, and explicit source cleanup.
+- Decodes both shipped cues before the larger legacy sound banks and exposes load/play telemetry for browser QA.
+
 ## Master 16.202 - 2026-08-07
 
 Added motion-comfort controls without slowing Hole-Eye movement.

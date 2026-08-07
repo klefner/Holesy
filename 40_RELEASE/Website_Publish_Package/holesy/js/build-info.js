@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 202;
+export const BUILD_SUB = 203;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.203',
+    title: 'Recorded wave and universal consume cues',
+    notes: [
+      'Plays a recorded completion cue when a successful wave closes and the next district transition begins.',
+      'Uses the supplied small-hit recording for every consumed object without an authored category sound.',
+      'Keeps fallback hits distance-aware, pitch-varied, voice-capped, and explicitly cleaned up under heavy consumption.',
+    ],
+  },
   {
     label: 'Master 16.202',
     title: 'Balanced Hole-Eye motion comfort',

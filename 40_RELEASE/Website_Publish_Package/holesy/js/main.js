@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.202';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.203';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -9453,7 +9453,14 @@ const audioBank = {
   gunshots: [],
   soldierVoices: [],
   biteChew: [null], // single-sample slot; wrapped in array for decodeSample compatibility
+  genericConsumeHit: [null],
+  waveComplete: [null],
 };
+
+const SHIPPED_AUDIO_ASSETS = Object.freeze([
+  [new URL('../assets/audio/sfx/generic-consume-hit.wav', import.meta.url), audioBank.genericConsumeHit],
+  [new URL('../assets/audio/sfx/wave-complete.wav', import.meta.url), audioBank.waveComplete],
+]);
 
 // Decode embedded MP3 data asynchronously so user gestures never spend seconds
 // converting base64 strings on the main thread.
@@ -9463,6 +9470,14 @@ async function decodeSample(b64, bank, idx) {
     const encodedAudio = await response.arrayBuffer();
     bank[idx] = await music.ctx.decodeAudioData(encodedAudio);
   } catch (err) { console.warn('Audio load failed:', err); }
+}
+
+async function decodeShippedAudioAsset(url, bank) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+    bank[0] = await music.ctx.decodeAudioData(await response.arrayBuffer());
+  } catch (err) { console.warn(`Audio asset load failed (${url}):`, err); }
 }
 
 function awardEndlessWaveLoreDrop() {
@@ -9486,6 +9501,7 @@ const PRIORITY_NON_MUSIC_SOURCE_RESERVE = 3;
 const MAX_SIMULTANEOUS_BUILDING_SOUNDS = 5;
 let activeBuildingAudioVoices = 0;
 let genericConsumePopsPlayed = 0;
+let waveCompletionSoundsPlayed = 0;
 
 function canStartNonMusicSource(priority = false) {
   const limit = MAX_SIMULTANEOUS_NON_MUSIC_SOURCES + (priority ? PRIORITY_NON_MUSIC_SOURCE_RESERVE : 0);
@@ -9535,6 +9551,9 @@ function scheduleAudioBankWarmup(delayMs = 2500) {
 async function loadAudioBanks() {
   if (audioBanksLoaded || !music.ctx) return;
   audioBanksLoaded = true;
+  // Decode the two frequent/structural cues first. Gameplay can begin while the
+  // larger legacy banks continue yielding between samples below.
+  await Promise.all(SHIPPED_AUDIO_ASSETS.map(([url, bank]) => decodeShippedAudioAsset(url, bank)));
   const banks = [
     [SCREAM_SAMPLES_B64, audioBank.screams],
     [TREE_SAMPLES_B64, audioBank.trees],
@@ -9579,9 +9598,9 @@ function makeVoiceProfile() {
 }
 
 // Generic sample playback with pitch + gain control, reverb send
-function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, priority = false) {
-  if (!music.ctx || !buffer) return;
-  if (!canStartNonMusicSource(priority)) return;
+function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, priority = false, maxDuration = null) {
+  if (!music.ctx || !buffer) return false;
+  if (!canStartNonMusicSource(priority)) return false;
   const ctx = music.ctx;
   const src = ctx.createBufferSource();
   src.buffer = buffer;
@@ -9599,32 +9618,33 @@ function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, pr
   }
   trackNonMusicSource(src, rev ? [g, rev] : [g]);
   src.start();
+  if (Number.isFinite(maxDuration) && maxDuration > 0) src.stop(ctx.currentTime + maxDuration);
+  return true;
 }
 
 // Every edible deserves feedback, even when it has no authored category sample.
-// This tiny synthesized pop avoids another decoded asset and releases its Web
-// Audio nodes in under 70 ms, so large-hole multi-consumes stay bounded by the
-// shared non-music voice ceiling above.
+// The recorded hit uses the shared voice ceiling so large-hole multi-consumes
+// cannot recreate the late-wave Web Audio overload.
 function playGenericConsumePop(volumeScale = 1.0, obj = null) {
   initMusicContext();
-  if (!music.ctx || !canStartNonMusicSource()) return;
-  const ctx = music.ctx;
-  const startAt = ctx.currentTime;
-  const stopAt = startAt + 0.065;
+  if (!music.ctx) return;
+  if (!audioBanksLoaded) scheduleAudioBankWarmup(0);
+  const buffer = audioBank.genericConsumeHit[0];
+  if (!buffer) return;
   const size = THREE.MathUtils.clamp(obj?.size || 0.35, 0.1, 1.5);
-  const oscillator = ctx.createOscillator();
-  const gain = ctx.createGain();
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(480 - size * 105 + Math.random() * 55, startAt);
-  oscillator.frequency.exponentialRampToValueAtTime(185 + Math.random() * 35, stopAt);
-  gain.gain.setValueAtTime(Math.max(0.001, 0.038 * volumeScale), startAt);
-  gain.gain.exponentialRampToValueAtTime(0.001, stopAt);
-  oscillator.connect(gain);
-  gain.connect(getSfxDestination());
-  trackNonMusicSource(oscillator, [gain]);
-  oscillator.start(startAt);
-  oscillator.stop(stopAt);
-  genericConsumePopsPlayed++;
+  const rate = THREE.MathUtils.clamp(1.08 - size * 0.08 + (Math.random() - 0.5) * 0.12, 0.88, 1.14);
+  if (playSample(buffer, rate, (0.16 + Math.random() * 0.05) * volumeScale, 0.04, false, 0.24)) {
+    genericConsumePopsPlayed++;
+  }
+}
+
+function playWaveCompletionSound() {
+  initMusicContext();
+  if (!music.ctx || music.muted) return;
+  if (!audioBanksLoaded) scheduleAudioBankWarmup(0);
+  const buffer = audioBank.waveComplete[0];
+  if (!buffer) return;
+  if (playSample(buffer, 1, 0.62, 0.08, true)) waveCompletionSoundsPlayed++;
 }
 
 function stopActiveNonMusicSources() {
@@ -10726,6 +10746,7 @@ async function enterWaveTransition(nextWave) {
   freezeGameplayTime();
   setGameState(GAME_STATES.WAVE_TRANSITION);
   triggerHaptic('waveTransition');
+  playWaveCompletionSound();
   showStagePop('DISTRICT CONSUMED', 1800);
   showEventBanner(waveTransitionLore(nextWave), HOLESY_CONFIG.eventMessaging.waveTransitionDurationMs);
   setEndlessPressureForWave(nextWave);
@@ -18361,6 +18382,9 @@ function updateRuntimePerformanceTelemetry(frameDeltaMs, now) {
   root.setAttribute('data-holesy-audio-active-sfx-voices', String(activeNonMusicSources.size));
   root.setAttribute('data-holesy-audio-dropped-sfx-voices', String(music.droppedSfxVoices));
   root.setAttribute('data-holesy-audio-generic-consume-pops', String(genericConsumePopsPlayed));
+  root.setAttribute('data-holesy-audio-generic-hit-loaded', audioBank.genericConsumeHit[0] ? 'true' : 'false');
+  root.setAttribute('data-holesy-audio-wave-complete-loaded', audioBank.waveComplete[0] ? 'true' : 'false');
+  root.setAttribute('data-holesy-audio-wave-completions', String(waveCompletionSoundsPlayed));
   root.setAttribute('data-holesy-audio-scheduler-recoveries', String(music.schedulerRecoveries));
   root.setAttribute('data-holesy-audio-context-state', music.ctx?.state || 'uninitialized');
   root.setAttribute('data-holesy-audio-active-music-sources', String(music.activeSources.size));
