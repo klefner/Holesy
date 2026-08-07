@@ -35,4 +35,8 @@ Prevent cancelled city-generation work and district-less Endless saves from mixi
 - A screenshot review confirmed the playable Harvest scene and unobstructed HUD at the representative Wave 1 baseline.
 - SHA-256 parity passed for 29 changed browser-package files across source and release, including all converted Harvest structure assets.
 
-Publication verification remains pending.
+## Publication Verification
+
+- GitHub Pages commit `608eac3` completed successfully in workflow `31206461856`.
+- Live browser verification confirmed `Master 16.209` / `Version 16.209` with no console errors.
+- Public test URL: `https://klefner.github.io/Holesy/?v=16.209-608eac3`
