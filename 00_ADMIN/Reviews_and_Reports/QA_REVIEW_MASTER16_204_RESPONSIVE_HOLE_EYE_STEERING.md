@@ -34,4 +34,4 @@ Master 16.202 made A/D camera-relative strafing controls. That removed the prima
 
 ## Result
 
-Pass for implementation and local browser verification. Sustained-turn player feel and GitHub Pages publication remain pending.
+Pass for implementation, local browser verification, and GitHub Pages publication. Pages commit `1dcb206` completed successfully; public HTTP verification confirmed build 204 metadata and the live responsive profile, steering hook, and turn-release repair. Sustained-turn player feel remains pending.
