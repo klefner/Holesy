@@ -8,7 +8,7 @@ Before any release packaging, live upload, master promotion, backlog sequencing,
 
 The acting developer must also read the repo-root `AGENTS.md` so release, implementation, QA, and handoff responsibilities are applied consistently across Codex, Claude, and other AI systems.
 
-## Current State As Of 2026-08-06
+## Current State As Of 2026-08-07
 
 | Layer | Current value | Meaning |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 | Stable `main` | stale relative to active branch | `main` is not the current gameplay source of truth until an explicit PR/merge updates it. |
 | Current approved source master | `10_SOURCE/Masters/Master 16/` | Governed modular source package for the current playable build line. |
 | Current source entry point | `10_SOURCE/Masters/Master 16/index.html` | Browser entry point for the modular source package. |
-| Current in-game build label | `Master 16.200` | Current published review build; normal player surfaces display `Version 16.200`. It preserves the complete Master 16.198 Harvest town baseline, retains the 16.199 SFX protections, and removes the append-only procedural-music source registry that accumulated thousands of ended Web Audio nodes by wave five. |
+| Current in-game build label | `Master 16.201` | Current release candidate; normal player surfaces display `Version 16.201`. It preserves the complete Master 16.198 Harvest gameplay population, retains the 16.199-16.200 audio protections, omits only distant sub-pixel loose details from extreme overhead rendering, and gives uncategorized consumed objects a bounded synthesized pop. |
 | Current release package | `40_RELEASE/Website_Publish_Package/holesy/` | Current modular browser-client release package and source for the GitHub Pages `docs/` deployment tree. |
 | Current Pages deployment branch | `claude/happy-clarke-ORWAI` | GitHub Pages publishes from this branch's `docs/` folder; commit `a18ccd5` publishes the complete `Master 16.200` package. Live verification on 2026-08-06 confirmed HTTP 200, public build 200 metadata, the live scheduled-music source set, per-note group cleanup, retained 24-voice SFX ceiling, and current/peak music-source telemetry. |
 | Legacy GoDaddy packages | obsolete | GoDaddy publishing was discontinued when GitHub Pages became the production host; retained historical folders must not drive release decisions. |
@@ -27,7 +27,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 
 ## Non-Negotiable Distinctions
 
-- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.200` is the current modular review patch on that architecture line.
+- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.201` is the current modular review patch on that architecture line.
 - `Master 16.74` closes `PERF-012` as a production package migration item; future UI, save/load, level/theme, reward/quest, and gameplay-system extraction should be tracked as separate feature-support architecture work.
 - The production package must preserve the modular folder shape unless an emergency temporary bundled hotfix is explicitly approved and documented.
 - GitHub Pages deployment must preserve the full modular package shape under the configured `docs/` source while commits remain narrowly scoped to changed files.

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.200';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.201';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -9446,6 +9446,7 @@ const MAX_SIMULTANEOUS_NON_MUSIC_SOURCES = 24;
 const PRIORITY_NON_MUSIC_SOURCE_RESERVE = 3;
 const MAX_SIMULTANEOUS_BUILDING_SOUNDS = 5;
 let activeBuildingAudioVoices = 0;
+let genericConsumePopsPlayed = 0;
 
 function canStartNonMusicSource(priority = false) {
   const limit = MAX_SIMULTANEOUS_NON_MUSIC_SOURCES + (priority ? PRIORITY_NON_MUSIC_SOURCE_RESERVE : 0);
@@ -9559,6 +9560,32 @@ function playSample(buffer, playbackRate = 1.0, gain = 0.7, reverbMix = 0.12, pr
   }
   trackNonMusicSource(src, rev ? [g, rev] : [g]);
   src.start();
+}
+
+// Every edible deserves feedback, even when it has no authored category sample.
+// This tiny synthesized pop avoids another decoded asset and releases its Web
+// Audio nodes in under 70 ms, so large-hole multi-consumes stay bounded by the
+// shared non-music voice ceiling above.
+function playGenericConsumePop(volumeScale = 1.0, obj = null) {
+  initMusicContext();
+  if (!music.ctx || !canStartNonMusicSource()) return;
+  const ctx = music.ctx;
+  const startAt = ctx.currentTime;
+  const stopAt = startAt + 0.065;
+  const size = THREE.MathUtils.clamp(obj?.size || 0.35, 0.1, 1.5);
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(480 - size * 105 + Math.random() * 55, startAt);
+  oscillator.frequency.exponentialRampToValueAtTime(185 + Math.random() * 35, stopAt);
+  gain.gain.setValueAtTime(Math.max(0.001, 0.038 * volumeScale), startAt);
+  gain.gain.exponentialRampToValueAtTime(0.001, stopAt);
+  oscillator.connect(gain);
+  gain.connect(getSfxDestination());
+  trackNonMusicSource(oscillator, [gain]);
+  oscillator.start(startAt);
+  oscillator.stop(stopAt);
+  genericConsumePopsPlayed++;
 }
 
 function stopActiveNonMusicSources() {
@@ -13491,6 +13518,8 @@ function awardObjectConsume(h, obj) {
         else playBuildingSound(obj.buildingSize, volScale);
       } else if (obj.isProp) {
         playMetalSound(volScale);
+      } else {
+        playGenericConsumePop(volScale, obj);
       }
     }
   }
@@ -18146,6 +18175,61 @@ const runtimeFrameSamples = new Float32Array(240);
 let runtimeFrameSampleCount = 0;
 let runtimeFrameSampleCursor = 0;
 let runtimeTelemetryUpdatedAt = 0;
+const HARVEST_MICRO_DETAIL_MIN_RADIUS = 7.3;
+const HARVEST_MICRO_DETAIL_UPDATE_MS = 220;
+const HARVEST_MICRO_DETAIL_MAX_SIZE = 0.68;
+const HARVEST_MICRO_DETAIL_MIN_PIXELS = 3.25;
+let harvestMicroDetailUpdatedAt = 0;
+let harvestMicroDetailsCulled = 0;
+
+// A large overhead hole can put almost the entire county inside the camera
+// frustum. Keep every object simulated and edible, but stop asking the GPU to
+// draw distant loose details that occupy only a few pixels. Buildings, targets,
+// active falls, powerups, people, animals, and nearby details always remain.
+function updateHarvestMicroDetailVisibility(now, focus) {
+  if (now - harvestMicroDetailUpdatedAt < HARVEST_MICRO_DETAIL_UPDATE_MS) return;
+  harvestMicroDetailUpdatedAt = now;
+  const enabled = selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY
+    && holeEyeViewBlend < 0.5
+    && focus?.radius >= HARVEST_MICRO_DETAIL_MIN_RADIUS;
+  const focalPixels = window.innerHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5)));
+  const protectedDistance = 28 + (focus?.radius || 0) * 4.5;
+  const protectedDistanceSq = protectedDistance * protectedDistance;
+  let culled = 0;
+  for (const obj of objects) {
+    if (!obj?.mesh || !obj.isHarvestAsset) continue;
+    const eligible = enabled
+      && !obj.consumed
+      && !obj.falling
+      && !obj.isBuilding
+      && !obj.isVoxelBuildingCube
+      && !obj.isSkyscraperChunk
+      && !obj.isGovernmentBuildingPiece
+      && !obj.physicsStackPiece
+      && !obj.isPowerup
+      && !obj.isPerson
+      && obj.mandateKind !== 'animal'
+      && (obj.size || 0) <= HARVEST_MICRO_DETAIL_MAX_SIZE;
+    let shouldCull = false;
+    if (eligible) {
+      const focusDx = obj.x - focus.x;
+      const focusDz = obj.z - focus.z;
+      if (focusDx * focusDx + focusDz * focusDz > protectedDistanceSq) {
+        const cameraDx = obj.x - camera.position.x;
+        const cameraDy = (obj.mesh.position.y || 0) - camera.position.y;
+        const cameraDz = obj.z - camera.position.z;
+        const distance = Math.max(1, Math.hypot(cameraDx, cameraDy, cameraDz));
+        const projectedPixels = ((obj.size || 0.1) * 2 * focalPixels) / distance;
+        shouldCull = projectedPixels < HARVEST_MICRO_DETAIL_MIN_PIXELS;
+      }
+    }
+    obj.performanceMicroCulled = shouldCull;
+    obj.mesh.visible = !shouldCull;
+    if (shouldCull) culled++;
+  }
+  harvestMicroDetailsCulled = culled;
+}
+
 function updateRuntimePerformanceTelemetry(frameDeltaMs, now) {
   runtimeFrameSamples[runtimeFrameSampleCursor] = frameDeltaMs;
   runtimeFrameSampleCursor = (runtimeFrameSampleCursor + 1) % runtimeFrameSamples.length;
@@ -18164,8 +18248,11 @@ function updateRuntimePerformanceTelemetry(frameDeltaMs, now) {
   root.setAttribute('data-holesy-perf-moving-people', String(movingPeople.length));
   root.setAttribute('data-holesy-perf-ambient-actors', String(medievalAmbientActors.length));
   root.setAttribute('data-holesy-perf-awake-harvest-actors', String(harvestAwakeMovingPeople + harvestAwakeAmbientActors));
+  root.setAttribute('data-holesy-perf-culled-harvest-micro-details', String(harvestMicroDetailsCulled));
+  root.setAttribute('data-holesy-perf-harvest-detail-governor', harvestMicroDetailsCulled > 0 ? 'active' : 'inactive');
   root.setAttribute('data-holesy-audio-active-sfx-voices', String(activeNonMusicSources.size));
   root.setAttribute('data-holesy-audio-dropped-sfx-voices', String(music.droppedSfxVoices));
+  root.setAttribute('data-holesy-audio-generic-consume-pops', String(genericConsumePopsPlayed));
   root.setAttribute('data-holesy-audio-scheduler-recoveries', String(music.schedulerRecoveries));
   root.setAttribute('data-holesy-audio-context-state', music.ctx?.state || 'uninitialized');
   root.setAttribute('data-holesy-audio-active-music-sources', String(music.activeSources.size));
@@ -18402,6 +18489,7 @@ function animate(frameNow = performance.now()) {
     // Camera follows focus hole. Zoom-out coefficient is deliberately small so
     // the hole visibly grows on screen rather than staying the same perceived size.
     updateGameplayCamera(focus, dt, now);
+    updateHarvestMicroDetailVisibility(now, focus);
 
     if (now - lastHudUpdateAt >= HUD_UPDATE_INTERVAL_MS) {
       lastHudUpdateAt = now;

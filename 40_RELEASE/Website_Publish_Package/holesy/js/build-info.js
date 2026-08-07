@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 200;
+export const BUILD_SUB = 201;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.201',
+    title: 'Large-hole frame relief and universal consume feedback',
+    notes: [
+      'Keeps the complete Harvest County object population simulated and edible while omitting only distant sub-pixel loose details from extreme overhead rendering.',
+      'Restores all detail automatically near the player, in Hole-Eye view, and below the Void/Abyss camera scale.',
+      'Gives every consumed object without an authored category sound a short, voice-capped synthesized pop.',
+    ],
+  },
   {
     label: 'Master 16.200',
     title: 'Wave-five music source leak removed',

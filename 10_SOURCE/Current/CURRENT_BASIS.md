@@ -6,8 +6,13 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.200` and player-facing surfaces show `Version 16.200`
-- `Master 16.200` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.201` and player-facing surfaces show `Version 16.201`
+- `Master 16.201` is the current governed source basis and includes:
+  - a large-hole Harvest render governor that preserves every gameplay object while omitting only distant, sub-pixel loose details from extreme overhead rendering
+  - automatic full-detail restoration near the player, below Void scale, and in Hole-Eye view
+  - a short synthesized fallback pop for consumed objects without an authored category sound, bounded by the existing shared SFX voice ceiling
+  - new telemetry for culled micro-details and fallback consume pops
+- `Master 16.200` remains the wave-five music-source cleanup basis and includes:
   - per-note procedural-music cleanup that removes ended sources and disconnects their filters, envelopes, and modulation nodes instead of retaining thousands through wave five
   - live and peak scheduled-music source telemetry for long-run endurance checks
   - the complete `Master 16.199` audio-pressure protections and unchanged `Master 16.198` Harvest town baseline

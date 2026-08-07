@@ -2,6 +2,18 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.201 - 2026-08-07
+
+Reduced the extreme overhead rendering cliff without removing Harvest gameplay content.
+
+- Keeps every Harvest object present, simulated, edible, and score-bearing.
+- Omits only distant loose details projected below roughly three screen pixels once the player reaches Void/Abyss scale in overhead view.
+- Keeps buildings, people, animals, powerups, active falls, physics pieces, and everything near the player visible.
+- Restores full detail automatically at smaller hole sizes and in Hole-Eye view.
+- Adds a short synthesized pop for consumed objects that do not have an explicit category sound, including tumbleweeds.
+- Routes fallback pops through the existing 24-voice SFX ceiling and explicit node cleanup.
+- Adds runtime telemetry for culled Harvest micro-details and generic consume-pop playback.
+
 ## Master 16.200 - 2026-08-06
 
 Removed the cumulative procedural-score source leak responsible for wave-five audio collapse.
