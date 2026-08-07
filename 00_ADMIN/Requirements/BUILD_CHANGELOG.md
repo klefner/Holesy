@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.212 - 2026-08-07
+
+Rebuilt Medieval Village mounted combatants as recognizable forward-moving cavalry.
+
+- Rotates the horse's long body axis from sideways X to the same +Z forward axis used by unit movement, rider facing, and lance attacks.
+- Adds a chest, raised neck, head, muzzle, ears, mane, tail, saddle, four separate legs, and hooves.
+- Replaces the rider's solid leg block with two legs that visibly straddle the saddle.
+- Animates diagonal leg pairs while moving and gives the tail a small gait-linked sway, using no skeletal rig or per-frame allocations.
+- Applies the corrected mount to both ordinary mounted lancers and the Medieval warlord boss.
+
 ## Master 16.211 - 2026-08-07
 
 Moved the first-person north landmark into the game world.

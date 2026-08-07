@@ -17189,26 +17189,82 @@ function makeMedievalCombatantMesh(unitType, isBoss = false) {
   const skinMat = sharedBoxMat(0xd5a47b);
 
   if (mounted) {
-    const horseBody = new THREE.Mesh(sharedBoxGeometry(1.75, 0.88, 0.68), leatherMat);
-    horseBody.position.y = 0.88;
+    // Mounted units face and move along +Z. Keep the horse's long axis on Z so
+    // it charges nose-first instead of sliding broadside like a desk.
+    const horseDarkMat = sharedBoxMat(0x2f2118);
+    const horseBody = new THREE.Mesh(sharedBoxGeometry(0.82, 0.92, 1.9), leatherMat);
+    horseBody.position.set(0, 0.98, 0);
     g.add(horseBody);
-    const horseHead = new THREE.Mesh(sharedBoxGeometry(0.56, 0.66, 0.58), leatherMat);
-    horseHead.position.set(0, 1.22, 0.92);
+
+    const horseChest = new THREE.Mesh(sharedBoxGeometry(0.72, 1.02, 0.58), leatherMat);
+    horseChest.position.set(0, 1.05, 0.7);
+    g.add(horseChest);
+    const horseNeck = new THREE.Mesh(sharedBoxGeometry(0.52, 1.0, 0.5), leatherMat);
+    horseNeck.position.set(0, 1.48, 0.88);
+    horseNeck.rotation.x = -0.28;
+    g.add(horseNeck);
+    const horseHead = new THREE.Mesh(sharedBoxGeometry(0.58, 0.56, 0.72), leatherMat);
+    horseHead.position.set(0, 1.82, 1.28);
     g.add(horseHead);
-    for (const x of [-0.55, 0.55]) for (const z of [-0.22, 0.22]) {
-      const leg = new THREE.Mesh(sharedBoxGeometry(0.16, 0.78, 0.16), leatherMat);
-      leg.position.set(x, 0.38, z);
-      g.add(leg);
+    const muzzle = new THREE.Mesh(sharedBoxGeometry(0.46, 0.34, 0.52), leatherMat);
+    muzzle.position.set(0, 1.68, 1.78);
+    g.add(muzzle);
+    for (const x of [-0.18, 0.18]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.38, 5), horseDarkMat);
+      ear.position.set(x, 2.22, 1.15);
+      g.add(ear);
     }
+    const mane = new THREE.Mesh(sharedBoxGeometry(0.12, 0.75, 0.62), horseDarkMat);
+    mane.position.set(0, 1.72, 0.72);
+    mane.rotation.x = -0.28;
+    g.add(mane);
+    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.12, 0.9, 6), horseDarkMat);
+    tail.position.set(0, 1.05, -1.28);
+    tail.rotation.x = -0.92;
+    g.add(tail);
+
+    const saddle = new THREE.Mesh(sharedBoxGeometry(0.92, 0.16, 0.74), sharedBoxMat(isBoss ? 0x8b2424 : 0x3f2b20));
+    saddle.position.set(0, 1.5, -0.05);
+    g.add(saddle);
+
+    const mountLegPivots = [];
+    const legPositions = [
+      [-0.3, 0.68], [0.3, 0.68], [-0.3, -0.68], [0.3, -0.68],
+    ];
+    for (const [index, [x, z]] of legPositions.entries()) {
+      const pivot = new THREE.Group();
+      pivot.position.set(x, 0.78, z);
+      const leg = new THREE.Mesh(sharedBoxGeometry(0.17, 0.84, 0.2), leatherMat);
+      leg.position.y = -0.42;
+      const hoof = new THREE.Mesh(sharedBoxGeometry(0.2, 0.16, 0.3), horseDarkMat);
+      hoof.position.set(0, -0.8, 0.06);
+      pivot.add(leg, hoof);
+      pivot.userData.gaitSign = index === 0 || index === 3 ? 1 : -1;
+      mountLegPivots.push(pivot);
+      g.add(pivot);
+    }
+    g.userData.mountLegPivots = mountLegPivots;
+    g.userData.mountTail = tail;
   }
 
   const riderBaseY = mounted ? 1.55 : 0;
   const body = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierBody, tunicMat);
   body.position.y = riderBaseY + 0.8;
   g.add(body);
-  const legs = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierLegs, leatherMat);
-  legs.position.y = riderBaseY + 0.32;
-  g.add(legs);
+  if (mounted) {
+    // Separate legs visibly straddle the saddle and face the same +Z travel
+    // axis as the horse and lance.
+    for (const x of [-0.38, 0.38]) {
+      const riderLeg = new THREE.Mesh(sharedBoxGeometry(0.18, 0.82, 0.2), leatherMat);
+      riderLeg.position.set(x, riderBaseY + 0.3, -0.02);
+      riderLeg.rotation.z = x < 0 ? -0.22 : 0.22;
+      g.add(riderLeg);
+    }
+  } else {
+    const legs = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierLegs, leatherMat);
+    legs.position.y = riderBaseY + 0.32;
+    g.add(legs);
+  }
   const head = new THREE.Mesh(WAVE_UNIT_GEOMETRIES.soldierHead, skinMat);
   head.position.y = riderBaseY + 1.22;
   g.add(head);
@@ -17237,6 +17293,19 @@ function makeMedievalCombatantMesh(unitType, isBoss = false) {
   g.userData.unitType = unitType;
   finalizeArmyBossVisual(g, isBoss, def.scale || 1, mounted ? 2.8 : 1.2, mounted ? 2.4 : 1.6);
   return g;
+}
+
+function updateMedievalMountGait(soldier, dt, moveX, moveZ) {
+  const mountLegPivots = soldier?.mesh?.userData?.mountLegPivots;
+  if (!mountLegPivots?.length) return;
+  const moving = Math.hypot(moveX, moveZ) > 0.0001;
+  soldier.mountGaitPhase = (soldier.mountGaitPhase || 0) + dt * (moving ? 9.5 : 2.2);
+  const swing = Math.sin(soldier.mountGaitPhase) * (moving ? 0.56 : 0.035);
+  for (const pivot of mountLegPivots) {
+    pivot.rotation.x = swing * (pivot.userData.gaitSign || 1);
+  }
+  const tail = soldier.mesh.userData.mountTail;
+  if (tail) tail.rotation.z = Math.sin(soldier.mountGaitPhase * 0.52) * (moving ? 0.18 : 0.06);
 }
 
 function makeSoldierMesh(options = {}) {
@@ -18121,6 +18190,7 @@ function updateSoldiers(dt) {
       }
     }
 
+    updateMedievalMountGait(s, dt, moveX, moveZ);
     if (getUnitType(s) === 'tank') updateArmyBossTankContact(s, dt, moveX, moveZ, facingDir);
 
     // Occasional voice callouts

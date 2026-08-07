@@ -6,8 +6,12 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.211` and player-facing surfaces show `Version 16.211`
-- `Master 16.211` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.212` and player-facing surfaces show `Version 16.212`
+- `Master 16.212` is the current governed source basis and includes:
+  - rebuilt Medieval cavalry mounts whose torso, head, rider, and lance all face the +Z movement axis
+  - recognizable horse anatomy with neck, muzzle, ears, mane, tail, saddle, four legs, and hooves
+  - lightweight diagonal leg gait and tail motion during movement, with a restrained idle stance
+- `Master 16.211` remains the world-space north-landmark basis and includes:
   - a stationary extruded world-space north `N` at the far northern sky edge in Hole-Eye view
   - normal scene depth testing so terrain, buildings, and other game objects render in front of the north landmark
   - continuous first-person visibility without the former direction-driven opacity fade
