@@ -1070,7 +1070,7 @@ const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerH
 camera.position.set(0, 40, 30);
 camera.lookAt(0, 0, 0);
 const OVERHEAD_CAMERA_FAR = 500;
-const HOLE_EYE_CAMERA_FAR = 175;
+const HOLE_EYE_CAMERA_FAR = 400;
 const HOLE_EYE_FOG_NEAR = 42;
 const HOLE_EYE_FOG_FAR = 145;
 let holeEyeViewEnabled = false;
@@ -1128,6 +1128,50 @@ let currentArenaScale = 1.0;
 let currentArenaHalf = HALF;
 const BLOCK = HOLESY_CONFIG.world.block;            // city block size
 const ROAD_W = HOLESY_CONFIG.world.roadWidth;
+
+// A true world-space north landmark: three extruded beams form a distant N at
+// the northern edge of the arena. Normal depth testing keeps every town object
+// in front of it, while the fixed world position supplies real perspective and
+// makes it stationary rather than behaving like a HUD overlay.
+const povNorthSkyMarker = new THREE.Group();
+const povNorthSkyMaterial = new THREE.MeshStandardMaterial({
+  color: 0xb9ddf5,
+  emissive: 0x19344c,
+  emissiveIntensity: 0.34,
+  roughness: 0.58,
+  metalness: 0.08,
+  transparent: true,
+  opacity: 0.82,
+  depthTest: true,
+  depthWrite: false,
+  fog: false,
+});
+const NORTH_MARKER_HEIGHT = 34;
+const NORTH_MARKER_HALF_WIDTH = 11.5;
+const NORTH_MARKER_STROKE = 3.2;
+const NORTH_MARKER_DEPTH = 2.4;
+for (const x of [-NORTH_MARKER_HALF_WIDTH, NORTH_MARKER_HALF_WIDTH]) {
+  const upright = new THREE.Mesh(
+    new THREE.BoxGeometry(NORTH_MARKER_STROKE, NORTH_MARKER_HEIGHT, NORTH_MARKER_DEPTH),
+    povNorthSkyMaterial
+  );
+  upright.position.x = x;
+  povNorthSkyMarker.add(upright);
+}
+const northDiagonalLength = Math.hypot(NORTH_MARKER_HEIGHT, NORTH_MARKER_HALF_WIDTH * 2);
+const northDiagonal = new THREE.Mesh(
+  new THREE.BoxGeometry(NORTH_MARKER_STROKE, northDiagonalLength, NORTH_MARKER_DEPTH),
+  povNorthSkyMaterial
+);
+northDiagonal.rotation.z = -Math.atan2(NORTH_MARKER_HALF_WIDTH * 2, NORTH_MARKER_HEIGHT);
+povNorthSkyMarker.add(northDiagonal);
+povNorthSkyMarker.visible = false;
+scene.add(povNorthSkyMarker);
+
+function placePovNorthSkyMarker() {
+  povNorthSkyMarker.position.set(0, 70, -currentArenaHalf - 120);
+}
+placePovNorthSkyMarker();
 
 const ENVIRONMENT_KEYS = Object.freeze({
   CLASSIC: 'classic',
@@ -3579,6 +3623,7 @@ function refreshArenaMasks() {
 function setArenaScale(scale = 1.0) {
   currentArenaScale = THREE.MathUtils.clamp(scale, 0.25, 1.0);
   currentArenaHalf = HALF * currentArenaScale;
+  placePovNorthSkyMarker();
   refreshArenaMasks();
 }
 
@@ -6458,7 +6503,6 @@ const adaptiveAssistIndicatorEl = document.getElementById('adaptive-assist-indic
 const mobileHudToggleBtn = document.getElementById('mobile-hud-toggle');
 const povToggleBtn = document.getElementById('pov-toggle-btn');
 const povCompassArrow = document.getElementById('pov-compass-arrow');
-const povNorthSkyMarker = document.getElementById('pov-north-sky-marker');
 const povComfortFrame = document.getElementById('pov-comfort-frame');
 const skipWaitBtn = document.getElementById('skip-wait-btn');
 const hapticTestBtn = document.getElementById('haptic-test-btn');
@@ -13554,7 +13598,7 @@ function syncHoleEyeViewControl() {
   povToggleBtn.textContent = holeEyeViewEnabled ? 'VIEW: 1ST · V/ESC' : 'VIEW: 3RD';
   const gameplayViewActive = holeEyeViewEnabled && isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION, GAME_STATES.LMS_CHOICE);
   document.body.classList.toggle('hole-eye-view', gameplayViewActive);
-  if (!gameplayViewActive && povNorthSkyMarker) povNorthSkyMarker.style.opacity = '0';
+  povNorthSkyMarker.visible = gameplayViewActive;
 }
 
 function setHoleEyeView(enabled) {
@@ -18689,10 +18733,6 @@ function updateGameplayCamera(focus, dt, now) {
   if (povCompassArrow && holeEyeViewBlend > 0.01) {
     const northAngle = Math.atan2(-holeEyeForward.x, -holeEyeForward.y);
     povCompassArrow.style.transform = `translateX(-50%) rotate(${northAngle}rad)`;
-    if (povNorthSkyMarker) {
-      const northAlignment = THREE.MathUtils.clamp((Math.cos(northAngle) - 0.45) / 0.55, 0, 1);
-      povNorthSkyMarker.style.opacity = (northAlignment * 0.22 * holeEyeViewBlend).toFixed(3);
-    }
   }
 
   const overheadHeight = 30 + focus.radius * 1.8;
