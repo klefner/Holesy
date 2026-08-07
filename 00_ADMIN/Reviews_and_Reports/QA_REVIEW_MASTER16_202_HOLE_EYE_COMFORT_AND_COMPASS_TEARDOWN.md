@@ -32,3 +32,8 @@ Date: 2026-08-07
 ## Player validation
 
 Recheck sustained Hole-Eye turning with mouse, keyboard strafing/backpedaling, Comfort and Balanced profiles, large-hole late-wave frame pacing, and personal nausea response. Motion comfort varies by player, so the profiles are deliberately adjustable.
+
+## Publication evidence
+
+- Pages commit `32a69a4` publishes the modular Master 16.202 package.
+- Public verification on 2026-08-07 returned Master 16.202 metadata and the live comfort profiles, immediate-first-click Begin fix, startup guard, and Hole-Eye teardown code.
