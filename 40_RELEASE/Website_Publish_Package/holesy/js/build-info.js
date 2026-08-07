@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 207;
+export const BUILD_SUB = 208;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.208',
+    title: 'Silence before the signal',
+    notes: [
+      'Stops music, active gameplay sounds, wind, aid loops, and engine drones before the Pause cue begins.',
+      'Routes the Pause cue through an isolated output so muting gameplay audio cannot mute the signal itself.',
+      'Restarts only the score and relevant continuous gameplay audio on Resume; interrupted one-shots stay ended.',
+    ],
+  },
   {
     label: 'Master 16.207',
     title: 'The lockdown closes north',

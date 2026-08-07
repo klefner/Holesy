@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.208 - 2026-08-07
+
+Made the Pause signal begin from complete gameplay silence.
+
+- Immediately stops scheduled music, active one-shot effects, hole wind, aid loops, and plane-engine drones before starting the Pause cue.
+- Routes the Pause cue through its own output so the gameplay SFX and ambience buses can already be silent when it begins.
+- On Resume, restarts the score and rebuilds only still-relevant continuous wind/engine audio; interrupted one-shots remain ended.
+
 ## Master 16.207 - 2026-08-07
 
 Restored mandatory Mandate enforcement and strengthened first-person north orientation.

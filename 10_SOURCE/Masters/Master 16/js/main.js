@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.207';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.208';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -7016,6 +7016,7 @@ const music = holesyMusicState = {
   masterGain: null,
   ambienceGain: null,
   sfxGain: null,
+  pauseGain: null,
   duckGain: null,
   celebrationGain: null,
   muted: false,
@@ -7162,16 +7163,19 @@ function initMusicContext() {
   music.archiveGain = music.ctx.createGain();
   music.ambienceGain = music.ctx.createGain();
   music.sfxGain = music.ctx.createGain();
+  music.pauseGain = music.ctx.createGain();
   music.celebrationGain = music.ctx.createGain();
   music.masterGain.gain.value = 0; // start muted, fade in on play
   music.archiveGain.gain.value = 0;
   music.ambienceGain.gain.value = 1;
   music.sfxGain.gain.value = 1;
+  music.pauseGain.gain.value = 1;
   music.celebrationGain.gain.value = 1;
   music.masterGain.connect(music.duckGain);
   music.archiveGain.connect(music.duckGain);
   music.ambienceGain.connect(music.ctx.destination);
   music.sfxGain.connect(music.duckGain);
+  music.pauseGain.connect(music.ctx.destination);
   music.celebrationGain.connect(music.ctx.destination);
   music.duckGain.connect(music.ctx.destination);
   music.reverb = music.ctx.createGain();
@@ -7207,6 +7211,10 @@ function initializeMusicReverb() {
 
 function getSfxDestination() {
   return music.sfxGain || music.masterGain || (music.ctx ? music.ctx.destination : null);
+}
+
+function getPauseDestination() {
+  return music.pauseGain || (music.ctx ? music.ctx.destination : null);
 }
 
 function getAmbienceDestination() {
@@ -9520,6 +9528,8 @@ let activePauseHumSource = null;
 function syncPauseHumTelemetry() {
   document.documentElement.setAttribute('data-holesy-audio-pause-hums', String(pauseHumSoundsPlayed));
   document.documentElement.setAttribute('data-holesy-audio-pause-hum-active', activePauseHumSource ? 'true' : 'false');
+  document.documentElement.setAttribute('data-holesy-audio-active-sfx-voices', String(activeNonMusicSources.size));
+  document.documentElement.setAttribute('data-holesy-audio-active-music-sources', String(music.activeSources.size));
 }
 
 function canStartNonMusicSource(priority = false) {
@@ -9688,7 +9698,7 @@ function playPauseHumSound() {
   const gain = music.ctx.createGain();
   gain.gain.value = 0.5;
   source.connect(gain);
-  gain.connect(getSfxDestination());
+  gain.connect(getPauseDestination());
   activePauseHumSource = source;
   trackNonMusicSource(source, [gain], () => {
     if (activePauseHumSource === source) {
@@ -10913,7 +10923,8 @@ function pauseGame() {
   const pausingWaveTransition = isGameState(GAME_STATES.WAVE_TRANSITION);
   if (!pausingWaveTransition && !running) return;
 
-  // Start the pause signal on the player's action, before state/DOM work can paint the overlay.
+  // End every gameplay voice first, then start the isolated pause signal before the overlay paints.
+  silenceGameplayAudioForPause();
   playPauseHumSound();
 
   if (pausingWaveTransition) {
@@ -10937,6 +10948,7 @@ function resumeGame() {
   clearPauseStatus();
   if (pausedStateBeforePause === GAME_STATES.WAVE_TRANSITION) {
     setGameState(GAME_STATES.WAVE_TRANSITION);
+    resumeAudioAfterPause();
     scheduleNextWaveStart(
       pausedWaveTransitionNextWave ?? (currentWave + 1),
       pausedWaveTransitionRemainingMs ?? HOLESY_CONFIG.eventMessaging.waveTransitionDelayMs
@@ -10949,8 +10961,8 @@ function resumeGame() {
     return;
   }
   running = true;
-  restoreGameplayAudioMix();
   setGameState(GAME_STATES.PLAYING);
+  resumeAudioAfterPause();
   lastT = performance.now();
   syncAlienAidLoop();
   updatePauseButtonLabel();
@@ -12743,15 +12755,19 @@ function syncAlienAidLoop(forceStop = false) {
 function setAudioGainNodeValue(node, value, rampSeconds = 0.06) {
   if (!music.ctx || !node) return;
   node.gain.cancelScheduledValues(music.ctx.currentTime);
+  if (rampSeconds <= 0) {
+    node.gain.setValueAtTime(value, music.ctx.currentTime);
+    return;
+  }
   node.gain.setValueAtTime(node.gain.value, music.ctx.currentTime);
   node.gain.linearRampToValueAtTime(value, music.ctx.currentTime + rampSeconds);
 }
 
-function setNonMusicGainMuted(muted) {
+function setNonMusicGainMuted(muted, rampSeconds = 0.06) {
   const gainValue = muted ? 0 : 1;
-  setAudioGainNodeValue(music.sfxGain, gainValue);
-  setAudioGainNodeValue(music.ambienceGain, gainValue);
-  setAudioGainNodeValue(music.celebrationGain, gainValue);
+  setAudioGainNodeValue(music.sfxGain, gainValue, rampSeconds);
+  setAudioGainNodeValue(music.ambienceGain, gainValue, rampSeconds);
+  setAudioGainNodeValue(music.celebrationGain, gainValue, rampSeconds);
 }
 
 function clearAidShipsFromScene() {
@@ -12781,8 +12797,35 @@ function silenceNonMusicAudioForMenuState() {
   setNonMusicGainMuted(true);
 }
 
+function silenceGameplayAudioForPause() {
+  stopPauseHumSound();
+  setAudioGainNodeValue(music.duckGain, 0, 0);
+  stopActiveNonMusicSources();
+  syncAlienAidLoop(true);
+  aidRadarAudio.nextPingAt = 0;
+  stopAllPlaneEngines(false);
+  stopHoleWindNow();
+  setNonMusicGainMuted(true, 0);
+  stopMusicNow();
+  document.documentElement.setAttribute('data-holesy-audio-gameplay-bus-muted', 'true');
+  syncPauseHumTelemetry();
+}
+
 function restoreGameplayAudioMix() {
+  setAudioGainNodeValue(music.duckGain, 1, 0.04);
   setNonMusicGainMuted(false);
+  document.documentElement.setAttribute('data-holesy-audio-gameplay-bus-muted', 'false');
+}
+
+function resumeAudioAfterPause() {
+  restoreGameplayAudioMix();
+  if (musicStarted && !music.muted) startMusic();
+  if (running && isGameState(GAME_STATES.PLAYING)) {
+    for (const plane of planes) {
+      if (!plane.engine) plane.engine = createPlaneEngineDrone();
+    }
+    ensureHoleWindLoop();
+  }
 }
 
 function makeAlienAidShipMesh() {

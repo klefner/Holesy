@@ -6,8 +6,10 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.207` and player-facing surfaces show `Version 16.207`
-- `Master 16.207` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.208` and player-facing surfaces show `Version 16.208`
+- `Master 16.208` is the current governed source basis and includes:
+  - immediate teardown of music, scheduled notes, gameplay one-shots, wind, aid loops, and plane engines before the isolated Pause cue starts
+  - Resume reconstruction of only the score and still-relevant continuous gameplay audio, without replaying interrupted one-shot effects
   - restored run-ending enforcement when a wave timer expires with any required Mandate target incomplete
   - a true arrow in the Hole-Eye compass plus a faded north-facing sky marker hidden outside first-person gameplay and implemented without another WebGL draw call
   - pause audio triggered at the start of each valid pause action, before pause-state and overlay work, for synchronized button, P, Escape, and between-wave behavior
