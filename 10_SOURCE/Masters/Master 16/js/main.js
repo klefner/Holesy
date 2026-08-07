@@ -1259,20 +1259,20 @@ const MEDIEVAL_BUILDINGS = Object.freeze([
 ]);
 const MEDIEVAL_COMMONS_ARCHETYPES = Object.freeze(['farm', 'pasture', 'barnyard', 'training_yard']);
 const HARVEST_BUILDINGS = Object.freeze([
-  { sourceBase: 'SmallBarn', assetId: 'harvest-small-barn', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 8, authoredValuePieceCount: 96, breakupCount: 8 },
-  { sourceBase: 'Barn', assetId: 'harvest-barn', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 12, authoredValuePieceCount: 96, breakupCount: 12 },
-  { sourceBase: 'BigBarn', assetId: 'harvest-big-barn', footprint: 12, progressionClass: 'large_structure', collapseSize: 6, blockCount: 18, authoredValuePieceCount: 96, breakupCount: 18 },
-  { sourceBase: 'Silo', assetId: 'harvest-silo', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.25, blockCount: 16, authoredValuePieceCount: 128, breakupCount: 16 },
-  { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 16, authoredValuePieceCount: 128, structuralValuePieceCount: 96, breakupCount: 16, unusualElement: 'water_tank' },
-  { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 20, authoredValuePieceCount: 96, structuralValuePieceCount: 72, breakupCount: 20, unusualElement: 'windmill_blades' },
+  { sourceBase: 'SmallBarn', assetId: 'harvest-small-barn', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96, authoredValuePieceCount: 96 },
+  { sourceBase: 'Barn', assetId: 'harvest-barn', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96, authoredValuePieceCount: 96 },
+  { sourceBase: 'BigBarn', assetId: 'harvest-big-barn', footprint: 12, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, authoredValuePieceCount: 96 },
+  { sourceBase: 'Silo', assetId: 'harvest-silo', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.25, blockCount: 128, authoredValuePieceCount: 128 },
+  { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128, authoredValuePieceCount: 128, unusualElement: 'water_tank' },
+  { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, authoredValuePieceCount: 96, unusualElement: 'windmill_blades' },
 ]);
 const HARVEST_FRONTIER_BUILDINGS = Object.freeze([
-  { ...MEDIEVAL_BUILDINGS[2], role: 'Saloon', theme: 'harvest', breakupCount: 14 },
-  { ...MEDIEVAL_BUILDINGS[0], role: 'Sheriff Office and Jail', theme: 'harvest', breakupCount: 12 },
-  { ...MEDIEVAL_BUILDINGS[1], role: 'General Store', theme: 'harvest', breakupCount: 12 },
-  { ...MEDIEVAL_BUILDINGS[9], role: 'Livery Stable', theme: 'harvest', breakupCount: 14 },
-  { ...MEDIEVAL_BUILDINGS[5], role: 'Feed and Grain', theme: 'harvest', breakupCount: 8 },
-  { ...MEDIEVAL_BUILDINGS[6], role: 'Frontier House', theme: 'harvest', breakupCount: 8 },
+  { ...MEDIEVAL_BUILDINGS[2], role: 'Saloon', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[0], role: 'Sheriff Office and Jail', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[1], role: 'General Store', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[9], role: 'Livery Stable', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[5], role: 'Feed and Grain', theme: 'harvest' },
+  { ...MEDIEVAL_BUILDINGS[6], role: 'Frontier House', theme: 'harvest' },
 ]);
 const HARVEST_CROPS = Object.freeze(['Carrot_4', 'Tomato_4', 'Pumpkin_4', 'Watermelon_4', 'Corn_4', 'Lettuce_4', 'Wheat_4']);
 const HARVEST_ANIMALS = Object.freeze({
@@ -1438,6 +1438,8 @@ function loadMedievalDestructible(definition) {
           blockHeight: child.userData.blockHeight,
           blockDepth: child.userData.blockDepth,
           floor: child.userData.floor || 0,
+          row: child.userData.row || 0,
+          col: child.userData.col || 0,
         });
       });
       if (blockTemplates.length !== definition.blockCount) {
@@ -1919,8 +1921,7 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell, bl
         descendant.renderOrder = 2;
       }
     });
-    // Compact themed buildings retain the complete authored building value even
-    // when represented by fewer, larger and more readable breakup pieces.
+    // Converted themed buildings retain their complete authored building value.
     const sourcePieceCount = Math.max(blockTemplates.length, definition.structuralValuePieceCount || definition.authoredValuePieceCount || definition.blockCount || blockTemplates.length);
     const authoredBuildingValue = sourcePieceCount * 5;
     const landmarkValue = definition.unusualElement ? Math.round(authoredBuildingValue * 0.25) : 0;

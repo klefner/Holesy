@@ -9,10 +9,10 @@
   "seed": 16159,
   "subdivision": {
     "shape": "closed-box-with-boundary-facade",
-    "cols": 2,
-    "rows": 2,
-    "floors": 2,
-    "blockCount": 8,
+    "cols": 4,
+    "rows": 4,
+    "floors": 6,
+    "blockCount": 96,
     "gapRatio": 0.04
   },
   "dimensions": {

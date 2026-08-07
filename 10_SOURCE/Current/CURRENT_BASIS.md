@@ -6,11 +6,15 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.209` and player-facing surfaces show `Version 16.209`
-- `Master 16.209` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.210` and player-facing surfaces show `Version 16.210`
+- `Master 16.210` is the current governed source basis and includes:
+  - the established 4×4×6 small-fragment grid across all Harvest barns and frontier buildings, with 4×4×8 grids for tower forms
+  - 96 closed structural cubes per ordinary building and 128 per tower, replacing the oversized 8–20-piece Harvest breakup without changing intact models
+  - unchanged progressive water-tower and windmill topples, with the tank and rotor retained as coherent non-cubic authored landmark parts
+- `Master 16.209` remains the city-isolation and Harvest support-collapse basis and includes:
   - immutable city-build contexts that cancel stale asynchronous population work before it can leak assets into a later district
   - district recipe identity in Endless saves, with incompatible or unidentified legacy records refused rather than mixed into the active town
-  - compact Harvest destruction models rebuilt as 8–20 substantial closed chunks while preserving their prior food, score, and progression value
+  - closed-volume Harvest destruction models that preserve their prior food, score, and progression value
   - local support-column failure and gravity-led collapse instead of immediate whole-building radial explosions
   - authored windmill rotors and water-tower tanks retained as coherent landmark pieces through progressive toppling and impact
 - `Master 16.208` remains the exclusive Pause-audio basis and includes:

@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 209;
+export const BUILD_SUB = 210;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.210',
+    title: 'The county breaks true',
+    notes: [
+      'Restores the established 96-piece small-fragment grid to every Harvest barn and frontier building, with 128 pieces for vertical tower forms.',
+      'Keeps every destruction fragment closed and substantial while preserving authored food, score, and progression value.',
+      'Preserves the approved water-tower and windmill topple behavior plus coherent non-cubic tank and rotor landmark pieces.',
+    ],
+  },
   {
     label: 'Master 16.209',
     title: 'District walls hold',

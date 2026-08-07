@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.210 - 2026-08-07
+
+Restored the established small-cube destruction scale throughout Harvest County.
+
+- Converts every dedicated Harvest barn and windmill support body to the shared 4×4×6, 96-piece destruction grid.
+- Converts silos and water-tower supports to the shared 4×4×8, 128-piece tower grid.
+- Removes Harvest-only frontier subsampling so saloons, stores, stables, and houses use every one of their 96 converted cubes.
+- Keeps dormant fragments detached until breach, retains authored progression value, and leaves the approved progressive water-tower/windmill topple behavior unchanged.
+- Preserves the water tank and windmill rotor as coherent authored non-cubic landmark pieces.
+
 ## Master 16.209 - 2026-08-07
 
 Isolated generated districts and rebuilt Harvest structural destruction.
