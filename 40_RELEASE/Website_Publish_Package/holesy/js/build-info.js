@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 213;
+export const BUILD_SUB = 214;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.214',
+    title: 'More town, less phone chrome',
+    notes: [
+      'Starts phone gameplay with a compact HUD while keeping full Run Goals, scores, time controls, and audio controls one HUD tap away.',
+      'Keeps the current Mandate target visible, shortens mobile deployment warnings, and compacts active-effect cards around phone safe areas.',
+      'Separates Hole-Eye mobile movement from turning, adds horizontal thumb-wobble protection, and stops residual camera rotation when the touch ends.',
+    ],
+  },
   {
     label: 'Master 16.213',
     title: 'North returns to the horizon',

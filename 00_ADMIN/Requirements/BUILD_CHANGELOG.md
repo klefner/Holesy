@@ -2,6 +2,17 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.214 - 2026-08-07
+
+Rebuilt the phone gameplay presentation and Hole-Eye touch steering boundary.
+
+- Changes fresh and legacy-v1 mobile sessions from expanded HUD to compact HUD by default.
+- Keeps Tier, Timer, View, Pause, and the first unfinished Mandate target visible; Run Goals, scores, Time, and Music remain available through `HUD+`.
+- Shortens mobile boss/troop deployment text and converts large active-effect cards into safe-area-aware compact chips.
+- Uses vertical drag for forward/back movement and horizontal drag for intentional Hole-Eye turning.
+- Adds a larger Comfort-mode horizontal deadzone and nonlinear response while retaining full turning at deliberate full input.
+- Tracks one touch identifier and cancels desired yaw plus yaw velocity immediately when that touch ends.
+
 ## Master 16.213 - 2026-08-07
 
 Corrected the world-space north landmark for the downward-pitched Hole-Eye camera.

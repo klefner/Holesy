@@ -1718,3 +1718,147 @@ html, body, #overlay { max-width:100vw; overflow-x:hidden !important; }
   #wave-contract.docking .required{transform:translate(38vw,-39vh) scale(.25);}
   #wave-contract.docking .optional{transform:translate(-38vw,-35vh) scale(.25);}
 }
+
+/* Phone gameplay: protect the playfield and disclose detail only on demand. */
+@media (max-width:768px) {
+  body.mobile-hud-compact #hud {
+    padding: max(6px, env(safe-area-inset-top, 0px) + 5px) 8px 0;
+    gap: 6px;
+  }
+  body.mobile-hud-compact .hud-left { width: 116px; max-width: 116px; }
+  body.mobile-hud-compact .hud-right { width: 150px; max-width: 150px; }
+  body.mobile-hud-compact .panel-status {
+    min-width: 0;
+    width: 116px;
+    max-width: 116px;
+    padding: 6px 8px;
+  }
+  body.mobile-hud-compact #stage-bar { width: 100px; }
+  body.mobile-hud-compact .panel-timer {
+    min-width: 82px;
+    width: 82px;
+    padding: 6px 8px;
+  }
+  body.mobile-hud-compact .hud-timer-row { align-self: flex-end; }
+  body.mobile-hud-compact .panel-objectives,
+  body.mobile-hud-compact #mini-lb { display: none !important; }
+  body.mobile-hud-compact #mandate-panel {
+    width: 150px;
+    min-width: 150px;
+    margin-top: 50px;
+    padding: 6px 7px;
+  }
+  body.mobile-hud-compact #mandate-instruction { display: none; }
+  body.mobile-hud-compact #mandate-dots { display: grid; margin-top: 4px; }
+  body.mobile-hud-compact .mandate-target { display: none; }
+  body.mobile-hud-compact .mandate-target.mandate-primary {
+    display: grid;
+    grid-template-columns: 9px minmax(0,1fr) auto;
+    gap: 4px;
+    padding: 4px 5px;
+    font-size: 8px;
+    line-height: 1.15;
+  }
+  body.mobile-hud-compact .mandate-marker-copy { font-size: 8px; }
+  body.mobile-hud-compact #game-controls {
+    top: calc(env(safe-area-inset-top, 0px) + 54px);
+    right: calc(env(safe-area-inset-right, 0px) + 8px);
+    max-width: 174px;
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+  body.mobile-hud-compact #game-controls button {
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+  body.mobile-hud-compact #time-cycle-btn { display: none; }
+  body.mobile-hud-compact #music-toggle-btn { display: none !important; }
+  #mobile-hud-toggle {
+    min-width: 58px;
+    min-height: 44px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+  }
+  #wave-hud {
+    top: calc(env(safe-area-inset-top, 0px) + 6px) !important;
+    width: auto !important;
+    min-width: 118px !important;
+    max-width: 42vw !important;
+    padding: 6px 8px !important;
+    border-radius: 10px !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    letter-spacing: .045em !important;
+    white-space: nowrap !important;
+  }
+  #event-banner {
+    left: 50% !important;
+    right: auto !important;
+    top: calc(env(safe-area-inset-top, 0px) + 62px) !important;
+    width: min(58vw, 230px) !important;
+    max-width: min(58vw, 230px) !important;
+    padding: 6px 8px !important;
+    border-radius: 10px !important;
+    font-size: 10px !important;
+    line-height: 1.18 !important;
+    transform: translate(-50%, -10px) scale(.96) !important;
+  }
+  #event-banner.show { transform: translate(-50%, 0) scale(1) !important; }
+  body.mobile-hud-compact #event-banner {
+    top: calc(env(safe-area-inset-top, 0px) + 164px) !important;
+  }
+  #stage-pop { font-size: clamp(24px, 8vw, 36px); max-width: 86vw; text-align: center; }
+  #active-effects-ui {
+    top: auto !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px) !important;
+    max-width: calc(100vw - 150px) !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+  }
+  #active-effects-ui .active-effect-card {
+    min-width: 92px !important;
+    max-width: 116px !important;
+    padding: 8px 7px 7px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 7px 16px rgba(0,0,0,.28) !important;
+  }
+  #active-effects-ui .active-effect-countdown {
+    top: -7px !important;
+    right: -5px !important;
+    min-width: 34px !important;
+    padding: 2px 5px !important;
+    font-size: 10px !important;
+  }
+  #active-effects-ui .active-effect-icon {
+    display: none !important;
+  }
+  #active-effects-ui .active-effect-label {
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+    letter-spacing: .055em !important;
+  }
+  #active-effects-ui .active-effect-copy {
+    margin-top: 3px !important;
+    font-size: 8px !important;
+    line-height: 1.1 !important;
+  }
+  body.hole-eye-view #pov-compass {
+    left: calc(50% - 36px);
+    top: calc(env(safe-area-inset-top, 0px) + 58px);
+    width: 46px;
+    height: 46px;
+  }
+}
+
+@media (max-width:360px) {
+  #wave-hud {
+    left: calc(50% + 10px) !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 224px) !important;
+    padding: 5px 6px !important;
+    font-size: 9px !important;
+    letter-spacing: .02em !important;
+    overflow: hidden !important;
+  }
+}
