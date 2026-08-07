@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 211;
+export const BUILD_SUB = 212;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.212',
+    title: 'The cavalry finds its feet',
+    notes: [
+      'Rebuilds Medieval mounted units with a recognizable forward-facing horse silhouette including neck, muzzle, ears, mane, tail, saddle, hooves, and four legs.',
+      'Aligns the horse, rider, and lance to the actual movement direction instead of sliding the mount broadside.',
+      'Adds a lightweight diagonal gait and tail motion while mounted units move, with a quiet idle stance when stopped.',
+    ],
+  },
   {
     label: 'Master 16.211',
     title: 'North takes its place',
