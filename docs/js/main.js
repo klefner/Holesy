@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.204';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.205';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -9464,11 +9464,13 @@ const audioBank = {
   biteChew: [null], // single-sample slot; wrapped in array for decodeSample compatibility
   genericConsumeHit: [null],
   waveComplete: [null],
+  pauseHum: [null],
 };
 
 const SHIPPED_AUDIO_ASSETS = Object.freeze([
   [new URL('../assets/audio/sfx/generic-consume-hit.wav', import.meta.url), audioBank.genericConsumeHit],
   [new URL('../assets/audio/sfx/wave-complete.wav', import.meta.url), audioBank.waveComplete],
+  [new URL('../assets/audio/sfx/pause-alien-hum.wav', import.meta.url), audioBank.pauseHum],
 ]);
 
 // Decode embedded MP3 data asynchronously so user gestures never spend seconds
@@ -9511,6 +9513,13 @@ const MAX_SIMULTANEOUS_BUILDING_SOUNDS = 5;
 let activeBuildingAudioVoices = 0;
 let genericConsumePopsPlayed = 0;
 let waveCompletionSoundsPlayed = 0;
+let pauseHumSoundsPlayed = 0;
+let activePauseHumSource = null;
+
+function syncPauseHumTelemetry() {
+  document.documentElement.setAttribute('data-holesy-audio-pause-hums', String(pauseHumSoundsPlayed));
+  document.documentElement.setAttribute('data-holesy-audio-pause-hum-active', activePauseHumSource ? 'true' : 'false');
+}
 
 function canStartNonMusicSource(priority = false) {
   const limit = MAX_SIMULTANEOUS_NON_MUSIC_SOURCES + (priority ? PRIORITY_NON_MUSIC_SOURCE_RESERVE : 0);
@@ -9654,6 +9663,41 @@ function playWaveCompletionSound() {
   const buffer = audioBank.waveComplete[0];
   if (!buffer) return;
   if (playSample(buffer, 1, 0.62, 0.08, true)) waveCompletionSoundsPlayed++;
+}
+
+function stopPauseHumSound() {
+  if (!activePauseHumSource) return;
+  const source = activePauseHumSource;
+  activePauseHumSource = null;
+  syncPauseHumTelemetry();
+  try { source.stop(); } catch (e) {}
+  const cleanup = nonMusicSourceCleanup.get(source);
+  if (cleanup) cleanup();
+}
+
+function playPauseHumSound() {
+  stopPauseHumSound();
+  initMusicContext();
+  if (!music.ctx || music.muted) return;
+  if (!audioBanksLoaded) scheduleAudioBankWarmup(0);
+  const buffer = audioBank.pauseHum[0];
+  if (!buffer || !canStartNonMusicSource(true)) return;
+  const source = music.ctx.createBufferSource();
+  source.buffer = buffer;
+  const gain = music.ctx.createGain();
+  gain.gain.value = 0.5;
+  source.connect(gain);
+  gain.connect(getSfxDestination());
+  activePauseHumSource = source;
+  trackNonMusicSource(source, [gain], () => {
+    if (activePauseHumSource === source) {
+      activePauseHumSource = null;
+      syncPauseHumTelemetry();
+    }
+  });
+  source.start();
+  pauseHumSoundsPlayed++;
+  syncPauseHumTelemetry();
 }
 
 function stopActiveNonMusicSources() {
@@ -10859,6 +10903,7 @@ function pauseWaveTransition() {
   clearPauseStatus();
   setGameState(GAME_STATES.PAUSED);
   pauseOverlay.classList.remove('hidden');
+  playPauseHumSound();
   syncAlienAidLoop();
   updatePauseButtonLabel();
 }
@@ -10875,6 +10920,7 @@ function pauseGame() {
   clearPauseStatus();
   setGameState(GAME_STATES.PAUSED);
   pauseOverlay.classList.remove('hidden');
+  playPauseHumSound();
   syncAlienAidLoop();
   updatePauseButtonLabel();
   updateWaveHudBanner();
@@ -10882,6 +10928,7 @@ function pauseGame() {
 
 function resumeGame() {
   if (!canUsePauseMenu() || pauseOverlay.classList.contains('hidden')) return;
+  stopPauseHumSound();
   pauseOverlay.classList.add('hidden');
   clearPauseStatus();
   if (pausedStateBeforePause === GAME_STATES.WAVE_TRANSITION) {
@@ -18394,6 +18441,9 @@ function updateRuntimePerformanceTelemetry(frameDeltaMs, now) {
   root.setAttribute('data-holesy-audio-generic-hit-loaded', audioBank.genericConsumeHit[0] ? 'true' : 'false');
   root.setAttribute('data-holesy-audio-wave-complete-loaded', audioBank.waveComplete[0] ? 'true' : 'false');
   root.setAttribute('data-holesy-audio-wave-completions', String(waveCompletionSoundsPlayed));
+  root.setAttribute('data-holesy-audio-pause-hum-loaded', audioBank.pauseHum[0] ? 'true' : 'false');
+  root.setAttribute('data-holesy-audio-pause-hums', String(pauseHumSoundsPlayed));
+  root.setAttribute('data-holesy-audio-pause-hum-active', activePauseHumSource ? 'true' : 'false');
   root.setAttribute('data-holesy-audio-scheduler-recoveries', String(music.schedulerRecoveries));
   root.setAttribute('data-holesy-audio-context-state', music.ctx?.state || 'uninitialized');
   root.setAttribute('data-holesy-audio-active-music-sources', String(music.activeSources.size));
