@@ -28,4 +28,6 @@ Passed local implementation and browser verification:
 - The north-facing sky marker uses the existing north-angle value, reaches 22% opacity at true north, and has no WebGL object or asset cost.
 - Returning to overhead view hid both orientation cues; game-over QA also confirmed the compass cleared.
 - Browser console error check returned no errors.
-- Source/release parity and publication remain to be verified after the final edits.
+- Final source/release and release/Pages SHA-256 parity passed for all five changed browser-package files.
+- Pages commit `fecc865` was pushed to `claude/happy-clarke-ORWAI`; workflow `31199780768` completed successfully.
+- Live browser verification confirmed public `Version 16.207`, the `↑` compass glyph, one sky-marker element, and no console errors at `https://klefner.github.io/Holesy/?v=16.207-fecc865`.
