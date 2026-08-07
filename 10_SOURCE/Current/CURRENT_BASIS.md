@@ -6,8 +6,9 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.205` and player-facing surfaces show `Version 16.205`
-- `Master 16.205` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.206` and player-facing surfaces show `Version 16.206`
+- `Master 16.206` is the current governed source basis and includes:
+  - pause audio triggered at the start of each valid pause action, before pause-state and overlay work, for synchronized button, P, Escape, and between-wave behavior
   - the supplied priority-reserved alien-technology cue whenever Pause opens, with immediate cleanup on Resume
   - responsive A/D and forward-diagonal steering in Hole-Eye view, with faster default yaw response
   - immediate turn-command release, safe S backpedaling, and retained Comfort/Snap accessibility options

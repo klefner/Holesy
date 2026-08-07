@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 205;
+export const BUILD_SUB = 206;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.206',
+    title: 'Pause signal synchronized',
+    notes: [
+      'Starts the pause signal at the beginning of every valid pause action, before the Pause screen is shown.',
+      'Keeps the timing identical for the Pause button, P, Escape, and between-wave pauses.',
+      'Preserves the existing priority voice reservation and immediate cleanup on Resume.',
+    ],
+  },
   {
     label: 'Master 16.205',
     title: 'The pause signal',

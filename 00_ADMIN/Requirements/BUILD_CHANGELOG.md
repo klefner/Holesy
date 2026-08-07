@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.206 - 2026-08-07
+
+Synchronized the recorded pause signal with the Pause screen.
+
+- Starts the pause cue immediately after a pause action is accepted, before changing game state or showing the overlay.
+- Uses the same action-entry timing for the Pause button, P, Escape, and between-wave pauses.
+- Removes the later duplicate trigger while preserving priority audio capacity and immediate Resume cleanup.
+
 ## Master 16.205 - 2026-08-07
 
 Added a distinct recorded pause-state signal.
