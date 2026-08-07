@@ -32,4 +32,9 @@ Passed local implementation and browser verification:
 - Browser console checks returned no errors.
 - Source/release SHA-256 parity passed for every changed browser-package file.
 
-Publication remains pending.
+## Publication Verification
+
+- GitHub Pages deployment commit `05d9b42` completed successfully in workflow `31203444233`.
+- The public test URL returned HTTP 200 and displayed `Version 16.208`.
+- The deployed `js/main.js` returned HTTP 200 and contained both `silenceGameplayAudioForPause()` and the isolated `getPauseDestination()` path.
+- Public test URL: `https://klefner.github.io/Holesy/?v=16.208-05d9b42`
