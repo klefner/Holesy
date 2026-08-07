@@ -34,4 +34,4 @@ Date: 2026-08-07
 
 ## Result
 
-Pass for implementation and local browser verification. GitHub Pages publication and player balance confirmation remain pending.
+Pass for implementation, local browser verification, and GitHub Pages publication. Pages commit `ef02687` served Master 16.203, both WAV assets at their expected byte sizes, and the fallback/transition routing. Player balance confirmation remains required.
