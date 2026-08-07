@@ -5928,7 +5928,7 @@ const input = {
   mouseControlArmed: false,
   mouseCarryActive: false, mouseCarryDx: 0, mouseCarryDz: 0,
   // Mobile: relative drag direction
-  dragActive: false, dragDx: 0, dragDy: 0,
+  dragActive: false, dragDx: 0, dragDy: 0, touchMoveScale: 0,
   isTouch: false
 };
 
@@ -5936,10 +5936,11 @@ const input = {
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 input.isTouch = isTouchDevice;
 const mobileHudMedia = window.matchMedia ? window.matchMedia('(max-width: 768px)') : null;
-const MOBILE_HUD_STORAGE_KEY = 'holesy.mobileHudExpanded.v1';
+const MOBILE_HUD_STORAGE_KEY = 'holesy.mobileHudExpanded.v2';
+let mobileHoleEyeForceCompact = false;
 let mobileHudExpandedPreference = (() => {
-  try { const saved = localStorage.getItem(MOBILE_HUD_STORAGE_KEY); return saved === null ? true : saved === 'true'; }
-  catch { return true; }
+  try { const saved = localStorage.getItem(MOBILE_HUD_STORAGE_KEY); return saved === 'true'; }
+  catch { return false; }
 })();
 
 function isMobileHudAvailable() {
@@ -5951,8 +5952,9 @@ function ensureMobileHudMode() {
     document.body.classList.remove('mobile-hud-compact', 'mobile-hud-expanded');
     return;
   }
-  document.body.classList.toggle('mobile-hud-expanded', mobileHudExpandedPreference);
-  document.body.classList.toggle('mobile-hud-compact', !mobileHudExpandedPreference);
+  const expanded = mobileHudExpandedPreference && !mobileHoleEyeForceCompact;
+  document.body.classList.toggle('mobile-hud-expanded', expanded);
+  document.body.classList.toggle('mobile-hud-compact', !expanded);
 }
 
 document.body.classList.toggle('touch-device', isTouchDevice);
@@ -6168,9 +6170,7 @@ function releaseMouseControl() {
 
 function resetTransientPointerInput() {
   releaseMouseControl();
-  input.dragActive = false;
-  input.dragDx = 0;
-  input.dragDy = 0;
+  releaseTouchControl();
 }
 
 window.addEventListener('keydown', (e) => {
@@ -6220,43 +6220,68 @@ canvas.addEventListener('mouseleave', () => {
   }
 });
 
-// Mobile touch: drag anywhere, move in the direction of the drag relative to touch start
-let touchStartX = 0, touchStartY = 0;
+// Mobile Hole-Eye uses a deliberate one-stick drive model: vertical drag moves
+// forward/back and horizontal drag turns. Keeping those axes separate prevents
+// normal forward travel (and small thumb wobble) from whipping the camera.
+let touchStartX = 0, touchStartY = 0, activeTouchId = null;
+
+function settleHoleEyeTouchView() {
+  if (!(holeEyeViewEnabled || holeEyeViewBlend > 0.5)) return;
+  holeEyeDesiredForward.copy(holeEyeForward);
+  holeEyeYawVelocity = 0;
+}
+
+function releaseTouchControl() {
+  input.dragActive = false;
+  input.dragDx = 0;
+  input.dragDy = 0;
+  input.touchMoveScale = 0;
+  activeTouchId = null;
+  settleHoleEyeTouchView();
+  stopPlayerMotion();
+}
+
+function findActiveTouch(touchList) {
+  if (activeTouchId === null) return null;
+  for (let i = 0; i < touchList.length; i += 1) {
+    const touch = touchList[i];
+    if (touch.identifier === activeTouchId) return touch;
+  }
+  return null;
+}
+
 canvas.addEventListener('touchstart', (e) => {
   e.preventDefault();
-  if (e.touches.length === 0) return;
-  const t = e.touches[0];
+  if (activeTouchId !== null || e.changedTouches.length === 0) return;
+  const t = e.changedTouches[0];
+  activeTouchId = t.identifier;
   touchStartX = t.clientX;
   touchStartY = t.clientY;
   input.dragActive = true;
   input.dragDx = 0;
   input.dragDy = 0;
+  input.touchMoveScale = 0;
   input.isTouch = true;
   input.hasMouse = false;
   input.mouseControlArmed = false;
+  settleHoleEyeTouchView();
 }, { passive: false });
 
 canvas.addEventListener('touchmove', (e) => {
   e.preventDefault();
-  if (e.touches.length === 0) return;
-  const t = e.touches[0];
+  const t = findActiveTouch(e.touches);
+  if (!t) return;
   input.dragDx = t.clientX - touchStartX;
   input.dragDy = t.clientY - touchStartY;
 }, { passive: false });
 
 canvas.addEventListener('touchend', (e) => {
   e.preventDefault();
-  input.dragActive = false;
-  input.dragDx = 0;
-  input.dragDy = 0;
-  stopPlayerMotion();
+  if (findActiveTouch(e.changedTouches)) releaseTouchControl();
 }, { passive: false });
 
 canvas.addEventListener('touchcancel', () => {
-  input.dragActive = false;
-  input.dragDx = 0;
-  input.dragDy = 0;
-  stopPlayerMotion();
+  releaseTouchControl();
 });
 
 window.addEventListener('blur', () => {
@@ -6364,23 +6389,60 @@ function getPlayerPrecisionReach() {
   return THREE.MathUtils.lerp(config.precisionReach, config.touchReach, growth);
 }
 
+function signedAxisResponse(value, deadzone, exponent) {
+  const magnitude = Math.abs(value);
+  if (magnitude <= deadzone) return 0;
+  const normalized = THREE.MathUtils.clamp((magnitude - deadzone) / Math.max(0.001, 1 - deadzone), 0, 1);
+  return Math.sign(value) * Math.pow(normalized, exponent);
+}
+
 function applyTouchControl() {
   const mag = Math.hypot(input.dragDx, input.dragDy);
-  if (mag <= HOLESY_CONFIG.input.touchDeadzone) return;
+  if (mag <= HOLESY_CONFIG.input.touchDeadzone) {
+    if (holeEyeViewEnabled || holeEyeViewBlend > 0.5) {
+      input.touchMoveScale = 0;
+      settleHoleEyeTouchView();
+      stopPlayerMotion();
+    }
+    return;
+  }
   const maxMag = HOLESY_CONFIG.input.touchMaxMagnitude;
+  if (holeEyeViewEnabled || holeEyeViewBlend > 0.5) {
+    const profileName = holeEyeComfortProfileName;
+    const movementExponent = profileName === 'comfort' ? 1.75 : profileName === 'immediate' ? 1.35 : 1.55;
+    const turnDeadzonePx = profileName === 'comfort' ? 24 : profileName === 'immediate' ? 12 : 18;
+    const turnExponent = profileName === 'comfort' ? 1.85 : profileName === 'immediate' ? 1.25 : 1.55;
+    const turnRangeDeg = profileName === 'comfort' ? 16 : profileName === 'immediate' ? 48 : profileName === 'snap' ? 30 : 28;
+    const forwardAxis = signedAxisResponse(
+      THREE.MathUtils.clamp(-input.dragDy / maxMag, -1, 1),
+      HOLESY_CONFIG.input.touchDeadzone / maxMag,
+      movementExponent
+    );
+    const turnAxis = signedAxisResponse(
+      THREE.MathUtils.clamp(input.dragDx / maxMag, -1, 1),
+      turnDeadzonePx / maxMag,
+      turnExponent
+    );
+    input.touchMoveScale = Math.abs(forwardAxis);
+    if (Math.abs(turnAxis) > 0.001) {
+      const desiredTouchYaw = holeEyeYaw - THREE.MathUtils.degToRad(turnRangeDeg) * turnAxis;
+      holeEyeDesiredForward.set(Math.sin(desiredTouchYaw), Math.cos(desiredTouchYaw));
+    } else {
+      holeEyeDesiredForward.copy(holeEyeForward);
+      holeEyeYawVelocity = 0;
+    }
+    const reach = getPlayerPrecisionReach();
+    player.targetX = clampToArena(player.x + holeEyeForward.x * forwardAxis * reach, 2);
+    player.targetZ = clampToArena(player.z + holeEyeForward.y * forwardAxis * reach, 2);
+    return;
+  }
+  input.touchMoveScale = 1;
   const scale = Math.pow(Math.min(1, mag / maxMag), HOLESY_CONFIG.input.touchResponseExponent);
   const nx = (input.dragDx / mag) * scale;
   const ny = (input.dragDy / mag) * scale;
   const reach = getPlayerPrecisionReach();
   let worldX = nx;
   let worldZ = ny;
-  if (holeEyeViewEnabled || holeEyeViewBlend > 0.5) {
-    const forwardAmount = -ny;
-    worldX = holeEyeForward.x * forwardAmount - holeEyeForward.y * nx;
-    worldZ = holeEyeForward.y * forwardAmount + holeEyeForward.x * nx;
-    const worldMag = Math.hypot(worldX, worldZ);
-    if (worldMag > 0.05) holeEyeDesiredForward.set(worldX / worldMag, worldZ / worldMag);
-  }
   player.targetX = clampToArena(player.x + worldX * reach, 2);
   player.targetZ = clampToArena(player.z + worldZ * reach, 2);
 }
@@ -6873,6 +6935,7 @@ const ACTIVE_EFFECT_VISUALS = {
 function ensureActiveEffectsUi() {
   if (activeEffectsUiEl) return;
   activeEffectsUiEl = document.createElement('div');
+  activeEffectsUiEl.id = 'active-effects-ui';
   activeEffectsUiEl.style.cssText = `
     position: fixed;
     left: 50%;
@@ -7028,7 +7091,7 @@ function updateActiveEffectsUi() {
   if (signature === activeEffectsUiSignature) return;
   activeEffectsUiSignature = signature;
   activeEffectsUiEl.innerHTML = entries.map(entry => `
-    <div style="
+    <div class="active-effect-card" style="
       position: relative;
       min-width: 150px;
       max-width: 190px;
@@ -7041,7 +7104,7 @@ function updateActiveEffectsUi() {
       color: #fff8f2;
       text-shadow: 0 2px 10px rgba(0,0,0,0.55);
     ">
-      <div style="
+      <div class="active-effect-countdown" style="
         position: absolute;
         top: -10px;
         right: -8px;
@@ -7056,9 +7119,9 @@ function updateActiveEffectsUi() {
         font-variant-numeric: tabular-nums;
         letter-spacing: 0.02em;
       ">${entry.countdown}</div>
-      <div style="font-size: 30px; line-height: 1; margin-bottom: 7px;">${entry.icon}</div>
-      <div style="font-size: 11px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;">${entry.label}</div>
-      <div style="margin-top:5px;font-size:10px;font-weight:800;line-height:1.2;color:rgba(255,255,255,0.88);">${entry.effect || ''}</div>
+      <div class="active-effect-icon" style="font-size: 30px; line-height: 1; margin-bottom: 7px;">${entry.icon}</div>
+      <div class="active-effect-label" style="font-size: 11px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;">${entry.label}</div>
+      <div class="active-effect-copy" style="margin-top:5px;font-size:10px;font-weight:800;line-height:1.2;color:rgba(255,255,255,0.88);">${entry.effect || ''}</div>
     </div>
   `).join('');
 }
@@ -9027,6 +9090,7 @@ function updateMandateHUD() {
     }
   }
 
+  const firstPendingMandateIndex = mandateTargets.findIndex(objective => objective.progress < objective.required || objective.failed);
   mandateTargets.forEach((objective, i) => {
     const dot = document.getElementById(`mandate-dot-${i}`);
     const row = document.getElementById(`mandate-target-${i}`);
@@ -9037,6 +9101,7 @@ function updateMandateHUD() {
     dot.classList.toggle('collected', collected);
     row.classList.toggle('collected', collected);
     row.classList.toggle('failed', !!objective.failed);
+    row.classList.toggle('mandate-primary', i === (firstPendingMandateIndex >= 0 ? firstPendingMandateIndex : 0));
     label.textContent = `${objective.verb} ${objective.label}`;
     progress.textContent = `${objective.progress}/${objective.required}`;
   });
@@ -11127,6 +11192,10 @@ function pauseGame() {
   if (!canUsePauseMenu()) return;
   const pausingWaveTransition = isGameState(GAME_STATES.WAVE_TRANSITION);
   if (!pausingWaveTransition && !running) return;
+
+  // A pause must also end any held mobile steering/look intent so resuming
+  // cannot continue a drag or camera turn the player is no longer making.
+  resetTransientPointerInput();
 
   // End every gameplay voice first, then start the isolated pause signal before the overlay paints.
   silenceGameplayAudioForPause();
@@ -13489,6 +13558,7 @@ function syncMobileHudToggle() {
 
 function setMobileHudExpanded(expanded) {
   mobileHudExpandedPreference = !!expanded;
+  if (expanded) mobileHoleEyeForceCompact = false;
   try { localStorage.setItem(MOBILE_HUD_STORAGE_KEY, String(mobileHudExpandedPreference)); } catch {}
   document.body.classList.toggle('mobile-hud-expanded', expanded);
   document.body.classList.toggle('mobile-hud-compact', !expanded);
@@ -13606,10 +13676,13 @@ function syncHoleEyeViewControl() {
 
 function setHoleEyeView(enabled) {
   holeEyeViewEnabled = !!enabled;
+  mobileHoleEyeForceCompact = holeEyeViewEnabled && isMobileHudAvailable();
   if (holeEyeViewEnabled && player?.alive) {
     releaseMouseControl();
-    const centerDistance = Math.hypot(player.x, player.z);
-    if (centerDistance > 1) holeEyeDesiredForward.set(-player.x / centerDistance, -player.z / centerDistance);
+    // Enter on the already-established travel/view heading. Re-aiming toward
+    // the arena center here caused a full-speed camera turn without input,
+    // which was especially uncomfortable on mobile.
+    holeEyeDesiredForward.copy(holeEyeForward);
     holeEyeYaw = Math.atan2(holeEyeForward.x, holeEyeForward.y);
     holeEyeYawVelocity = 0;
     holeEyeLastSnapAt = 0;
@@ -13618,6 +13691,8 @@ function setHoleEyeView(enabled) {
     holeEyeVignetteOpacity = 0;
     if (povComfortFrame) povComfortFrame.style.opacity = '0';
   }
+  ensureMobileHudMode();
+  syncMobileHudToggle();
   syncHoleEyeViewControl();
   wakeRenderLoop();
 }
@@ -15684,6 +15759,9 @@ function moveHole(h, dt) {
   // Constant speed regardless of radius — no "big hole moves like snail"
   // Fleeing AI moves nearly as fast as the player so chases are real contests
   let speed = h.isPlayer ? 14 : (h.aiState === 'flee' ? 13.5 : 12);
+  if (h.isPlayer && input.isTouch && input.dragActive && (holeEyeViewEnabled || holeEyeViewBlend > 0.5)) {
+    speed *= THREE.MathUtils.clamp(input.touchMoveScale, 0, 1);
+  }
   if (!h.isPlayer && h.aiState === 'hunt_hole') speed *= Math.min(1.55, 1.08 + Math.max(0, currentWave - 1) * 0.04);
   if (!h.isPlayer && h.personality && h.personality.speedMult) speed *= h.personality.speedMult;
   speed *= getHoleSpeedMultiplier(h);
@@ -18524,6 +18602,7 @@ let waveEndWarnEl = null;
 function ensureWaveHud() {
   if (waveHudEl) return;
   waveHudEl = document.createElement('div');
+  waveHudEl.id = 'wave-hud';
   waveHudEl.style.cssText = `
     position: fixed;
     top: var(--safe-top);
@@ -18553,6 +18632,7 @@ function ensureWaveHud() {
 function ensureWaveEndWarning() {
   if (waveEndWarnEl) return;
   waveEndWarnEl = document.createElement('div');
+  waveEndWarnEl.id = 'wave-end-warning';
   waveEndWarnEl.style.cssText = `
     position: fixed;
     top: 0;
@@ -18603,13 +18683,14 @@ function updateWaveHudBanner() {
     if (secs !== lastWaveHudSecond) {
       lastWaveHudSecond = secs;
       const medievalResponse = getCurrentTownThemeProfile().responseStyle === 'ground_warband';
+      const mobileBriefing = isMobileHudAvailable();
       waveHudEl.textContent = armyBossPendingThisWave
         ? medievalResponse
-          ? `⚔️ WARLORD CHARGE: ${secs} SECONDS! ⚔️`
-          : `🚨 ARMY BOSS DEPLOYMENT: ${secs} SECONDS! 🚨`
+          ? mobileBriefing ? `WARLORD · ${secs}s` : `⚔️ WARLORD CHARGE: ${secs} SECONDS! ⚔️`
+          : mobileBriefing ? `BOSS · ${secs}s` : `🚨 ARMY BOSS DEPLOYMENT: ${secs} SECONDS! 🚨`
         : medievalResponse
-          ? `🏹 NEXT WAR PARTY: ${secs} SECONDS! 🏹`
-          : `🚨 NEXT TROOP DEPLOYMENT: ${secs} SECONDS! 🚨`;
+          ? mobileBriefing ? `WAR PARTY · ${secs}s` : `🏹 NEXT WAR PARTY: ${secs} SECONDS! 🏹`
+          : mobileBriefing ? `TROOPS · ${secs}s` : `🚨 NEXT TROOP DEPLOYMENT: ${secs} SECONDS! 🚨`;
     }
     const showWaveEndWarning = gameTime > 0 && gameTime <= 3;
     const warningDisplay = showWaveEndWarning ? 'block' : 'none';
