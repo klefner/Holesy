@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 203;
+export const BUILD_SUB = 204;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.204',
+    title: 'Responsive Hole-Eye steering restored',
+    notes: [
+      'Makes A/D and forward diagonals steer and turn the Hole-Eye view continuously again instead of only strafing.',
+      'Raises default turn speed and acceleration while retaining the stable horizon, no-shake camera, and brief turn shading.',
+      'Keeps S as a safe backpedal and retains gentler Comfort and Snap Turn options for sensitive players.',
+    ],
+  },
   {
     label: 'Master 16.203',
     title: 'Recorded wave and universal consume cues',

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.203';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.204';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -1082,9 +1082,9 @@ let holeEyeYawVelocity = 0;
 let holeEyeLastSnapAt = 0;
 const HOLE_EYE_COMFORT_STORAGE_KEY = 'holesyHoleEyeComfort';
 const HOLE_EYE_COMFORT_PROFILES = Object.freeze({
-  balanced: Object.freeze({ maxYawDeg: 150, accelerationDeg: 520, brakingDeg: 680, vignette: 0.72, cameraSeparation: 1.18, snap: false }),
-  comfort: Object.freeze({ maxYawDeg: 108, accelerationDeg: 340, brakingDeg: 440, vignette: 1, cameraSeparation: 1.25, snap: false }),
-  immediate: Object.freeze({ maxYawDeg: 270, accelerationDeg: 1100, brakingDeg: 1400, vignette: 0, cameraSeparation: 1.08, snap: false }),
+  balanced: Object.freeze({ maxYawDeg: 225, accelerationDeg: 900, brakingDeg: 1100, vignette: 0.62, cameraSeparation: 1.18, snap: false }),
+  comfort: Object.freeze({ maxYawDeg: 135, accelerationDeg: 500, brakingDeg: 650, vignette: 1, cameraSeparation: 1.25, snap: false }),
+  immediate: Object.freeze({ maxYawDeg: 360, accelerationDeg: 1800, brakingDeg: 2100, vignette: 0, cameraSeparation: 1.08, snap: false }),
   snap: Object.freeze({ maxYawDeg: 0, accelerationDeg: 0, brakingDeg: 0, vignette: 0.9, cameraSeparation: 1.2, snap: true }),
 });
 let holeEyeComfortProfileName = (() => {
@@ -6115,9 +6115,17 @@ function applyKeyboardControl(keyIntent) {
     const rightAmount = keyIntent.dx;
     intentX = holeEyeForward.x * forwardAmount - holeEyeForward.y * rightAmount;
     intentZ = holeEyeForward.y * forwardAmount + holeEyeForward.x * rightAmount;
-    // Keyboard locomotion is camera-relative but does not force the viewpoint
-    // to rotate: A/D strafe and S backpedals. The hole remains fully responsive
-    // while mouse/touch look controls own the visual yaw.
+    // A/D and forward diagonals steer the view as players expect. S remains a
+    // backpedal so reversing never forces an involuntary 180-degree camera whip.
+    const steeringForward = Math.max(0, forwardAmount);
+    const steeringX = holeEyeForward.x * steeringForward - holeEyeForward.y * rightAmount;
+    const steeringZ = holeEyeForward.y * steeringForward + holeEyeForward.x * rightAmount;
+    const steeringMagnitude = Math.hypot(steeringX, steeringZ);
+    if (Math.abs(rightAmount) > 0.05 && steeringMagnitude > 0.05) {
+      holeEyeDesiredForward.set(steeringX / steeringMagnitude, steeringZ / steeringMagnitude);
+    } else {
+      holeEyeDesiredForward.copy(holeEyeForward);
+    }
   }
   const mag = Math.hypot(intentX, intentZ);
   const reach = HOLESY_CONFIG.input.keyboardReach;
@@ -6129,6 +6137,7 @@ function applyKeyboardControl(keyIntent) {
 function releaseKeyboardControl() {
   player.targetX = player.x;
   player.targetZ = player.z;
+  if (holeEyeViewEnabled || holeEyeViewBlend > 0.5) holeEyeDesiredForward.copy(holeEyeForward);
   player._lastInputWasKeys = false;
 }
 
@@ -6393,9 +6402,9 @@ cosmeticSelect?.addEventListener('change', () => {
 });
 refreshCosmeticPicker();
 const HOLE_EYE_COMFORT_DESCRIPTIONS = Object.freeze({
-  balanced: 'Fast movement with controlled camera acceleration, a stable horizon, and light peripheral shading during hard turns.',
-  comfort: 'Gentler camera rotation, stronger turn shading, and more distance from nearby objects. Hole movement stays full speed.',
-  immediate: 'Very fast camera response with no turn shading. First-person shake remains disabled.',
+  balanced: 'Responsive A/D steering with fast controlled turning, a stable horizon, and light peripheral shading during hard turns.',
+  comfort: 'Responsive A/D steering with gentler camera rotation, stronger turn shading, and more distance from nearby objects.',
+  immediate: 'Immediate A/D steering and very fast camera response with no turn shading. First-person shake remains disabled.',
   snap: 'Turns the view in 30-degree steps while movement remains continuous and full speed.',
 });
 function syncHoleEyeComfortPicker() {

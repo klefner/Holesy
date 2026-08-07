@@ -6,8 +6,10 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.203` and player-facing surfaces show `Version 16.203`
-- `Master 16.203` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.204` and player-facing surfaces show `Version 16.204`
+- `Master 16.204` is the current governed source basis and includes:
+  - responsive A/D and forward-diagonal steering in Hole-Eye view, with faster default yaw response
+  - immediate turn-command release, safe S backpedaling, and retained Comfort/Snap accessibility options
   - the supplied recorded level-completion cue at each successful between-wave transition
   - the supplied small-hit cue for every consumed object without an authored category sound
   - priority-first decoding plus the existing bounded Web Audio voice and cleanup protections

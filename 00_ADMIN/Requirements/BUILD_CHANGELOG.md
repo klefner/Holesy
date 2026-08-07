@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.204 - 2026-08-07
+
+Restored intuitive, responsive first-person keyboard turning.
+
+- Makes A/D and forward diagonals continuously steer the hole and turn the Hole-Eye camera again instead of acting only as strafing controls.
+- Raises Responsive-mode maximum yaw from 150 to 225 degrees per second and shortens acceleration/braking response.
+- Stops requested turning as soon as the steering key is released.
+- Keeps S as a backpedal so reversing does not whip the camera 180 degrees.
+- Preserves stable horizon, zero first-person shake, turn-triggered peripheral shading, and optional Comfort and Snap Turn modes.
+
 ## Master 16.203 - 2026-08-07
 
 Added recorded wave completion and universal fallback consumption audio.
