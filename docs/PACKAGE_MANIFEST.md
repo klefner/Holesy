@@ -1,6 +1,6 @@
 # Holesy Modular Package Manifest
 
-Build label: `Master 16.208`
+Build label: `Master 16.209`
 
 Purpose: enumerate the complete governed modular package so release and upload work no longer treats `index.html` as the whole game.
 
@@ -25,7 +25,7 @@ Purpose: enumerate the complete governed modular package so release and upload w
 - `assets/environments/medieval-village/runtime/` optimized CC0 GLB models for the automatically selected Medieval Village district
 - `assets/environments/medieval-village/converted/` immutable authored-surface destruction fragments for every Medieval building
 - `assets/environments/harvest-county/runtime/` optimized Harvest County runtime models
-- `assets/environments/harvest-county/converted/` authored-surface destruction fragments for Harvest buildings
+- `assets/environments/harvest-county/converted/` compact closed-volume destruction structures plus preserved landmark parts for Harvest buildings
 
 ## Required Package Directories
 

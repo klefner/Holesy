@@ -11,7 +11,7 @@
     "rows": 4,
     "floors": 6
   },
-  "coreVisualScale": 0.28,
+  "coreVisualScale": 0.96,
   "materials": {
     "facade": ["Wood", "Wall", "Metal", "Stone"],
     "roof": ["Roof", "Metal"],
@@ -23,6 +23,7 @@
       "assetId": "harvest-small-barn",
       "sourceBase": "SmallBarn",
       "footprint": 8.5,
+      "grid": { "cols": 2, "rows": 2, "floors": 2 },
       "progressionClass": "small_structure",
       "collapseSize": 4.25
     },
@@ -31,6 +32,7 @@
       "assetId": "harvest-barn",
       "sourceBase": "Barn",
       "footprint": 10.5,
+      "grid": { "cols": 3, "rows": 2, "floors": 2 },
       "progressionClass": "medium_structure",
       "collapseSize": 5.25
     },
@@ -39,6 +41,7 @@
       "assetId": "harvest-big-barn",
       "sourceBase": "BigBarn",
       "footprint": 12,
+      "grid": { "cols": 3, "rows": 3, "floors": 2 },
       "progressionClass": "large_structure",
       "collapseSize": 6
     },
@@ -47,7 +50,7 @@
       "assetId": "harvest-silo",
       "sourceBase": "Silo",
       "footprint": 8,
-      "grid": { "cols": 4, "rows": 4, "floors": 8 },
+      "grid": { "cols": 2, "rows": 2, "floors": 4 },
       "progressionClass": "tower_structure",
       "collapseSize": 6.25
     },
@@ -56,19 +59,22 @@
       "assetId": "harvest-water-tower",
       "sourceBase": "WaterTower",
       "footprint": 8,
-      "grid": { "cols": 4, "rows": 4, "floors": 8 },
+      "grid": { "cols": 2, "rows": 2, "floors": 4 },
+      "excludeMaterialPatterns": ["^DarkGrey$"],
       "progressionClass": "tower_structure",
       "collapseSize": 6.5,
-      "unusualElements": ["water-tower tank retained inside structural grid"]
+      "unusualElements": ["water-tower tank excluded from support grid and retained as an authored rigid landmark"]
     },
     {
       "id": "harvest-windmill",
       "assetId": "harvest-windmill",
       "sourceBase": "Windmill",
       "footprint": 10,
+      "grid": { "cols": 2, "rows": 2, "floors": 5 },
+      "meshIndexes": [0],
       "progressionClass": "large_structure",
       "collapseSize": 6,
-      "unusualElements": ["windmill blades retained inside structural grid"]
+      "unusualElements": ["windmill blade mesh excluded from support grid and retained as an authored rigid landmark"]
     }
   ]
 }

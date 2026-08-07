@@ -9,10 +9,10 @@
   "seed": 16159,
   "subdivision": {
     "shape": "closed-box-with-boundary-facade",
-    "cols": 4,
-    "rows": 4,
-    "floors": 6,
-    "blockCount": 96,
+    "cols": 3,
+    "rows": 2,
+    "floors": 2,
+    "blockCount": 12,
     "gapRatio": 0.04
   },
   "dimensions": {
@@ -25,7 +25,7 @@
     "outwardFaces": "DarkRed",
     "topFaces": "RoofBlack",
     "cutFaces": "DarkRed",
-    "coreVisualScale": 0.28
+    "coreVisualScale": 0.96
   },
   "progressionClass": "medium_structure",
   "collapseSize": 5.25,

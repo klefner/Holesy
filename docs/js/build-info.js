@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 208;
+export const BUILD_SUB = 209;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.209',
+    title: 'District walls hold',
+    notes: [
+      'Stops cancelled city builders from leaking downtown structures into a later Harvest County wave and binds Endless saves to their district recipe.',
+      'Rebuilds Harvest structures as substantial closed chunks with local support-column failure instead of sparse shell sheets and whole-building radial pops.',
+      'Lets windmills and water towers topple under gravity while preserving the authored rotor or tank as a coherent falling landmark part.',
+    ],
+  },
   {
     label: 'Master 16.208',
     title: 'Silence before the signal',
