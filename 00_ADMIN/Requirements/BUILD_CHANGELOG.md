@@ -2,6 +2,14 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.207 - 2026-08-07
+
+Restored mandatory Mandate enforcement and strengthened first-person north orientation.
+
+- Checks Mandate completion before every wave-expiry winner or transition branch and immediately ends the run when any required target remains incomplete.
+- Replaces the compass triangle glyph with a clearer weighted arrow that continues to rotate toward north.
+- Adds a giant faded sky `N` that appears only while the Hole-Eye camera faces north, with no added WebGL objects or draw calls.
+
 ## Master 16.206 - 2026-08-07
 
 Synchronized the recorded pause signal with the Pause screen.

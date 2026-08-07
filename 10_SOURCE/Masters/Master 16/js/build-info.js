@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 206;
+export const BUILD_SUB = 207;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.207',
+    title: 'The lockdown closes north',
+    notes: [
+      'Ends a wave-based run when its timer expires with any required Mandate target incomplete.',
+      'Replaces the first-person compass triangle with a clear directional arrow.',
+      'Adds a giant faded sky N that appears only while the Hole-Eye camera faces north.',
+    ],
+  },
   {
     label: 'Master 16.206',
     title: 'Pause signal synchronized',

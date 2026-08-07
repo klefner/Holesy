@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.206';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.207';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -6312,6 +6312,7 @@ const adaptiveAssistIndicatorEl = document.getElementById('adaptive-assist-indic
 const mobileHudToggleBtn = document.getElementById('mobile-hud-toggle');
 const povToggleBtn = document.getElementById('pov-toggle-btn');
 const povCompassArrow = document.getElementById('pov-compass-arrow');
+const povNorthSkyMarker = document.getElementById('pov-north-sky-marker');
 const povComfortFrame = document.getElementById('pov-comfort-frame');
 const skipWaitBtn = document.getElementById('skip-wait-btn');
 const hapticTestBtn = document.getElementById('haptic-test-btn');
@@ -12560,6 +12561,7 @@ function startWave(waveNum) {
 // the next wave or ends the run if this was wave 4.
 function onWaveTimerExpired() {
   if (!player.alive && playerConsumedReturnTimer) return;
+  if (triggerMandateFailureGameOver()) return;
   // If somehow only one hole is left at this point, end immediately as a win.
   const aliveCount = holes.filter(h => h.alive).length;
   if (!endlessMode && aliveCount <= 1) { endGame(); return; }
@@ -13319,6 +13321,7 @@ function syncHoleEyeViewControl() {
   povToggleBtn.textContent = holeEyeViewEnabled ? 'VIEW: 1ST · V/ESC' : 'VIEW: 3RD';
   const gameplayViewActive = holeEyeViewEnabled && isGameState(GAME_STATES.PLAYING, GAME_STATES.PAUSED, GAME_STATES.WAVE_TRANSITION, GAME_STATES.LMS_CHOICE);
   document.body.classList.toggle('hole-eye-view', gameplayViewActive);
+  if (!gameplayViewActive && povNorthSkyMarker) povNorthSkyMarker.style.opacity = '0';
 }
 
 function setHoleEyeView(enabled) {
@@ -18302,6 +18305,10 @@ function updateGameplayCamera(focus, dt, now) {
   if (povCompassArrow && holeEyeViewBlend > 0.01) {
     const northAngle = Math.atan2(-holeEyeForward.x, -holeEyeForward.y);
     povCompassArrow.style.transform = `translateX(-50%) rotate(${northAngle}rad)`;
+    if (povNorthSkyMarker) {
+      const northAlignment = THREE.MathUtils.clamp((Math.cos(northAngle) - 0.45) / 0.55, 0, 1);
+      povNorthSkyMarker.style.opacity = (northAlignment * 0.22 * holeEyeViewBlend).toFixed(3);
+    }
   }
 
   const overheadHeight = 30 + focus.radius * 1.8;
