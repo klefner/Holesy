@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.211 - 2026-08-07
+
+Moved the first-person north landmark into the game world.
+
+- Replaces the fixed DOM sky letter with a true extruded Three.js `N` positioned beyond the northern edge of the arena.
+- Uses normal depth testing so buildings, towers, terrain, and other world geometry correctly appear in front of it.
+- Raises the marker into the distant sky while retaining approximately the established apparent size.
+- Removes directional opacity fading; the stationary landmark remains present whenever Hole-Eye gameplay is active and naturally leaves the frame when the player turns away.
+- Preserves the compact rotating compass arrow and keeps the marker hidden in overhead view and after gameplay ends.
+
 ## Master 16.210 - 2026-08-07
 
 Restored the established small-cube destruction scale throughout Harvest County.

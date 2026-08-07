@@ -1191,24 +1191,6 @@
     line-height: 1;
     text-shadow: 0 1px 5px #000;
   }
-  #pov-north-sky-marker {
-    position: fixed;
-    left: 50%;
-    top: clamp(120px, 18vh, 210px);
-    z-index: 24;
-    display: none;
-    transform: translateX(-50%);
-    color: #e1f2ff;
-    font-family: Georgia, serif;
-    font-size: clamp(110px, 18vw, 250px);
-    font-weight: 800;
-    line-height: 0.8;
-    opacity: 0;
-    text-shadow: 0 4px 20px rgba(2, 8, 18, 0.6);
-    pointer-events: none;
-    transition: opacity 120ms linear;
-  }
-  body.hole-eye-view.gameplay-active #pov-north-sky-marker { display: block; }
   #pov-comfort-frame {
     position: fixed;
     inset: 0;

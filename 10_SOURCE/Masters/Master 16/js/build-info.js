@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 210;
+export const BUILD_SUB = 211;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.211',
+    title: 'North takes its place',
+    notes: [
+      'Replaces the flat north-facing HUD letter with a stationary extruded N at the far northern edge of the world.',
+      'Uses scene depth so buildings, towers, and landscape naturally appear in front of the marker.',
+      'Keeps the N continuously present in Hole-Eye view without directional fading while preserving the compact compass arrow.',
+    ],
+  },
   {
     label: 'Master 16.210',
     title: 'The county breaks true',
