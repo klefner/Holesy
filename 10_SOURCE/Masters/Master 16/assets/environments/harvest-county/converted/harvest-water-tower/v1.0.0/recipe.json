@@ -9,28 +9,28 @@
   "seed": 16159,
   "subdivision": {
     "shape": "closed-box-with-boundary-facade",
-    "cols": 4,
-    "rows": 4,
-    "floors": 8,
-    "blockCount": 128,
+    "cols": 2,
+    "rows": 2,
+    "floors": 4,
+    "blockCount": 16,
     "gapRatio": 0.04
   },
   "dimensions": {
     "width": 8,
     "depth": 8,
-    "height": 26.628004457759538
+    "height": 22.288362273321784
   },
   "materials": {
     "intactShell": "unmodified authored glTF at runtime",
     "outwardFaces": "Brown",
     "topFaces": "Brown",
     "cutFaces": "DarkGrey",
-    "coreVisualScale": 0.28
+    "coreVisualScale": 0.96
   },
   "progressionClass": "tower_structure",
   "collapseSize": 6.5,
   "unusualElements": [
-    "water-tower tank retained inside structural grid"
+    "water-tower tank excluded from support grid and retained as an authored rigid landmark"
   ],
   "physics": {
     "collider": "box",

@@ -26,7 +26,10 @@ const cols = buildingConfig.grid?.cols || packConfig.defaultGrid?.cols || 4;
 const rows = buildingConfig.grid?.rows || packConfig.defaultGrid?.rows || 4;
 const floors = buildingConfig.grid?.floors || packConfig.defaultGrid?.floors || 6;
 const selectedMeshIndexes = buildingConfig.meshIndexes || source.meshes.map((_, index) => index);
-const selectedPrimitives = selectedMeshIndexes.flatMap(index => source.meshes[index]?.primitives || []);
+const excludedMaterialPatterns = (buildingConfig.excludeMaterialPatterns || []).map(pattern => new RegExp(pattern, 'i'));
+const selectedPrimitives = selectedMeshIndexes
+  .flatMap(index => source.meshes[index]?.primitives || [])
+  .filter(primitive => !excludedMaterialPatterns.some(pattern => pattern.test(source.materials[primitive.material]?.name || '')));
 if (!selectedPrimitives.length) throw new Error(`${modelId} has no selected mesh primitives.`);
 const selectedPositionAccessorIndexes = new Set(selectedPrimitives.map(primitive => primitive.attributes.POSITION));
 const sourcePositionAccessors = [...selectedPositionAccessorIndexes].map(index => source.accessors[index]).filter(accessor => accessor?.type === 'VEC3' && accessor.min && accessor.max);

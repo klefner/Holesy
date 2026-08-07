@@ -6,8 +6,14 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.208` and player-facing surfaces show `Version 16.208`
-- `Master 16.208` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.209` and player-facing surfaces show `Version 16.209`
+- `Master 16.209` is the current governed source basis and includes:
+  - immutable city-build contexts that cancel stale asynchronous population work before it can leak assets into a later district
+  - district recipe identity in Endless saves, with incompatible or unidentified legacy records refused rather than mixed into the active town
+  - compact Harvest destruction models rebuilt as 8–20 substantial closed chunks while preserving their prior food, score, and progression value
+  - local support-column failure and gravity-led collapse instead of immediate whole-building radial explosions
+  - authored windmill rotors and water-tower tanks retained as coherent landmark pieces through progressive toppling and impact
+- `Master 16.208` remains the exclusive Pause-audio basis and includes:
   - immediate teardown of music, scheduled notes, gameplay one-shots, wind, aid loops, and plane engines before the isolated Pause cue starts
   - Resume reconstruction of only the score and still-relevant continuous gameplay audio, without replaying interrupted one-shot effects
   - restored run-ending enforcement when a wave timer expires with any required Mandate target incomplete

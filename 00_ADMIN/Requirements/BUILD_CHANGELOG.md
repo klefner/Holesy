@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.209 - 2026-08-07
+
+Isolated generated districts and rebuilt Harvest structural destruction.
+
+- Cancels stale asynchronous city builders and prevents a completed wave from proceeding into Mandates or scheduling unless its city-build context is still current.
+- Stores and validates the district recipe in Endless saves so restored objects cannot silently inherit another town's labels and topology.
+- Replaces sampled exterior-shell fragments with genuine 8–20-piece closed-volume Harvest destruction models while preserving total food and scoring value.
+- Activates only the struck support column first, allowing upper structure to lean and descend under gravity rather than launching the entire building outward.
+- Preserves the windmill rotor and water-tower tank as coherent authored landmark parts during a progressive whole-structure topple and impact breakup.
+
 ## Master 16.208 - 2026-08-07
 
 Made the Pause signal begin from complete gameplay silence.

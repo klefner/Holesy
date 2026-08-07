@@ -1182,6 +1182,45 @@ const ELIGIBLE_ENVIRONMENTS = Object.freeze(Object.values(ENVIRONMENT_KEYS));
 let selectedEnvironment = ENVIRONMENT_KEYS.CLASSIC;
 let lastGeneratedEnvironment = null;
 let selectedEnvironmentOverride = 'auto';
+let cityBuildToken = 0;
+let activeCityBuildContext = null;
+let cancelledCityBuildCount = 0;
+const reportedCancelledCityBuildTokens = new Set();
+
+function beginCityBuildContext(environment) {
+  const recipe = CITY_RECIPES[environment] || CITY_RECIPES[ENVIRONMENT_KEYS.CLASSIC];
+  const context = Object.freeze({
+    token: ++cityBuildToken,
+    roundRunId,
+    environment,
+    packs: Object.freeze([...recipe.packs]),
+  });
+  activeCityBuildContext = context;
+  document.documentElement.setAttribute('data-holesy-city-build-token', String(context.token));
+  document.documentElement.setAttribute('data-holesy-city-build-environment', context.environment);
+  document.documentElement.setAttribute('data-holesy-city-build-state', 'building');
+  return context;
+}
+
+function cancelActiveCityBuild(reason = 'teardown') {
+  cityBuildToken++;
+  activeCityBuildContext = null;
+  document.documentElement.setAttribute('data-holesy-city-build-state', `cancelled:${reason}`);
+}
+
+function isCityBuildContextCurrent(context) {
+  const current = !!context
+    && activeCityBuildContext === context
+    && context.token === cityBuildToken
+    && context.roundRunId === roundRunId
+    && context.environment === selectedEnvironment;
+  if (!current && context && !reportedCancelledCityBuildTokens.has(context.token)) {
+    reportedCancelledCityBuildTokens.add(context.token);
+    cancelledCityBuildCount++;
+    document.documentElement.setAttribute('data-holesy-city-build-cancelled-count', String(cancelledCityBuildCount));
+  }
+  return current;
+}
 const megakitTextureLoader = new THREE.TextureLoader();
 const megakitGltfLoader = new GLTFLoader();
 const megakitTextureCache = new Map();
@@ -1220,12 +1259,12 @@ const MEDIEVAL_BUILDINGS = Object.freeze([
 ]);
 const MEDIEVAL_COMMONS_ARCHETYPES = Object.freeze(['farm', 'pasture', 'barnyard', 'training_yard']);
 const HARVEST_BUILDINGS = Object.freeze([
-  { sourceBase: 'SmallBarn', assetId: 'harvest-small-barn', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 96, breakupCount: 8 },
-  { sourceBase: 'Barn', assetId: 'harvest-barn', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 96, breakupCount: 12 },
-  { sourceBase: 'BigBarn', assetId: 'harvest-big-barn', footprint: 12, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, breakupCount: 18 },
-  { sourceBase: 'Silo', assetId: 'harvest-silo', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.25, blockCount: 128, breakupCount: 16 },
-  { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 128, breakupCount: 16, unusualElement: 'water_tank' },
-  { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 96, breakupCount: 20, unusualElement: 'windmill_blades' },
+  { sourceBase: 'SmallBarn', assetId: 'harvest-small-barn', footprint: 8.5, progressionClass: 'small_structure', collapseSize: 4.25, blockCount: 8, authoredValuePieceCount: 96, breakupCount: 8 },
+  { sourceBase: 'Barn', assetId: 'harvest-barn', footprint: 10.5, progressionClass: 'medium_structure', collapseSize: 5.25, blockCount: 12, authoredValuePieceCount: 96, breakupCount: 12 },
+  { sourceBase: 'BigBarn', assetId: 'harvest-big-barn', footprint: 12, progressionClass: 'large_structure', collapseSize: 6, blockCount: 18, authoredValuePieceCount: 96, breakupCount: 18 },
+  { sourceBase: 'Silo', assetId: 'harvest-silo', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.25, blockCount: 16, authoredValuePieceCount: 128, breakupCount: 16 },
+  { sourceBase: 'WaterTower', assetId: 'harvest-water-tower', footprint: 8, progressionClass: 'tower_structure', collapseSize: 6.5, blockCount: 16, authoredValuePieceCount: 128, structuralValuePieceCount: 96, breakupCount: 16, unusualElement: 'water_tank' },
+  { sourceBase: 'Windmill', assetId: 'harvest-windmill', footprint: 10, progressionClass: 'large_structure', collapseSize: 6, blockCount: 20, authoredValuePieceCount: 96, structuralValuePieceCount: 72, breakupCount: 20, unusualElement: 'windmill_blades' },
 ]);
 const HARVEST_FRONTIER_BUILDINGS = Object.freeze([
   { ...MEDIEVAL_BUILDINGS[2], role: 'Saloon', theme: 'harvest', breakupCount: 14 },
@@ -1324,6 +1363,8 @@ function loadHarvestDestructible(definition) {
           blockHeight: child.userData.blockHeight,
           blockDepth: child.userData.blockDepth,
           floor: child.userData.floor || 0,
+          row: child.userData.row || 0,
+          col: child.userData.col || 0,
         });
       });
       if (blockTemplates.length !== definition.blockCount) {
@@ -1880,8 +1921,10 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell, bl
     });
     // Compact themed buildings retain the complete authored building value even
     // when represented by fewer, larger and more readable breakup pieces.
-    const sourcePieceCount = Math.max(blockTemplates.length, definition.blockCount || blockTemplates.length);
-    const pieceValue = Math.max(5, Math.round(sourcePieceCount * 5 / blockTemplates.length));
+    const sourcePieceCount = Math.max(blockTemplates.length, definition.structuralValuePieceCount || definition.authoredValuePieceCount || definition.blockCount || blockTemplates.length);
+    const authoredBuildingValue = sourcePieceCount * 5;
+    const landmarkValue = definition.unusualElement ? Math.round(authoredBuildingValue * 0.25) : 0;
+    const pieceValue = Math.max(5, Math.round((authoredBuildingValue - landmarkValue) / blockTemplates.length));
     const object = makeObject(piece, Math.max(pieceW, pieceD) * 0.52, 1, pieceValue, {
       x: x + rotatedX,
       z: z + rotatedZ,
@@ -1903,6 +1946,8 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell, bl
     object.stackSettled = false;
     object.stackRestTimer = 0;
     object.stackIndex = template.floor;
+    object.stackRow = template.row || 0;
+    object.stackCol = template.col || 0;
     object.stackFloorCount = floorCount;
     object.stackPieceCount = piecesPerFloor;
     object.stackCollapseSize = definition.collapseSize;
@@ -1917,6 +1962,7 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell, bl
     object.stackHeight = pieceH;
     object.stackPieceW = pieceW;
     object.stackPieceD = pieceD;
+    object.usesHarvestSupportCollapse = object.isHarvestAsset;
     object.vx = 0; object.vy = 0; object.vz = 0;
     object.avx = 0; object.avy = 0; object.avz = 0;
     object.medievalAssetName = `Authored ${definition.sourceBase} fragment`;
@@ -1924,6 +1970,7 @@ function addMedievalDestructionStack(definition, x, z, rotation, intactShell, bl
     object.megakitDormantDetached = true;
     physicsStackPieces.push(object);
   }
+  return stackId;
 }
 
 function selectHarvestBreakupTemplates(definition, blockTemplates) {
@@ -1936,7 +1983,7 @@ function selectHarvestBreakupTemplates(definition, blockTemplates) {
   return selected;
 }
 
-async function populateMedievalVillage() {
+async function populateMedievalVillage(cityBuildContext = activeCityBuildContext) {
   const generation = medievalEnvironmentGeneration;
   document.documentElement.setAttribute('data-holesy-medieval-models', '0');
   document.documentElement.setAttribute('data-holesy-medieval-cars', '0');
@@ -1962,19 +2009,22 @@ async function populateMedievalVillage() {
 
   let loadedModelCount = 0;
   for (const { bp, definition } of sites) {
-    if (selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
+    if (!isCityBuildContextCurrent(cityBuildContext) || selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
     let authoredSource = null;
     let blockTemplates = null;
     try {
       authoredSource = await loadMedievalBuildingWithRetry(definition.sourceBase);
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
       await yieldCityBuildFrame();
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
       blockTemplates = await loadMedievalDestructibleWithRetry(definition);
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
     } catch (error) {
       console.warn(`[Holesy] Medieval authored or destructible asset unavailable after retries: ${definition.sourceBase}`, error);
       continue;
     }
     await yieldCityBuildFrame();
-    if (selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
+    if (!isCityBuildContextCurrent(cityBuildContext) || selectedEnvironment !== ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE || generation !== medievalEnvironmentGeneration) return;
     for (const object of [...objects]) {
       if (Math.hypot(object.x - bp.x, object.z - bp.z) > 10.25) continue;
       if (object.mesh?.parent) scene.remove(object.mesh);
@@ -2043,7 +2093,10 @@ async function populateMedievalVillage() {
       makeMedievalAnimal(['chicken', 'sheep', 'cow', 'horse'][parcelIndex % 4], bp.x + randomBetween(-5.5, 5.5), bp.z + randomBetween(-5.5, 5.5), bounds);
       edibleCount++;
     }
-    if (parcelIndex % 4 === 3) await yieldCityBuildFrame();
+    if (parcelIndex % 4 === 3) {
+      await yieldCityBuildFrame();
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
+    }
   }
   document.documentElement.setAttribute('data-holesy-medieval-edibles', String(edibleCount));
   const ambientParcels = [...eligibleParcels].sort(() => Math.random() - 0.5);
@@ -2353,6 +2406,34 @@ function normalizeHarvestVisual(template, targetFootprint) {
   return group;
 }
 
+function makeHarvestLandmarkPart(definition, authoredSource) {
+  if (!definition.unusualElement) return null;
+  const part = normalizeHarvestVisual(authoredSource, definition.footprint);
+  let retainedMeshes = 0;
+  part.traverse(child => {
+    if (!child.isMesh) return;
+    if (definition.unusualElement === 'windmill_blades') {
+      const keep = /blades/i.test(child.name || child.parent?.name || '');
+      child.visible = keep;
+      if (keep) retainedMeshes++;
+      return;
+    }
+    if (definition.unusualElement === 'water_tank') {
+      const materials = Array.isArray(child.material) ? child.material : [child.material];
+      const filtered = materials.map(material => {
+        const clone = material.clone();
+        clone.visible = /darkgrey/i.test(material.name || '');
+        if (clone.visible) retainedMeshes++;
+        return clone;
+      });
+      child.material = Array.isArray(child.material) ? filtered : filtered[0];
+    }
+  });
+  if (!retainedMeshes) return null;
+  part.visible = false;
+  return part;
+}
+
 function addHarvestConsumable(template, name, x, z, targetFootprint, size, value, mandateKind = 'prop') {
   const group = normalizeHarvestVisual(template, targetFootprint);
   if (mandateKind === 'prop' && targetFootprint <= 1.6) {
@@ -2477,7 +2558,7 @@ async function addHarvestBuilding(definition, authoredSource, blockTemplates, bp
   authoredVisual.position.set(bp.x, 0, bp.z);
   scene.add(authoredVisual);
   harvestEnvironmentMeshes.push(authoredVisual);
-  addMedievalDestructionStack(
+  const stackId = addMedievalDestructionStack(
     { ...definition, theme: 'harvest' },
     bp.x,
     bp.z,
@@ -2485,6 +2566,16 @@ async function addHarvestBuilding(definition, authoredSource, blockTemplates, bp
     authoredVisual,
     selectHarvestBreakupTemplates(definition, blockTemplates)
   );
+  const landmarkPart = makeHarvestLandmarkPart(definition, authoredSource);
+  if (landmarkPart) {
+    landmarkPart.rotation.y = authoredVisual.rotation.y;
+    landmarkPart.position.set(bp.x, 0, bp.z);
+    harvestLandmarkPartsByStack.set(stackId, {
+      kind: definition.unusualElement,
+      mesh: landmarkPart,
+      value: Math.max(35, Math.round((definition.authoredValuePieceCount || definition.blockCount || 20) * 5 * 0.25)),
+    });
+  }
 }
 
 function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, site, accent) {
@@ -2556,7 +2647,7 @@ function addHarvestFrontierBuilding(definition, authoredSource, blockTemplates, 
   }
 }
 
-async function populateHarvestCounty() {
+async function populateHarvestCounty(cityBuildContext = activeCityBuildContext) {
   const generation = harvestEnvironmentGeneration;
   const buildingPieceCountAtStart = physicsStackPieces.length;
   showEventBanner('DISTRICT: Harvest County', 2200);
@@ -2569,40 +2660,48 @@ async function populateHarvestCounty() {
   addHistoricRoadNetwork(addHarvestGroundPlane, dirt);
 
   await preloadHarvestCountyAssets();
-  if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+  if (!isCityBuildContextCurrent(cityBuildContext) || selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
 
   const assetNames = HARVEST_PREFAB_NAMES;
   const templates = new Map();
   for (const assetName of assetNames) {
-    if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+    if (!isCityBuildContextCurrent(cityBuildContext) || selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
     try {
       templates.set(assetName, await loadHarvestAsset(assetName));
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
     } catch (error) {
       console.warn(`[Holesy] Harvest County asset unavailable: ${assetName}`, error);
     }
     await yieldCityBuildFrame();
+    if (!isCityBuildContextCurrent(cityBuildContext)) return;
   }
 
   const buildingAssets = new Map();
   for (const definition of HARVEST_BUILDINGS) {
-    if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+    if (!isCityBuildContextCurrent(cityBuildContext) || selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
     try {
       const authored = await loadHarvestAsset(definition.sourceBase);
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
       await yieldCityBuildFrame();
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
       const destructible = await loadHarvestDestructible(definition);
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
       buildingAssets.set(definition.assetId, { authored, destructible });
     } catch (error) {
       console.warn(`[Holesy] Harvest building unavailable after intake validation: ${definition.sourceBase}`, error);
     }
     await yieldCityBuildFrame();
+    if (!isCityBuildContextCurrent(cityBuildContext)) return;
   }
 
   const frontierAssets = new Map();
   for (const definition of HARVEST_FRONTIER_BUILDINGS) {
-    if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+    if (!isCityBuildContextCurrent(cityBuildContext) || selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
     try {
       const authored = await loadMedievalBuilding(definition.sourceBase);
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
       const destructible = await loadMedievalDestructible(definition);
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
       frontierAssets.set(definition.role, { authored, destructible });
     } catch (error) {
       console.warn(`[Holesy] Frontier building unavailable after intake validation: ${definition.role}`, error);
@@ -2615,7 +2714,7 @@ async function populateHarvestCounty() {
   const activeParcels = generateHarvestRuralSites();
   const buildingEvery = 4;
   for (let parcelIndex = 0; parcelIndex < activeParcels.length; parcelIndex++) {
-    if (selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
+    if (!isCityBuildContextCurrent(cityBuildContext) || selectedEnvironment !== ENVIRONMENT_KEYS.HARVEST_COUNTY || generation !== harvestEnvironmentGeneration) return;
     const bp = activeParcels[parcelIndex];
     const bounds = { minX: bp.x - 8.7, maxX: bp.x + 8.7, minZ: bp.z - 8.7, maxZ: bp.z + 8.7 };
     const parcelType = parcelIndex % buildingEvery;
@@ -2630,6 +2729,7 @@ async function populateHarvestCounty() {
       const building = buildingAssets.get(definition.assetId);
       if (building) {
         await addHarvestBuilding(definition, building.authored, building.destructible, bp);
+        if (!isCityBuildContextCurrent(cityBuildContext)) return;
         buildingCount++;
       }
       const supportKinds = ['basket', 'sack', 'crate', 'barrel', 'hay', 'cart'];
@@ -2729,7 +2829,10 @@ async function populateHarvestCounty() {
         edibleCount++;
       }
     }
-    if (parcelIndex % 3 === 2) await yieldCityBuildFrame();
+    if (parcelIndex % 3 === 2) {
+      await yieldCityBuildFrame();
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
+    }
   }
 
   for (let i = 0; i < 26; i++) {
@@ -3170,15 +3273,16 @@ const CITY_PACK_POPULATORS = Object.freeze({
   [CITY_PACK_KEYS.HARVEST_COUNTY]: populateHarvestCounty,
 });
 
-async function populateSelectedCityPacks() {
-  const recipe = CITY_RECIPES[selectedEnvironment] || CITY_RECIPES[ENVIRONMENT_KEYS.CLASSIC];
-  for (const packKey of recipe.packs) {
+async function populateSelectedCityPacks(cityBuildContext) {
+  for (const packKey of cityBuildContext.packs) {
+    if (!isCityBuildContextCurrent(cityBuildContext)) return;
     const populatePack = CITY_PACK_POPULATORS[packKey];
     if (!populatePack) {
       console.warn(`[Holesy] City recipe references unknown pack: ${packKey}`);
       continue;
     }
-    await populatePack();
+    await populatePack(cityBuildContext);
+    if (!isCityBuildContextCurrent(cityBuildContext)) return;
   }
 }
 
@@ -3559,6 +3663,8 @@ const objects = [];
 const physicsStackPieces = [];
 const activePhysicsStackIds = new Set();
 const stackCollapsePlans = new Map();
+const harvestLandmarkPartsByStack = new Map();
+const activeHarvestLandmarkCollapses = [];
 let nextPhysicsStackId = 1;
 const voxelImpactAudioState = new Map();
 const skyscraperImpactAudioState = new Map();
@@ -5057,8 +5163,28 @@ function populateParcelDetails(bp, parcelUse, blockBounds) {
   }
 }
 
+function auditCompletedCityBuild(cityBuildContext) {
+  let incompatibleBuildingCount = 0;
+  if (cityBuildContext.environment === ENVIRONMENT_KEYS.HARVEST_COUNTY) {
+    incompatibleBuildingCount = objects.filter(obj =>
+      (obj.isBuilding || obj.isSkyscraperChunk || obj.isVoxelBuildingCube || obj.isGovernmentBuildingPiece)
+      && !obj.isHarvestAsset
+    ).length;
+  }
+  document.documentElement.setAttribute('data-holesy-city-build-incompatible-buildings', String(incompatibleBuildingCount));
+  document.documentElement.setAttribute(
+    'data-holesy-city-build-integrity',
+    incompatibleBuildingCount === 0 ? 'pass' : 'fail'
+  );
+  if (incompatibleBuildingCount > 0) {
+    console.error(`[Holesy] City recipe integrity failure: ${incompatibleBuildingCount} incompatible building pieces in ${cityBuildContext.environment}.`);
+  }
+  return incompatibleBuildingCount === 0;
+}
+
 async function populateCity() {
   chooseEnvironmentForNextCity();
+  const cityBuildContext = beginCityBuildContext(selectedEnvironment);
   applyTownTopologyVisibility();
   const isMedievalVillage = selectedEnvironment === ENVIRONMENT_KEYS.MEDIEVAL_VILLAGE;
   const isHarvestCounty = selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY;
@@ -5124,12 +5250,18 @@ async function populateCity() {
     const isNativeMedievalParcel = isMedievalVillage && medievalNativeParcelKeys.has(parcelKey(bp));
     if (isHarvestCounty) {
       populatedBlockCount++;
-      if (populatedBlockCount % 4 === 0) await yieldCityBuildFrame();
+      if (populatedBlockCount % 4 === 0) {
+        await yieldCityBuildFrame();
+        if (!isCityBuildContextCurrent(cityBuildContext)) return;
+      }
       continue;
     }
     if (isMedievalVillage && !isNativeMedievalParcel) {
       populatedBlockCount++;
-      if (populatedBlockCount % 4 === 0) await yieldCityBuildFrame();
+      if (populatedBlockCount % 4 === 0) {
+        await yieldCityBuildFrame();
+        if (!isCityBuildContextCurrent(cityBuildContext)) return;
+      }
       continue;
     }
     // Decide block type
@@ -5222,7 +5354,10 @@ async function populateCity() {
       }
     }
     populatedBlockCount++;
-    if (populatedBlockCount % 2 === 0) await yieldCityBuildFrame();
+    if (populatedBlockCount % 2 === 0) {
+      await yieldCityBuildFrame();
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
+    }
   }
 
   // Cars on the roads — 80% moving, 20% stationary.
@@ -5277,7 +5412,10 @@ async function populateCity() {
     } else {
       car.moving = false;
     }
-    if (i % 8 === 7) await yieldCityBuildFrame();
+    if (i % 8 === 7) {
+      await yieldCityBuildFrame();
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
+    }
   }
 
   // Extra people & trees on the grass edges of blocks (parks feel)
@@ -5286,9 +5424,13 @@ async function populateCity() {
     const p = randInBlock(bp, 3);
     if (Math.random() < 0.5 * personChance) makePerson(p);
     else makeTree(p);
-    if (i % 10 === 9) await yieldCityBuildFrame();
+    if (i % 10 === 9) {
+      await yieldCityBuildFrame();
+      if (!isCityBuildContextCurrent(cityBuildContext)) return;
+    }
   }
-  await populateSelectedCityPacks();
+  await populateSelectedCityPacks(cityBuildContext);
+  if (!isCityBuildContextCurrent(cityBuildContext)) return;
   pruneObjectsToArena();
   const liveHydrantCount = objects.filter(obj => !obj.consumed && obj.mandateKind === 'hydrant').length;
   const liveLampCount = objects.filter(obj => !obj.consumed && obj.mandateKind === 'lamp').length;
@@ -5296,6 +5438,9 @@ async function populateCity() {
   document.documentElement.setAttribute('data-holesy-live-lamps', String(liveLampCount));
   if (isMedievalVillage) document.documentElement.setAttribute('data-holesy-medieval-hydrants', String(liveHydrantCount));
   if (isMedievalVillage) document.documentElement.setAttribute('data-holesy-medieval-lamps', String(liveLampCount));
+  auditCompletedCityBuild(cityBuildContext);
+  document.documentElement.setAttribute('data-holesy-city-build-state', 'ready');
+  return cityBuildContext;
 }
 
 function pruneObjectsToArena() {
@@ -10757,7 +10902,7 @@ function resetStandardRoundTuning() {
 async function rebuildWaveWorldForCurrentArena() {
   tearDownWorld();
   repositionHolesForNewWave();
-  await populateCity();
+  return populateCity();
 }
 
 function enterTimedOrLmsRound() {
@@ -10783,9 +10928,11 @@ async function beginWaveRun() {
   const cfg = getWaveConfig(1);
   setArenaScale(cfg.worldScale || 1.0);
   resetHoleState();
-  await rebuildWaveWorldForCurrentArena();
+  const cityBuildContext = await rebuildWaveWorldForCurrentArena();
+  if (!cityBuildContext || !isCityBuildContextCurrent(cityBuildContext)) return false;
   selectMandateTargets();
   startWave(1);
+  return true;
 }
 
 function applyWaveConfig(cfg) {
@@ -10802,6 +10949,7 @@ function applyWaveConfig(cfg) {
 }
 
 async function enterWaveTransition(nextWave) {
+  const transitionRoundId = roundRunId;
   document.body.classList.remove('mandate-screen-warning');
   document.body.classList.remove('mandate-screen-success');
   removeMandateWarningArrow();
@@ -10815,7 +10963,8 @@ async function enterWaveTransition(nextWave) {
   showEventBanner(waveTransitionLore(nextWave), HOLESY_CONFIG.eventMessaging.waveTransitionDurationMs);
   setEndlessPressureForWave(nextWave);
   setArenaScale(getWaveConfig(nextWave).worldScale || 1.0);
-  await rebuildWaveWorldForCurrentArena();
+  const cityBuildContext = await rebuildWaveWorldForCurrentArena();
+  if (transitionRoundId !== roundRunId || !cityBuildContext || !isCityBuildContextCurrent(cityBuildContext)) return;
   selectMandateTargets();
   updatePauseButtonLabel();
   scheduleNextWaveStart(nextWave);
@@ -10872,7 +11021,11 @@ async function startGame() {
   timerEl.classList.remove('lms-active');
 
   if (isWaveBasedMode()) {
-    await beginWaveRun();
+    const waveRunStarted = await beginWaveRun();
+    if (!waveRunStarted) {
+      playBtn.disabled = false;
+      return;
+    }
     startLoreRunTracking();
     showGameplayUi();
     syncTitleAudioToGameState();
@@ -10884,7 +11037,11 @@ async function startGame() {
   tearDownWorld();
   resetHoleState();
   repositionHolesForNewWave();
-  await populateCity();
+  const cityBuildContext = await populateCity();
+  if (!cityBuildContext || !isCityBuildContextCurrent(cityBuildContext)) {
+    playBtn.disabled = false;
+    return;
+  }
   selectMandateTargets();
   startLoreRunTracking();
   enterTimedOrLmsRound();
@@ -11912,10 +12069,13 @@ function clearPauseStatus() {
 
 function buildEndlessSaveState() {
   const now = getGameplayNow();
+  const cityRecipe = CITY_RECIPES[selectedEnvironment] || CITY_RECIPES[ENVIRONMENT_KEYS.CLASSIC];
   return {
     schemaVersion: ENDLESS_SAVE_SCHEMA,
     buildLabel: BUILD_LABEL,
     savedAt: new Date().toISOString(),
+    environment: selectedEnvironment,
+    cityRecipePacks: [...cityRecipe.packs],
     selectedDifficultyName,
     currentWave,
     gameTime,
@@ -11983,6 +12143,18 @@ function loadEndlessGame() {
     showEventBanner('The Endless save is from an incompatible record.', 3600);
     return false;
   }
+  if (!ELIGIBLE_ENVIRONMENTS.includes(save.environment)) {
+    document.documentElement.setAttribute('data-holesy-endless-save-environment', 'legacy-missing');
+    showEventBanner('This legacy Endless save lacks a district identity and cannot be restored safely.', 4600);
+    return false;
+  }
+  const savedRecipe = CITY_RECIPES[save.environment] || CITY_RECIPES[ENVIRONMENT_KEYS.CLASSIC];
+  if (Array.isArray(save.cityRecipePacks)
+      && save.cityRecipePacks.join(',') !== savedRecipe.packs.join(',')) {
+    document.documentElement.setAttribute('data-holesy-endless-save-environment', 'recipe-mismatch');
+    showEventBanner('The Endless save district recipe does not match this build.', 4200);
+    return false;
+  }
 
   pendingLoreDropId = '';
   invalidateRoundLifecycle();
@@ -11994,6 +12166,20 @@ function loadEndlessGame() {
   finalWrap.classList.add('hidden');
   leaderboardEl.innerHTML = '';
   resetInputState();
+  selectedEnvironment = save.environment;
+  selectedEnvironmentOverride = save.environment;
+  lastGeneratedEnvironment = save.environment;
+  if (environmentSelect) environmentSelect.value = save.environment;
+  const restoredRecipe = CITY_RECIPES[save.environment];
+  if (environmentDesc && restoredRecipe) {
+    environmentDesc.textContent = `${restoredRecipe.label} restored with this Endless save.`;
+  }
+  document.documentElement.setAttribute('data-holesy-environment', selectedEnvironment);
+  document.documentElement.setAttribute('data-holesy-environment-override', selectedEnvironmentOverride);
+  document.documentElement.setAttribute('data-holesy-city-packs', restoredRecipe.packs.join(','));
+  document.documentElement.setAttribute('data-holesy-endless-save-environment', `restored:${selectedEnvironment}`);
+  applyTownTopologyVisibility();
+  if (selectedEnvironment === ENVIRONMENT_KEYS.HARVEST_COUNTY) preloadHarvestCountyAssets();
   selectedMode = 'endless';
   syncModePickerSelection();
   setDifficulty(save.selectedDifficultyName || selectedDifficultyName || 'normal');
@@ -12208,6 +12394,7 @@ function cashoutFromLmsChoice() {
 // and their tracking arrays. Also clears pending wave rosters since any
 // in-flight bonuses no longer apply.
 function tearDownWorld() {
+  cancelActiveCityBuild('world-teardown');
   clearMegakitEnvironmentMeshes();
   clearMedievalEnvironmentMeshes();
   clearHarvestEnvironmentMeshes();
@@ -12222,6 +12409,8 @@ function tearDownWorld() {
   physicsStackPieces.length = 0;
   activePhysicsStackIds.clear();
   stackCollapsePlans.clear();
+  harvestLandmarkPartsByStack.clear();
+  activeHarvestLandmarkCollapses.length = 0;
   governmentPhysics.clear();
   movingCars.length = 0;
   movingPeople.length = 0;
@@ -13883,6 +14072,7 @@ function beginConsume(h, obj) {
   }
   if (obj.physicsStackPiece && !obj.isVoxelBuildingCube) {
     if (!activatePhysicsStack(obj.stackId, h, obj)) return;
+    if (activeHarvestLandmarkCollapses.some(collapse => collapse.stackId === obj.stackId)) return;
   }
   extinguishBuildingLights(obj, true);
   cutStreetLightPower(obj, true);
@@ -14402,6 +14592,143 @@ function getCollapsePlan(stackId, sourceHole, consumedPiece) {
   return stackCollapsePlans.get(stackId);
 }
 
+function activateHarvestSupportColumn(stackId, sourceHole, consumedPiece, plan) {
+  if (!consumedPiece?.usesHarvestSupportCollapse) return false;
+  const hitRow = consumedPiece.stackRow || 0;
+  const hitCol = consumedPiece.stackCol || 0;
+  let activated = false;
+  for (const piece of physicsStackPieces) {
+    if (
+      piece.stackId !== stackId ||
+      !piece.usesHarvestSupportCollapse ||
+      piece.stackRow !== hitRow ||
+      piece.stackCol !== hitCol ||
+      piece.consumed || piece.falling || piece.stackActive
+    ) continue;
+    const floorT = piece.stackFloorCount > 1 ? piece.stackIndex / (piece.stackFloorCount - 1) : 0;
+    const localAway = normalize2(piece.x - plan.centerX, piece.z - plan.centerZ, plan.fallDir);
+    piece.stackActive = true;
+    piece.stackSettled = false;
+    piece.stackRestTimer = 0;
+    piece.stackCollapsedAt = getGameplayNow();
+    piece.stackCollapsedBy = sourceHole;
+    // Release the struck support first. Upper pieces remain visibly supported
+    // for a beat, then inherit a small lean and surrender to gravity instead of
+    // receiving the whole-building explosion impulse.
+    piece.stackDelaySeconds = piece.stackIndex <= 0
+      ? 0
+      : 0.12 + piece.stackIndex * randomBetween(0.08, 0.14);
+    piece.stackMaxSpread = Math.min(plan.maxSpread, 9.5);
+    const lean = 0.22 + floorT * 0.72;
+    piece.vx += localAway.x * lean + plan.fallDir.x * floorT * 0.38;
+    piece.vz += localAway.z * lean + plan.fallDir.z * floorT * 0.38;
+    piece.vy += piece.stackIndex <= 0 ? -0.18 : randomBetween(-0.08, 0.04);
+    piece.avx += plan.fallDir.z * (0.18 + floorT * 0.62) + randomBetween(-0.12, 0.12);
+    piece.avy += randomBetween(-0.16, 0.16);
+    piece.avz -= plan.fallDir.x * (0.18 + floorT * 0.62) + randomBetween(-0.12, 0.12);
+    activated = true;
+  }
+  return activated;
+}
+
+function startHarvestLandmarkCollapse(stackId, sourceHole, consumedPiece, plan, shell) {
+  const landmark = harvestLandmarkPartsByStack.get(stackId);
+  if (!landmark || !shell) return false;
+  if (activeHarvestLandmarkCollapses.some(collapse => collapse.stackId === stackId)) return true;
+  const axis = new THREE.Vector3(plan.fallDir.z, 0, -plan.fallDir.x).normalize();
+  activeHarvestLandmarkCollapses.push({
+    stackId,
+    sourceHole,
+    shell,
+    landmark,
+    plan,
+    axis,
+    baseQuaternion: shell.quaternion.clone(),
+    angle: 0,
+    angularVelocity: landmark.kind === 'water_tank' ? 0.14 : 0.18,
+  });
+  return true;
+}
+
+function releaseHarvestLandmarkAfterImpact(collapse) {
+  const { stackId, shell, landmark, plan, axis, angle } = collapse;
+  const impactQuaternion = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+  const center = new THREE.Vector3(plan.centerX, 0, plan.centerZ);
+  if (shell.parent) shell.parent.remove(shell);
+  megakitIntactShellsByStack.delete(stackId);
+
+  const partMesh = landmark.mesh;
+  partMesh.position.copy(center);
+  partMesh.quaternion.copy(collapse.baseQuaternion).premultiply(impactQuaternion);
+  partMesh.visible = true;
+  const partSize = landmark.kind === 'water_tank' ? 2.8 : 3.2;
+  const part = makeObject(partMesh, partSize, 1, landmark.value, {
+    x: center.x,
+    y: 0.32,
+    z: center.z,
+  });
+  part.isBuilding = true;
+  part.isHarvestAsset = true;
+  part.isHarvestLandmarkPart = true;
+  part.harvestLandmarkKind = landmark.kind;
+  part.physicsStackPiece = true;
+  part.stackId = stackId;
+  part.stackActive = true;
+  part.stackSettled = false;
+  part.stackFloorY = 0.32;
+  part.stackCenterX = center.x;
+  part.stackCenterZ = center.z;
+  part.stackMaxSpread = 9.5;
+  part.stackCollapsedAt = getGameplayNow();
+  part.stackDelaySeconds = 0;
+  part.vx = plan.fallDir.x * randomBetween(0.65, 1.05);
+  part.vy = randomBetween(0.08, 0.22);
+  part.vz = plan.fallDir.z * randomBetween(0.65, 1.05);
+  part.avx = axis.x * randomBetween(0.45, 0.8);
+  part.avy = randomBetween(-0.22, 0.22);
+  part.avz = axis.z * randomBetween(0.45, 0.8);
+  physicsStackPieces.push(part);
+
+  for (const piece of physicsStackPieces) {
+    if (piece === part || piece.stackId !== stackId || !piece.mesh || piece.consumed || piece.falling) continue;
+    if (piece.megakitDormantDetached && !piece.mesh.parent) {
+      scene.add(piece.mesh);
+      piece.megakitDormantDetached = false;
+    }
+    const local = new THREE.Vector3(piece.x - center.x, piece.mesh.position.y, piece.z - center.z).applyQuaternion(impactQuaternion);
+    piece.x = center.x + local.x;
+    piece.z = center.z + local.z;
+    piece.mesh.position.set(piece.x, Math.max(piece.stackFloorY, local.y), piece.z);
+    piece.mesh.quaternion.premultiply(impactQuaternion);
+    piece.mesh.visible = true;
+    piece.stackActive = true;
+    piece.stackSettled = false;
+    piece.stackCollapsedAt = getGameplayNow();
+    piece.stackDelaySeconds = randomBetween(0.02, 0.16) + piece.stackIndex * 0.035;
+    piece.stackMaxSpread = 9.5;
+    piece.vx = plan.fallDir.x * randomBetween(0.28, 0.72) + randomBetween(-0.24, 0.24);
+    piece.vy = randomBetween(0.02, 0.18);
+    piece.vz = plan.fallDir.z * randomBetween(0.28, 0.72) + randomBetween(-0.24, 0.24);
+    piece.avx = randomBetween(-0.48, 0.48);
+    piece.avy = randomBetween(-0.32, 0.32);
+    piece.avz = randomBetween(-0.48, 0.48);
+  }
+  harvestLandmarkPartsByStack.delete(stackId);
+}
+
+function updateHarvestLandmarkCollapses(dt) {
+  for (let index = activeHarvestLandmarkCollapses.length - 1; index >= 0; index--) {
+    const collapse = activeHarvestLandmarkCollapses[index];
+    collapse.angularVelocity = Math.min(1.3, collapse.angularVelocity + dt * 0.72);
+    collapse.angle = Math.min(1.38, collapse.angle + collapse.angularVelocity * dt);
+    const tilt = new THREE.Quaternion().setFromAxisAngle(collapse.axis, collapse.angle);
+    collapse.shell.quaternion.copy(collapse.baseQuaternion).premultiply(tilt);
+    if (collapse.angle < 1.38) continue;
+    releaseHarvestLandmarkAfterImpact(collapse);
+    activeHarvestLandmarkCollapses.splice(index, 1);
+  }
+}
+
 function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null) {
   const requiredCollapseSize = consumedPiece?.stackCollapseSize || 0;
   if (requiredCollapseSize && sourceHole.radius * 0.95 < requiredCollapseSize) {
@@ -14424,6 +14751,14 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
   if (firstActivation) {
     activePhysicsStackIds.add(stackId);
     const intactShell = megakitIntactShellsByStack.get(stackId);
+    const landmark = harvestLandmarkPartsByStack.get(stackId);
+    if (landmark && intactShell) {
+      const plan = getCollapsePlan(stackId, sourceHole, consumedPiece);
+      startHarvestLandmarkCollapse(stackId, sourceHole, consumedPiece, plan, intactShell);
+      extinguishStackLights(stackId);
+      if (!music.muted) playSkyscraperCollapseSound(0.72, 0.82, stackId);
+      return true;
+    }
     if (intactShell) {
       if (intactShell.parent) intactShell.parent.remove(intactShell);
       megakitIntactShellsByStack.delete(stackId);
@@ -14446,8 +14781,11 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
     }
   }
 
+  if (activeHarvestLandmarkCollapses.some(collapse => collapse.stackId === stackId)) return true;
+
   const plan = getCollapsePlan(stackId, sourceHole, consumedPiece);
   rememberAiCollapseFocus(sourceHole, plan.centerX, plan.centerZ, stackId);
+  if (activateHarvestSupportColumn(stackId, sourceHole, consumedPiece, plan)) return true;
   for (const piece of physicsStackPieces) {
     if (piece.stackId !== stackId || piece.consumed || piece.falling || piece.stackActive) continue;
     piece.stackActive = true;
@@ -14875,6 +15213,7 @@ function sleepPhysicsStackPiece(piece) {
 }
 
 function updatePhysicsStackPieces(dt) {
+  updateHarvestLandmarkCollapses(dt);
   const inactiveScanBucket = inactiveStackScanFrame++ % INACTIVE_STACK_SCAN_STRIDE;
   const gameplayNow = getGameplayNow();
   for (let pieceIndex = 0; pieceIndex < physicsStackPieces.length; pieceIndex++) {
@@ -14882,6 +15221,7 @@ function updatePhysicsStackPieces(dt) {
     if (piece.consumed || piece.falling || piece.jammedInHole) continue;
 
     if (!piece.stackActive) {
+      if (activeHarvestLandmarkCollapses.some(collapse => collapse.stackId === piece.stackId)) continue;
       // Every imported floor repeats the same 4x4 footprint. One ground-floor
       // trigger per column is sufficient because contact activates the whole
       // stack; scanning all six floors multiplied idle proximity work by six.

@@ -9,28 +9,28 @@
   "seed": 16159,
   "subdivision": {
     "shape": "closed-box-with-boundary-facade",
-    "cols": 4,
-    "rows": 4,
-    "floors": 6,
-    "blockCount": 96,
+    "cols": 2,
+    "rows": 2,
+    "floors": 5,
+    "blockCount": 20,
     "gapRatio": 0.04
   },
   "dimensions": {
     "width": 10,
     "depth": 10,
-    "height": 17.20456322016832
+    "height": 18.446021748476692
   },
   "materials": {
     "intactShell": "unmodified authored glTF at runtime",
     "outwardFaces": "Brown",
     "topFaces": "Brown",
     "cutFaces": "Brown",
-    "coreVisualScale": 0.28
+    "coreVisualScale": 0.96
   },
   "progressionClass": "large_structure",
   "collapseSize": 6,
   "unusualElements": [
-    "windmill blades retained inside structural grid"
+    "windmill blade mesh excluded from support grid and retained as an authored rigid landmark"
   ],
   "physics": {
     "collider": "box",
