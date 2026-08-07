@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
-import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.205';
+import { BUILD_LABEL, BUILD_CHANGELOG } from './build-info.js?v=16.206';
 import { DIFFICULTY_PROFILES } from './difficulty-profiles.js';
 import { GovernmentPhysicsWorld } from './government-physics.js';
 import { LORE_DOCUMENTS, LORE_STARTING_UNLOCKS } from '../data/lore-documents.js';
@@ -10903,24 +10903,27 @@ function pauseWaveTransition() {
   clearPauseStatus();
   setGameState(GAME_STATES.PAUSED);
   pauseOverlay.classList.remove('hidden');
-  playPauseHumSound();
   syncAlienAidLoop();
   updatePauseButtonLabel();
 }
 
 function pauseGame() {
   if (!canUsePauseMenu()) return;
-  if (isGameState(GAME_STATES.WAVE_TRANSITION)) {
+  const pausingWaveTransition = isGameState(GAME_STATES.WAVE_TRANSITION);
+  if (!pausingWaveTransition && !running) return;
+
+  // Start the pause signal on the player's action, before state/DOM work can paint the overlay.
+  playPauseHumSound();
+
+  if (pausingWaveTransition) {
     pauseWaveTransition();
     return;
   }
-  if (!running) return;
   running = false;
   pausedStateBeforePause = GAME_STATES.PLAYING;
   clearPauseStatus();
   setGameState(GAME_STATES.PAUSED);
   pauseOverlay.classList.remove('hidden');
-  playPauseHumSound();
   syncAlienAidLoop();
   updatePauseButtonLabel();
   updateWaveHudBanner();
