@@ -21,6 +21,7 @@ The top-right control is labeled `Music`, but switching it off also silenced dev
 - Always initialize Web Audio and warm sample banks from the Begin gesture; start the score only when Music is enabled.
 - Prevent `startMusic()` from creating a silent scheduler while Music is disabled or focus-suspended.
 - Run aid movement and pickup simulation regardless of audio permission while continuing to gate only its chimes, radar, and loop audio.
+- Advance the `build-info.js` module cache key with the build so the public badge and changelog cannot be rewritten by a cached prior module.
 
 ## Acceptance Matrix
 
@@ -47,3 +48,4 @@ The repair uses the existing separated Web Audio buses and removes invalid prefe
 - Local browser, Pause/Resume with Music off: the Pause cue count increased once, the gameplay bus changed true → false across Pause/Resume, and music remained stopped.
 - Local browser, Music restored: active score sources reached 14 while the gameplay bus remained open and the consume-pop count remained intact.
 - Local browser console error count was zero. Focus lifecycle and aid-drop preference independence are covered by the existing whole-context suspension path plus the new static ownership contract; publication proof is recorded separately after GitHub Pages verification.
+- The first public probe correctly returned the new 16.215 HTML and main script but exposed a cached 16.214 build-info module; advancing its cache key corrected the package, and the static contract now compares both module cache keys with `BUILD_SUB`.

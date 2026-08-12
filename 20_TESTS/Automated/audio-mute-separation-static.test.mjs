@@ -2,7 +2,16 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const sourcePath = new URL('../../10_SOURCE/Masters/Master 16/js/main.js', import.meta.url);
+const buildInfoPath = new URL('../../10_SOURCE/Masters/Master 16/js/build-info.js', import.meta.url);
+const indexPath = new URL('../../10_SOURCE/Masters/Master 16/index.html', import.meta.url);
 const source = readFileSync(sourcePath, 'utf8');
+const buildInfo = readFileSync(buildInfoPath, 'utf8');
+const index = readFileSync(indexPath, 'utf8');
+
+const buildSub = buildInfo.match(/BUILD_SUB = (\d+);/)?.[1];
+assert.ok(buildSub, 'build-info.js must declare BUILD_SUB');
+assert.match(source, new RegExp(`build-info\\.js\\?v=16\\.${buildSub}`), 'main.js must bust the current build-info cache');
+assert.match(index, new RegExp(`main\\.js\\?v=16\\.${buildSub}`), 'index.html must bust the current main.js cache');
 
 function functionBody(name) {
   const marker = `function ${name}(`;
