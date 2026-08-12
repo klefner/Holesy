@@ -49,3 +49,5 @@ The repair uses the existing separated Web Audio buses and removes invalid prefe
 - Local browser, Music restored: active score sources reached 14 while the gameplay bus remained open and the consume-pop count remained intact.
 - Local browser console error count was zero. Focus lifecycle and aid-drop preference independence are covered by the existing whole-context suspension path plus the new static ownership contract; publication proof is recorded separately after GitHub Pages verification.
 - The first public probe correctly returned the new 16.215 HTML and main script but exposed a cached 16.214 build-info module; advancing its import key and issuing a one-time `main.js?v=16.215.1` cache token corrected the package. The static contract now compares both module cache keys with `BUILD_SUB`.
+- GitHub Pages workflow `31619921544` completed successfully for deployment commit `32bd222`.
+- Final cache-busted public verification returned `Master 16.215`, visible `Version 16.215`, and `main.js?v=16.215.1`, with no boot error and zero console errors.
