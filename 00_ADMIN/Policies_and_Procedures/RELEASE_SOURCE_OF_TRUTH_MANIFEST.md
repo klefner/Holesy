@@ -8,7 +8,7 @@ Before any release packaging, live upload, master promotion, backlog sequencing,
 
 The acting developer must also read the repo-root `AGENTS.md` so release, implementation, QA, and handoff responsibilities are applied consistently across Codex, Claude, and other AI systems.
 
-## Current State As Of 2026-08-07
+## Current State As Of 2026-08-12
 
 | Layer | Current value | Meaning |
 | --- | --- | --- |
@@ -17,7 +17,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 | Stable `main` | stale relative to active branch | `main` is not the current gameplay source of truth until an explicit PR/merge updates it. |
 | Current approved source master | `10_SOURCE/Masters/Master 16/` | Governed modular source package for the current playable build line. |
 | Current source entry point | `10_SOURCE/Masters/Master 16/index.html` | Browser entry point for the modular source package. |
-| Current in-game build label | `Master 16.214` | Current governed review build; normal player surfaces display `Version 16.214`. It preserves the complete Master 16.213 baseline while decluttering phone gameplay and separating intentional Hole-Eye touch turning from forward/back movement. |
+| Current in-game build label | `Master 16.215` | Current governed review build; normal player surfaces display `Version 16.215`. It preserves the complete Master 16.214 baseline while making the Music preference control only the procedural and Archive scores, never gameplay sound or simulation. |
 | Current release package | `40_RELEASE/Website_Publish_Package/holesy/` | Current modular browser-client release package and source for the GitHub Pages `docs/` deployment tree. |
 | Current Pages deployment branch | `claude/happy-clarke-ORWAI` | GitHub Pages publishes from this branch's `docs/` folder; commit `995b580` publishes the complete `Master 16.214` package. A cache-busted public request on 2026-08-07 returned `Master 16.214`; 320px/390px/430px browser smoke, console, syntax, and source/release/Pages parity verification passed. |
 | Legacy GoDaddy packages | obsolete | GoDaddy publishing was discontinued when GitHub Pages became the production host; retained historical folders must not drive release decisions. |
@@ -27,7 +27,7 @@ The acting developer must also read the repo-root `AGENTS.md` so release, implem
 
 ## Non-Negotiable Distinctions
 
-- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.214` is the current modular review patch on that architecture line.
+- A bundled `index.html` was a temporary publish artifact before `Master 16.17`; it is not the accepted architecture target. `Master 16.215` is the current modular review patch on that architecture line.
 - `Master 16.74` closes `PERF-012` as a production package migration item; future UI, save/load, level/theme, reward/quest, and gameplay-system extraction should be tracked as separate feature-support architecture work.
 - The production package must preserve the modular folder shape unless an emergency temporary bundled hotfix is explicitly approved and documented.
 - GitHub Pages deployment must preserve the full modular package shape under the configured `docs/` source while commits remain narrowly scoped to changed files.

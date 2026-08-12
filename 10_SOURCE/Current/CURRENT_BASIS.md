@@ -6,8 +6,12 @@ Current status:
 
 - The promoted stable master is the modular source package at `10_SOURCE/Masters/Master 16/`
 - The playable entry point is `10_SOURCE/Masters/Master 16/index.html`
-- `Master 16` is the approved build family; the current internal build label is `Master 16.214` and player-facing surfaces show `Version 16.214`
-- `Master 16.214` is the current governed source basis and includes:
+- `Master 16` is the approved build family; the current internal build label is `Master 16.215` and player-facing surfaces show `Version 16.215`
+- `Master 16.215` is the current governed source basis and includes:
+  - a top-right Music control that owns only the procedural score and Archive score
+  - independent gameplay SFX, ambience, celebration, wave, collapse, and Pause audio while Music is disabled
+  - SFX sample warmup on Begin regardless of Music preference and aid-drop simulation independent of audio permission
+- `Master 16.214` remains the mobile HUD and touch-control basis and includes:
   - compact-by-default phone gameplay HUD with critical Tier, Timer, View, Pause, and active Mandate information preserved
   - shortened phone deployment notices and small safe-area-aware active-effect chips
   - separated mobile Hole-Eye movement/turn axes, Comfort thumb-wobble deadzone, nonlinear response, stable touch identity, and immediate yaw stop on release

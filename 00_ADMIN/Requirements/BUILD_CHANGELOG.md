@@ -2,6 +2,16 @@
 
 Purpose: maintain concise build notes that can become player-facing patch notes inside the game.
 
+## Master 16.215 - 2026-08-12
+
+Separated the Music preference from every non-music game-audio path.
+
+- Makes the top-right Music button stop and resume only the procedural and Archive scores.
+- Keeps devour, combat, warning, reward, collapse, wave-completion, UI, ambient wind, and Pause cues audible while Music is off.
+- Initializes Web Audio and warms gameplay samples on Begin even when Music was disabled before the game starts, without scheduling a silent score.
+- Removes audio permission from alien-aid movement and pickup simulation so a sound preference cannot alter gameplay.
+- Preserves focus suspension and the established Pause sequence: silence active gameplay, play the isolated Pause cue, then restore SFX on Resume while honoring the player's Music choice.
+
 ## Master 16.214 - 2026-08-07
 
 Rebuilt the phone gameplay presentation and Hole-Eye touch steering boundary.

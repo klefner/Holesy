@@ -7880,7 +7880,7 @@ function stopArchiveMusicNow() {
 
 function startMusic() {
   initMusicContext();
-  if (!music.ctx || music.playing) return;
+  if (!music.ctx || music.playing || music.muted || music.focusSuspended) return;
   if (music.stopTimer) {
     clearTimeout(music.stopTimer);
     music.stopTimer = null;
@@ -7966,7 +7966,9 @@ function isMusicAudibleAllowed() {
 }
 
 function isGameplayAudioAllowed() {
-  return !music.muted && !music.focusSuspended && isMusicAllowedByFocus() && running && isGameState(GAME_STATES.PLAYING);
+  // The Music control owns only the procedural score and Archive score.
+  // Gameplay SFX/ambience remain available when the player turns music off.
+  return !music.focusSuspended && isMusicAllowedByFocus() && running && isGameState(GAME_STATES.PLAYING);
 }
 
 function handleMusicFocusChange() {
@@ -9615,13 +9617,14 @@ function finalizeLoreRunTracking(winner, playerRank, playerWon) {
 
 function primeAudioFromStartGesture() {
   musicStarted = true;
-    initMusicContext();
-    if (music.ctx && music.ctx.state === 'suspended') {
-      music.ctx.resume().catch(err => console.warn('resume failed:', err));
-    }
-    startMusic();
-    scheduleAudioBankWarmup(0);
+  initMusicContext();
+  if (music.ctx && music.ctx.state === 'suspended') {
+    music.ctx.resume().catch(err => console.warn('resume failed:', err));
   }
+  if (!music.muted) startMusic();
+  // SFX must be ready even when Music was disabled before Begin.
+  scheduleAudioBankWarmup(0);
+}
 
 function syncTitleAudioToGameState() {
   if (!musicStarted) return;
@@ -9927,7 +9930,7 @@ function playGenericConsumePop(volumeScale = 1.0, obj = null) {
 
 function playWaveCompletionSound() {
   initMusicContext();
-  if (!music.ctx || music.muted) return;
+  if (!music.ctx) return;
   if (!audioBanksLoaded) scheduleAudioBankWarmup(0);
   const buffer = audioBank.waveComplete[0];
   if (!buffer) return;
@@ -9947,7 +9950,7 @@ function stopPauseHumSound() {
 function playPauseHumSound() {
   stopPauseHumSound();
   initMusicContext();
-  if (!music.ctx || music.muted) return;
+  if (!music.ctx) return;
   if (!audioBanksLoaded) scheduleAudioBankWarmup(0);
   const buffer = audioBank.pauseHum[0];
   if (!buffer || !canStartNonMusicSource(true)) return;
@@ -10357,7 +10360,7 @@ function updateHoleWind() {
     }
     return;
   }
-  if (!musicStarted || !music.ctx || music.muted) return;
+  if (!musicStarted || !music.ctx) return;
   if (!music.holeWind) {
     ensureHoleWindLoop();
     if (!music.holeWind) return;
@@ -10438,7 +10441,7 @@ function stopHoleWindNow() {
 
 function playUnitClearStinger() {
   initMusicContext();
-  if (!music.ctx || music.muted) return;
+  if (!music.ctx) return;
   const ctx = music.ctx;
   const now = ctx.currentTime;
   const output = getCelebrationDestination();
@@ -10491,7 +10494,7 @@ function resetWaveCountdownCue() {
 
 function playMandateRowTick() {
   initMusicContext();
-  if (!music.ctx || music.muted) return;
+  if (!music.ctx) return;
   const ctx = music.ctx;
   const now = ctx.currentTime;
   const output = getCelebrationDestination();
@@ -10512,7 +10515,7 @@ function playMandateRowTick() {
 
 function playRunGoalChime() {
   initMusicContext();
-  if (!music.ctx || music.muted) return;
+  if (!music.ctx) return;
   const ctx = music.ctx;
   const now = ctx.currentTime;
   const output = getCelebrationDestination();
@@ -10533,7 +10536,7 @@ function playRunGoalChime() {
 
 function playBossInboundWarning() {
   initMusicContext();
-  if (!music.ctx || music.muted) return;
+  if (!music.ctx) return;
   const ctx = music.ctx;
   const now = ctx.currentTime;
   const output = getCelebrationDestination();
@@ -10593,7 +10596,7 @@ function playMandateArrowFlashAlerts(delaySeconds = 0) {
 
 function playBossVictoryFanfare() {
   initMusicContext();
-  if (!music.ctx || music.muted) return;
+  if (!music.ctx) return;
   const ctx = music.ctx;
   const now = ctx.currentTime;
   const output = getCelebrationDestination();
@@ -12984,7 +12987,7 @@ function scheduleWaveAidDrop() {
 
 function createAlienAidChime() {
   initMusicContext();
-  if (!music.ctx || music.muted) return;
+  if (!music.ctx) return;
   const ctx = music.ctx;
   const now = ctx.currentTime;
   const tones = [
@@ -13235,11 +13238,6 @@ function dropAidPowerup(ship) {
 }
 
 function updateAidDrops(dt) {
-  if (!isGameplayAudioAllowed()) {
-    syncAlienAidLoop(true);
-    aidRadarAudio.nextPingAt = 0;
-    return;
-  }
   let nearestAidDistance = Infinity;
   for (const obj of objects) {
     if (!obj.isPowerup || obj.consumed || obj.falling) continue;
@@ -14013,26 +14011,24 @@ function awardObjectConsume(h, obj) {
   recordMandateTargetConsume(h, obj);
   if (h.isPlayer) recordPlayerObjectFamilyProgress(obj, h);
   // Category-based sound effect — distance-attenuated relative to player camera
-  if (!music.muted) {
-    const distToPlayer = Math.hypot(obj.x - player.x, obj.z - player.z);
-    const maxHearDist = 60;
-    if (distToPlayer < maxHearDist) {
-      const volScale = 1 - (distToPlayer / maxHearDist);
-      if (obj.isPerson && obj.voice) {
-        playScream(obj.voice, volScale);
-      } else if (obj.isTree) {
-        playTreeSound(volScale);
-      } else if (obj.isCar) {
-        playCarSound(volScale);
-      } else if (obj.isBuilding) {
-        if (obj.isVoxelBuildingCube) playVoxelCubeImpactSound(obj, volScale * 0.55);
-        else if (obj.isSkyscraperChunk) playSkyscraperChunkSound(volScale, obj);
-        else playBuildingSound(obj.buildingSize, volScale);
-      } else if (obj.isProp) {
-        playMetalSound(volScale);
-      } else {
-        playGenericConsumePop(volScale, obj);
-      }
+  const distToPlayer = Math.hypot(obj.x - player.x, obj.z - player.z);
+  const maxHearDist = 60;
+  if (distToPlayer < maxHearDist) {
+    const volScale = 1 - (distToPlayer / maxHearDist);
+    if (obj.isPerson && obj.voice) {
+      playScream(obj.voice, volScale);
+    } else if (obj.isTree) {
+      playTreeSound(volScale);
+    } else if (obj.isCar) {
+      playCarSound(volScale);
+    } else if (obj.isBuilding) {
+      if (obj.isVoxelBuildingCube) playVoxelCubeImpactSound(obj, volScale * 0.55);
+      else if (obj.isSkyscraperChunk) playSkyscraperChunkSound(volScale, obj);
+      else playBuildingSound(obj.buildingSize, volScale);
+    } else if (obj.isProp) {
+      playMetalSound(volScale);
+    } else {
+      playGenericConsumePop(volScale, obj);
     }
   }
   // Visual feedback for player
@@ -14302,7 +14298,7 @@ function holeEatsHole(eater, eaten) {
     showStagePop('DEVOURED ' + eaten.name.toUpperCase() + '!');
     flashConsumed('+' + reward + ' (ate ' + eaten.name + ')', new THREE.Vector3(eater.x, 0, eater.z));
     // Apple bite-n-chew sound plays the player's own kill
-    if (!music.muted) playBiteChew();
+    playBiteChew();
   } else if (eaten.isPlayer) {
     pendingPlayerEndReason = 'eaten_by_rival';
     schedulePlayerConsumedReturn(eater);
@@ -14879,7 +14875,7 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
       const plan = getCollapsePlan(stackId, sourceHole, consumedPiece);
       startHarvestLandmarkCollapse(stackId, sourceHole, consumedPiece, plan, intactShell);
       extinguishStackLights(stackId);
-      if (!music.muted) playSkyscraperCollapseSound(0.72, 0.82, stackId);
+      playSkyscraperCollapseSound(0.72, 0.82, stackId);
       return true;
     }
     if (intactShell) {
@@ -14895,13 +14891,11 @@ function activatePhysicsStack(stackId, sourceHole = player, consumedPiece = null
       piece.mesh.visible = true;
     }
     extinguishStackLights(stackId);
-    if (!music.muted) {
-      const sourceX = sourceHole?.x ?? player.x;
-      const sourceZ = sourceHole?.z ?? player.z;
-      const distToPlayer = Math.hypot(sourceX - player.x, sourceZ - player.z);
-      const volScale = Math.max(0.25, 1 - Math.min(1, distToPlayer / 70));
-      playSkyscraperCollapseSound(volScale, 1.05, stackId);
-    }
+    const sourceX = sourceHole?.x ?? player.x;
+    const sourceZ = sourceHole?.z ?? player.z;
+    const distToPlayer = Math.hypot(sourceX - player.x, sourceZ - player.z);
+    const volScale = Math.max(0.25, 1 - Math.min(1, distToPlayer / 70));
+    playSkyscraperCollapseSound(volScale, 1.05, stackId);
   }
 
   if (activeHarvestLandmarkCollapses.some(collapse => collapse.stackId === stackId)) return true;
@@ -15044,11 +15038,9 @@ function activateVoxelBuildingColumn(seedPiece, sourceHole = player) {
     extinguishStackLights(stackId);
     jarVoxelBuildingPieces(seedPiece, sourceHole, leanDir);
     activePhysicsStackIds.add(stackId);
-    if (!music.muted) {
-      const distToPlayer = Math.hypot(seedPiece.x - player.x, seedPiece.z - player.z);
-      const volScale = Math.max(0.18, 1 - Math.min(1, distToPlayer / 50));
-      playVoxelCubeImpactSound(seedPiece, volScale * 0.7);
-    }
+    const distToPlayer = Math.hypot(seedPiece.x - player.x, seedPiece.z - player.z);
+    const volScale = Math.max(0.18, 1 - Math.min(1, distToPlayer / 50));
+    playVoxelCubeImpactSound(seedPiece, volScale * 0.7);
   }
   return activated;
 }
@@ -15950,7 +15942,7 @@ function stopCarAsWreck(car, impactTarget = null) {
     scene.remove(impactTarget.mesh);
     removeObjectFromActiveLists(impactTarget);
   }
-  if (Math.hypot(car.x - player.x, car.z - player.z) < 35 && !music.muted) playCarSound(0.75);
+  if (Math.hypot(car.x - player.x, car.z - player.z) < 35) playCarSound(0.75);
 }
 
 function findCarCrashImpact(car) {
@@ -17591,7 +17583,7 @@ function spawnWave() {
   waveRosters[waveId] = { expected: rosterCount, remaining: rosterCount, eatenBy: null };
 
   // Announce via a soldier voice callout for drama
-  if (!music.muted && getCurrentTownThemeProfile().era !== 'medieval') playSoldierVoice(1.0);
+  if (getCurrentTownThemeProfile().era !== 'medieval') playSoldierVoice(1.0);
   if (armyBossCount) announceBossInbound(getUnitType(unitManifest.find(unit => unit.isArmyBoss)));
 }
 
@@ -18131,7 +18123,7 @@ function fireOffensiveUnitShot(s, tgt, didHit, originOffsetX = 0) {
 function playOffensiveUnitWeaponAudio(s) {
   const distToPlayer = Math.hypot(s.x - player.x, s.z - player.z);
   const volScale = Math.max(0, 1 - distToPlayer / 70);
-  if (music.muted || volScale <= 0) return;
+  if (volScale <= 0) return;
   if (isMedievalCombatUnit(getUnitType(s))) return;
   if (getUnitType(s) === 'tank' || getUnitDefinition(getUnitType(s)).cannonAudio) playCannonShot(volScale);
   else playGunshot(volScale);
@@ -18279,7 +18271,7 @@ function updateSoldiers(dt) {
     if (s.voiceCooldown <= 0) {
       const distToPlayer = Math.hypot(s.x - player.x, s.z - player.z);
       const volScale = Math.max(0, 1 - distToPlayer / 60);
-      if (!music.muted && volScale > 0) playSoldierVoice(volScale);
+      if (volScale > 0) playSoldierVoice(volScale);
       s.voiceCooldown = 5 + Math.random() * 7; // next in 5-12s
     }
   }
@@ -18423,7 +18415,6 @@ function recordUnitClearDebug(breakdown, speedBoost, eaterName) {
 }
 
 function playConsumedSoldierAudio(soldier) {
-  if (music.muted) return;
   const distToPlayer = Math.hypot(soldier.x - player.x, soldier.z - player.z);
   const volScale = Math.max(0, 1 - distToPlayer / 60);
   if (volScale <= 0) return;

@@ -1,8 +1,17 @@
 export const BUILD_MASTER = 16;
-export const BUILD_SUB = 214;
+export const BUILD_SUB = 215;
 export const BUILD_LABEL = BUILD_SUB > 0 ? `Master ${BUILD_MASTER}.${BUILD_SUB}` : `Master ${BUILD_MASTER}`;
 
 export const BUILD_CHANGELOG = Object.freeze([
+  {
+    label: 'Master 16.215',
+    title: 'Music means music',
+    notes: [
+      'Makes the top-right Music control stop and resume only the procedural and Archive scores.',
+      'Keeps devour, combat, warning, reward, ambience, collapse, wave, and Pause sounds audible when Music is off.',
+      'Warms gameplay samples before Begin even with Music disabled and keeps alien-aid movement independent of audio permission.',
+    ],
+  },
   {
     label: 'Master 16.214',
     title: 'More town, less phone chrome',
